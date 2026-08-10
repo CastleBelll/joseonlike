@@ -118,11 +118,30 @@ def main():
     if retry_idle != 510 or baseline != 449:
         fail(f"single-sheet metrics changed unexpectedly: idle={retry_idle}, baseline={baseline}")
 
+    conditioned_dir = "asset/character/Taoist/raw/conditioned_south"
+    for name in ("walk_0", "walk_1"):
+        check_sprite(f"{conditioned_dir}/{name}_cut.png", (92, 92), 46)
+    conditioned = json.loads((ROOT / conditioned_dir / "metrics.json").read_text(encoding="utf-8"))
+    conditioned_changed = [
+        conditioned["frames"][f"walk_{index}_cut"]["changed_pixels"]
+        for index in range(2)
+    ]
+    conditioned_accepted = [
+        conditioned["frames"][f"walk_{index}_cut"]["accepted"]
+        for index in range(2)
+    ]
+    if conditioned_changed != [1005, 987] or any(conditioned_accepted):
+        fail(
+            "conditioned retry metrics changed unexpectedly: "
+            f"changed={conditioned_changed}, accepted={conditioned_accepted}"
+        )
+
     if ERRORS:
         raise SystemExit("\n".join(ERRORS))
     print("M1 assets verified: 20 UI icons + 4 chrome assets, 14 weapon assets, 2 characters, 2 seamless tiles, 6 audio files")
     print(f"Motion-generation rejection evidence: {changed}/1702 pixels changed between same-pose frames")
     print(f"Single-sheet retry rejected: idle pair {retry_idle}/1702 versus separate baseline {baseline}/1702")
+    print(f"Direct-conditioned retry rejected: south walk frames {conditioned_changed[0]}/1702 and {conditioned_changed[1]}/1702")
 
 
 if __name__ == "__main__":

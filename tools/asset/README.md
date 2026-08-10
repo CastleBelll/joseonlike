@@ -89,6 +89,10 @@ M1 helper scripts are deterministic and safe to rerun:
 - `measure_motion_sheet.py` compares cut motion cells on the authority's canonical 37x46
   window and writes reproducible JSON using the same pixel-diff denominator as the original
   separate-render test.
+- `measure_conditioned_motion.py` applies that same 1,702-pixel comparison to direct
+  image-to-image edits and separates lower-body changes from stable upper-body, hat, and
+  staff regions. The retained south-direction trial failed because only about 35% of its
+  changes stayed in the lower body and both stable silhouettes moved.
 
 ## Import settings
 
