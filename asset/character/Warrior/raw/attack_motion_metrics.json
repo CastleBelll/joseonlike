@@ -1,0 +1,384 @@
+{
+  "method": "exact RGBA ImageChops difference on full 92x92 canvases",
+  "motion": "attack",
+  "canvas_pixels": 8464,
+  "directions": {
+    "south": {
+      "idle_bbox": [
+        31,
+        23,
+        60,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_south_0.png",
+          "changed_pixels": 898,
+          "changed_percent_canvas": 10.61,
+          "alpha_changed_pixels": 294,
+          "lower_changed_pixels": 319,
+          "lower_alpha_changed_pixels": 117,
+          "lower_share_percent": 35.52,
+          "upper_changed_pixels": 579,
+          "upper_alpha_changed_pixels": 177,
+          "head_changed_pixels": 298,
+          "head_alpha_changed_pixels": 100,
+          "head_share_percent": 33.18,
+          "opaque_colours": 44,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_south_1.png",
+          "changed_pixels": 957,
+          "changed_percent_canvas": 11.31,
+          "alpha_changed_pixels": 442,
+          "lower_changed_pixels": 313,
+          "lower_alpha_changed_pixels": 159,
+          "lower_share_percent": 32.71,
+          "upper_changed_pixels": 644,
+          "upper_alpha_changed_pixels": 283,
+          "head_changed_pixels": 344,
+          "head_alpha_changed_pixels": 185,
+          "head_share_percent": 35.95,
+          "opaque_colours": 47,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 895,
+        "alpha_changed_pixels": 326
+      }
+    },
+    "south-east": {
+      "idle_bbox": [
+        32,
+        23,
+        59,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_south-east_0.png",
+          "changed_pixels": 873,
+          "changed_percent_canvas": 10.31,
+          "alpha_changed_pixels": 305,
+          "lower_changed_pixels": 300,
+          "lower_alpha_changed_pixels": 136,
+          "lower_share_percent": 34.36,
+          "upper_changed_pixels": 573,
+          "upper_alpha_changed_pixels": 169,
+          "head_changed_pixels": 319,
+          "head_alpha_changed_pixels": 108,
+          "head_share_percent": 36.54,
+          "opaque_colours": 46,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_south-east_1.png",
+          "changed_pixels": 872,
+          "changed_percent_canvas": 10.3,
+          "alpha_changed_pixels": 339,
+          "lower_changed_pixels": 260,
+          "lower_alpha_changed_pixels": 98,
+          "lower_share_percent": 29.82,
+          "upper_changed_pixels": 612,
+          "upper_alpha_changed_pixels": 241,
+          "head_changed_pixels": 308,
+          "head_alpha_changed_pixels": 109,
+          "head_share_percent": 35.32,
+          "opaque_colours": 47,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 905,
+        "alpha_changed_pixels": 392
+      }
+    },
+    "east": {
+      "idle_bbox": [
+        33,
+        23,
+        58,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_east_0.png",
+          "changed_pixels": 842,
+          "changed_percent_canvas": 9.95,
+          "alpha_changed_pixels": 303,
+          "lower_changed_pixels": 285,
+          "lower_alpha_changed_pixels": 136,
+          "lower_share_percent": 33.85,
+          "upper_changed_pixels": 557,
+          "upper_alpha_changed_pixels": 167,
+          "head_changed_pixels": 313,
+          "head_alpha_changed_pixels": 110,
+          "head_share_percent": 37.17,
+          "opaque_colours": 44,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_east_1.png",
+          "changed_pixels": 938,
+          "changed_percent_canvas": 11.08,
+          "alpha_changed_pixels": 457,
+          "lower_changed_pixels": 290,
+          "lower_alpha_changed_pixels": 143,
+          "lower_share_percent": 30.92,
+          "upper_changed_pixels": 648,
+          "upper_alpha_changed_pixels": 314,
+          "head_changed_pixels": 366,
+          "head_alpha_changed_pixels": 205,
+          "head_share_percent": 39.02,
+          "opaque_colours": 47,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 882,
+        "alpha_changed_pixels": 298
+      }
+    },
+    "north-east": {
+      "idle_bbox": [
+        31,
+        23,
+        60,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_north-east_0.png",
+          "changed_pixels": 894,
+          "changed_percent_canvas": 10.56,
+          "alpha_changed_pixels": 327,
+          "lower_changed_pixels": 325,
+          "lower_alpha_changed_pixels": 136,
+          "lower_share_percent": 36.35,
+          "upper_changed_pixels": 569,
+          "upper_alpha_changed_pixels": 191,
+          "head_changed_pixels": 295,
+          "head_alpha_changed_pixels": 104,
+          "head_share_percent": 33.0,
+          "opaque_colours": 42,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_north-east_1.png",
+          "changed_pixels": 965,
+          "changed_percent_canvas": 11.4,
+          "alpha_changed_pixels": 433,
+          "lower_changed_pixels": 336,
+          "lower_alpha_changed_pixels": 159,
+          "lower_share_percent": 34.82,
+          "upper_changed_pixels": 629,
+          "upper_alpha_changed_pixels": 274,
+          "head_changed_pixels": 335,
+          "head_alpha_changed_pixels": 170,
+          "head_share_percent": 34.72,
+          "opaque_colours": 46,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 861,
+        "alpha_changed_pixels": 324
+      }
+    },
+    "north": {
+      "idle_bbox": [
+        31,
+        23,
+        60,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_north_0.png",
+          "changed_pixels": 943,
+          "changed_percent_canvas": 11.14,
+          "alpha_changed_pixels": 381,
+          "lower_changed_pixels": 329,
+          "lower_alpha_changed_pixels": 134,
+          "lower_share_percent": 34.89,
+          "upper_changed_pixels": 614,
+          "upper_alpha_changed_pixels": 247,
+          "head_changed_pixels": 316,
+          "head_alpha_changed_pixels": 128,
+          "head_share_percent": 33.51,
+          "opaque_colours": 45,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_north_1.png",
+          "changed_pixels": 887,
+          "changed_percent_canvas": 10.48,
+          "alpha_changed_pixels": 328,
+          "lower_changed_pixels": 302,
+          "lower_alpha_changed_pixels": 127,
+          "lower_share_percent": 34.05,
+          "upper_changed_pixels": 585,
+          "upper_alpha_changed_pixels": 201,
+          "head_changed_pixels": 274,
+          "head_alpha_changed_pixels": 88,
+          "head_share_percent": 30.89,
+          "opaque_colours": 47,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 883,
+        "alpha_changed_pixels": 313
+      }
+    },
+    "north-west": {
+      "idle_bbox": [
+        32,
+        23,
+        60,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_north-west_0.png",
+          "changed_pixels": 853,
+          "changed_percent_canvas": 10.08,
+          "alpha_changed_pixels": 289,
+          "lower_changed_pixels": 300,
+          "lower_alpha_changed_pixels": 131,
+          "lower_share_percent": 35.17,
+          "upper_changed_pixels": 553,
+          "upper_alpha_changed_pixels": 158,
+          "head_changed_pixels": 288,
+          "head_alpha_changed_pixels": 87,
+          "head_share_percent": 33.76,
+          "opaque_colours": 41,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_north-west_1.png",
+          "changed_pixels": 947,
+          "changed_percent_canvas": 11.19,
+          "alpha_changed_pixels": 426,
+          "lower_changed_pixels": 299,
+          "lower_alpha_changed_pixels": 141,
+          "lower_share_percent": 31.57,
+          "upper_changed_pixels": 648,
+          "upper_alpha_changed_pixels": 285,
+          "head_changed_pixels": 350,
+          "head_alpha_changed_pixels": 188,
+          "head_share_percent": 36.96,
+          "opaque_colours": 50,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 840,
+        "alpha_changed_pixels": 307
+      }
+    },
+    "west": {
+      "idle_bbox": [
+        32,
+        23,
+        59,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_west_0.png",
+          "changed_pixels": 862,
+          "changed_percent_canvas": 10.18,
+          "alpha_changed_pixels": 296,
+          "lower_changed_pixels": 296,
+          "lower_alpha_changed_pixels": 131,
+          "lower_share_percent": 34.34,
+          "upper_changed_pixels": 566,
+          "upper_alpha_changed_pixels": 165,
+          "head_changed_pixels": 312,
+          "head_alpha_changed_pixels": 104,
+          "head_share_percent": 36.19,
+          "opaque_colours": 42,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_west_1.png",
+          "changed_pixels": 852,
+          "changed_percent_canvas": 10.07,
+          "alpha_changed_pixels": 324,
+          "lower_changed_pixels": 265,
+          "lower_alpha_changed_pixels": 112,
+          "lower_share_percent": 31.1,
+          "upper_changed_pixels": 587,
+          "upper_alpha_changed_pixels": 212,
+          "head_changed_pixels": 300,
+          "head_alpha_changed_pixels": 101,
+          "head_share_percent": 35.21,
+          "opaque_colours": 49,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 930,
+        "alpha_changed_pixels": 398
+      }
+    },
+    "south-west": {
+      "idle_bbox": [
+        31,
+        23,
+        60,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_south-west_0.png",
+          "changed_pixels": 872,
+          "changed_percent_canvas": 10.3,
+          "alpha_changed_pixels": 292,
+          "lower_changed_pixels": 304,
+          "lower_alpha_changed_pixels": 123,
+          "lower_share_percent": 34.86,
+          "upper_changed_pixels": 568,
+          "upper_alpha_changed_pixels": 169,
+          "head_changed_pixels": 291,
+          "head_alpha_changed_pixels": 94,
+          "head_share_percent": 33.37,
+          "opaque_colours": 47,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Warrior/raw/motion_cut/attack_south-west_1.png",
+          "changed_pixels": 918,
+          "changed_percent_canvas": 10.85,
+          "alpha_changed_pixels": 368,
+          "lower_changed_pixels": 283,
+          "lower_alpha_changed_pixels": 115,
+          "lower_share_percent": 30.83,
+          "upper_changed_pixels": 635,
+          "upper_alpha_changed_pixels": 253,
+          "head_changed_pixels": 336,
+          "head_alpha_changed_pixels": 164,
+          "head_share_percent": 36.6,
+          "opaque_colours": 48,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 843,
+        "alpha_changed_pixels": 280
+      }
+    }
+  },
+  "summary": {
+    "frames": 16,
+    "accepted_frames": 0,
+    "sheet_accepted": false,
+    "changed_pixels_mean": 898.31,
+    "changed_pixels_min": 842,
+    "changed_pixels_max": 965,
+    "lower_share_percent_mean": 33.45
+  }
+}

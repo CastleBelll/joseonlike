@@ -18,6 +18,25 @@ func run() -> Array[String]:
 	failures.append_array(_test_every_weapon_has_vfx())
 	failures.append_array(_test_melee_arc_uses_authored_texture())
 	failures.append_array(_test_melee_arc_falls_back())
+	failures.append_array(_test_arc_owns_its_collider())
+	return failures
+
+
+## A node built outside the tree must own its collider outright. Attaching it
+## with call_deferred here would drop the callable when the arc is freed and
+## leave the shape with no owner -- a silent RID leak rather than a test
+## failure, which is exactly the kind of noise that hides the next real one.
+func _test_arc_owns_its_collider() -> Array[String]:
+	var arc: Area2D = MeleeArcScript.new()
+	arc.facing = Vector2.RIGHT
+	arc._ready()
+	var failures: Array[String] = []
+	var collider: Node = arc.get_node_or_null(^"CollisionShape2D")
+	if collider == null:
+		failures.append("arc built outside the tree should parent its collider immediately")
+	elif collider.get_parent() != arc:
+		failures.append("collider is not owned by the arc, so freeing the arc leaks it")
+	arc.free()
 	return failures
 
 

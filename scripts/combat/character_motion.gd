@@ -26,14 +26,25 @@ const IDLE_OFFSETS: Array[Vector2i] = [
 	Vector2i(0, 0), Vector2i(0, -1), Vector2i(0, -1), Vector2i(0, 0),
 ]
 
-## Walk swings one pixel left, up, right, centre. The x sequence is mirrored on
-## alternating steps so the two strides are not identical.
+## Walk is a vertical hop: 0, -1, -2, -1 pixels, every frame moving.
+##
+## Measured, not guessed. The first version swung one pixel left/up/right and was
+## invisible in play: at 90 px/s the hunter travels 11.25 px per walk frame, so a
+## 1 px offset is 8.9% of the translation it rides on, and three of the four
+## frames moved on the horizontal axis -- exactly the axis that translation
+## masks. Vertical is the only axis nothing else is using, and 2 px is 4.3% of
+## the 46 px sprite height rather than 2.2%. Still whole-pixel: the asset report
+## banned subpixel offsets, fractional scale and rotation, not amplitude.
 const WALK_OFFSETS: Array[Vector2i] = [
-	Vector2i(-1, 0), Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 0),
+	Vector2i(0, 0), Vector2i(0, -1), Vector2i(0, -2), Vector2i(0, -1),
 ]
 
 const FRAME_COUNT: int = 4
 const DIRECTION_COUNT: int = 8
+
+## No cycle or recoil offset may exceed this on either axis. Two offsets that
+## compose past it read as a glitch rather than as animation.
+const MAX_OFFSET_PX: int = 2
 
 
 ## Nearest of the eight authored rotations for a movement vector. A zero vector
@@ -52,22 +63,28 @@ static func frame_index(elapsed_sec: float, hz: float) -> int:
 	return int(floor(elapsed_sec * hz)) % FRAME_COUNT
 
 
-## How many complete cycles have elapsed; walk uses its parity to mirror x.
-static func step_index(elapsed_sec: float, hz: float) -> int:
-	if elapsed_sec <= 0.0 or hz <= 0.0:
-		return 0
-	return int(floor(elapsed_sec * hz)) / FRAME_COUNT
-
-
 static func idle_offset(elapsed_sec: float) -> Vector2i:
 	return IDLE_OFFSETS[frame_index(elapsed_sec, IDLE_HZ)]
 
 
 static func walk_offset(elapsed_sec: float) -> Vector2i:
-	var offset: Vector2i = WALK_OFFSETS[frame_index(elapsed_sec, WALK_HZ)]
-	if step_index(elapsed_sec, WALK_HZ) % 2 == 1:
-		return Vector2i(-offset.x, offset.y)
-	return offset
+	return WALK_OFFSETS[frame_index(elapsed_sec, WALK_HZ)]
+
+
+## The single source of the sprite offset for a tick.
+##
+## Recoil REPLACES the cycle offset instead of adding to it. Composing them
+## produced a 2-3 px jump on one tick, which reads as a glitch, and it also broke
+## the promise that the recoil is one pixel.
+static func sprite_offset(
+	elapsed_sec: float,
+	is_walking: bool,
+	recoil: Vector2i,
+	is_recoiling: bool
+) -> Vector2i:
+	if is_recoiling:
+		return recoil
+	return walk_offset(elapsed_sec) if is_walking else idle_offset(elapsed_sec)
 
 
 ## Whole-pixel recoil away from the aim direction, applied for a single tick.

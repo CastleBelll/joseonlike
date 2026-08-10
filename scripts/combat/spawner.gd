@@ -22,13 +22,13 @@ var _pool: EnemyPool = null
 var _events: Array[Dictionary] = []
 var _cursor: int = 0
 var _clock_sec: float = 0.0
-var _rng := RandomNumberGenerator.new()
+var _rng: RandomNumberGenerator = null
 
 @onready var _container: Node2D = $Enemies
 
 
 func _ready() -> void:
-	_rng.randomize()
+	_rng = CombatRng.create()
 	_pool = EnemyPool.new()
 	_pool.name = "EnemyPool"
 	add_child(_pool)

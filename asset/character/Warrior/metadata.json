@@ -3,14 +3,25 @@
   "canvas": { "width": 92, "height": 92 },
   "content": { "width": 29, "height": 46 },
   "view": "low top-down",
+  "directions": 8,
   "frames": {
-    "rotations": { "south": "Idle/rotations/south.png" },
+    "rotations": {
+      "south": "Idle/rotations/south.png",
+      "south-east": "Idle/rotations/south-east.png",
+      "east": "Idle/rotations/east.png",
+      "north-east": "Idle/rotations/north-east.png",
+      "north": "Idle/rotations/north.png",
+      "north-west": "Idle/rotations/north-west.png",
+      "west": "Idle/rotations/west.png",
+      "south-west": "Idle/rotations/south-west.png"
+    },
     "animations": {}
   },
   "motion": "procedural; see asset/M1_ASSET_REPORT.md",
   "source": {
     "provider": "Higgsfield",
     "model": "nano_banana_2",
-    "job_id": "fc66d71d-2bf6-420d-ba7b-cfa5fe2605c1"
+    "south_job_id": "fc66d71d-2bf6-420d-ba7b-cfa5fe2605c1",
+    "rotation_sheet_job_id": "bcceeb59-9827-49ba-9f59-ea4f3e4f3849"
   }
 }

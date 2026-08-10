@@ -5,6 +5,7 @@ extends CanvasLayer
 
 @onready var _hp_bar: ProgressBar = $Root/HpBar
 @onready var _hp_label: Label = $Root/HpBar/HpLabel
+@onready var _xp_icon: TextureRect = $Root/XpIcon
 @onready var _xp_bar: ProgressBar = $Root/XpBar
 @onready var _level_label: Label = $Root/LevelLabel
 @onready var _time_label: Label = $Root/StatsRow/TimeLabel
@@ -20,6 +21,7 @@ func _ready() -> void:
 	layer = 10
 	_style_bar(_hp_bar, UiPalette.DANGER)
 	_style_bar(_xp_bar, UiPalette.GOLD)
+	_xp_icon.texture = UiPalette.ICON_XP
 	for label in [_hp_label, _level_label, _time_label, _kills_label, _weapons_empty_label]:
 		label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
 		label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
@@ -132,7 +134,7 @@ func _build_weapon_chip(weapon_entry: Dictionary) -> Control:
 	var weapon_data: Dictionary = GameData.weapon(weapon_id)
 
 	var chip := PanelContainer.new()
-	chip.add_theme_stylebox_override("panel", UiPalette.panel_style(UiPalette.INK.lerp(UiPalette.VERMILION_DARK, 0.3), Color.TRANSPARENT, 0, 6))
+	chip.add_theme_stylebox_override("panel", UiPalette.nine_slice_panel())
 	chip.custom_minimum_size = Vector2(UiPalette.TOUCH_TARGET_MIN, UiPalette.TOUCH_TARGET_MIN)
 
 	var box := VBoxContainer.new()
@@ -151,7 +153,7 @@ func _build_weapon_chip(weapon_entry: Dictionary) -> Control:
 	var label := Label.new()
 	var display_name: String = LocaleText.field(weapon_data, "name") if not weapon_data.is_empty() else weapon_id
 	label.text = "%s Lv%d" % [display_name, level]
-	label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+	label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 	label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(label)

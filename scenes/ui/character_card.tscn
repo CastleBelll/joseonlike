@@ -46,10 +46,11 @@ mouse_filter = 2
 alignment = 1
 theme_override_constants/separation = 6
 
-[node name="LockIcon" type="Label" parent="Margin/Box/LockRow"]
+[node name="LockIcon" type="TextureRect" parent="Margin/Box/LockRow"]
 layout_mode = 2
+custom_minimum_size = Vector2(32, 32)
 mouse_filter = 2
-text = "lock"
+stretch_mode = 5
 
 [node name="LockReasonLabel" type="Label" parent="Margin/Box/LockRow"]
 layout_mode = 2
@@ -58,3 +59,16 @@ size_flags_horizontal = 3
 autowrap_mode = 2
 horizontal_alignment = 0
 text = "Locked"
+
+[node name="CheckBadge" type="TextureRect" parent="."]
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -40.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = 40.0
+grow_horizontal = 0
+mouse_filter = 2
+stretch_mode = 5
+visible = false
