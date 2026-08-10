@@ -242,11 +242,16 @@ Valid `stat` keys (frozen — combat reads these): `attack_damage`, `attack_spee
     "hp": 20.0, "damage": 6.0, "speed": 55.0,
     "xp_drop": 3, "gold_drop": 1,
     "behaviour": "chase",
+    "collision_radius": 6.0,
     "sprite": "res://asset/monster/forest_goblin.png"
   }
 }
 ```
 `behaviour` ∈ `chase | ranged | charger | swarm | boss`.
+`collision_radius` is required and authoritative: sprites range from 26x46 to 60x76, so a
+single hardcoded radius in `enemy_base.tscn` cannot fit them. Combat sizes the collision
+shape from this field and never from the sprite texture, so a resized sprite never
+silently changes hitboxes.
 
 ### `data/stages.json`
 ```json
