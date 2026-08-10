@@ -1,0 +1,23 @@
+{
+  "phoenix_talisman": {
+    "requires_weapon": "fire_talisman",
+    "requires_passive": "skill_power",
+    "min_weapon_level": 5,
+    "min_passive_stacks": 3,
+    "result_weapon": "phoenix_talisman"
+  },
+  "twin_sword": {
+    "requires_weapon": "sword",
+    "requires_passive": "attack_damage",
+    "min_weapon_level": 5,
+    "min_passive_stacks": 3,
+    "result_weapon": "twin_sword"
+  },
+  "divine_bow": {
+    "requires_weapon": "bow",
+    "requires_passive": "attack_speed",
+    "min_weapon_level": 5,
+    "min_passive_stacks": 3,
+    "result_weapon": "divine_bow"
+  }
+}

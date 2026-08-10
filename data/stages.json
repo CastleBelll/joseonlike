@@ -1,0 +1,29 @@
+{
+  "bamboo_forest": {
+    "name_ko": "대나무 숲",
+    "name_en": "Bamboo Forest",
+    "duration_sec": 600,
+    "boss_id": "bamboo_spirit_lord",
+    "waves": [
+      { "at_sec": 0,   "monster_id": "forest_goblin", "count": 6,  "interval_sec": 2.0 },
+      { "at_sec": 40,  "monster_id": "forest_goblin", "count": 8,  "interval_sec": 1.8 },
+      { "at_sec": 90,  "monster_id": "forest_goblin", "count": 10, "interval_sec": 1.6 },
+      { "at_sec": 120, "monster_id": "forest_spirit", "count": 6,  "interval_sec": 2.2 },
+      { "at_sec": 150, "monster_id": "forest_goblin", "count": 12, "interval_sec": 1.4 },
+      { "at_sec": 180, "monster_id": "forest_spirit", "count": 8,  "interval_sec": 2.0 },
+      { "at_sec": 240, "monster_id": "forest_goblin", "count": 14, "interval_sec": 1.2 },
+      { "at_sec": 240, "monster_id": "forest_spirit", "count": 8,  "interval_sec": 1.8 },
+      { "at_sec": 300, "monster_id": "bamboo_brute",  "count": 4,  "interval_sec": 3.0 },
+      { "at_sec": 330, "monster_id": "forest_goblin", "count": 16, "interval_sec": 1.0 },
+      { "at_sec": 360, "monster_id": "forest_spirit", "count": 10, "interval_sec": 1.5 },
+      { "at_sec": 360, "monster_id": "bamboo_brute",  "count": 5,  "interval_sec": 2.5 },
+      { "at_sec": 420, "monster_id": "forest_goblin", "count": 18, "interval_sec": 0.9 },
+      { "at_sec": 420, "monster_id": "forest_spirit", "count": 12, "interval_sec": 1.3 },
+      { "at_sec": 480, "monster_id": "bamboo_brute",  "count": 8,  "interval_sec": 1.8 },
+      { "at_sec": 480, "monster_id": "forest_goblin", "count": 20, "interval_sec": 0.8 },
+      { "at_sec": 540, "monster_id": "forest_spirit", "count": 14, "interval_sec": 1.1 },
+      { "at_sec": 540, "monster_id": "bamboo_brute",  "count": 10, "interval_sec": 1.5 },
+      { "at_sec": 570, "monster_id": "forest_goblin", "count": 24, "interval_sec": 0.6 }
+    ]
+  }
+}

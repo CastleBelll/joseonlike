@@ -1,0 +1,29 @@
+{
+  "taoist": {
+    "name_ko": "도사",
+    "name_en": "Taoist",
+    "role": "magic_aoe",
+    "base_hp": 100,
+    "base_speed": 90.0,
+    "starting_weapon": "old_talisman",
+    "unlock": { "type": "default" }
+  },
+  "warrior": {
+    "name_ko": "무사",
+    "name_en": "Warrior",
+    "role": "melee_bruiser",
+    "base_hp": 140,
+    "base_speed": 80.0,
+    "starting_weapon": "sword",
+    "unlock": { "type": "achievement", "achievement_id": "goblin_hunter" }
+  },
+  "archer": {
+    "name_ko": "궁수",
+    "name_en": "Archer",
+    "role": "ranged_dps",
+    "base_hp": 80,
+    "base_speed": 100.0,
+    "starting_weapon": "bow",
+    "unlock": { "type": "gold", "cost": 500 }
+  }
+}
