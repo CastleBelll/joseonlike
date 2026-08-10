@@ -1,8 +1,10 @@
 extends Node
-## Entry point: load content, load the profile, then hand control to base camp.
+## Entry point: load content, load the profile, then hand control to the title
+## screen, where the GDD flow starts. The title's Start button routes onward to
+## the camp.
 ##
-## Content is a hard dependency — routing into the camp with empty data would
-## produce silently broken menus, so a load failure stops here and says so.
+## Content is a hard dependency — routing onward with empty data would produce
+## silently broken menus, so a load failure stops here and says so.
 
 ## Shown on screen when content is unusable. English on purpose: the localised
 ## strings live in data/, which is exactly what failed to load.
@@ -20,7 +22,7 @@ func _ready() -> void:
 		return
 
 	SaveManager.load_profile()
-	SceneRouter.goto_camp()
+	SceneRouter.goto_title()
 
 
 func _show_load_failure(load_result: Error) -> void:
