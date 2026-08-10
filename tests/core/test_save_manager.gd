@@ -18,6 +18,7 @@ func run() -> Array[String]:
 	failures.append_array(_test_reserved_schema_key_is_rejected())
 	failures.append_array(_test_newer_schema_is_rejected_read_only())
 	failures.append_array(_test_corrupt_profile_falls_back())
+	failures.append_array(_test_debounced_autosave_defers_then_writes())
 	_cleanup()
 	return failures
 
@@ -132,6 +133,44 @@ func _test_corrupt_profile_falls_back() -> Array[String]:
 	var save_result: Error = manager.save_profile()
 	if save_result != OK:
 		failures.append("saving over a corrupt profile returned %d, expected OK" % save_result)
+
+	manager.free()
+	_cleanup()
+	return failures
+
+
+## The debounce is the one autoload behaviour the headless runner cannot observe:
+## _ready() never fires there, so _autosave_timer stays null and set_value takes
+## its early return. Timer.start() also refuses to run outside the scene tree, so
+## the timer object itself is untestable here -- but its payload is not. This
+## drives _on_autosave_timeout() directly, which is exactly what the timer calls.
+func _test_debounced_autosave_defers_then_writes() -> Array[String]:
+	var failures: Array[String] = []
+	_cleanup()
+
+	var manager := _new_manager()
+	manager.load_profile()
+	manager.set_value("gold", TEST_GOLD)
+
+	# Debounced: the setter must not touch the disk on its own.
+	if FileAccess.file_exists(TEST_SAVE_PATH):
+		failures.append("set_value wrote %s immediately instead of deferring" % TEST_SAVE_PATH)
+
+	manager._on_autosave_timeout()
+	if not FileAccess.file_exists(TEST_SAVE_PATH):
+		failures.append("the autosave timeout did not write %s" % TEST_SAVE_PATH)
+
+	var reader := _new_manager()
+	reader.load_profile()
+	if int(reader.get_value("gold", 0)) != TEST_GOLD:
+		failures.append("the autosaved profile did not round-trip gold")
+	reader.free()
+
+	# Nothing dirty: a second timeout must not churn the disk.
+	_cleanup()
+	manager._on_autosave_timeout()
+	if FileAccess.file_exists(TEST_SAVE_PATH):
+		failures.append("the autosave timeout rewrote a profile with no pending changes")
 
 	manager.free()
 	_cleanup()

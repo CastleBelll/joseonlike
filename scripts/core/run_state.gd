@@ -48,6 +48,27 @@ const FIELD_STAT := "stat"
 const FIELD_STARTING_WEAPON := "starting_weapon"
 const FIELD_EVOLUTION_ONLY := "evolution_only"
 
+## Evolution rule fields (data/evolutions.json, ARCHITECTURE.md section 4).
+const RULE_REQUIRES_WEAPON := "requires_weapon"
+const RULE_REQUIRES_PASSIVE := "requires_passive"
+const RULE_MIN_PASSIVE_STACKS := "min_passive_stacks"
+const RULE_RESULT_WEAPON := "result_weapon"
+
+## Relative draw weight of a passive that is the missing piece of an evolution
+## the run can still reach, against BASE_CHOICE_WEIGHT for everything else.
+##
+## Why 4. A mid-run pool is about 15 options holding exactly one gating passive,
+## so a uniform draw of three offers it 3/15 = 20% of the time -- which is what
+## the ten-seed sweep measured. Weight 4 lifts that to roughly 55% per level-up
+## (1 - 14/18 * 13/17 * 12/16), a 2.8x improvement. It deliberately stops well
+## short of certainty: 45% of level-ups still do not show it, so builds keep
+## diverging and evolution stays a choice rather than a script. Since
+## min_passive_stacks sits at the schema floor of 1, one accepted offer opens the
+## gate, so the odds across several level-ups compound high without any single
+## draw being guaranteed.
+const GATING_PASSIVE_WEIGHT := 4.0
+const BASE_CHOICE_WEIGHT := 1.0
+
 var character_id: String = ""
 var stage_id: String = ""
 var level: int = FIRST_LEVEL
@@ -286,8 +307,79 @@ func _build_choices() -> Array[Dictionary]:
 		push_warning("RunState: level %d has no upgrade options left" % level)
 		return pool
 
-	pool.shuffle()
-	return pool.slice(0, CHOICES_PER_LEVEL)
+	return _weighted_sample(pool, CHOICES_PER_LEVEL)
+
+
+## Draws up to `count` distinct options, favouring passives that still gate a
+## reachable evolution. Sampling is without replacement, so an option can never
+## be offered twice in one level-up, and weighting only reorders the odds of
+## candidates the pool already contains -- an exhausted passive was filtered out
+## upstream in _passive_choices() and no weight can bring it back.
+func _weighted_sample(pool: Array[Dictionary], count: int) -> Array[Dictionary]:
+	var gating: Dictionary = _gating_passive_ids()
+	var remaining: Array[Dictionary] = pool.duplicate()
+	var weights: Array[float] = []
+	for choice: Dictionary in remaining:
+		weights.append(_choice_weight(choice, gating))
+
+	var drawn: Array[Dictionary] = []
+	while drawn.size() < count and not remaining.is_empty():
+		var total: float = 0.0
+		for weight: float in weights:
+			total += weight
+
+		var roll: float = randf() * total
+		# Falls back to the last index, which also covers float drift leaving a
+		# sliver of the roll unconsumed.
+		var index: int = remaining.size() - 1
+		for candidate: int in range(remaining.size()):
+			roll -= weights[candidate]
+			if roll <= 0.0:
+				index = candidate
+				break
+
+		drawn.append(remaining[index])
+		remaining.remove_at(index)
+		weights.remove_at(index)
+
+	return drawn
+
+
+func _choice_weight(choice: Dictionary, gating_passive_ids: Dictionary) -> float:
+	if String(choice.get(CHOICE_KIND, "")) != KIND_PASSIVE:
+		return BASE_CHOICE_WEIGHT
+	if gating_passive_ids.has(String(choice.get(CHOICE_ID, ""))):
+		return GATING_PASSIVE_WEIGHT
+	return BASE_CHOICE_WEIGHT
+
+
+## Passives that are the one missing piece of an evolution this run can still
+## reach: it already holds the source weapon, has not produced the result yet,
+## and is short of the rule's stack threshold. Read off the rules themselves, so
+## content can add an evolution without touching this file.
+##
+## Once the stacks are met the passive drops back to base weight -- at that point
+## the weapon level is the blocker and weapon upgrades already cover it.
+func _gating_passive_ids() -> Dictionary:
+	var gating: Dictionary = {}
+	for rule: Dictionary in _content().all_evolutions():
+		var source_id: String = String(rule.get(RULE_REQUIRES_WEAPON, ""))
+		if source_id.is_empty() or weapon_level(source_id) <= 0:
+			continue
+
+		var result_id: String = String(rule.get(RULE_RESULT_WEAPON, ""))
+		if not result_id.is_empty() and weapon_level(result_id) > 0:
+			continue
+
+		var passive_id: String = String(rule.get(RULE_REQUIRES_PASSIVE, ""))
+		if passive_id.is_empty():
+			continue
+		if passive_stacks(passive_id) >= int(rule.get(RULE_MIN_PASSIVE_STACKS, 0)):
+			continue
+
+		gating[passive_id] = true
+
+	return gating
 
 
 func _weapon_upgrade_choices() -> Array[Dictionary]:
