@@ -11,7 +11,8 @@ extends Control
 @onready var _title_label: Label = $ContentRoot/TitleLabel
 @onready var _time_label: Label = $ContentRoot/StatsBox/TimeLabel
 @onready var _kills_label: Label = $ContentRoot/StatsBox/KillsLabel
-@onready var _gold_label: Label = $ContentRoot/StatsBox/GoldLabel
+@onready var _gold_icon: TextureRect = $ContentRoot/StatsBox/GoldRow/GoldIcon
+@onready var _gold_label: Label = $ContentRoot/StatsBox/GoldRow/GoldLabel
 @onready var _achievements_title_label: Label = $ContentRoot/AchievementsTitleLabel
 @onready var _achievements_box: VBoxContainer = $ContentRoot/ScrollContainer/AchievementsBox
 @onready var _return_button: Button = $ContentRoot/ReturnButton
@@ -25,9 +26,10 @@ func _ready() -> void:
 
 	_return_button.text = LocaleText.ui("return_to_camp")
 	_return_button.custom_minimum_size = Vector2(0, 56)
-	UiPalette.apply_button_style(_return_button, UiPalette.VERMILION_DARK, UiPalette.TEXT_ON_DARK)
+	UiPalette.apply_button_style(_return_button)
 	_return_button.pressed.connect(_on_return_pressed)
 
+	_gold_icon.texture = UiPalette.ICON_GOLD
 	for label in [_time_label, _kills_label, _gold_label]:
 		label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 		label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
@@ -70,11 +72,28 @@ func _render_achievements() -> void:
 		return
 
 	for achievement in newly:
-		var row := Label.new()
-		row.text = "\U0001F3C6 %s" % LocaleText.field(achievement, "name")
-		row.add_theme_color_override("font_color", UiPalette.GOLD)
-		row.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
-		_achievements_box.add_child(row)
+		_achievements_box.add_child(_build_achievement_row(achievement))
+
+
+func _build_achievement_row(achievement: Dictionary) -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", UiPalette.SPACING_SM)
+
+	var icon_texture: Texture2D = UiPalette.achievement_icon(String(achievement.get("id", "")))
+	if icon_texture != null:
+		var icon := TextureRect.new()
+		icon.texture = icon_texture
+		icon.custom_minimum_size = Vector2(32, 32)
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		row.add_child(icon)
+
+	var label := Label.new()
+	label.text = LocaleText.field(achievement, "name")
+	label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
+	label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
+	row.add_child(label)
+
+	return row
 
 
 func _format_time(seconds: float) -> String:
@@ -83,4 +102,5 @@ func _format_time(seconds: float) -> String:
 
 
 func _on_return_pressed() -> void:
+	UiSound.play_click(self)
 	SceneRouter.goto_camp()
