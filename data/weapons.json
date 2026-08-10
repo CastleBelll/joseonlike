@@ -13,7 +13,8 @@
     "max_level": 8,
     "per_level": { "damage": 3.0, "cooldown_sec": -0.05 },
     "evolves_to": "fire_talisman",
-    "evolution_only": false
+    "evolution_only": false,
+    "sprite": "res://asset/weapon/icons/old_talisman.png"
   },
   "fire_talisman": {
     "name_ko": "화염 부적",
@@ -29,7 +30,8 @@
     "max_level": 8,
     "per_level": { "damage": 4.0, "cooldown_sec": -0.05 },
     "evolves_to": "phoenix_talisman",
-    "evolution_only": true
+    "evolution_only": true,
+    "sprite": "res://asset/weapon/icons/fire_talisman.png"
   },
   "phoenix_talisman": {
     "name_ko": "봉황 부적",
@@ -44,7 +46,8 @@
     "speed": 280.0,
     "max_level": 8,
     "per_level": { "damage": 6.0, "cooldown_sec": -0.04 },
-    "evolution_only": true
+    "evolution_only": true,
+    "sprite": "res://asset/weapon/icons/phoenix_talisman.png"
   },
   "sword": {
     "name_ko": "환도",
@@ -60,7 +63,8 @@
     "max_level": 8,
     "per_level": { "damage": 3.5, "cooldown_sec": -0.04 },
     "evolves_to": "twin_sword",
-    "evolution_only": false
+    "evolution_only": false,
+    "sprite": "res://asset/weapon/icons/sword.png"
   },
   "twin_sword": {
     "name_ko": "쌍환도",
@@ -75,7 +79,8 @@
     "speed": 0.0,
     "max_level": 8,
     "per_level": { "damage": 4.5, "cooldown_sec": -0.03 },
-    "evolution_only": true
+    "evolution_only": true,
+    "sprite": "res://asset/weapon/icons/twin_sword.png"
   },
   "bow": {
     "name_ko": "각궁",
@@ -91,7 +96,8 @@
     "max_level": 8,
     "per_level": { "damage": 2.5, "cooldown_sec": -0.03 },
     "evolves_to": "divine_bow",
-    "evolution_only": false
+    "evolution_only": false,
+    "sprite": "res://asset/weapon/icons/bow.png"
   },
   "divine_bow": {
     "name_ko": "신궁",
@@ -106,6 +112,7 @@
     "speed": 420.0,
     "max_level": 8,
     "per_level": { "damage": 3.5, "cooldown_sec": -0.03 },
-    "evolution_only": true
+    "evolution_only": true,
+    "sprite": "res://asset/weapon/icons/divine_bow.png"
   }
 }

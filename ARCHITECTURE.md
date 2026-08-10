@@ -206,7 +206,8 @@ never hardcode Korean strings in scripts.
     "max_level": 8,
     "per_level": { "damage": 3.0, "cooldown_sec": -0.05 },
     "evolves_to": "fire_talisman",
-    "evolution_only": false
+    "evolution_only": false,
+    "sprite": "res://asset/weapon/icons/old_talisman.png"
   }
 }
 ```
