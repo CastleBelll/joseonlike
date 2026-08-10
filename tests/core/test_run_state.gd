@@ -28,6 +28,7 @@ func run() -> Array[String]:
 	failures.append_array(_test_exhausted_pool_shrinks_choices())
 	failures.append_array(_test_apply_choice_mutates_run())
 	failures.append_array(_test_weapon_slot_cap_holds())
+	failures.append_array(_test_evolution_only_weapons_are_not_offered())
 	failures.append_array(_test_stat_total_aggregates_stacks())
 	return failures
 
@@ -255,6 +256,54 @@ func _test_weapon_slot_cap_holds() -> Array[String]:
 
 	if captured.is_empty():
 		failures.append("a full-slot run offered no choices at all")
+
+	_drop(run)
+	return failures
+
+
+## An evolution result handed out as an ordinary pick makes the evolution
+## requirements worthless, so combat sees evolution never pay off.
+func _test_evolution_only_weapons_are_not_offered() -> Array[String]:
+	var failures: Array[String] = []
+	var run := _new_run()
+
+	var evolution_only_ids: Array[String] = []
+	for weapon_data: Dictionary in run.content.all_weapons():
+		if bool(weapon_data.get(RUN_STATE_SCRIPT.FIELD_EVOLUTION_ONLY, false)):
+			evolution_only_ids.append(String(weapon_data.get("id", "")))
+
+	if evolution_only_ids.is_empty():
+		failures.append("the fixture pool has no evolution_only weapon, so this test cannot catch a regression")
+		_drop(run)
+		return failures
+
+	# Asserted on the candidate list, not on an emitted level-up: _build_choices
+	# shuffles and slices to three, so a sampled check would pass by luck.
+	var candidate_ids: Array[String] = []
+	for choice: Dictionary in run._new_weapon_choices():
+		candidate_ids.append(String(choice.get("id", "")))
+
+	for blocked_id: String in evolution_only_ids:
+		if candidate_ids.has(blocked_id):
+			failures.append("evolution_only weapon \"%s\" was offered as weapon_new" % blocked_id)
+
+	if candidate_ids.is_empty():
+		failures.append("excluding evolution_only weapons emptied the weapon_new pool")
+
+	# The exclusion is about acquiring, not levelling: once the evolution rule has
+	# granted it, its upgrade must still show up.
+	var evolved_id: String = evolution_only_ids[0]
+	run.grant_weapon(evolved_id)
+	if run.weapon_level(evolved_id) != RUN_STATE_SCRIPT.WEAPON_START_LEVEL:
+		failures.append("grant_weapon refused the evolution result \"%s\"" % evolved_id)
+
+	var upgrade_offered: bool = false
+	for choice: Dictionary in run._weapon_upgrade_choices():
+		if String(choice.get("id", "")) == evolved_id:
+			upgrade_offered = true
+
+	if not upgrade_offered:
+		failures.append("owning \"%s\" did not put its upgrade in the pool" % evolved_id)
 
 	_drop(run)
 	return failures
