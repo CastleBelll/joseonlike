@@ -5,7 +5,7 @@
     "hp": 20.0,
     "damage": 6.0,
     "speed": 55.0,
-    "xp_drop": 3,
+    "xp_drop": 1,
     "gold_drop": 1,
     "behaviour": "chase",
     "sprite": "res://assets/monsters/forest_goblin.png"
@@ -24,7 +24,7 @@
   "bamboo_brute": {
     "name_ko": "죽림 거한",
     "name_en": "Bamboo Brute",
-    "hp": 60.0,
+    "hp": 85.0,
     "damage": 18.0,
     "speed": 70.0,
     "xp_drop": 8,
@@ -35,7 +35,7 @@
   "bamboo_spirit_lord": {
     "name_ko": "죽림 정령왕",
     "name_en": "Bamboo Spirit Lord",
-    "hp": 7000.0,
+    "hp": 4000.0,
     "damage": 35.0,
     "speed": 50.0,
     "xp_drop": 200,
