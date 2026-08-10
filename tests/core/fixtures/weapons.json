@@ -1,0 +1,45 @@
+{
+  "old_talisman": {
+    "name_ko": "낡은 부적",
+    "name_en": "Old Talisman",
+    "category": "spiritual",
+    "grade": "common",
+    "damage": 12.0,
+    "cooldown_sec": 1.2,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 260.0,
+    "max_level": 3,
+    "per_level": { "damage": 3.0, "cooldown_sec": -0.05 },
+    "evolves_to": "fire_talisman"
+  },
+  "fire_talisman": {
+    "name_ko": "화염 부적",
+    "name_en": "Fire Talisman",
+    "category": "spiritual",
+    "grade": "rare",
+    "damage": 20.0,
+    "cooldown_sec": 1.0,
+    "projectile_count": 1,
+    "pierce": 1,
+    "area_scale": 1.2,
+    "speed": 280.0,
+    "max_level": 3,
+    "per_level": { "damage": 5.0 }
+  },
+  "short_bow": {
+    "name_ko": "단궁",
+    "name_en": "Short Bow",
+    "category": "ranged",
+    "grade": "common",
+    "damage": 9.0,
+    "cooldown_sec": 0.8,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 320.0,
+    "max_level": 2,
+    "per_level": { "damage": 2.0 }
+  }
+}
