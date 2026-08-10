@@ -76,6 +76,9 @@ Generated contact sheets can be split into recuttable raw cells before pixelizin
 python tools/asset/slice_sheet.py sheet.png asset/ui/raw/cells 5 4 first second _ fourth
 ```
 
+If a generator adds a uniform grid line despite the prompt, pass `--inset=N` before the
+cell names to trim that many source pixels from every cell edge before chroma-keying.
+
 M1 helper scripts are deterministic and safe to rerun:
 
 - `make_seamless_tile.py` darkens, quantises, and mirror-wraps generated ground concepts.
@@ -83,6 +86,9 @@ M1 helper scripts are deterministic and safe to rerun:
 - `synthesize_audio.py` rebuilds the original peak-safe M1 WAV set.
 - `verify_assets.py` checks fixed canvases, hard alpha, chroma removal, tile seams, palettes,
   audio formats/peaks, and the retained motion-consistency evidence.
+- `measure_motion_sheet.py` compares cut motion cells on the authority's canonical 37x46
+  window and writes reproducible JSON using the same pixel-diff denominator as the original
+  separate-render test.
 
 ## Import settings
 
