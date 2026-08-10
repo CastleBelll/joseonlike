@@ -41,8 +41,12 @@ var _closest: Dictionary = {}
 
 
 func _ready() -> void:
-	_rng.seed = _seed_from_args()
-	print("SOAK seed=%d" % _rng.seed)
+	var run_seed: int = _seed_from_args()
+	_rng.seed = run_seed
+	# Crit rolls and spawn placement too, or the run is not reproducible and
+	# a boss-only change can appear to move a death five minutes earlier.
+	CombatRng.begin_deterministic(run_seed)
+	print("SOAK seed=%d" % run_seed)
 	if GameData.load_all() != OK:
 		print("SOAK: data load failed")
 		get_tree().quit(1)

@@ -73,6 +73,7 @@ var _is_dashing: bool = false
 var _charge_direction: Vector2 = Vector2.ZERO
 var _weave_phase: float = 0.0
 var _hit_flash_left: float = 0.0
+var _rng: RandomNumberGenerator = CombatRng.create()
 
 @onready var _sprite: Sprite2D = $Sprite2D
 @onready var _collider: CollisionShape2D = $CollisionShape2D
@@ -102,7 +103,7 @@ func activate(new_monster_id: String, data: Dictionary, spawn_position: Vector2)
 	_attack_cooldown_left = RANGED_COOLDOWN_SEC
 	_is_dashing = false
 	_charge_phase_left = CHARGER_WINDUP_SEC
-	_weave_phase = randf() * TAU
+	_weave_phase = _rng.randf() * TAU
 	_hit_flash_left = 0.0
 
 	_apply_visuals(data)
