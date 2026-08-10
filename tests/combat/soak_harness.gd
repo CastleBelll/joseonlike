@@ -246,6 +246,7 @@ func _on_run_ended(result: Dictionary) -> void:
 		_levelups, _evolutions, _cleared_hp, _damage_taken, RunState.kills, RunState.level,
 	])
 	_report_pool_and_closest()
+	_report_death_state(result)
 	_report_router.call_deferred()
 
 
@@ -405,3 +406,33 @@ func _trace_motion() -> void:
 		print("SOAK motion t=%.2f moving=%s offset=%s rot=%s vel=%.0f" % [
 			_clock, moving, sprite.position, rotation_name, player.velocity.length(),
 		])
+
+
+## Where the run stood when it ended.
+##
+## The weighted passive pool can only help a run that has already taken a weapon
+## to its rule's min_weapon_level -- that is the condition the weighting keys on.
+## A run that dies before then never draws against an evolution at all, and is a
+## survivability problem rather than a pool problem. This reports which of the
+## two each run was.
+func _report_death_state(result: Dictionary) -> void:
+	var eligible_rules: Array[String] = []
+	var states: Array[String] = []
+	for rule_key: Variant in _rules.keys():
+		var rule: Dictionary = _rules[rule_key]
+		var weapon_id: String = String(rule.get("requires_weapon", ""))
+		var passive_id: String = String(rule.get("requires_passive", ""))
+		var need_level: int = int(rule.get("min_weapon_level", 1))
+		var need_stacks: int = int(rule.get("min_passive_stacks", 1))
+		var have_level: int = RunState.weapon_level(weapon_id)
+		var have_stacks: int = RunState.passive_stacks(passive_id)
+		if have_level >= need_level:
+			eligible_rules.append(String(rule_key))
+		states.append("%s(%s %d/%d, %s %d/%d)" % [
+			rule_key, weapon_id, have_level, need_level, passive_id, have_stacks, need_stacks,
+		])
+	print("SOAK death t=%.1f minute=%d level=%d levelups=%d victory=%s eligible=%s" % [
+		_clock, int(ceil(_clock / SAMPLE_SEC)), RunState.level, _levelups,
+		bool(result.get("victory", false)), eligible_rules,
+	])
+	print("SOAK death_state %s" % [states])
