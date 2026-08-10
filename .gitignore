@@ -1,0 +1,26 @@
+# Godot 4+
+.godot/
+/android/
+/build/
+/export/
+*.translation
+
+# Exported binaries
+*.apk
+*.aab
+*.ipa
+*.exe
+*.pck
+*.zip
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Secrets — never commit keystores or signing config
+*.keystore
+*.jks
+export_credentials.cfg
+.env

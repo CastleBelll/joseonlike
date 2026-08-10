@@ -1,0 +1,44 @@
+; Engine configuration file.
+; Owned by the coordinator only. Workers must request changes via the coordinator
+; (autoload registration, input maps, layer names) instead of editing this file,
+; because concurrent edits here conflict across every worktree.
+
+config_version=5
+
+[application]
+
+config/name="JOSEONLIKE"
+config/description="Joseon-inspired pixel roguelike survival action RPG"
+run/main_scene="res://scenes/boot/boot.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+EventBus="*res://scripts/core/event_bus.gd"
+GameData="*res://scripts/core/game_data.gd"
+SaveManager="*res://scripts/core/save_manager.gd"
+RunState="*res://scripts/core/run_state.gd"
+SceneRouter="*res://scripts/core/scene_router.gd"
+
+[display]
+
+window/size/viewport_width=540
+window/size/viewport_height=960
+window/stretch/mode="viewport"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[layer_names]
+
+2d_physics/layer_1="player"
+2d_physics/layer_2="enemy"
+2d_physics/layer_3="player_projectile"
+2d_physics/layer_4="enemy_projectile"
+2d_physics/layer_5="pickup"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/canvas_textures/default_texture_filter=0
