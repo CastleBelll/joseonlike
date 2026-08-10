@@ -31,6 +31,7 @@ func _fire() -> bool:
 		arrow.lifetime_sec = LIFETIME_SEC
 		arrow.radius_px = RADIUS_PX * area_scale()
 		arrow.tint = TINT
+		arrow.texture = vfx_texture()
 		arrow.direction = direction
 		arrow.global_position = archer.global_position
 		arrow.configure_for_player()

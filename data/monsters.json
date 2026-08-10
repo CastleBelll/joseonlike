@@ -15,7 +15,7 @@
     "name_ko": "숲의 원혼",
     "name_en": "Forest Spirit",
     "hp": 16.0,
-    "damage": 9.0,
+    "damage": 5.0,
     "speed": 40.0,
     "xp_drop": 5,
     "gold_drop": 2,
@@ -38,7 +38,7 @@
   "bamboo_spirit_lord": {
     "name_ko": "죽림 정령왕",
     "name_en": "Bamboo Spirit Lord",
-    "hp": 8000.0,
+    "hp": 2150.0,
     "damage": 35.0,
     "speed": 50.0,
     "xp_drop": 200,

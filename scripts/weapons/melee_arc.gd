@@ -16,6 +16,10 @@ var is_crit: bool = false
 var radius_px: float = DEFAULT_RADIUS_PX
 var lifetime_sec: float = DEFAULT_LIFETIME_SEC
 var facing: Vector2 = Vector2.RIGHT
+## Authored swing art (sword.png / twin_sword.png). Only this rotates to the
+## facing; the collision circle is placed, never spun, so hit geometry stays
+## exactly what it was before the art landed.
+var texture: Texture2D = null
 
 var _age_sec: float = 0.0
 var _hit_ids: Array[int] = []
@@ -24,7 +28,6 @@ var _hit_ids: Array[int] = []
 func _ready() -> void:
 	collision_layer = PLAYER_PROJECTILE_LAYER
 	collision_mask = ENEMY_LAYER
-	rotation = facing.angle()
 	_ensure_shape()
 	_ensure_visual()
 	body_entered.connect(_on_body_entered)
@@ -56,22 +59,35 @@ func _ensure_shape() -> void:
 	var collider := CollisionShape2D.new()
 	collider.name = "CollisionShape2D"
 	collider.shape = shape
-	collider.position = Vector2(radius_px * 0.6, 0.0)
+	collider.position = facing.normalized() * radius_px * 0.6
 	# Deferred: these areas are spawned from inside a physics callback, and the
 	# physics server rejects a new shape while it is flushing queries.
 	add_child.call_deferred(collider)
 
 
 func _ensure_visual() -> void:
-	if get_node_or_null(^"Polygon2D") != null:
+	if get_node_or_null(^"Visual") != null:
 		return
+	if texture != null:
+		var sprite := Sprite2D.new()
+		sprite.name = "Visual"
+		sprite.texture = texture
+		sprite.rotation = facing.angle()
+		sprite.position = facing.normalized() * radius_px * 0.6
+		add_child(sprite)
+		return
+	_add_placeholder_wedge()
+
+
+## Fallback wedge for weapons with no authored swing art yet.
+func _add_placeholder_wedge() -> void:
 	var points := PackedVector2Array()
 	points.append(Vector2.ZERO)
 	for index in ARC_POINTS:
 		var angle: float = -ARC_SPAN_RAD * 0.5 + ARC_SPAN_RAD * float(index) / float(ARC_POINTS - 1)
-		points.append(Vector2.RIGHT.rotated(angle) * radius_px * 1.3)
+		points.append(Vector2.RIGHT.rotated(angle + facing.angle()) * radius_px * 1.3)
 	var polygon := Polygon2D.new()
-	polygon.name = "Polygon2D"
+	polygon.name = "Visual"
 	polygon.polygon = points
 	polygon.color = PLACEHOLDER_TINT
 	add_child(polygon)

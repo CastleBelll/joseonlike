@@ -30,7 +30,7 @@ const CHARACTER_REQUIRED: Array[String] = [
 const WEAPON_REQUIRED: Array[String] = [
 	"name_ko", "name_en", "category", "grade", "damage", "cooldown_sec",
 	"projectile_count", "pierce", "area_scale", "speed", "max_level", "per_level",
-	"evolution_only",
+	"evolution_only", "sprite",
 ]
 const PASSIVE_REQUIRED: Array[String] = ["name_ko", "name_en", "stat", "per_stack", "max_stacks"]
 const EVOLUTION_REQUIRED: Array[String] = [
@@ -237,6 +237,12 @@ static func _validate_weapons(weapons: Dictionary, evolutions: Dictionary, error
 					errors.append("%s: '%s'.evolves_to '%s' does not exist in weapons.json" % [file, id, evolves_to])
 				elif not produced_weapons.has(evolves_to):
 					errors.append("%s: '%s'.evolves_to '%s' has no evolutions.json rule that produces it — dead pointer" % [file, id, evolves_to])
+
+		var sprite: String = w.get("sprite", "")
+		if not sprite.begins_with("res://"):
+			errors.append("%s: '%s'.sprite must be a res:// path" % [file, id])
+		elif not FileAccess.file_exists(sprite):
+			errors.append("%s: '%s'.sprite '%s' does not exist" % [file, id, sprite])
 
 
 # ---- data/passives.json ----

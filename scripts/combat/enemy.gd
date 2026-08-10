@@ -120,6 +120,7 @@ func take_damage(amount: float, _is_crit: bool = false) -> void:
 	if not is_active or amount <= 0.0:
 		return
 	hp -= amount
+	CombatAudio.play_hit()
 	_hit_flash_left = HIT_FLASH_SEC
 	if _sprite != null:
 		_sprite.modulate = HIT_FLASH_TINT
@@ -225,6 +226,7 @@ func _shoot(direction: Vector2) -> void:
 
 func _die() -> void:
 	hp = 0.0
+	CombatAudio.play_enemy_death()
 	EventBus.enemy_killed.emit(monster_id, global_position)
 	EventBus.stat_recorded.emit("enemy_killed", 1)
 	deactivate()
