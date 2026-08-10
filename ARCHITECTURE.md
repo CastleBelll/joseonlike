@@ -21,6 +21,7 @@ paths, send it to the coordinator via `ask`.
 | `content-data` | `data/**`, `tools/validate_data.gd`, `tests/data/**` | `scripts/core/**` |
 | `meta-ui` | `scripts/ui/**`, `scripts/meta/**`, `scenes/ui/**`, `scenes/basecamp/**`, `tests/ui/**` | `scripts/core/**`, `data/**` |
 | `infra-ci` | `.github/**`, `export_presets.cfg`, `tools/ci/**`, `scripts/services/**` | everything |
+| `asset-forge` | `asset/**`, `tools/asset/**` | everything |
 
 **Coordinator-owned, never edited by workers:** `project.godot`, `ARCHITECTURE.md`,
 `JOSEONLIKE_GDD.md`, `README.md`, `icon.svg`, `.gitignore`.
@@ -48,7 +49,7 @@ scripts/
 data/             JSON content, single source of balance truth (content-data)
 tests/            headless test scripts, mirrored per owner
 tools/            validators and CI helpers
-asset/            art, singular. Coordinator-owned; workers reference, never add
+asset/            art and audio, singular. Owned by asset-forge; others reference only
   character/<Name>/<State>/rotations/<direction>.png   8-way sprite sets
   monster/<id>.png                                     single front-facing sprite
   monster/raw/<id>_raw.png                             pre-cutout generator output
