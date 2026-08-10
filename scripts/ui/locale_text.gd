@@ -9,6 +9,8 @@ extends RefCounted
 ## Small, non-content UI chrome strings only. Anything that names a character,
 ## weapon, monster, stage, passive, or achievement must come from data/*.json.
 const UI_STRINGS: Dictionary = {
+	"start_button": {"ko": "시작", "en": "Start"},
+
 	"camp_title": {"ko": "본거지", "en": "Base Camp"},
 	"building_workshop": {"ko": "공방", "en": "Workshop"},
 	"building_archive": {"ko": "서고", "en": "Archive"},
@@ -67,6 +69,13 @@ static func field(data: Dictionary, field_base: String = "name") -> String:
 	if not fallback.is_empty():
 		return fallback
 	return "???"
+
+
+## Picks between two locale-specific textures (e.g. asset/title/joseonlike_ko.png
+## vs joseonlike_en.png) the same way field()/ui() pick text, so no screen
+## hardcodes which language's art to show.
+static func texture(korean: Texture2D, english: Texture2D) -> Texture2D:
+	return korean if is_korean() else english
 
 
 ## Picks a UI chrome string (not game content) by key from UI_STRINGS.

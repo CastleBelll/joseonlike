@@ -1,0 +1,46 @@
+[gd_scene load_steps=2 format=3 uid="uid://ui_title"]
+
+[ext_resource type="Script" path="res://scripts/ui/title.gd" id="1_script"]
+
+[node name="Title" type="Control"]
+layout_mode=3
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+script=ExtResource("1_script")
+
+[node name="Backdrop" type="TextureRect" parent="."]
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+stretch_mode=0
+
+[node name="Logo" type="TextureRect" parent="."]
+layout_mode=1
+anchor_left=0.5
+anchor_right=0.5
+offset_left=-240.0
+offset_top=380.0
+offset_right=240.0
+offset_bottom=476.0
+grow_horizontal=2
+mouse_filter=2
+stretch_mode=5
+
+[node name="StartButton" type="Button" parent="."]
+layout_mode=1
+anchor_left=0.5
+anchor_right=0.5
+offset_left=-110.0
+offset_top=540.0
+offset_right=110.0
+offset_bottom=604.0
+grow_horizontal=2
+focus_mode=2
+text="Start"
