@@ -26,6 +26,9 @@ var tint: Color = Color.WHITE
 ## Authored VFX from asset/weapon/projectiles. Left null by enemy shots,
 ## which have no weapon id and fall back to the tinted placeholder.
 var texture: Texture2D = null
+## Effect set played where this projectile lands. Enemy shots leave the
+## default, so a hit on the player still reads.
+var impact_effect: StringName = EffectPool.HIT
 var target_group: StringName = &"enemy"
 
 ## Radians per second the heading may bend toward the nearest target. 0 = straight.
@@ -112,6 +115,7 @@ func _on_body_entered(body: Node2D) -> void:
 	if _hit_ids.has(body_id):
 		return
 	_hit_ids.append(body_id)
+	EffectPool.play(impact_effect, global_position)
 	body.take_damage(damage, is_crit)
 	if pierce_left <= 0:
 		_despawn()

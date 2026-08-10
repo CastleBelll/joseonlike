@@ -30,6 +30,9 @@ func _ready() -> void:
 	collision_mask = ENEMY_LAYER
 	_ensure_shape()
 	_ensure_visual()
+	# The arc is the swing, so the slash plays once here rather than per
+	# enemy hit -- one sweep should not stack four overlapping slashes.
+	EffectPool.play(EffectPool.SLASH, global_position + facing.normalized() * radius_px * 0.6, facing.angle())
 	body_entered.connect(_on_body_entered)
 
 
