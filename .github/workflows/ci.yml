@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  # Pinned exact Godot 4.7 stable build. Do NOT float to "latest" — a silent
+  # engine bump is the failure mode this pin exists to prevent.
+  GODOT_VERSION: "4.7-stable"
+  GODOT_RELEASE_TAG: "4.7-stable"
+  GODOT_ARCHIVE: "Godot_v4.7-stable_linux.x86_64.zip"
+  GODOT_BIN_NAME: "Godot_v4.7-stable_linux.x86_64"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Godot binary
+        id: cache-godot-bin
+        uses: actions/cache@v4
+        with:
+          path: ~/godot-bin
+          key: godot-bin-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Download Godot ${{ env.GODOT_VERSION }}
+        if: steps.cache-godot-bin.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot-bin
+          curl -fL -o /tmp/godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE_TAG}/${GODOT_ARCHIVE}"
+          unzip -q /tmp/godot.zip -d ~/godot-bin
+          chmod +x "$HOME/godot-bin/${GODOT_BIN_NAME}"
+
+      - name: Cache .godot import folder
+        uses: actions/cache@v4
+        with:
+          path: .godot
+          key: godot-import-${{ env.GODOT_VERSION }}-${{ hashFiles('**/*.tscn', '**/*.tres', '**/*.import', 'project.godot') }}
+          restore-keys: |
+            godot-import-${{ env.GODOT_VERSION }}-
+
+      - name: Resolve Godot binary path
+        run: echo "GODOT=$HOME/godot-bin/${GODOT_BIN_NAME}" >> "$GITHUB_ENV"
+
+      - name: Import project (headless)
+        timeout-minutes: 5
+        run: |
+          "$GODOT" --headless --path . --import --quit 2>&1 | tee import.log || true
+          if grep -Eq "SCRIPT ERROR|Parse Error" import.log; then
+            echo "::error::GDScript parse/script error detected during import"
+            exit 1
+          fi
+
+      - name: Run tests
+        timeout-minutes: 5
+        run: |
+          set -o pipefail
+          "$GODOT" --headless --path . --script tests/run_tests.gd 2>&1 | tee tests.log
+          test_exit=$?
+          if grep -Eq "SCRIPT ERROR|Parse Error" tests.log; then
+            echo "::error::GDScript parse/script error detected in test run"
+            exit 1
+          fi
+          if [ "$test_exit" -ne 0 ]; then
+            echo "::error::tests/run_tests.gd exited with status $test_exit"
+            exit 1
+          fi
+
+      - name: Validate data (skipped if validator not landed yet)
+        timeout-minutes: 5
+        run: |
+          set -o pipefail
+          if [ ! -f tools/validate_data.gd ]; then
+            echo "::warning::tools/validate_data.gd not found yet — skipping data validation step"
+            exit 0
+          fi
+          "$GODOT" --headless --path . --script tools/validate_data.gd 2>&1 | tee validate.log
+          validate_exit=$?
+          if grep -Eq "SCRIPT ERROR|Parse Error" validate.log; then
+            echo "::error::GDScript parse/script error detected in data validation"
+            exit 1
+          fi
+          if [ "$validate_exit" -ne 0 ]; then
+            echo "::error::tools/validate_data.gd exited with status $validate_exit"
+            exit 1
+          fi
