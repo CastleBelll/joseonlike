@@ -47,12 +47,24 @@ jobs:
       - name: Resolve Godot binary path
         run: echo "GODOT=$HOME/godot-bin/${GODOT_BIN_NAME}" >> "$GITHUB_ENV"
 
+      # Authoritative import pass: writes/refreshes res://.godot/global_script_class_cache.cfg
+      # (required for bare class_name identifiers to resolve in test files) and imports every
+      # asset under asset/**. Always runs, even on a .godot cache hit — a hit can carry a stale
+      # cache from before new class_name scripts or assets landed, and `--import` (no --quit) is
+      # the supported headless-import-and-exit mode; `--import --quit` was dropped because it
+      # opens the editor and can exit before the class cache write is flushed to disk.
       - name: Import project (headless)
         timeout-minutes: 5
         run: |
-          "$GODOT" --headless --path . --import --quit 2>&1 | tee import.log || true
+          set -o pipefail
+          "$GODOT" --headless --path . --import 2>&1 | tee import.log
+          import_exit=$?
           if grep -Eq "SCRIPT ERROR|Parse Error" import.log; then
             echo "::error::GDScript parse/script error detected during import"
+            exit 1
+          fi
+          if [ "$import_exit" -ne 0 ]; then
+            echo "::error::godot --import exited with status $import_exit"
             exit 1
           fi
 
