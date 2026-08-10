@@ -295,6 +295,8 @@ static func _validate_monsters(monsters: Dictionary, errors: Array[String]) -> v
 		var sprite: String = m.get("sprite", "")
 		if not sprite.begins_with("res://"):
 			errors.append("%s: '%s'.sprite must be a res:// path" % [file, id])
+		elif not FileAccess.file_exists(sprite):
+			errors.append("%s: '%s'.sprite '%s' does not exist" % [file, id, sprite])
 
 
 # ---- data/stages.json ----

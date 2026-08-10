@@ -195,3 +195,38 @@ kiting, not tanking, per the GDD's movement-only combat model.
 Minutes 1-5 stay above ~4x margin (with an extreme 19.65x lull at minute 4)
 — consistent with the GDD's "learn the loop" framing for the first half of a
 10-15 minute session.
+
+## Sprite scale vs. hitbox (for combat to size collision from data)
+
+The four M1 monster sprites now in `asset/monster/` are not uniform size —
+verified pixel dimensions (`PIL Image.size`):
+
+| Monster | Sprite size (px) | Footprint (√area) | Ratio vs. forest_goblin |
+|---|---|---|---|
+| forest_goblin | 87×80 | 83.4 | 1.00x |
+| forest_spirit | 42×92 | 62.1 | 0.74x (tall/narrow — floating caster) |
+| bamboo_brute | 135×120 | 127.3 | 1.53x |
+| bamboo_spirit_lord | 128×160 | 143.1 | 1.72x |
+
+(`√area` used as a single footprint scalar since aspect ratios differ —
+`forest_spirit` is taller than it is wide, so width or height alone would
+misrepresent it. Reference: the Taoist player sprite is 92×92, footprint 92.)
+
+**This matters for collision, and the current combat implementation doesn't
+use it.** `scenes/actors/enemy_base.tscn` gives every `Enemy` node one fixed
+`CircleShape2D` with `radius = 8.0`, and `scripts/combat/enemy.gd` only
+special-cases the boss with a flat `BOSS_SCALE = 2.2` node-scale (which
+scales the sprite and the 8px collider together, decoupled from the boss's
+actual sprite proportions). Concretely: `forest_goblin` (87×80) and
+`bamboo_brute` (135×120, 53% bigger by footprint) currently get *the exact
+same* 8px hit radius. A player standing where a brute's sprite clearly
+overlaps them can take a hit that visually shouldn't have landed, or dodge
+one that should have.
+
+This worktree doesn't own `scenes/actors/**` or `scripts/combat/**` and
+`monsters.json`'s schema is frozen (no `hitbox_radius` field exists in
+ARCHITECTURE.md section 4), so no field was added here unilaterally. If
+combat wants to derive collision size from data instead of a single hardcoded
+constant, the ratios above (or `sprite` dimensions read directly at load
+time) are the numbers to use — worth raising with the coordinator as a
+schema addition if this is worth fixing before ship.
