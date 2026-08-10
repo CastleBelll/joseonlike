@@ -30,6 +30,7 @@ const CHARACTER_REQUIRED: Array[String] = [
 const WEAPON_REQUIRED: Array[String] = [
 	"name_ko", "name_en", "category", "grade", "damage", "cooldown_sec",
 	"projectile_count", "pierce", "area_scale", "speed", "max_level", "per_level",
+	"evolution_only",
 ]
 const PASSIVE_REQUIRED: Array[String] = ["name_ko", "name_en", "stat", "per_stack", "max_stacks"]
 const EVOLUTION_REQUIRED: Array[String] = [
@@ -69,7 +70,7 @@ static func validate_all() -> Array[String]:
 	var achievements := _load_json("achievements.json", errors)
 
 	_validate_characters(characters, weapons, achievements, errors)
-	_validate_weapons(weapons, errors)
+	_validate_weapons(weapons, evolutions, errors)
 	_validate_passives(passives, errors)
 	_validate_evolutions(evolutions, weapons, passives, errors)
 	_validate_monsters(monsters, errors)
@@ -165,11 +166,29 @@ static func _validate_characters(characters: Dictionary, weapons: Dictionary, ac
 				errors.append("%s: '%s'.unlock.cost must be > 0" % [file, id])
 
 
+## Every result_weapon named by an evolutions.json rule, as a set (Dictionary
+## used for O(1) `.has()`; values are unused). Shared by the evolves_to and
+## evolution_only reachability checks so an id must be an actual evolution
+## payoff, not merely another entry in weapons.json.
+static func _result_weapons(evolutions: Dictionary) -> Dictionary:
+	var produced: Dictionary = {}
+	for rule_id in evolutions.keys():
+		var entry: Variant = evolutions[rule_id]
+		if not (entry is Dictionary):
+			continue
+		var result_weapon: Variant = entry.get("result_weapon")
+		if result_weapon is String and not result_weapon.is_empty():
+			produced[result_weapon] = true
+	return produced
+
+
 # ---- data/weapons.json ----
 
-static func _validate_weapons(weapons: Dictionary, errors: Array[String]) -> void:
+static func _validate_weapons(weapons: Dictionary, evolutions: Dictionary, errors: Array[String]) -> void:
 	var file := "weapons.json"
 	_check_ids(file, weapons, errors)
+
+	var produced_weapons: Dictionary = _result_weapons(evolutions)
 
 	for id in weapons.keys():
 		var w: Dictionary = weapons[id]
@@ -205,10 +224,19 @@ static func _validate_weapons(weapons: Dictionary, errors: Array[String]) -> voi
 		if not (per_level is Dictionary) or per_level.is_empty():
 			errors.append("%s: '%s'.per_level must be a non-empty object" % [file, id])
 
+		var evolution_only: Variant = w.get("evolution_only")
+		if not (evolution_only is bool):
+			errors.append("%s: '%s'.evolution_only must be a boolean" % [file, id])
+		elif evolution_only == true and not produced_weapons.has(id):
+			errors.append("%s: '%s' is evolution_only but no evolutions.json rule produces it — it is unreachable" % [file, id])
+
 		if w.has("evolves_to"):
 			var evolves_to: String = w.get("evolves_to", "")
-			if not evolves_to.is_empty() and not weapons.has(evolves_to):
-				errors.append("%s: '%s'.evolves_to '%s' does not exist in weapons.json" % [file, id, evolves_to])
+			if not evolves_to.is_empty():
+				if not weapons.has(evolves_to):
+					errors.append("%s: '%s'.evolves_to '%s' does not exist in weapons.json" % [file, id, evolves_to])
+				elif not produced_weapons.has(evolves_to):
+					errors.append("%s: '%s'.evolves_to '%s' has no evolutions.json rule that produces it — dead pointer" % [file, id, evolves_to])
 
 
 # ---- data/passives.json ----

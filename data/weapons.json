@@ -12,7 +12,8 @@
     "speed": 260.0,
     "max_level": 8,
     "per_level": { "damage": 3.0, "cooldown_sec": -0.05 },
-    "evolves_to": "fire_talisman"
+    "evolves_to": "fire_talisman",
+    "evolution_only": false
   },
   "fire_talisman": {
     "name_ko": "화염 부적",
@@ -27,7 +28,8 @@
     "speed": 260.0,
     "max_level": 8,
     "per_level": { "damage": 4.0, "cooldown_sec": -0.05 },
-    "evolves_to": "phoenix_talisman"
+    "evolves_to": "phoenix_talisman",
+    "evolution_only": true
   },
   "phoenix_talisman": {
     "name_ko": "봉황 부적",
@@ -41,7 +43,8 @@
     "area_scale": 1.8,
     "speed": 280.0,
     "max_level": 8,
-    "per_level": { "damage": 6.0, "cooldown_sec": -0.04 }
+    "per_level": { "damage": 6.0, "cooldown_sec": -0.04 },
+    "evolution_only": true
   },
   "sword": {
     "name_ko": "환도",
@@ -56,7 +59,8 @@
     "speed": 0.0,
     "max_level": 8,
     "per_level": { "damage": 3.5, "cooldown_sec": -0.04 },
-    "evolves_to": "twin_sword"
+    "evolves_to": "twin_sword",
+    "evolution_only": false
   },
   "twin_sword": {
     "name_ko": "쌍환도",
@@ -70,7 +74,8 @@
     "area_scale": 1.1,
     "speed": 0.0,
     "max_level": 8,
-    "per_level": { "damage": 4.5, "cooldown_sec": -0.03 }
+    "per_level": { "damage": 4.5, "cooldown_sec": -0.03 },
+    "evolution_only": true
   },
   "bow": {
     "name_ko": "각궁",
@@ -85,7 +90,8 @@
     "speed": 380.0,
     "max_level": 8,
     "per_level": { "damage": 2.5, "cooldown_sec": -0.03 },
-    "evolves_to": "divine_bow"
+    "evolves_to": "divine_bow",
+    "evolution_only": false
   },
   "divine_bow": {
     "name_ko": "신궁",
@@ -99,6 +105,7 @@
     "area_scale": 1.0,
     "speed": 420.0,
     "max_level": 8,
-    "per_level": { "damage": 3.5, "cooldown_sec": -0.03 }
+    "per_level": { "damage": 3.5, "cooldown_sec": -0.03 },
+    "evolution_only": true
   }
 }
