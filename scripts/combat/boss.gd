@@ -48,6 +48,7 @@ func spawn_now() -> Enemy:
 	if boss == null:
 		push_error("BossController: could not spawn boss '%s'" % boss_id)
 		return null
+	CombatAudio.play_boss_spawn()
 	EventBus.boss_spawned.emit(boss_id)
 	EventBus.stat_recorded.emit("boss_spawned", 1)
 	return boss

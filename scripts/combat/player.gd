@@ -23,6 +23,22 @@ const HIT_FLASH_HZ: float = 12.0
 
 const PLACEHOLDER_TINT: Color = Color(0.42, 0.78, 1.0)
 const SPRITE_KEY: String = "sprite"
+
+## One authored sprite per direction (asset/M1_ASSET_REPORT.md). Warrior and
+## Archer only ship "south" for M1, so a missing rotation falls back rather
+## than leaving the hunter invisible.
+const ROTATION_PATH: String = "res://asset/character/%s/Idle/rotations/%s.png"
+const CHARACTER_FOLDERS: Dictionary = {
+	"taoist": "Taoist",
+	"warrior": "Warrior",
+	"archer": "Archer",
+}
+
+## Attack presentation. The body never redraws: the VFX carries the attack, the
+## body only flashes briefly and may recoil a single pixel for one tick.
+const ATTACK_FLASH_SEC: float = 0.06
+const ATTACK_FLASH_TINT: Color = Color(1.7, 1.7, 1.7)
+const RECOIL_TICKS: int = 1
 const KEY_BASE_HP: String = "base_hp"
 const KEY_BASE_SPEED: String = "base_speed"
 const KEY_STARTING_WEAPON: String = "starting_weapon"
@@ -47,6 +63,16 @@ var _weapons: Array[WeaponBase] = []
 var _character_data: Dictionary = {}
 ## source weapon id -> evolved weapon id, for weapons that have already evolved.
 var _evolution_swaps: Dictionary = {}
+
+## Motion state. `_motion_time` restarts on every state change so a cycle always
+## begins on its first frame instead of mid-stride.
+var _is_walking: bool = false
+var _motion_time: float = 0.0
+var _attack_flash_left: float = 0.0
+var _recoil_ticks_left: int = 0
+var _recoil_offset: Vector2i = Vector2i.ZERO
+var _direction_name: String = CharacterMotion.DEFAULT_DIRECTION
+var _rotation_cache: Dictionary = {}
 
 @onready var _sprite: Sprite2D = $Sprite2D
 @onready var _hurt_box: Area2D = $HurtBox
@@ -78,6 +104,7 @@ func _physics_process(delta: float) -> void:
 	velocity = direction * move_speed
 	move_and_slide()
 	_apply_contact_damage()
+	_advance_motion(direction, delta)
 
 
 func is_alive() -> bool:
@@ -118,6 +145,7 @@ func add_weapon(id: String, start_level: int = CombatMath.MIN_LEVEL) -> WeaponBa
 	weapon.name = "Weapon_%s" % id
 	_weapon_root.add_child(weapon)
 	weapon.setup(id, start_level)
+	weapon.fired.connect(_on_weapon_fired)
 	_weapons.append(weapon)
 	return weapon
 
@@ -143,13 +171,6 @@ func _tick_invulnerability(delta: float) -> void:
 	if _invulnerable_left <= 0.0:
 		return
 	_invulnerable_left = maxf(_invulnerable_left - delta, 0.0)
-	if _sprite == null:
-		return
-	if _invulnerable_left <= 0.0:
-		_sprite.modulate.a = 1.0
-		return
-	var blink: bool = fmod(_invulnerable_left * HIT_FLASH_HZ, 1.0) < 0.5
-	_sprite.modulate.a = HIT_FLASH_ALPHA if blink else 1.0
 
 
 ## Enemies damage on touch. Polled instead of signal-driven because contact is a
@@ -192,12 +213,50 @@ func _refresh_stats() -> void:
 	hp = clampf(max_hp - missing_hp, 0.0, max_hp)
 
 
-func _apply_sprite(character_data: Dictionary) -> void:
-	if _sprite == null or _sprite.texture != null:
+func _apply_sprite(_character_data_unused: Dictionary) -> void:
+	if _sprite == null:
 		return
-	_sprite.texture = PlaceholderArt.texture_or_placeholder(
-		String(character_data.get(SPRITE_KEY, "")), PLACEHOLDER_TINT
-	)
+	_sprite.centered = true
+	_apply_direction(CharacterMotion.DEFAULT_DIRECTION)
+
+
+## Swaps in the authored rotation for `direction`, caching loads because this is
+## queried every time the movement vector crosses a 45 degree boundary.
+func _apply_direction(direction: String) -> void:
+	if _sprite == null or (direction == _direction_name and _sprite.texture != null):
+		return
+	_direction_name = direction
+	_sprite.texture = _rotation_texture(direction)
+
+
+func _rotation_texture(direction: String) -> Texture2D:
+	if _rotation_cache.has(direction):
+		return _rotation_cache[direction]
+	var folder: String = String(CHARACTER_FOLDERS.get(_character_id(), ""))
+	var texture: Texture2D = null
+	if not folder.is_empty():
+		texture = _load_rotation(folder, direction)
+		if texture == null and direction != CharacterMotion.DEFAULT_DIRECTION:
+			# Warrior and Archer ship one direction for M1.
+			texture = _load_rotation(folder, CharacterMotion.DEFAULT_DIRECTION)
+	if texture == null:
+		texture = PlaceholderArt.placeholder(PLACEHOLDER_TINT)
+	_rotation_cache[direction] = texture
+	return texture
+
+
+func _load_rotation(folder: String, direction: String) -> Texture2D:
+	var path: String = ROTATION_PATH % [folder, direction]
+	if not ResourceLoader.exists(path):
+		return null
+	var resource: Resource = ResourceLoader.load(path)
+	return resource as Texture2D
+
+
+func _character_id() -> String:
+	if not character_id_override.is_empty():
+		return character_id_override
+	return RunState.character_id
 
 
 ## Deferred so RunState has already applied the pick: both this node and
@@ -270,3 +329,59 @@ func _run_state_loadout() -> Array[Dictionary]:
 	if starting_weapon.is_empty():
 		return []
 	return [{KEY_ID: starting_weapon, KEY_LEVEL: CombatMath.MIN_LEVEL}]
+
+
+## --- procedural motion (asset/M1_ASSET_REPORT.md) ---------------------------
+
+## Chooses the rotation and the whole-pixel sprite offset for this tick. The
+## CharacterBody2D itself never moves here, so collision placement is untouched.
+func _advance_motion(direction: Vector2, delta: float) -> void:
+	if _sprite == null:
+		return
+
+	var walking: bool = direction.length_squared() > 0.0
+	if walking != _is_walking:
+		# State change resets the cycle and the offset, so motion cannot leak
+		# into the next state or into collision placement.
+		_is_walking = walking
+		_motion_time = 0.0
+		_sprite.position = Vector2.ZERO
+	_motion_time += delta
+
+	if walking:
+		_apply_direction(CharacterMotion.direction_name(direction))
+
+	var offset: Vector2i = CharacterMotion.walk_offset(_motion_time) if walking 		else CharacterMotion.idle_offset(_motion_time)
+
+	if _recoil_ticks_left > 0:
+		_recoil_ticks_left -= 1
+		offset += _recoil_offset
+		if _recoil_ticks_left <= 0:
+			_recoil_offset = Vector2i.ZERO
+
+	_sprite.position = Vector2(offset)
+	_tick_attack_flash(delta)
+
+
+func _tick_attack_flash(delta: float) -> void:
+	if _attack_flash_left > 0.0:
+		_attack_flash_left = maxf(_attack_flash_left - delta, 0.0)
+	_sprite.modulate = ATTACK_FLASH_TINT if _attack_flash_left > 0.0 else Color.WHITE
+	_sprite.modulate.a = _invulnerability_alpha()
+
+
+func _invulnerability_alpha() -> float:
+	if _invulnerable_left <= 0.0:
+		return 1.0
+	var blink: bool = fmod(_invulnerable_left * HIT_FLASH_HZ, 1.0) < 0.5
+	return HIT_FLASH_ALPHA if blink else 1.0
+
+
+## A weapon fired: the VFX carries the attack, the body only flashes and may
+## recoil one pixel for a single tick. It never leaves its authored pose.
+func _on_weapon_fired(_weapon_id: String) -> void:
+	_attack_flash_left = ATTACK_FLASH_SEC
+	_recoil_offset = CharacterMotion.recoil_offset(facing)
+	_recoil_ticks_left = RECOIL_TICKS
+	if _sprite != null:
+		_sprite.position = Vector2.ZERO
