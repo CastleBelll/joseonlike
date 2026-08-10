@@ -24,21 +24,58 @@ boss must be sized against — the two are coupled, and re-deriving one
 without the other silently invalidates a tuned number.** `bamboo_spirit_lord.hp`
 was retuned to 2150 against a re-derived, validated 39.6 dps model.
 
-**Five more playthroughs against that retune (this pass).** It worked on
-every axis it targeted: win rate 0/5 → 3/5, any evolution 1/5 → 4/5, and the
-full `old_talisman` → `fire_talisman` → `phoenix_talisman` chain fired in
-3/5 (core-engine's evolved-weapon-level tracking fix, landed since the last
-pass, is what made that chain reachable at all). The 39.6 dps model was
-vindicated precisely: the one run that never evolved measured 41 dps on the
-boss hp curve — 1% off the model, not a lucky number. **What it exposed:**
-boss TTK is now 12.2-14.4s against the 55s target, undershooting in the
-*opposite* direction from before. Root cause isn't the hp value — it's that
-`phoenix_talisman` quadruples single-target dps (~41 unevolved → ~160
-evolved) at the *same point in the same run*, so 2150 hp is simultaneously a
-13s fight when phoenix is present and unwinnable when it isn't. No single
-hp number satisfies both branches; both of this pass's two remaining losses
-were runs without phoenix. **This pass narrows the spread instead of
-picking a number** — see "Loadout spread" below.
+**Five more playthroughs against that retune (two passes ago).** It worked
+on every axis it targeted: win rate 0/5 → 3/5, any evolution 1/5 → 4/5, and
+the full `old_talisman` → `fire_talisman` → `phoenix_talisman` chain fired
+in 3/5 (core-engine's evolved-weapon-level tracking fix, landed since the
+previous pass, is what made that chain reachable at all). The 39.6 dps model
+was vindicated precisely: the one run that never evolved measured 41 dps on
+the boss hp curve — 1% off the model, not a lucky number. **What it
+exposed:** boss TTK was 12.2-14.4s against the 55s target, undershooting in
+the *opposite* direction from before. Root cause wasn't the hp value — it
+was that `phoenix_talisman` quadrupled single-target dps (~41 unevolved →
+~160 evolved) at the *same point in the same run*, so 2150 hp was
+simultaneously a 13s fight when phoenix was present and unwinnable when it
+wasn't. That pass narrowed the spread (`phoenix_talisman` damage/cooldown/
+`projectile_count` cut) and re-sized `bamboo_spirit_lord.hp` to 3150 for
+the projected middle.
+
+**Correction that changes how much to trust every number above this
+line.** combat found its measurement instrument itself was broken: the
+sweep seed only drove level-up choice, while crit rolls, spawn placement,
+and the swarm weave each called `randomize()` independently, so two runs of
+the *same build* diverged and no build-to-build comparison — including
+every "N of 5 wins" figure in this document before this pass — was ever
+statistically valid. combat routed every random stream through one seeded
+RNG and verified a seed now reruns bit-identical. **This pass's numbers are
+from the first genuinely controlled sweep, extended to ten seeds because
+the headline question is a rate.** Treat every dps/win-rate figure dated
+before this correction as directional noise, not a measurement — the
+*diagnoses* built on them (projectile_count, the ranged-pressure danger
+model, the survivability fix) held up when re-checked against controlled
+data, but the specific percentages didn't.
+
+**Ten controlled seeds against the previous pass's spread fix (this
+pass).** The spread fix and its diagnosis were both correct: evolved dps
+measured 84.8 against a projected 79, unevolved 38.0 against a modeled 41 —
+a 2.23x spread versus the 1.9x projected and the ~4x chasm before it. What
+the controlled sweep exposed instead: win rate 2/10, and the correlation is
+sharper than anything measured so far — the phoenix chain wins 2 of 2, no
+other chain loses 8 of 8 (one run evolved `sword`→`twin_sword`, worth only
+~3 dps and inside the unevolved band, and still lost). Chain rate is 2/10,
+any evolution 3/10 — the nerf did not make evolution pointless, it made it
+the *only* path to a win, which is its own problem: the boss is now a
+phoenix-chain check that locks out 80% of runs before dps even matters.
+Boss TTK missed the 45-70s window in both directions (evolved 37.2s, 8s
+under floor; unevolved extrapolates to ~83s, and no unevolved run actually
+survived that long — seed 7 had the boss at 588/3150 hp at +70s and died
+first). Genuine improvement in shape, separate from the win-rate problem:
+5 of 10 runs now reach the boss and fight it for 29-77s, instead of dying
+before it spawned. **This pass, two changes:** narrow the spread further
+(toward ~1.5x, since combat is explicit that with branches this far apart
+no single boss hp can center both), and make the phoenix chain reachable
+enough to stop being a coin flip — see "Loadout spread, round 2" and
+"Evolution reachability" below.
 
 ## What changed from the first pass, and why it mattered
 
@@ -161,13 +198,25 @@ reachability").
   the fix that made the evolution chain reachable, which is what exposed
   the loadout-spread problem below.
 
-**This pass, against five more real playthroughs of the above:**
+**Two passes ago, against five more real playthroughs of the above:**
 - `phoenix_talisman`: `damage` 30.0→25.0, `cooldown_sec` 0.9→0.95,
   `projectile_count` 2→1, `per_level.damage` 6.0→5.0. The loadout-spread
-  fix — see "Loadout spread".
-- `bamboo_spirit_lord.hp`: **2150 → 3150**. Re-sized for the middle of the
-  narrowed evolved/unevolved dps band, not re-derived from a single
-  measurement — see "Loadout spread".
+  fix — validated by the controlled sweep at 84.8 dps evolved vs. a 79
+  projection.
+- `bamboo_spirit_lord.hp`: **2150 → 3150** (superseded this pass). Re-sized
+  for the middle of the narrowed evolved/unevolved dps band.
+
+**This pass, against the first controlled ten-seed sweep:**
+- `phoenix_talisman`: `damage` 25.0→17.5, `per_level.damage` 5.0→3.5
+  (`cooldown_sec`, `per_level.cooldown_sec`, `projectile_count` unchanged).
+  Round 2 of the loadout-spread fix — see "Loadout spread, round 2".
+- `bamboo_spirit_lord.hp`: **3150 → 2600**. Re-centered for the
+  further-narrowed band — see "Boss".
+- `evolutions.json`'s `min_passive_stacks` was **not** changed this pass —
+  it's already at its floor (1, the minimum non-zero value the schema
+  allows). See "Evolution reachability": the chain-reachability fix this
+  pass needed is engine-side, not a threshold this worktree can retune
+  further.
 
 ## XP curve → implied player level by minute (re-derived)
 
@@ -404,20 +453,70 @@ upside (`pierce: 2, area_scale: 1.8`, both above `fire_talisman`'s), this
 keeps evolution feeling like a genuine tier-up without being the run-ending
 spike it was.
 
+**Calibration check on the projection above, now that the controlled sweep
+has a real number:** the projected 79 evolved dps landed within 7% of the
+measured 84.8 — close enough that the same methodology (scale the
+`phoenix_talisman` unit-dps ratio, apply it to the measured total) is
+trustworthy for round 2 below, with the same explicit caveat that it's a
+projection, not a guarantee.
+
+## Loadout spread, round 2 — correcting a modeling error, then cutting further
+
+**Target: narrow 2.23x (measured) toward ~1.5x.** With unevolved dps
+measured at 38.0 (real, not the 41 this document modeled before), hitting
+1.5x means the evolved branch needs to land near **57 dps** — a further cut
+of `57 / 84.8 ≈ 0.672` (about a third off the current evolved output).
+
+**Correction found while planning this cut:** the round-1 analysis modeled
+`phoenix_talisman` starting at level 1 on evolving and reaching level 3
+only after two more upgrade picks. That's wrong. `RunState.evolve_weapon()`
+(`scripts/core/run_state.gd`) rewrites the weapon entry in place and
+**inherits the source weapon's level**, clamped to the target's own
+`max_level` — its own doc comment explains why: combat already carries the
+level across the swap node-side, and a level-1 restart would strand the
+second leg of a chain, since it gates on the evolved weapon reaching a
+level it could no longer reach again inside one run. Concretely:
+`fire_talisman` inherits whatever level `old_talisman` was at when the
+first evolution fired (at least 3, the gate); and because
+`_check_evolutions()` re-scans every owned weapon on every level-up, the
+second evolution can fire on the *very next* level-up if `skill_power` is
+already held — so `phoenix_talisman` typically starts at level 3+
+*inherited*, not level 1. This explains why the real 84.8 measurement ran
+a bit hotter than the (level-1-anchored) 79 projection, and it changes
+where this round's cut should land: cutting raw `damage` again would push
+`phoenix_talisman`'s *immediate, inherited* stats below `fire_talisman`'s
+trigger-level output, which breaks "evolution must still feel earned" — the
+previous round's cut already brought the two close together
+(`phoenix_talisman`@1 old-model 26.3 vs. `fire_talisman`@3's 26.0 was
+already a near-tie, and that comparison was using the wrong phoenix level).
+
+**Change made: scale `damage` and `per_level.damage` by the same ~0.70
+factor, leave `cooldown_sec`/`per_level.cooldown_sec`/`projectile_count`
+untouched.** `phoenix_talisman.damage` 25.0→17.5, `per_level.damage`
+5.0→3.5. Scaling damage alone (not cooldown) preserves the *trigger-moment*
+comparison ratio exactly, so the immediate payoff doesn't collapse: at the
+inherited level 3, new unit dps is `(17.5 + 3.5×2) / 0.87 ≈ 28.2` against
+`fire_talisman`@3's `26.0` — still a real, if modest, +8% immediate upgrade,
+continuing to outscale from there as levels accumulate. Applying the same
+~0.70 ratio to the measured 84.8 total (the same scaling methodology
+calibrated to 7% above) projects **evolved dps ≈ 59**, giving **59 / 38.0 ≈
+1.55x** — inside the ~1.5x target.
+
 ## Boss
 
-`bamboo_spirit_lord.hp`: **2150 → 3150.** Sized for the *middle* of the
-narrowed band rather than re-derived from either endpoint, per instruction.
-Using the geometric mean of the two branches (appropriate here because
-time-to-kill is a *ratio* — dps × time — so centering the *ratio* of the two
-branches' TTKs, not their raw hp difference, is what actually splits the
-difference fairly): `sqrt(41 × 79) ≈ 56.9` dps at the target midpoint,
-`56.9 × 55 ≈ 3130`, rounded to **3150**. Resulting time-to-kill: **~76.8s**
-on the unevolved branch (3150 / 41), **~39.9s** on the evolved branch
-(3150 / 79) — both within shouting distance of the 45-70s design window
-(unevolved runs a bit long, evolved runs a bit short) rather than the
-previous 13s/204s chasm, and importantly: **no run is now unwinnable or a
-trivial stomp purely because of whether one specific evolution completed.**
+`bamboo_spirit_lord.hp`: **3150 → 2600.** Re-centered for the further-
+narrowed band using the same geometric-mean method as before (time-to-kill
+is a ratio, so centering the branches' TTK ratio — not the raw hp
+difference — splits the difference fairly): `sqrt(38.0 × 59) ≈ 47.4` dps at
+the target midpoint, `47.4 × 55 ≈ 2610`, rounded to **2600**. Resulting
+time-to-kill: **~68.4s** on the unevolved branch (2600 / 38.0), **~44.1s**
+on the evolved branch (2600 / 59) — both now close to the 45-70s design
+window (unevolved sits near the top of it, evolved is ~1s under the floor)
+rather than round 1's 77s/40s spread, itself already far better than the
+original 13s/204s chasm. As the residual ~1.55x spread implies, no single
+hp value perfectly centers both branches while any spread remains — this
+is the closest data alone can bring them without also closing the spread
+to 1.0x, which is not the target.
 
 Two other levers remain on the table and both are out of this worktree's
 reach: a damage-reduction/invulnerability phase (boss AI, `scripts/combat/
@@ -432,6 +531,12 @@ plus whatever `max_hp` stacks were picked still means the fight has to be
 won by kiting, not tanking, per the GDD's movement-only combat model — the
 boss hp number changes how long that kiting has to hold up, not whether
 kiting is required.
+
+**Genuine improvement in shape, unrelated to this section's fix:** the
+controlled sweep shows 5 of 10 runs now reach the boss and fight it for
+29-77s, instead of dying before it spawned. That's a real result of the
+prior passes' survivability work (`forest_spirit.damage`, `taoist.base_hp`)
+holding up under a controlled sweep, not something this pass touched.
 
 ## Where the run should feel dangerous (confirmed — minute 7 is the intended spike)
 
@@ -570,13 +675,76 @@ results are now excluded from the ordinary `weapon_new` pool
 (ARCHITECTURE.md section 4), so reaching a rule's threshold buys something
 the pool can't hand over for free.
 
-**Known external caveat, not compensated for in data:** core-engine's
-evolved-weapon-level tracking bug (see "Boss" above) means a weapon that has
-evolved once currently can't be read at its correct level for a *second*
-evolution — this specifically blocks the `fire_talisman` → `phoenix_talisman`
-step (evolving twice in the same weapon line) regardless of these
-thresholds. `sword` → `twin_sword`, `bow` → `divine_bow`, and
-`old_talisman` → `fire_talisman` (each a single evolution) are unaffected.
+**Resolved since the above was written:** core-engine's evolved-weapon-level
+tracking fix landed (see "Loadout spread, round 2"), so the
+`fire_talisman` → `phoenix_talisman` step is no longer structurally
+blocked. It fired in 3 of 5 runs immediately after — mechanically, the
+chain works.
+
+## Evolution reachability, round 2 — the passive threshold has hit its floor
+
+**`min_passive_stacks` cannot be retuned any further; it's already at the
+schema minimum (1).** The controlled ten-seed sweep still measured only
+2/10 chain completion (3/10 any evolution) with that floor in place, and
+`tools/validate_data.gd` rejects a non-positive `min_passive_stacks` by
+design — 0 would mean the rule fires without ever landing the passive at
+all, which isn't "reachable," it's "the requirement doesn't exist." There
+is no lower number to retune to.
+
+**Why this is a probability-of-a-single-draw problem, not a threshold
+problem, and why that ceiling is genuinely outside this worktree's data
+levers:** with `min_passive_stacks: 1`, the phoenix chain's binding
+requirement reduces to "did `skill_power` get drawn at least once, while
+`old_talisman` also reached level 3, before the run ended." Every level-up
+offers 3 choices sampled from a pool of roughly 8 passives plus a handful
+of weapon options (this document's own "Weapon/passive growth" model puts
+the pool at roughly constant size ~10-11 for most of a run, since
+`weapon_new` slots convert 1:1 into `weapon_upgrade` slots as the 3
+reachable base weapons are acquired). A back-of-envelope calc using that
+model — per-level miss-probability `1 - 1/11 ≈ 0.909`, applied across a
+full ~15-level-up run — predicts roughly **76% of runs draw `skill_power`
+at least once**, nowhere close to the measured ~20-30%. That gap is itself
+informative: roughly half of all runs still die before reaching the boss
+at all (this pass's own "5 of 10 reach the boss" figure), which means a
+large share of runs never accumulate anywhere near 15 level-ups to draw
+against in the first place — the model's implicit "every run survives to
+compare" assumption doesn't hold, and this document's models have
+repeatedly needed recalibration against real measurement for exactly this
+kind of reason (see "DPS model" above).
+
+**Levers checked and ruled out, all still inside `data/**`:**
+- *Lower `min_passive_stacks` further* — already at the schema floor (1).
+- *Bump `xp_drop` values to buy a few more level-ups* — modeled explicitly:
+  a ~30-40% `forest_spirit`/`bamboo_brute` `xp_drop` increase (the largest
+  change that wouldn't also re-break the front-loading fix by touching
+  `forest_goblin`) raises the implied endgame level by only ~1 (level
+  16→17, i.e. one extra level-up), moving the modeled draw-success
+  probability from ~76% to ~78% — a rounding error against the ~50
+  percentage-point gap this needs to close, and it risks distorting the
+  XP-level table, the danger-curve minute mapping, and every DPS-by-minute
+  number this document has calibrated. Not worth pulling for a fix this
+  small.
+- *Broaden which passive satisfies each rule* — `evolutions.json`'s
+  `requires_passive` is a single string field (ARCHITECTURE.md section 4,
+  frozen); there's no schema room to say "any of N passives" without a
+  contract change.
+- *Add alternate evolution paths gated on easier-to-draw passives* — would
+  require new `evolution_only` weapon entries (new sprites, new balance
+  surface) for a mechanic the task didn't ask to expand, not a tuning fix.
+
+**Conclusion: this needs engine behaviour, not data.** The actual lever
+that would move chain-reachability from ~20% toward the requested 70-80%
+is *how the choice pool weights passives*, not any per-rule threshold —
+concretely, weighting `skill_power`/`attack_damage`/`attack_speed` (the
+three currently-used evolution-gating passives) higher in
+`RunState._passive_choices()`/`_build_choices()`, or some other mechanism
+that raises the odds of the *specific* required passive appearing without
+touching the frozen `min_passive_stacks` contract. That's
+`scripts/core/run_state.gd` — outside `data/**`. Flagging this rather than
+attempting a data workaround, per instruction: **I could not find a data-
+only lever that materially moves this number**, and the smallest lever I
+did find (an xp bump) isn't worth its side effects for a ~2 percentage
+point gain against a ~50 point target.
 
 ## Sprite scale and `collision_radius` (now a required, authoritative field)
 
