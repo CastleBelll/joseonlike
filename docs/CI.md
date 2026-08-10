@@ -56,6 +56,22 @@ On every push and pull request:
 4. Runs `tests/run_tests.gd`.
 5. Runs `tools/validate_data.gd` if present, else logs a `::warning::` and skips.
 
+**Known local-only quirk: intermittent exit 139 on Windows after `--import` completes.**
+`godot --headless --path . --import` has been observed on Windows dev machines to
+segfault (exit 139) *after* the `[ DONE ] reimport` line prints — a crash during
+process teardown once the actual import work is already done, roughly one run in
+eight, only with `.godot` already present, gone on an immediate re-run. This is a
+teardown crash, not a failed import, and it has not been reproduced on Linux: 40
+consecutive warm runs of the exact same command on the actual `ubuntu-latest` GitHub
+Actions runner all exited 0
+(https://github.com/CastleBelll/joseonlike/actions/runs/31384597597). If you hit
+`exit 139` running this locally on Windows, it is this known issue, not your change —
+re-run once and move on. **CI itself is not exposed** (no step was added to tolerate
+it, on purpose: a step that silently swallows a real Linux failure would be worse
+than the flake it's working around). If this ever reproduces on a GitHub runner,
+that would be new information and should reopen this — the conclusion above is
+"unaffected so far under real testing," not "provably impossible."
+
 **GDScript-error gate:** Godot can exit 0 in some headless paths even when a script
 has a parse/compile error. Every step's output is captured and grepped for
 `SCRIPT ERROR` / `Parse Error`; a match fails the job explicitly, regardless of the
