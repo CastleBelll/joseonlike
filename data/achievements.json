@@ -1,0 +1,58 @@
+{
+  "first_boss": {
+    "name_ko": "첫 보스 처치",
+    "name_en": "First Boss Clear",
+    "counter_key": "boss_defeated",
+    "target": 1,
+    "reward": { "type": "gold", "amount": 100 }
+  },
+  "boss_slayer": {
+    "name_ko": "요괴 사냥꾼",
+    "name_en": "Boss Slayer",
+    "counter_key": "boss_defeated",
+    "target": 10,
+    "reward": { "type": "gold", "amount": 500 }
+  },
+  "goblin_hunter": {
+    "name_ko": "도깨비 사냥꾼",
+    "name_en": "Goblin Hunter",
+    "counter_key": "enemy_killed",
+    "target": 100,
+    "reward": { "type": "gold", "amount": 50 }
+  },
+  "monster_collector": {
+    "name_ko": "요괴 도감 수집가",
+    "name_en": "Monster Collector",
+    "counter_key": "enemy_killed",
+    "target": 1000,
+    "reward": { "type": "gold", "amount": 300 }
+  },
+  "survivor": {
+    "name_ko": "생존자",
+    "name_en": "Survivor",
+    "counter_key": "run_completed",
+    "target": 1,
+    "reward": { "type": "gold", "amount": 150 }
+  },
+  "veteran_survivor": {
+    "name_ko": "백전노장",
+    "name_en": "Veteran Survivor",
+    "counter_key": "run_completed",
+    "target": 20,
+    "reward": { "type": "gold", "amount": 800 }
+  },
+  "rising_star": {
+    "name_ko": "떠오르는 도사",
+    "name_en": "Rising Star",
+    "counter_key": "level_reached",
+    "target": 15,
+    "reward": { "type": "gold", "amount": 200 }
+  },
+  "weapon_master": {
+    "name_ko": "무구의 달인",
+    "name_en": "Weapon Master",
+    "counter_key": "weapon_evolved",
+    "target": 1,
+    "reward": { "type": "gold", "amount": 250 }
+  }
+}
