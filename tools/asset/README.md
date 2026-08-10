@@ -68,6 +68,11 @@ contains no green. Style consistency comes from resolution, outline weight and f
 shading — not from identical hues. Outline pixels are forced to pure black so the
 silhouette still reads at sprite size.
 
+If a backend ignores the chroma request and draws a grey transparency checkerboard, retain
+that failure in `raw/` and pass `--checker-background`. The option removes only bright neutral
+pixels connected to a cell edge, so enclosed white effect cores remain intact. Do not use it
+on ordinary chroma sheets.
+
 Keep the pre-cutout generator output under `asset/<kind>/raw/` so a sprite can be recut at
 another size without paying to regenerate it.
 
@@ -107,6 +112,9 @@ M1 helper scripts are deterministic and safe to rerun:
 - `measure_directional_motion.py` compares every generated motion cell against its own
   direction's 92x92 idle authority and records per-frame lower-body concentration, head
   silhouette stability, pair differences, and a sheet-level acceptance summary.
+- `measure_effect_sheets.py` records opaque coverage, bright-core pixels, and consecutive
+  frame deltas for the ten four-frame effect sheets. Its final dissipation frame is exempt
+  from the bright-core gate but still must retain a readable silhouette and distinct motion.
 
 ## Import settings
 
