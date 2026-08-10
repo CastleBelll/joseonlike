@@ -196,37 +196,67 @@ Minutes 1-5 stay above ~4x margin (with an extreme 19.65x lull at minute 4)
 — consistent with the GDD's "learn the loop" framing for the first half of a
 10-15 minute session.
 
-## Sprite scale vs. hitbox (for combat to size collision from data)
+## Sprite scale and `collision_radius` (now a required, authoritative field)
 
-The four M1 monster sprites now in `asset/monster/` are not uniform size —
-verified pixel dimensions (`PIL Image.size`):
+**Correction:** an earlier pass of this document recorded sprite dimensions
+from the first art generation, which was discarded for not matching the
+Taoist reference style. The art was regenerated; the numbers below are
+measured directly from the files currently in `asset/monster/`
+(`PIL Image.size`, re-verified in this pass, not copied from a prior report):
 
-| Monster | Sprite size (px) | Footprint (√area) | Ratio vs. forest_goblin |
+| Monster | Sprite canvas (px) | Median silhouette width* | Max silhouette width* |
 |---|---|---|---|
-| forest_goblin | 87×80 | 83.4 | 1.00x |
-| forest_spirit | 42×92 | 62.1 | 0.74x (tall/narrow — floating caster) |
-| bamboo_brute | 135×120 | 127.3 | 1.53x |
-| bamboo_spirit_lord | 128×160 | 143.1 | 1.72x |
+| forest_goblin | 33×44 | 23 | 30 |
+| forest_spirit | 26×46 | 16 | 24 |
+| bamboo_brute | 61×58 | 43 | 61 |
+| bamboo_spirit_lord | 60×76 | 47 | 60 |
 
-(`√area` used as a single footprint scalar since aspect ratios differ —
-`forest_spirit` is taller than it is wide, so width or height alone would
-misrepresent it. Reference: the Taoist player sprite is 92×92, footprint 92.)
+Reference: the Taoist player sprite's canvas is 92×92, but its actual
+silhouette (alpha bounding box) is 37×46 — the canvas carries padding for
+8-direction rotation framing that the monster sprites don't have (their
+canvas is already tightly cropped to the silhouette, confirmed by checking
+each file's alpha bbox against its canvas size).
 
-**This matters for collision, and the current combat implementation doesn't
-use it.** `scenes/actors/enemy_base.tscn` gives every `Enemy` node one fixed
-`CircleShape2D` with `radius = 8.0`, and `scripts/combat/enemy.gd` only
-special-cases the boss with a flat `BOSS_SCALE = 2.2` node-scale (which
-scales the sprite and the 8px collider together, decoupled from the boss's
-actual sprite proportions). Concretely: `forest_goblin` (87×80) and
-`bamboo_brute` (135×120, 53% bigger by footprint) currently get *the exact
-same* 8px hit radius. A player standing where a brute's sprite clearly
-overlaps them can take a hit that visually shouldn't have landed, or dodge
-one that should have.
+*Median/max silhouette width = per-row count of non-transparent pixels,
+median and max taken across all rows. This distinguishes core body from
+protruding elements: `bamboo_brute` holds a club that widens a minority of
+rows to the full 61px canvas, but a typical row (median) is 43px — the club
+is not the body. Same effect, smaller, on `bamboo_spirit_lord`'s two
+outstretched blade-like ornaments (median 47 vs. max 60).
 
-This worktree doesn't own `scenes/actors/**` or `scripts/combat/**` and
-`monsters.json`'s schema is frozen (no `hitbox_radius` field exists in
-ARCHITECTURE.md section 4), so no field was added here unilaterally. If
-combat wants to derive collision size from data instead of a single hardcoded
-constant, the ratios above (or `sprite` dimensions read directly at load
-time) are the numbers to use — worth raising with the coordinator as a
-schema addition if this is worth fixing before ship.
+**`collision_radius` (ARCHITECTURE.md section 4, now required)** is set to
+half the *median* silhouette width, not half the canvas or half the max row
+— so a swung club or an ornamental blade doesn't inflate the hitbox past
+what the body actually occupies:
+
+| Monster | `collision_radius` | Derivation |
+|---|---|---|
+| forest_goblin | 11.5 | 23 (median width) / 2 |
+| forest_spirit | 8.0 | 16 / 2 |
+| bamboo_brute | 21.5 | 43 / 2 |
+| bamboo_spirit_lord | 23.5 | 47 / 2 |
+
+All four are comfortably under the validator's half-canvas ceiling (16.5,
+13.0, 30.5, 30.0 respectively) — the point of that ceiling isn't that these
+values are near it, it's that a typo (e.g. transposing brute and boss, or
+entering a canvas dimension instead of a radius) gets caught instead of
+silently shipping as an invisible wall.
+
+**Feel being aimed for:** `forest_goblin` and `forest_spirit` should read as
+small and threadable — a player weaving through a cluster of 5-10 goblins
+(minutes 1-5 spawn density) needs real gaps to path through, not a wall of
+11.5-radius circles touching edge-to-edge. `bamboo_brute` at 21.5 is
+deliberately the largest non-boss radius (roughly double the goblin's) —
+it's the charger, and the collision size should make "don't stand where the
+brute is" a real spatial commitment, not a graze. `bamboo_spirit_lord` at
+23.5 is only marginally larger than the brute despite being visually the
+biggest sprite (60×76 vs. 61×58) — a boss fight that's already won on
+attack-pattern reading and kiting room, not on the body itself being an
+unavoidable wall, matches the ~45-70s single-target fight this document
+designs around above; a boss hitbox much larger than the brute's would fight
+that kiting design.
+
+This section previously argued for adding `collision_radius` to the schema;
+that argument is now resolved — the coordinator approved it and
+ARCHITECTURE.md section 4 requires it. `tools/validate_data.gd` enforces
+presence, positivity, and the half-sprite-width ceiling described above.

@@ -8,6 +8,7 @@
     "xp_drop": 1,
     "gold_drop": 1,
     "behaviour": "chase",
+    "collision_radius": 11.5,
     "sprite": "res://asset/monster/forest_goblin.png"
   },
   "forest_spirit": {
@@ -19,6 +20,7 @@
     "xp_drop": 5,
     "gold_drop": 2,
     "behaviour": "ranged",
+    "collision_radius": 8.0,
     "sprite": "res://asset/monster/forest_spirit.png"
   },
   "bamboo_brute": {
@@ -30,6 +32,7 @@
     "xp_drop": 8,
     "gold_drop": 4,
     "behaviour": "charger",
+    "collision_radius": 21.5,
     "sprite": "res://asset/monster/bamboo_brute.png"
   },
   "bamboo_spirit_lord": {
@@ -41,6 +44,7 @@
     "xp_drop": 200,
     "gold_drop": 150,
     "behaviour": "boss",
+    "collision_radius": 23.5,
     "sprite": "res://asset/monster/bamboo_spirit_lord.png"
   }
 }

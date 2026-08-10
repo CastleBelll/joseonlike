@@ -36,7 +36,8 @@ const EVOLUTION_REQUIRED: Array[String] = [
 	"requires_weapon", "requires_passive", "min_weapon_level", "min_passive_stacks", "result_weapon",
 ]
 const MONSTER_REQUIRED: Array[String] = [
-	"name_ko", "name_en", "hp", "damage", "speed", "xp_drop", "gold_drop", "behaviour", "sprite",
+	"name_ko", "name_en", "hp", "damage", "speed", "xp_drop", "gold_drop", "behaviour",
+	"collision_radius", "sprite",
 ]
 const STAGE_REQUIRED: Array[String] = ["name_ko", "name_en", "duration_sec", "boss_id", "waves"]
 const WAVE_REQUIRED: Array[String] = ["at_sec", "monster_id", "count", "interval_sec"]
@@ -292,11 +293,25 @@ static func _validate_monsters(monsters: Dictionary, errors: Array[String]) -> v
 		if _num(m, "gold_drop") < 0.0:
 			errors.append("%s: '%s'.gold_drop must be >= 0" % [file, id])
 
+		var collision_radius: float = _num(m, "collision_radius")
+		if collision_radius <= 0.0:
+			errors.append("%s: '%s'.collision_radius must be > 0" % [file, id])
+
 		var sprite: String = m.get("sprite", "")
 		if not sprite.begins_with("res://"):
 			errors.append("%s: '%s'.sprite must be a res:// path" % [file, id])
 		elif not FileAccess.file_exists(sprite):
 			errors.append("%s: '%s'.sprite '%s' does not exist" % [file, id, sprite])
+		elif collision_radius > 0.0:
+			# A typo-sized radius (e.g. the full canvas instead of the body) would
+			# make the enemy an invisible wall, so cap it against the real sprite.
+			# Image.load() prints an "export" warning that doesn't apply here — this
+			# validator only ever runs headless from source, never from an export.
+			var image := Image.new()
+			if image.load(sprite) == OK:
+				var half_width: float = image.get_width() / 2.0
+				if collision_radius > half_width:
+					errors.append("%s: '%s'.collision_radius %.1f exceeds half the sprite width (%dpx wide, max %.1f)" % [file, id, collision_radius, image.get_width(), half_width])
 
 
 # ---- data/stages.json ----
