@@ -38,7 +38,7 @@
   "bamboo_spirit_lord": {
     "name_ko": "죽림 정령왕",
     "name_en": "Bamboo Spirit Lord",
-    "hp": 2600.0,
+    "hp": 3600.0,
     "damage": 35.0,
     "speed": 50.0,
     "xp_drop": 200,

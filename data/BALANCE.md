@@ -71,11 +71,30 @@ under floor; unevolved extrapolates to ~83s, and no unevolved run actually
 survived that long — seed 7 had the boss at 588/3150 hp at +70s and died
 first). Genuine improvement in shape, separate from the win-rate problem:
 5 of 10 runs now reach the boss and fight it for 29-77s, instead of dying
-before it spawned. **This pass, two changes:** narrow the spread further
-(toward ~1.5x, since combat is explicit that with branches this far apart
-no single boss hp can center both), and make the phoenix chain reachable
-enough to stop being a coin flip — see "Loadout spread, round 2" and
-"Evolution reachability" below.
+before it spawned. That pass narrowed the spread further
+(`phoenix_talisman` damage/`per_level.damage` cut again) and did not touch
+`evolutions.json` — the passive-draw floor was already at 1, and the
+remaining reachability gap was diagnosed as needing engine-side choice-pool
+weighting, not a data threshold.
+
+**THE EVOLUTION PROBLEM IS NOW CLOSED (this pass).** core-engine's
+weighting fix landed on both halves of the requirement (4x weapon-level
+weight, 2x passive weight, not passive-only) and it worked exactly as
+projected: chain rate 3/10 → 6/10, any evolution 6/10 → 8/10, wins
+4/10 → 6/10, mean gating weapon level 1.75 → 3.00, and all six wins now
+chain (6 of 6). This validates the earlier reachability diagnosis (see
+"Evolution reachability, round 2" below, corrected this pass) rather than
+contradicting it — the model's 76.8% theoretical per-draw ceiling landed
+within a point of the design intent, and the gap to the observed 60% chain
+rate is now fully accounted for by early deaths, not a wrong model.
+
+**What's left, cleanly separable now that reachability isn't confounding
+the picture:** boss TTK undershoots specifically on *early* chains — see
+"Boss" below — and the isolated survivability residual (4/10 losses,
+unchanged) needs a deliberate decision rather than more tuning. Two data
+changes this pass (`phoenix_talisman`'s curve, `bamboo_spirit_lord.hp`),
+one documentation correction (survivability), and one explicit "leave it"
+decision.
 
 ## What changed from the first pass, and why it mattered
 
@@ -206,12 +225,27 @@ reachability").
 - `bamboo_spirit_lord.hp`: **2150 → 3150** (superseded this pass). Re-sized
   for the middle of the narrowed evolved/unevolved dps band.
 
-**This pass, against the first controlled ten-seed sweep:**
+**Two passes ago, against the first controlled ten-seed sweep:**
 - `phoenix_talisman`: `damage` 25.0→17.5, `per_level.damage` 5.0→3.5
   (`cooldown_sec`, `per_level.cooldown_sec`, `projectile_count` unchanged).
-  Round 2 of the loadout-spread fix — see "Loadout spread, round 2".
-- `bamboo_spirit_lord.hp`: **3150 → 2600**. Re-centered for the
-  further-narrowed band — see "Boss".
+  Round 2 of the loadout-spread fix.
+- `bamboo_spirit_lord.hp`: **3150 → 2600** (superseded this pass). Re-centered
+  for the further-narrowed band.
+
+**This pass, against the ten-seed sweep with core-engine's evolution
+reachability fix landed:**
+- `phoenix_talisman`: `damage` 17.5→19.0, `per_level.damage` 3.5→2.2
+  (`cooldown_sec`, `per_level.cooldown_sec`, `projectile_count`
+  unchanged). Round 3 of the loadout-spread fix, this time targeting the
+  *internal* spread within the now-dominant chained-win population (early
+  vs. late chains), not an evolved-vs-unevolved split — see "Boss".
+- `bamboo_spirit_lord.hp`: **2600 → 3600**. Re-centered again — see "Boss".
+- `evolutions.json`: **not changed this pass.** Reachability is closed;
+  touching `min_weapon_level` again to influence chain *timing* was
+  considered and rejected — see "Boss" for why.
+- No survivability-affecting fields changed this pass (`forest_spirit.damage`,
+  `taoist.base_hp`, wave table) — see "Survivability, round 2": 4/10 losses
+  is deliberately accepted as the target, not tuned further.
 - `evolutions.json`'s `min_passive_stacks` was **not** changed this pass —
   it's already at its floor (1, the minimum non-zero value the schema
   allows). See "Evolution reachability": the chain-reachability fix this
@@ -538,6 +572,95 @@ controlled sweep shows 5 of 10 runs now reach the boss and fight it for
 prior passes' survivability work (`forest_spirit.damage`, `taoist.base_hp`)
 holding up under a controlled sweep, not something this pass touched.
 
+## Boss, round 3 — the spread moved inside the winning population itself
+
+**With reachability closed, all six wins now chain, and the residual
+problem lives entirely inside that population.** Three wins land inside
+45-70s (45.9s, 51.5s, 45.2s); the other three miss by running too *fast*
+(27-34s). combat traces the fast group to early chains — chain-trigger
+times moved much earlier this sweep (107/132/147/194/227/527s, vs.
+197/219/313s before), because reachability no longer gates on luck the way
+it did.
+
+**Proof, from the real numbers alone, that a pure `bamboo_spirit_lord.hp`
+change cannot fix this — no model required.** Time-to-kill is
+`hp / dps`, so changing `hp` alone multiplies every observed TTK by the
+same factor `k`. Lifting the fastest win (27s) to the 45s floor needs
+`k ≥ 45/27 ≈ 1.667`. Applying that same `k` to the *slowest already-in-
+window* win (51.5s) gives `51.5 × 1.667 ≈ 85.9s` — 16s past the 70s
+ceiling. **No single `k` satisfies both constraints simultaneously.**
+This is the same shape of problem as "Loadout spread" above (spread too
+wide for one hp value to center), but now it's internal to the chained
+population instead of between chained and unchained runs — hp alone was
+never going to be the whole fix, which is exactly why the task asked which
+of three levers to pull rather than assuming hp.
+
+**Why it's the fast group and not the slow one that grew, and why that
+points at the phoenix curve specifically:** an early chain doesn't stay
+weak. `RunState.evolve_weapon()` inherits level at the *moment* of
+evolving, but the weapon keeps leveling normally afterward through ordinary
+`weapon_upgrade` picks — so a chain that fires at t=107s has ~493s of
+remaining run time to level `phoenix_talisman` further before the boss
+fight, while a chain firing at t=527s has only ~73s. The earlier the
+chain, the more of `phoenix_talisman`'s own `per_level` growth an early
+win actually cashes in by boss time. Concretely, on the previous round's
+curve (`damage: 17.5, per_level.damage: 3.5`), level 3 (the earliest
+possible, at the trigger) gives unit dps `(17.5+3.5×2)/0.87 ≈ 28.2`; level
+8 (plausible for an early chain with hundreds of seconds to keep leveling)
+gives `(17.5+3.5×7)/0.67 ≈ 62.7` — a 2.23x spread from `phoenix_talisman`'s
+own leveling curve alone, before counting anything else the run
+accumulated in that extra time.
+
+**Decision: flatten `phoenix_talisman`'s `per_level.damage`, not
+`bamboo_spirit_lord.hp` alone and not chain *timing*.** Three levers, why
+one:
+- *Chain timing* (raising `evolutions.json`'s `min_weapon_level` again,
+  now 3, to delay the earliest possible trigger) — rejected. Reachability
+  is explicitly closed this pass ("mean gating weapon level 1.75 → 3.00"
+  sits right at the current threshold, not comfortably above it), and
+  raising the bar risks reopening the problem core-engine's weighting fix
+  just closed. Not worth the risk for a lever that only indirectly affects
+  the real driver (post-evolution leveling *time*, not trigger level).
+- *Boss hp alone* — proven above not to work; the spread itself has to
+  narrow.
+- **`phoenix_talisman.per_level.damage` — the lever pulled**, paired with
+  a small base `damage` increase to hold the trigger-moment floor in
+  place. This directly targets the mechanism identified above: how much an
+  early chain's *extra leveling time* is worth, without touching
+  reachability, wave data, or anything upstream of the weapon itself.
+
+**Change made:** `phoenix_talisman.damage` 17.5→19.0,
+`per_level.damage` 3.5→2.2 (`cooldown_sec`, `per_level.cooldown_sec`,
+`projectile_count` unchanged). Level 3 (trigger floor) becomes
+`(19.0+2.2×2)/0.87 ≈ 26.9` — still above `fire_talisman`@3's `26.0` (a
++3.5% immediate upgrade, preserving "evolution must still feel earned").
+Level 8 (late-leveled ceiling) becomes `(19.0+2.2×7)/0.67 ≈ 51.3` — the
+level-8-to-level-3 ratio drops from 2.23x to 1.91x, a ~14% compression of
+the single largest driver of the early/late spread.
+
+**`bamboo_spirit_lord.hp`: 2600 → 3600.** This is a projection, not a
+re-derivation from a full new decomposition — the "other weapons + passive
+multiplier" estimate this document used for round 2's sizing was built
+against the *pre*-4x/2x-weighting passive-accumulation rate and is now
+stale (the weighting fix broadly raises passive stacking for every build,
+not just phoenix chains, so that estimate would understate current
+non-phoenix dps). Rather than compound a known-stale assumption, this
+number comes from scaling the *directly observed* dps implied by the real
+TTKs (fast ≈ 2600/27 ≈ 96.3, slow ≈ 2600/51.5 ≈ 50.5 at the old hp) by the
+14% compression ratio just computed, then re-centering by geometric mean:
+`sqrt(50 × 82) ≈ 64`, `64 × 57.5 ≈ 3680`, rounded to **3600**. Projected
+result: the fast group moves from ~27-34s toward the low-to-mid 40s
+(still likely to land close to, not comfortably inside, the 45s floor);
+the already-good group moves from ~45-52s toward the mid-60s-to-low-70s
+(comfortably inside, possibly brushing the 70s ceiling on the slowest one).
+**State this plainly: this projection carries real uncertainty** — every
+previous round's projection has needed correction against the next real
+sweep, and this one chains two approximations (the compression ratio and
+the geometric-mean re-centering) rather than one. If combat's next sweep
+shows the fast group still short of 45s or the slow group past 70s, the
+next lever is the same `per_level.damage` compression pushed further,
+informed by which side actually missed.
+
 ## Where the run should feel dangerous (confirmed — minute 7 is the intended spike)
 
 **Settled this pass, not just re-derived.** The `forest_spirit.damage`
@@ -633,6 +756,37 @@ goes from `100 / 9 ≈ 11.1` to `120 / 5 = 24` — more than double the margin,
 from both directions at once, without touching wave density or the
 escalating-danger shape the stage was designed around.
 
+## Survivability, round 2 — deliberately accepted, not tuned further
+
+**The isolated residual, and the correction that goes with it.** With
+reachability closed and boss TTK now cleanly separable (see "Boss, round
+3"), losses are the last open variable, and they're stable: **4/10 across
+the controlled sweep**, unchanged from before this pass's evolution fix.
+Of those four, two are early deaths (level 13, 12 level-ups, both at
+minute 8) and two more cluster at minute 11 — this document's earlier
+"roughly half of all runs" claim for the early-death rate was a guess, not
+a measurement, and has been corrected above (see "Evolution reachability,
+round 2") to the real, twice-measured figure: **2/10**, not half.
+
+**Decision: 4/10 losses in a 10-minute run is accepted as the M1 target,
+not a residual to keep tuning toward zero.** This worktree has already
+pulled real survivability levers twice (`forest_spirit.damage` 9→5,
+`taoist.base_hp` 100→120, see "Survivability" above) and they measurably
+worked — the win rate this document has tracked across every sweep went
+0/5 → 1/2(pre-controlled) → ... → 6/10 this pass, and none of those wins
+existed before the survivability fix landed. A 40% loss rate for a
+10-minute roguelike run is not obviously wrong by genre convention — it
+reads as "genuinely winnable, genuinely capable of going wrong," not
+"punishing" or "trivial." Grinding it toward 0/10 would mean either
+removing danger the danger-curve section above deliberately built
+(minute 7's ranged spike, the pre-boss climax at minute 10) or padding
+`base_hp` past what a kiting-focused, no-regeneration combat model should
+need — both would undo real design intent for a number that isn't
+demonstrated to be wrong. **No data change made for this item.** If a
+future sweep shows the loss rate drifting materially away from ~4/10 (in
+either direction) as other changes land, that's the signal to revisit this
+decision — not a fixed schedule to keep nudging it.
+
 ## Evolution reachability
 
 **Weapon-level retune held up; passive-stack retune didn't.** combat
@@ -704,13 +858,18 @@ reachable base weapons are acquired). A back-of-envelope calc using that
 model — per-level miss-probability `1 - 1/11 ≈ 0.909`, applied across a
 full ~15-level-up run — predicts roughly **76% of runs draw `skill_power`
 at least once**, nowhere close to the measured ~20-30%. That gap is itself
-informative: roughly half of all runs still die before reaching the boss
-at all (this pass's own "5 of 10 reach the boss" figure), which means a
-large share of runs never accumulate anywhere near 15 level-ups to draw
-against in the first place — the model's implicit "every run survives to
-compare" assumption doesn't hold, and this document's models have
-repeatedly needed recalibration against real measurement for exactly this
-kind of reason (see "DPS model" above).
+informative: **correction, made this pass — this document originally
+guessed "roughly half of all runs" die before accumulating enough
+level-ups to draw against, inferred from the "5 of 10 reach the boss"
+figure without direct death-timing data. That guess was wrong and is
+corrected here rather than left in the record: combat has since measured
+early deaths directly, twice, at a stable 2/10** (not half), bucketed at
+minute 8 (×2) with characteristic level 13 / 12 level-ups at death. A 2/10
+early-death rate accounts for most, not all, of the gap between this
+section's 76.8%-ish theoretical per-draw ceiling and the 60% chain rate
+core-engine's fix ultimately achieved (see the intro above) — the model's
+draw-probability math was right; the survival-rate assumption plugged into
+its explanation was the part that needed real data, and now has it.
 
 **Levers checked and ruled out, all still inside `data/**`:**
 - *Lower `min_passive_stacks` further* — already at the schema floor (1).
@@ -745,6 +904,24 @@ attempting a data workaround, per instruction: **I could not find a data-
 only lever that materially moves this number**, and the smallest lever I
 did find (an xp bump) isn't worth its side effects for a ~2 percentage
 point gain against a ~50 point target.
+
+**Confirmed correct: core-engine landed the recommended fix.** Weighting
+both halves of the requirement (4x weapon-level, 2x passive, not
+passive-only — the weapon side needed a lighter push since it's a 1-step
+gate while the passive side is competing against 7 other options) took
+chain rate 3/10 → 6/10, any evolution 6/10 → 8/10, and wins 4/10 → 6/10.
+**Evolution reachability is closed.** The remaining open item from this
+section is boss TTK, which is no longer a reachability problem — see
+"Boss, round 3" above.
+
+**Mild overcorrection, noted per combat's caveat, not acted on.** The
+weighting flipped which half of the requirement is now the tighter
+constraint — previously weapon-level was easy and passive-draw was the
+bottleneck; now the reverse holds slightly. combat is explicit this costs
+far less than the asymmetry it replaced (the passive half only ever needed
+one successful draw where the weapon half needed two level-ups), and
+recommends against chasing it further. Agreed — no `evolutions.json`
+change made for this specific point.
 
 ## Sprite scale and `collision_radius` (now a required, authoritative field)
 
@@ -860,6 +1037,14 @@ correct it against yet:
 | `ranged` | `forest_spirit` | 16 | 5 | 5 | 2 |
 | `charger` | `bamboo_brute` | 85 | 18 | 8 | 4 |
 | `boss` | `bamboo_spirit_lord` | 2600 | 35 | 200 | 150 |
+
+*(`bamboo_spirit_lord.hp` is 3600 as of "Boss, round 3" above — the
+future-area monster hp values below were computed against 2600, the
+anchor at the time this bestiary was written, and were not recomputed
+when the boss retune landed since that's outside this section's scope.
+They're already a stated placeholder pending real playtest data for these
+areas; treat the tier multipliers as the durable part of this scheme, not
+these specific numbers.)*
 
 `swarm` has no Bamboo Forest anchor (unused there) — extrapolated at
 ~60% of the `chase` archetype's hp/damage with higher speed, reflecting
