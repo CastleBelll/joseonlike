@@ -1,0 +1,182 @@
+# JOSEONLIKE M1 asset handoff
+
+## Engineering decision: procedural character motion
+
+The style authority was independently measured as a 92x92 canvas with opaque bounds
+`(27,23)-(63,68)`, a 37x46 character, and 52 opaque colours. Two separate Higgsfield
+same-pose renders were cut to 37x46 through `tools/asset/pixelize.py`. Their silhouettes
+matched, but 449 of 1,702 pixels (26.4%) changed between them; staff details, robe folds,
+face, hat highlights, and colours visibly flicker. Each also changed more than 500 pixels
+relative to the authority. Generating walk/attack frames would therefore make the player
+less coherent, not more animated.
+
+Use the existing eight Taoist rotations as one authoritative sprite per direction. Motion
+must be deterministic and pixel-snapped:
+
+- Select the nearest of the existing eight rotations from the nonzero movement vector.
+- Idle at 4 Hz with integer `Sprite2D.position.y` frames `[0, -1, -1, 0]`.
+- Walk at 8 Hz with integer local offsets `[Vector2(-1,0), Vector2(0,-1),
+  Vector2(1,0), Vector2(0,0)]`; flip the x sequence for alternating steps. Do not use
+  continuous subpixel bobbing, fractional scale, or sprite rotation.
+- On attack, keep the body sprite fixed. Present the authored weapon/projectile VFX, flash
+  the body for at most 60 ms, and optionally apply a one-pixel recoil opposite the aim for
+  one physics tick. The VFX carries the attack; the character does not redraw.
+- Reset local sprite offset to `Vector2.ZERO` when movement or attack state changes so
+  motion never leaks into collision placement.
+
+The failed test is intentionally retained under `asset/character/raw/motion_test/` as raw
+and pixelized evidence. It is not production art.
+
+## Production assets
+
+### Characters
+
+- Taoist: existing eight rotations under `asset/character/Taoist/Idle/rotations/`.
+- Warrior: `asset/character/Warrior/Idle/rotations/south.png`, 92x92 canvas, 29x46 content.
+- Archer: `asset/character/Archer/Idle/rotations/south.png`, 92x92 canvas, 38x46 content.
+
+Warrior and Archer are single-direction M1 portraits/gameplay fallbacks. Do not synthesize
+their other directions independently; mirror only when direction readability is sufficient,
+or commission a hand-authored rotation set later.
+
+### Weapon icons and gameplay VFX
+
+Every generated sprite below was sliced from the raw Higgsfield sheet and passed through
+`pixelize.py` against the Taoist rotation palette.
+
+- Fixed 32x32 HUD icons: `asset/weapon/icons/{old_talisman,fire_talisman,phoenix_talisman,sword,twin_sword,bow,divine_bow}.png`
+- Gameplay art: `asset/weapon/projectiles/{old_talisman,fire_talisman,phoenix_talisman,sword,twin_sword,bow,divine_bow}.png`
+- Recuttable sources: `asset/weapon/raw/higgsfield_weapon_sheet.png` and `asset/weapon/raw/cells/`
+
+Combat worktree changes required:
+
+1. Add `sprite` to all seven entries in `data/weapons.json`, pointing to the corresponding
+   `res://asset/weapon/icons/<id>.png` file (content-data worktree).
+2. Add a `Texture2D`/resource path property to `Projectile`; `_ensure_sprite()` should use
+   it instead of `PlaceholderArt.placeholder(tint)`. Map talisman ids to old/fire/phoenix
+   projectile art and bow ids to bow/divine-bow art.
+3. Add an authored visual texture property to `MeleeArc`, replacing its placeholder
+   `Polygon2D`; use `sword.png` for sword and `twin_sword.png` for twin sword. Preserve the
+   existing collision circle and rotate only this VFX to `facing.angle()`.
+4. Use the procedural character offsets above in `scripts/combat/player.gd`; collision and
+   root `CharacterBody2D` position remain unchanged.
+
+### Stage ground
+
+- `asset/stage/bamboo_forest_ground.png`
+- `asset/stage/abandoned_temple_ground.png`
+
+Both are 256x256, 32-colour, darkened tiles with bit-identical opposite edges guaranteed by
+mirrored construction. Raw Higgsfield concepts are under `asset/stage/raw/`.
+
+Combat worktree changes required: add a background layer behind actors in
+`scenes/combat/stage.tscn`, select the ground texture from `stage_id`, enable texture repeat,
+and cover at least the camera viewport plus one tile margin. Bamboo Forest maps to
+`bamboo_forest_ground.png`; Abandoned Temple maps to `abandoned_temple_ground.png`.
+
+### UI/UX
+
+- Passive icons, all fixed 32x32: `asset/ui/passive/<passive_id>.png`
+- Achievement icons, all fixed 32x32: `asset/ui/achievement/<achievement_id>.png`
+- Currency and XP: `asset/ui/currency/{gold,xp}.png`
+- State icons: `asset/ui/state/{lock,check}.png`
+- Nine-slice chrome: `asset/ui/chrome/panel_9slice.png` and
+  `button_{normal,hover,pressed}_9slice.png`
+
+The chrome uses the existing ink/paper/vermilion/gold constants exactly. Icons have distinct
+silhouettes/internal shapes so state is not colour-only. Meta-UI should replace emoji and
+placeholder chips with these paths and configure nine-slice margins at 6 px for the panel
+and 6 px horizontal / 8 px vertical for buttons.
+
+### Audio
+
+- Loop: `asset/audio/ambience/bamboo_forest_loop.wav` (12.0 s)
+- SFX: `asset/audio/sfx/{combat_hit,enemy_death,level_up,boss_spawn,ui_click}.wav`
+
+All are mono 22.05 kHz PCM and peak-normalized at or below -3 dBFS. The ambience is built
+from periodic components whose cycle length is exactly the file length. Combat should route
+hit/death SFX to a shared limited-voice pool; meta-UI should play level-up and UI click; boss
+controller should play boss spawn. Do not stack duplicate hit sounds in the same physics
+frame.
+
+`asset/audio/LICENSE.md` records provenance. These files contain no samples or third-party
+material. Higgsfield audio was not used because the configured endpoint is speech-only and
+explicitly cannot generate ambience or sound effects.
+
+## Higgsfield provenance and limitations
+
+The workspace started with 1082.55 credits and ended with 1064.55, so the pass spent 18
+credits total. Cost preflights were performed; each completed image job cost 2 credits.
+The two-result motion preflight reported 2 credits but the final balance indicates the
+backend charged per submitted job; this discrepancy is worth remembering for future batch
+estimates. Source jobs:
+
+- Motion tests: `9a2f2ecd-1d22-47be-9dae-89ef62a590bd`,
+  `7ed6c4da-dac1-4407-a3c5-5191d26bab54`
+- Weapons: `bddbcc88-b441-4b1d-a9ae-39adf90c4ee9`
+- UI icons: `5354d426-10d8-48ff-9919-9d8d3a3a48d8`
+- Bamboo ground: `0edaee1a-72e0-4a1f-a34c-37e6db9f1fcd`
+- Temple ground: `2f907a25-833f-49ef-ad56-fe8287d5d42e`
+- Warrior: `fc66d71d-2bf6-420d-ba7b-cfa5fe2605c1`
+- Archer: `95a61dd9-5e00-436b-9de9-219642fe7d79`
+
+Higgsfield did well on isolated icons, independent character concepts, and environmental
+concept texture. It did not produce safe frame-to-frame character consistency, its
+AutoSprite model was exposed by discovery but rejected both cost estimation and generation,
+and its audio connector could not perform the requested SFX task. A future art pass should
+use a human-authored sprite animator for directional character motion and retain this
+procedural motion until such a set is complete.
+
+## Verification
+
+Asset contract verifier:
+
+```text
+$ python tools/asset/verify_assets.py
+M1 assets verified: 20 UI icons + 4 chrome assets, 14 weapon assets, 2 characters, 2 seamless tiles, 6 audio files
+Motion-generation rejection evidence: 449/1702 pixels changed between same-pose frames
+```
+
+Required Godot commands, with real output:
+
+```text
+$ godot --headless --path . --import
+(no stdout or stderr; exit 0)
+
+$ godot --headless --path . --quit
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+(exit 0)
+
+$ godot --headless --path . --script tools/validate_data.gd
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+PASS data validation: no errors
+WARNING: Loaded resource as image file, this will not work on export: 'res://asset/monster/forest_goblin.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load (core/io/image.cpp:2770)
+   GDScript backtrace (most recent call first):
+       [0] _validate_monsters (res://tools/validate_data.gd:311)
+       [1] validate_all (res://tools/validate_data.gd:75)
+       [2] _init (res://tools/validate_data.gd:48)
+WARNING: Loaded resource as image file, this will not work on export: 'res://asset/monster/forest_spirit.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load (core/io/image.cpp:2770)
+   GDScript backtrace (most recent call first):
+       [0] _validate_monsters (res://tools/validate_data.gd:311)
+       [1] validate_all (res://tools/validate_data.gd:75)
+       [2] _init (res://tools/validate_data.gd:48)
+WARNING: Loaded resource as image file, this will not work on export: 'res://asset/monster/bamboo_brute.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load (core/io/image.cpp:2770)
+   GDScript backtrace (most recent call first):
+       [0] _validate_monsters (res://tools/validate_data.gd:311)
+       [1] validate_all (res://tools/validate_data.gd:75)
+       [2] _init (res://tools/validate_data.gd:48)
+WARNING: Loaded resource as image file, this will not work on export: 'res://asset/monster/bamboo_spirit_lord.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load (core/io/image.cpp:2770)
+   GDScript backtrace (most recent call first):
+       [0] _validate_monsters (res://tools/validate_data.gd:311)
+       [1] validate_all (res://tools/validate_data.gd:75)
+       [2] _init (res://tools/validate_data.gd:48)
+(exit 0)
+```
+
+The four validator warnings predate this asset set and arise because the validator itself
+loads monster PNGs as raw `Image` objects. No monster sprite or collision dimension changed.

@@ -48,7 +48,7 @@ subject.
 ## Cutting
 
 ```bash
-python tools/asset/pixelize.py <in.png> <out.png> <content_height> <palette_dir>
+python tools/asset/pixelize.py <in.png> <out.png> <content_height> <palette_dir> [canvas_size]
 # e.g.
 python tools/asset/pixelize.py asset/monster/raw/forest_goblin_raw.png \
     asset/monster/forest_goblin.png 44 asset/character/Taoist/Idle/rotations
@@ -58,6 +58,9 @@ It chroma-keys the flat background, crops to content, downscales to the target l
 height with BOX (averaging beats NEAREST here — NEAREST point-samples one arbitrary source
 pixel per cell and keeps generator noise), then quantises.
 
+For fixed-size UI icons, pass `32` as `canvas_size`. Oversized wide subjects are scaled
+down proportionally with nearest-neighbour and centred on a transparent 32x32 canvas.
+
 The palette is the reference palette **plus** the subject's own dominant hues. Snapping to
 the reference palette alone turned the bamboo brute stone grey, because the reference
 contains no green. Style consistency comes from resolution, outline weight and flat
@@ -66,6 +69,20 @@ silhouette still reads at sprite size.
 
 Keep the pre-cutout generator output under `asset/<kind>/raw/` so a sprite can be recut at
 another size without paying to regenerate it.
+
+Generated contact sheets can be split into recuttable raw cells before pixelizing:
+
+```bash
+python tools/asset/slice_sheet.py sheet.png asset/ui/raw/cells 5 4 first second _ fourth
+```
+
+M1 helper scripts are deterministic and safe to rerun:
+
+- `make_seamless_tile.py` darkens, quantises, and mirror-wraps generated ground concepts.
+- `build_ui_chrome.py` rebuilds the ink/paper/vermilion nine-slice chrome and currency icons.
+- `synthesize_audio.py` rebuilds the original peak-safe M1 WAV set.
+- `verify_assets.py` checks fixed canvases, hard alpha, chroma removal, tile seams, palettes,
+  audio formats/peaks, and the retained motion-consistency evidence.
 
 ## Import settings
 
