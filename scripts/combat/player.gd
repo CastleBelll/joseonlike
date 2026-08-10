@@ -351,13 +351,15 @@ func _advance_motion(direction: Vector2, delta: float) -> void:
 	if walking:
 		_apply_direction(CharacterMotion.direction_name(direction))
 
-	var offset: Vector2i = CharacterMotion.walk_offset(_motion_time) if walking 		else CharacterMotion.idle_offset(_motion_time)
-
-	if _recoil_ticks_left > 0:
+	var is_recoiling: bool = _recoil_ticks_left > 0
+	if is_recoiling:
 		_recoil_ticks_left -= 1
-		offset += _recoil_offset
-		if _recoil_ticks_left <= 0:
-			_recoil_offset = Vector2i.ZERO
+
+	var offset: Vector2i = CharacterMotion.sprite_offset(
+		_motion_time, walking, _recoil_offset, is_recoiling
+	)
+	if not is_recoiling:
+		_recoil_offset = Vector2i.ZERO
 
 	_sprite.position = Vector2(offset)
 	_tick_attack_flash(delta)
