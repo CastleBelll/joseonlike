@@ -1,0 +1,5 @@
+[
+  { "id": "choice_fire_talisman", "kind": "weapon_new", "name_ko": "화염 부적 획득", "name_en": "Acquire Fire Talisman", "description_ko": "새로운 무기를 획득합니다." },
+  { "id": "choice_old_talisman_upgrade", "kind": "weapon_upgrade", "name_ko": "낡은 부적 강화", "name_en": "Upgrade Old Talisman", "description_ko": "기존 무기를 강화합니다." },
+  { "id": "choice_attack_speed", "kind": "passive", "name_ko": "공격 속도", "name_en": "Attack Speed", "description_ko": "공격 속도가 증가합니다." }
+]

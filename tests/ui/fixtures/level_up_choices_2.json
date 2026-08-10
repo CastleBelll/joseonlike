@@ -1,0 +1,4 @@
+[
+  { "id": "choice_fire_talisman", "kind": "weapon_new", "name_ko": "화염 부적 획득", "name_en": "Acquire Fire Talisman", "description_ko": "새로운 무기를 획득합니다." },
+  { "id": "choice_max_hp", "kind": "passive", "name_ko": "최대 체력", "name_en": "Max HP", "description_ko": "최대 체력이 증가합니다." }
+]
