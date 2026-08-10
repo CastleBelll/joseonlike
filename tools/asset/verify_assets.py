@@ -32,8 +32,16 @@ def check_sprite(path, canvas=None, content_height=None):
     alphas = {pixel[3] for pixel in sprite.get_flattened_data()}
     if not alphas <= {0, 255}:
         fail(f"{path}: soft alpha values {sorted(alphas - {0, 255})[:8]}")
-    if any(pixel[:3] == (255, 0, 255) and pixel[3] for pixel in sprite.get_flattened_data()):
-        fail(f"{path}: opaque chroma magenta survived cutout")
+    if any(
+        pixel[3]
+        and pixel[0] > 120
+        and pixel[2] > 120
+        and pixel[1] < 110
+        and abs(pixel[0] - pixel[2]) < 85
+        and min(pixel[0], pixel[2]) - pixel[1] > 55
+        for pixel in sprite.get_flattened_data()
+    ):
+        fail(f"{path}: opaque chroma-magenta range survived cutout")
 
 
 def check_tile(path):
@@ -47,6 +55,17 @@ def check_tile(path):
     opaque_colours = {pixel[:3] for pixel in tile.get_flattened_data() if pixel[3]}
     if len(opaque_colours) > 32:
         fail(f"{path}: expected <=32 colours, got {len(opaque_colours)}")
+
+
+def check_backdrop(path):
+    backdrop = image(path)
+    if backdrop.size != (540, 960):
+        fail(f"{path}: expected 540x960, got {backdrop.size}")
+    if any(pixel[3] != 255 for pixel in backdrop.get_flattened_data()):
+        fail(f"{path}: expected a fully opaque backdrop")
+    colours = {pixel[:3] for pixel in backdrop.get_flattened_data()}
+    if len(colours) > 64:
+        fail(f"{path}: expected <=64 colours, got {len(colours)}")
 
 
 def check_audio(path, expected_duration):
@@ -84,10 +103,37 @@ def main():
         check_sprite(f"asset/weapon/icons/{name}.png", (32, 32))
         check_sprite(f"asset/weapon/projectiles/{name}.png")
 
-    check_sprite("asset/character/Warrior/Idle/rotations/south.png", (92, 92), 46)
-    check_sprite("asset/character/Archer/Idle/rotations/south.png", (92, 92), 46)
+    directions = ("south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west")
+    for character in ("Warrior", "Archer"):
+        for direction in directions:
+            check_sprite(f"asset/character/{character}/Idle/rotations/{direction}.png", (92, 92), 46)
+        metadata = json.loads((ROOT / f"asset/character/{character}/metadata.json").read_text(encoding="utf-8"))
+        expected_rotations = {
+            direction: f"Idle/rotations/{direction}.png"
+            for direction in directions
+        }
+        if metadata.get("frames", {}).get("rotations") != expected_rotations:
+            fail(f"asset/character/{character}/metadata.json: incomplete rotation map")
+    monster_heights = {
+        "forest_goblin": 44,
+        "forest_spirit": 46,
+        "bamboo_brute": 58,
+        "bamboo_spirit_lord": 76,
+    }
+    for monster_id, height in monster_heights.items():
+        for direction in directions:
+            check_sprite(f"asset/monster/{monster_id}/rotations/{direction}.png", (92, 92), height)
     check_tile("asset/stage/bamboo_forest_ground.png")
     check_tile("asset/stage/abandoned_temple_ground.png")
+    for name in ("main_menu", "bamboo_forest", "abandoned_temple"):
+        check_backdrop(f"asset/stage/backdrops/{name}.png")
+    prop_names = (
+        "wooden_crate", "small_box", "broken_crate", "storage_chest",
+        "bamboo_cluster", "fallen_log", "mossy_rock", "stone_lantern",
+        "temple_urn", "offering_table", "prayer_post", "brazier",
+    )
+    for name in prop_names:
+        check_sprite(f"asset/prop/{name}.png", (64, 64), 48)
 
     audio = {
         "asset/audio/ambience/bamboo_forest_loop.wav": 12.0,
@@ -136,12 +182,34 @@ def main():
             f"changed={conditioned_changed}, accepted={conditioned_accepted}"
         )
 
+    current_motion_metrics = (
+        "asset/character/Taoist/raw/walk_conditioned_metrics.json",
+        "asset/character/Taoist/raw/attack_conditioned_metrics.json",
+        "asset/character/Warrior/raw/walk_motion_metrics.json",
+        "asset/character/Warrior/raw/attack_motion_metrics.json",
+        "asset/character/Archer/raw/walk_motion_metrics.json",
+        "asset/character/Archer/raw/attack_motion_metrics.json",
+    )
+    accepted_current = 0
+    measured_current = 0
+    for metrics_path in current_motion_metrics:
+        sheet_metrics = json.loads((ROOT / metrics_path).read_text(encoding="utf-8"))
+        summary = sheet_metrics["summary"]
+        accepted_current += summary["accepted_frames"]
+        measured_current += summary["frames"]
+        if summary["sheet_accepted"]:
+            fail(f"{metrics_path}: unstable generated sheet unexpectedly marked accepted")
+    if accepted_current != 0 or measured_current != 96:
+        fail(f"current sheet metrics changed unexpectedly: accepted={accepted_current}, measured={measured_current}")
+
     if ERRORS:
         raise SystemExit("\n".join(ERRORS))
     print("M1 assets verified: 20 UI icons + 4 chrome assets, 14 weapon assets, 2 characters, 2 seamless tiles, 6 audio files")
     print(f"Motion-generation rejection evidence: {changed}/1702 pixels changed between same-pose frames")
     print(f"Single-sheet retry rejected: idle pair {retry_idle}/1702 versus separate baseline {baseline}/1702")
     print(f"Direct-conditioned retry rejected: south walk frames {conditioned_changed[0]}/1702 and {conditioned_changed[1]}/1702")
+    print("Directional additions verified: 14 class rotations + 32 monster rotations, 3 backdrops, 12 props")
+    print(f"Six multi-reference motion sheets rejected: {accepted_current}/{measured_current} frames passed the regional stability gate")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 """Convert a generated image into a sprite that matches a reference sprite's style.
 
-Usage: python sprite_pixelize.py <in.png> <out.png> <content_height> <palette_dir> [canvas_size]
+Usage: python sprite_pixelize.py <in.png> <out.png> <content_height> <palette_dir>
+       [canvas_size|WIDTHxHEIGHT] [--opaque-background]
 
 Style match is three separate things, and the earlier cut script only did the first:
 
@@ -18,7 +19,7 @@ output cell and keeps generator noise.
 import pathlib
 import sys
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 CHROMA_TOLERANCE = 60    # generator backgrounds are flat but not bit-exact
 ALPHA_CUTOFF = 128       # pixel art has hard edges, never soft ones
@@ -49,9 +50,17 @@ def key_out(image, background):
     for y in range(height):
         for x in range(width):
             r, g, b, _ = pixels[x, y]
-            if (abs(r - background[0]) <= CHROMA_TOLERANCE
+            near_sampled_background = (
+                    abs(r - background[0]) <= CHROMA_TOLERANCE
                     and abs(g - background[1]) <= CHROMA_TOLERANCE
-                    and abs(b - background[2]) <= CHROMA_TOLERANCE):
+                    and abs(b - background[2]) <= CHROMA_TOLERANCE)
+            # Some sheet generations add low-amplitude noise to the requested
+            # magenta. Remove the entire magenta family rather than preserving
+            # darker islands that become a visible rectangle after scaling.
+            magenta_chroma = (
+                    r > 120 and b > 120 and g < 110
+                    and abs(r - b) < 85 and min(r, b) - g > 55)
+            if near_sampled_background or magenta_chroma:
                 pixels[x, y] = (r, g, b, 0)
     return image
 
@@ -149,19 +158,42 @@ def main():
     source_path, out_path = sys.argv[1], sys.argv[2]
     content_height = int(sys.argv[3])
     palette_dir = sys.argv[4]
-    canvas_size = int(sys.argv[5]) if len(sys.argv) > 5 else None
+    canvas_size = None
+    output_size = None
+    opaque_background = False
+    for option in sys.argv[5:]:
+        if option == "--opaque-background":
+            opaque_background = True
+        elif "x" in option.lower():
+            width_text, height_text = option.lower().split("x", 1)
+            output_size = (int(width_text), int(height_text))
+        else:
+            canvas_size = int(option)
+    if canvas_size is not None and output_size is not None:
+        raise SystemExit("choose either a square canvas_size or WIDTHxHEIGHT, not both")
 
     image = Image.open(source_path).convert("RGBA")
-    image = key_out(image, corner_colour(image))
+    if not opaque_background:
+        image = key_out(image, corner_colour(image))
 
     bbox = image.getbbox()
     if bbox is None:
         raise SystemExit("%s: keying removed everything; check the background colour" % source_path)
     image = image.crop(bbox)
 
-    width, height = image.size
-    target_width = max(1, round(width * content_height / height))
-    image = image.resize((target_width, content_height), Image.BOX)
+    if output_size is not None:
+        image = ImageOps.fit(
+            image,
+            output_size,
+            method=Image.Resampling.BOX,
+            centering=(0.5, 0.5),
+        )
+        target_width, target_height = output_size
+    else:
+        width, height = image.size
+        target_width = max(1, round(width * content_height / height))
+        target_height = content_height
+        image = image.resize((target_width, target_height), Image.BOX)
 
     palette = reference_palette(palette_dir) + subject_colours(image, SUBJECT_COLOURS)
     image = quantise(image, palette)
@@ -172,7 +204,7 @@ def main():
     used = {pixel[:3] for pixel in flattened(image) if pixel[3] > 0}
     image.save(out_path)
     print("%s -> %s  %dx%d  colours=%d (palette of %d)" % (
-        source_path, out_path, target_width, content_height, len(used), len(palette)))
+        source_path, out_path, target_width, target_height, len(used), len(palette)))
 
 
 if __name__ == "__main__":
