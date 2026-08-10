@@ -90,7 +90,12 @@ func passive(id: String) -> Dictionary
 func evolution_for(weapon_id: String, passive_id: String) -> String   # "" when none
 func all_characters() -> Array[Dictionary]
 func all_achievements() -> Array[Dictionary]
+func all_weapons() -> Array[Dictionary]      # added: the level-up pool needs enumeration
+func all_passives() -> Array[Dictionary]     # added: same reason
 ```
+
+List accessors inject the JSON key as an `id` field on each returned entry, since the
+files are keyed objects and UI code iterates without the key.
 
 Returns are **duplicated dictionaries**; callers must not mutate shared data.
 A missing id logs an error and returns `{}` — callers guard with `is_empty()`.
@@ -112,7 +117,25 @@ func begin(character_id: String, stage_id: String) -> void
 func reset() -> void
 func add_xp(amount: int) -> void            # emits xp_gained, level_reached
 func stat_total(key: String) -> float       # aggregated passive value, e.g. "attack_speed"
+func xp_to_next(from_level: int) -> int     # 5 * 1.25^(from_level-1), rounded
+func weapon_level(weapon_id: String) -> int
+func passive_stacks(passive_id: String) -> int
+func grant_weapon(weapon_id: String) -> void
+func grant_passive(passive_id: String) -> void
+func apply_choice(choice_id: String) -> void
 ```
+
+**Who applies a level-up pick:** RunState connects to `EventBus.upgrade_chosen` and
+applies the pick itself via `apply_choice`. The UI's only job is to emit
+`upgrade_chosen(choice_id)`. Do not also mutate weapons or passives from UI code, or
+every pick is applied twice.
+
+**XP curve:** `xp_to_next(level) = 5 * 1.25 ^ (level - 1)`, rounded. Geometric, not
+arithmetic. `data/BALANCE.md` was originally derived against a guessed arithmetic curve;
+the geometric one here is authoritative and the balance notes are re-derived against it.
+
+Concurrent weapon slots are capped at 4; the choice pool stops offering `weapon_new`
+once four weapons are held.
 
 ### 3.4 `SaveManager` (autoload) — persistence
 
