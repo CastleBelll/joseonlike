@@ -48,7 +48,17 @@ scripts/
 data/             JSON content, single source of balance truth (content-data)
 tests/            headless test scripts, mirrored per owner
 tools/            validators and CI helpers
+asset/            art, singular. Coordinator-owned; workers reference, never add
+  character/<Name>/<State>/rotations/<direction>.png   8-way sprite sets
+  monster/<id>.png                                     single front-facing sprite
+  monster/raw/<id>_raw.png                             pre-cutout generator output
 ```
+
+**Asset paths are `res://asset/...`, singular, not `assets/`.** The directory layout
+above is what actually exists on disk; data files and scenes must match it exactly.
+Sprites are chroma-keyed and downscaled with nearest-neighbour, and the project sets
+`default_texture_filter=0`, so never enable filtering on a sprite import — it turns the
+pixel grid to mush.
 
 ---
 
@@ -232,7 +242,7 @@ Valid `stat` keys (frozen — combat reads these): `attack_damage`, `attack_spee
     "hp": 20.0, "damage": 6.0, "speed": 55.0,
     "xp_drop": 3, "gold_drop": 1,
     "behaviour": "chase",
-    "sprite": "res://assets/monsters/forest_goblin.png"
+    "sprite": "res://asset/monster/forest_goblin.png"
   }
 }
 ```
