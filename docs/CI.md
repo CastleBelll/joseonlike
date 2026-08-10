@@ -35,7 +35,21 @@ On every push and pull request:
 **GDScript-error gate:** Godot can exit 0 in some headless paths even when a script
 has a parse/compile error. Every step's output is captured and grepped for
 `SCRIPT ERROR` / `Parse Error`; a match fails the job explicitly, regardless of the
-process exit code.
+process exit code. Verified locally: a broken script wired into
+`tests/run_tests.gd`'s discovery path (i.e. a `tests/test_*.gd` file) reliably
+fails the run with `SCRIPT ERROR`/`Parse Error` in the output.
+
+**Known limitation, verified on a real GitHub Actions run:** a `.gd` file that
+nothing references yet (no scene, no autoload, not preloaded, no test file
+loads it) is never compiled by Godot at all — during import, during a
+headless game boot, or in the shipped game itself — so a syntax error in a
+genuinely orphaned file will not fail CI. Confirmed by pushing a deliberately
+broken, unreferenced file under `scripts/services/` to a throwaway branch:
+the real run came back green
+(https://github.com/CastleBelll/joseonlike/actions/runs/31362918354). This
+isn't a gap specific to this workflow; it's how Godot's script loading works.
+Wire new scripts into a scene/autoload/test as soon as they're written to get
+gate coverage.
 
 ## Exporting per platform
 
