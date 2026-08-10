@@ -24,3 +24,6 @@ Thumbs.db
 *.jks
 export_credentials.cfg
 .env
+
+# Godot editor thumbnail cache
+.thumbs/

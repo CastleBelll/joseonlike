@@ -1,12 +1,11 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://bp5nxyynycr2w"]
 
-[ext_resource type="Script" path="res://scenes/boot/boot.gd" id="1_boot"]
+[ext_resource type="Script" uid="uid://dv1ed5sgkd04r" path="res://scenes/boot/boot.gd" id="1_boot"]
 
-[node name="Boot" type="Node"]
+[node name="Boot" type="Node" unique_id=112378555]
 script = ExtResource("1_boot")
 
-[node name="ErrorLabel" type="Label" parent="."]
-visible = false
+[node name="ErrorLabel" type="Label" parent="." unique_id=566172195]
 offset_left = 32.0
 offset_top = 400.0
 offset_right = 508.0
