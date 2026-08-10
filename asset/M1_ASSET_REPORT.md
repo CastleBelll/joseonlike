@@ -1,5 +1,51 @@
 # JOSEONLIKE M1 asset handoff
 
+## Per-direction direct-conditioning retry
+
+The third motion test used the existing south rotation itself as a direct image-to-image
+reference and asked Higgsfield to alter only the two feet into opposite walk contact poses.
+This is materially stronger conditioning than the earlier separate renders or packed sheet.
+Each single-result job preflighted at 2 credits; the workspace balance moved from 1062.55 to
+1058.55, confirming an actual spend of 4 credits for two submitted jobs. No further
+directions, attacks, Warrior frames, or Archer frames were generated after the gate failed.
+
+Jobs and recuttable evidence:
+
+- `3268bf63-ac4c-441b-ab90-37004bc67fc4`: south `walk_0`, left foot forward.
+- `444bff5e-57dd-41b1-9a18-9176a1814cd8`: south `walk_1`, right foot forward.
+- Raw 1024px outputs and 92x92 `pixelize.py` cuts:
+  `asset/character/Taoist/raw/conditioned_south/`.
+- Reproducible regional measurements:
+  `asset/character/Taoist/raw/conditioned_south/metrics.json`, produced by
+  `tools/asset/measure_conditioned_motion.py`.
+
+The comparison uses the exact RGBA `ImageChops.difference` method and the authority's
+37x46 canonical window, so its denominator remains 1,702 pixels and is directly comparable
+to the 449/1,702 (26.38%) separate-render baseline. `Lower share` is the proportion of all
+changed pixels falling in the last 15 rows, where the requested feet/leg edit belongs;
+hat/staff columns report alpha changes, so nonzero values prove silhouette movement.
+
+| Direction/frame | Changed pixels | Percent | Lower share | Upper changed | Hat alpha changed | Staff alpha changed | Decision |
+|---|---:|---:|---:|---:|---:|---:|---|
+| south `walk_0` | 1005/1702 | 59.05% | 34.43% | 659 | 22 | 72 | reject |
+| south `walk_1` | 987/1702 | 57.99% | 34.95% | 642 | 25 | 74 | reject |
+
+Decision: **direct per-direction conditioning also fails.** Both frames changed more than
+twice the 449-pixel baseline rather than preserving the authority. Roughly two thirds of
+each change escaped the lower body, and the supposedly fixed hat and staff silhouettes both
+moved. The model also expanded the authority's 52-colour cut to 72 and 77 colours. These
+would visibly flicker, so the cut frames remain evidence under `raw/` and there are
+deliberately no files in `asset/character/Taoist/Walk/rotations/` or
+`asset/character/Taoist/Attack/rotations/` for combat to load.
+
+Combat integration is therefore unchanged: consume **no new paths** from this attempt and
+keep `asset/character/Taoist/Idle/rotations/<direction>.png` as the directional authority.
+The current deterministic motion implementation should remain until an artist edits those
+exact 37x46 sprites at pixel level. A shippable replacement needs two hand-authored contact
+poses per direction whose changes are confined to the lowest leg pixels, plus cardinal
+attack VFX or hand-authored attack poses; diffusion output is not a safe source for those
+frames after three independently measured failures.
+
 ## Single-image motion-sheet retry
 
 The follow-up tested the strongest practical diffusion workaround: all motion frames packed
@@ -295,3 +341,34 @@ WARNING: Loaded resource as image file, this will not work on export: 'res://ass
        [2] _init (res://tools/validate_data.gd:49)
 (exit 0)
 ```
+
+### Direct-conditioned retry verification (real output)
+
+```text
+$ python tools/asset/verify_assets.py
+M1 assets verified: 20 UI icons + 4 chrome assets, 14 weapon assets, 2 characters, 2 seamless tiles, 6 audio files
+Motion-generation rejection evidence: 449/1702 pixels changed between same-pose frames
+Single-sheet retry rejected: idle pair 510/1702 versus separate baseline 449/1702
+Direct-conditioned retry rejected: south walk frames 1005/1702 and 987/1702
+(exit 0)
+
+$ godot --headless --path . --import
+(no stdout or stderr; exit 0)
+
+$ godot --headless --path . --quit
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+(exit 0)
+
+$ godot --headless --path . --script tools/validate_data.gd
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+PASS data validation: no errors
+WARNING: Loaded resource as image file, this will not work on export: 'res://asset/monster/forest_goblin.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+WARNING: Loaded resource as image file, this will not work on export: 'res://asset/monster/forest_spirit.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+WARNING: Loaded resource as image file, this will not work on export: 'res://asset/monster/bamboo_brute.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+WARNING: Loaded resource as image file, this will not work on export: 'res://asset/monster/bamboo_spirit_lord.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+(exit 0)
+```
+
+The validator warnings are the same pre-existing raw-Image loading warnings described
+above; no monster asset or collision dimension changed in this retry.

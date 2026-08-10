@@ -1,0 +1,129 @@
+{
+  "method": "exact RGBA ImageChops difference on the authority's canonical window",
+  "authority_bbox": [
+    27,
+    23,
+    64,
+    69
+  ],
+  "comparison_pixels": 1702,
+  "separate_render_baseline": {
+    "changed_pixels": 449,
+    "changed_percent": 26.38
+  },
+  "acceptance": {
+    "lower_body_share_min_percent": 70.0,
+    "hat_alpha_changed_max": 0,
+    "staff_alpha_changed_max": 0
+  },
+  "frames": {
+    "walk_0_cut": {
+      "changed_pixels": 1005,
+      "changed_percent": 59.05,
+      "alpha_changed_pixels": 163,
+      "opaque_colours": 72,
+      "lower_body_share_percent": 34.43,
+      "regions": {
+        "upper_body": {
+          "box": [
+            0,
+            0,
+            37,
+            31
+          ],
+          "pixels": 1147,
+          "changed_pixels": 659,
+          "alpha_changed_pixels": 70
+        },
+        "lower_body": {
+          "box": [
+            0,
+            31,
+            37,
+            46
+          ],
+          "pixels": 555,
+          "changed_pixels": 346,
+          "alpha_changed_pixels": 93
+        },
+        "hat": {
+          "box": [
+            0,
+            0,
+            37,
+            17
+          ],
+          "pixels": 629,
+          "changed_pixels": 316,
+          "alpha_changed_pixels": 22
+        },
+        "staff": {
+          "box": [
+            0,
+            0,
+            11,
+            46
+          ],
+          "pixels": 506,
+          "changed_pixels": 244,
+          "alpha_changed_pixels": 72
+        }
+      },
+      "accepted": false
+    },
+    "walk_1_cut": {
+      "changed_pixels": 987,
+      "changed_percent": 57.99,
+      "alpha_changed_pixels": 168,
+      "opaque_colours": 77,
+      "lower_body_share_percent": 34.95,
+      "regions": {
+        "upper_body": {
+          "box": [
+            0,
+            0,
+            37,
+            31
+          ],
+          "pixels": 1147,
+          "changed_pixels": 642,
+          "alpha_changed_pixels": 72
+        },
+        "lower_body": {
+          "box": [
+            0,
+            31,
+            37,
+            46
+          ],
+          "pixels": 555,
+          "changed_pixels": 345,
+          "alpha_changed_pixels": 96
+        },
+        "hat": {
+          "box": [
+            0,
+            0,
+            37,
+            17
+          ],
+          "pixels": 629,
+          "changed_pixels": 296,
+          "alpha_changed_pixels": 25
+        },
+        "staff": {
+          "box": [
+            0,
+            0,
+            11,
+            46
+          ],
+          "pixels": 506,
+          "changed_pixels": 250,
+          "alpha_changed_pixels": 74
+        }
+      },
+      "accepted": false
+    }
+  }
+}
