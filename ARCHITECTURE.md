@@ -205,11 +205,18 @@ never hardcode Korean strings in scripts.
     "pierce": 0, "area_scale": 1.0, "speed": 260.0,
     "max_level": 8,
     "per_level": { "damage": 3.0, "cooldown_sec": -0.05 },
-    "evolves_to": "fire_talisman"
+    "evolves_to": "fire_talisman",
+    "evolution_only": false
   }
 }
 ```
 `category` ∈ `melee | ranged | spiritual`. `grade` ∈ `common | rare | epic | legendary | mythic`.
+`evolution_only: true` marks a weapon that exists **only** as an evolution result. RunState
+must exclude those from the ordinary `weapon_new` pool — otherwise the payoff for meeting an
+evolution's weapon-level and passive-stack requirements is also handed out as a plain
+level-up pick, and evolution stops being a goal. `evolves_to` must name a weapon that some
+rule in `evolutions.json` actually produces; a pointer with no matching rule is a dead end
+and the validator rejects it.
 
 ### `data/passives.json`
 ```json
