@@ -1,5 +1,6 @@
 """Verify the authored M1 asset contract without importing Godot."""
 from pathlib import Path
+import json
 import math
 import struct
 import wave
@@ -105,10 +106,23 @@ def main():
     if changed < 100:
         fail(f"motion test unexpectedly consistent: only {changed} changed pixels")
 
+    retry_sheet = image("asset/character/Taoist/raw/taoist_motion_sheet_higgsfield.png")
+    if retry_sheet.size != (1200, 896):
+        fail(f"single-sheet retry: expected 1200x896 raw sheet, got {retry_sheet.size}")
+    retry_names = ("idle_0", "idle_1", "walk_0", "walk_1", "walk_2", "walk_3", "attack_0", "attack_1", "attack_2", "attack_3")
+    for name in retry_names:
+        check_sprite(f"asset/character/Taoist/raw/motion_cut/{name}.png", (92, 92), 46)
+    metrics = json.loads((ROOT / "asset/character/Taoist/raw/motion_metrics.json").read_text(encoding="utf-8"))
+    retry_idle = metrics["consecutive_transitions"]["idle_0->idle_1"]["changed_pixels"]
+    baseline = metrics["separate_render_baseline"]["changed_pixels"]
+    if retry_idle != 510 or baseline != 449:
+        fail(f"single-sheet metrics changed unexpectedly: idle={retry_idle}, baseline={baseline}")
+
     if ERRORS:
         raise SystemExit("\n".join(ERRORS))
     print("M1 assets verified: 20 UI icons + 4 chrome assets, 14 weapon assets, 2 characters, 2 seamless tiles, 6 audio files")
     print(f"Motion-generation rejection evidence: {changed}/1702 pixels changed between same-pose frames")
+    print(f"Single-sheet retry rejected: idle pair {retry_idle}/1702 versus separate baseline {baseline}/1702")
 
 
 if __name__ == "__main__":
