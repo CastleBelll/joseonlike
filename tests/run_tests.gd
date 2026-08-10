@@ -8,7 +8,9 @@ extends SceneTree
 const TESTS_ROOT := "res://tests"
 
 
-func _init() -> void:
+## Runs in _initialize(), not _init(): SceneTree attaches the autoloads to the
+## root between those two calls, and test files are allowed to use them.
+func _initialize() -> void:
 	var failures: Array[String] = []
 	var file_count: int = 0
 

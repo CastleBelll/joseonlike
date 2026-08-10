@@ -1,0 +1,16 @@
+{
+  "attack_speed": {
+    "name_ko": "공격 속도",
+    "name_en": "Attack Speed",
+    "stat": "attack_speed",
+    "per_stack": 0.08,
+    "max_stacks": 5
+  },
+  "skill_power": {
+    "name_ko": "술법 위력",
+    "name_en": "Skill Power",
+    "stat": "skill_power",
+    "per_stack": 0.1,
+    "max_stacks": 2
+  }
+}

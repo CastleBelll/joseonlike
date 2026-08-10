@@ -4,3 +4,13 @@
 
 [node name="Boot" type="Node"]
 script = ExtResource("1_boot")
+
+[node name="ErrorLabel" type="Label" parent="."]
+visible = false
+offset_left = 32.0
+offset_top = 400.0
+offset_right = 508.0
+offset_bottom = 560.0
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3

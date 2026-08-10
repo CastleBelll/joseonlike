@@ -1,0 +1,9 @@
+{
+  "phoenix_talisman": {
+    "requires_weapon": "fire_talisman",
+    "requires_passive": "skill_power",
+    "min_weapon_level": 2,
+    "min_passive_stacks": 2,
+    "result_weapon": "phoenix_talisman"
+  }
+}
