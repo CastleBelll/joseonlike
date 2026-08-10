@@ -6,6 +6,15 @@ guessed arithmetic XP curve and a "player dumps half their picks into the
 starting weapon" model. Both were wrong. This version reads `run_state.gd`
 directly and derives the curve from it.
 
+**Reconciled against a real combat playthrough (this pass, main at
+409646e).** combat played Bamboo Forest end to end against this worktree's
+data and reported ground truth: `{victory:true, time_sec:627.6, kills:213,
+gold:352}`, boss spawned at t=599.8s, boss killed in 27.6s at ~145 observed
+single-target DPS. Two defects follow directly from that measurement (boss
+TTK, a pressure-column arithmetic error) and are fixed below using the
+observed numbers as ground truth, not by re-deriving a new model from
+scratch — per instruction, measured beats modeled where they disagree.
+
 ## What changed from the first pass, and why it mattered
 
 `RunState.xp_to_next(L) = round(5 * 1.25^(L-1))` — **geometric**, not the
@@ -63,15 +72,23 @@ pick pool behaves.
   policy that doesn't require guessing player psychology. A real player who
   prioritizes weapon upgrades over passives would out-DPS this model; one who
   hoards passives would under-DPS it.
-- Crit multiplier and how `crit_chance` actually resolves in combat — not
-  landed (`scripts/combat/**` doesn't exist yet in this worktree's view).
-- Evolution trigger timing. `GameData.evolution_for()` is implemented and
-  correctly checks `weapon_level`/`passive_stacks` thresholds against
-  `evolutions.json`, but nothing in `run_state.gd` calls it — no code path
-  swaps a weapon on reaching threshold or emits `weapon_evolved`. Evolution
-  is a working *query*, not yet a wired *effect*. The DPS model below assumes
-  no evolution bonus is live yet; once combat wires it, endgame DPS should be
-  treated as a floor, not a ceiling.
+- Crit multiplier and how `crit_chance` actually resolves in combat — still
+  not independently verified by this worktree; folded into the observed
+  145 dps figure below rather than modeled separately.
+
+**Resolved this pass (was "guessed"/"not landed"):**
+- Evolution trigger timing. combat wired `weapon_evolved` and verified the
+  trigger fires correctly by forcing it — the mechanic works. What was
+  actually broken was reachability: `min_weapon_level: 5` +
+  `min_passive_stacks: 3` on one specific passive, drawn from a ~15-option
+  pool across only 14-16 level-ups in a full run, essentially never
+  completes under real play. See "Evolution reachability" below.
+- The old_talisman-only DPS model was wrong, and now we know by how much:
+  the real pick pool hands `twin_sword`/`divine_bow` out directly at their
+  own rare-grade stats (not a gradual level-up from a weak common weapon),
+  so a real 4-weapon loadout out-damages the old_talisman-only model by
+  ~2.5x (observed 145 dps vs. modeled 57.6 at the same point in a run). See
+  "Boss" below for how this is handled.
 
 ## Data change made in this pass
 
@@ -80,12 +97,28 @@ the front-loading described above — goblins dominate the spawn count in
 minutes 1-3, so their XP is what was pushing the curve two levels ahead of
 design intent. Spirit (5) and brute (8) xp_drop are untouched.
 
-`bamboo_brute.hp`: **60 → 85**, and `bamboo_spirit_lord.hp`: **7000 → 4000**.
-Both are pressure-side corrections, explained below — the real pick-pool DPS
-model runs meaningfully higher late-game than the original guess did (more
-weapons owned beats one deeply-leveled weapon), so trash and boss HP needed
-to come up/down respectively to keep the intended danger shape and boss
-fight length.
+`bamboo_brute.hp`: **60 → 85**, and `bamboo_spirit_lord.hp`: **7000 → 4000**
+(this pass: **4000 → 8000**, see "Boss" below). Both are pressure-side
+corrections — the real pick-pool DPS model runs meaningfully higher
+late-game than the original guess did (more weapons owned beats one
+deeply-leveled weapon), so trash and boss HP needed to come up to keep the
+intended danger shape and boss fight length.
+
+**This pass, additionally:**
+- `bamboo_spirit_lord.hp`: 4000 → 8000, retuned against the real observed
+  145 dps rather than the flawed 57.6 model (see "Boss").
+- Recomputed the entire pressure column in the DPS-vs-pressure table
+  directly from `stages.json` + `monsters.json` — two rows (minute 6, 7)
+  had a manual bucketing error (see "Enemy pressure" below).
+- `evolutions.json`: added a `fire_talisman` rule (`old_talisman` +
+  `skill_power`) so `old_talisman.evolves_to` stops being a dead pointer,
+  and lowered every rule's thresholds from `min_weapon_level: 5,
+  min_passive_stacks: 3` to `min_weapon_level: 3, min_passive_stacks: 2`
+  (see "Evolution reachability").
+- `weapons.json`: added the required `evolution_only` field to all 7
+  weapons — `true` on `fire_talisman`, `phoenix_talisman`, `twin_sword`,
+  `divine_bow` (the four evolution results), `false` on the three base
+  weapons.
 
 ## XP curve → implied player level by minute (re-derived)
 
@@ -136,65 +169,136 @@ The weapon cap (4) is reached by minute 5-6. Average weapon level stays low
 depth almost the whole run, and `max_level: 8` is never realistically
 reached by minute 10. This is the opposite of the original guess.
 
-## Expected DPS vs. enemy pressure by minute (re-derived)
+## Enemy pressure vs. DPS by minute (pressure column corrected)
 
-DPS model: `owned_weapons × (old_talisman_damage(avg_level) /
-old_talisman_cooldown(avg_level)) × (1 + 0.06×avg_stacks) × (1 +
-0.08×avg_stacks)` — using `old_talisman`'s own per-level curve as a stand-in
-"average weapon" (the 7 weapons differ in specifics but are close enough in
-order of magnitude for this estimate), and applying the average
-passive-stack count to both `attack_damage` and `attack_speed` multipliers
-(a simplification — see guesses above). Pressure uses the unchanged wave
-table with `bamboo_brute.hp` at its new value of 85.
+**The pressure column below was wrong in the previous pass.** combat's
+playthrough reported real incoming HP of 660 at minute 6 and 585 at minute 7
+against this document's stated 340 and 905 — the opposite ordering. Root
+cause: manual bucketing error. The wave at `at_sec: 330` (16 `forest_goblin`)
+falls in the minute-6 bucket `[300, 360)`, not minute 7 — it was hand-
+assigned to the wrong minute when the table was first written. The fix is to
+recompute the whole column programmatically from `stages.json` +
+`monsters.json` rather than patch the two visibly-wrong rows, since a manual
+process that produced one bucketing error could have produced others that
+happen to look plausible:
 
-| Minute | DPS | Incoming HP | HP/s | Margin | Note |
+```python
+pressure = [0.0] * 10
+for wave in stages_json["bamboo_forest"]["waves"]:
+    minute_idx = min(wave["at_sec"] // 60, 9)
+    pressure[minute_idx] += monsters_json[wave["monster_id"]]["hp"] * wave["count"]
+```
+
+The DPS column is unchanged from the previous pass (`owned_weapons ×
+old_talisman_damage(avg_level)/old_talisman_cooldown(avg_level) × passive
+multipliers` — see "What's guessed vs. derived" above for why this
+under-counts real loadouts by ~2.5x once rare-grade weapons enter play,
+confirmed by the boss measurement below). **Read the DPS numbers in this
+table as a conservative floor, not a real measurement** — only the boss row
+has been calibrated against actual combat data; the rest of the column
+carries the same old_talisman-only bias, likely increasingly so from
+minute 5-6 onward as `weapon_new` starts handing out `twin_sword`/
+`divine_bow` and evolutions (now reachable, see below) start landing.
+
+| Minute | DPS (floor, uncalibrated) | Incoming HP | HP/s | Margin | Note |
 |---|---|---|---|---|---|
 | 1 | 18.5 | 280 | 4.67 | 3.97x | goblins only |
 | 2 | 22.7 | 200 | 3.33 | 6.80x | still comfortable |
 | 3 | 34.4 | 336 | 5.60 | 6.15x | forest_spirit introduced |
 | 4 | 41.9 | 128 | 2.13 | 19.65x | intentional lull |
 | 5 | 45.6 | 408 | 6.80 | 6.70x | density climbing |
-| 6 | 49.2 | 340 | 5.67 | 8.68x | bamboo_brute introduced (85 hp) — again a burst-damage/reaction threat, not a DPS one |
-| 7 | 52.3 | 905 | 15.08 | 3.47x | **first real danger minute** — sharpest margin drop so far |
-| 8 | 54.0 | 552 | 9.20 | 5.87x | margin recovers |
+| 6 | 49.2 | 660 | 11.00 | 4.47x | bamboo_brute introduced (85 hp) *and* the real step-up minute — sharpest margin drop in the run so far |
+| 7 | 52.3 | 585 | 9.75 | 5.36x | pressure eases off from minute 6, margin recovers |
+| 8 | 54.0 | 552 | 9.20 | 5.87x | still recovering |
 | 9 | 55.8 | 1080 | 18.00 | 3.10x | **second danger minute** |
 | 10 | 57.6 | 1554 | 25.90 | 2.22x | **tightest margin of the run**, by design, right before the boss |
 
-The overall margin curve sits higher than the original arithmetic-curve
-design (which targeted ~1.8-2.6x at the danger minutes) — this is the real,
-derived consequence of the pool math rewarding weapon breadth: 4 weapons at
-low level collectively out-DPS the single maxed weapon the original design
-assumed. Rather than fight that with further HP inflation (which starts to
-feel like padding trash HP to compensate for a mechanic this worktree
-doesn't own), the shape — comfortable early, tightening at 7/9/10, boss last
-— is preserved and considered acceptable; the exact numeric margin is less
-important than the shape once real combat resolution (crit, evolution) is
-live and can be re-measured.
-
 ## Boss
 
-`bamboo_spirit_lord.hp` dropped 7000 → 4000. At minute-10 baseline DPS (57.6,
-no crit/evolution bonus, since neither is wired yet) that's a 69s
-time-to-kill; once crit_chance and weapon evolution land in combat, expect
-DPS to rise and TTK to fall into roughly the 45-60s range this fight is
-designed for. `bamboo_spirit_lord.damage` (35/hit) against a Taoist with
-`base_hp: 100` plus whatever `max_hp` stacks were picked (likely 0-1 stacks
-given the passive dilution above) still means the fight has to be won by
-kiting, not tanking, per the GDD's movement-only combat model.
+**Retuned against real measurement, not the model.** combat's playthrough
+killed the boss in 27.6s at ~145 observed single-target DPS against
+`bamboo_spirit_lord.hp: 4000` — a fight designed for 45-70s came in at half
+the floor. Root cause, per the task: the DPS model above treats every
+weapon as an `old_talisman` clone, but the real `weapon_new` pool hands
+`twin_sword`/`divine_bow` (rare grade, higher base damage) out directly, and
+a real 4-weapon loadout collectively out-damages the model by ~2.5x (145 vs.
+57.6 modeled at the same run length). The model is fixed by *not*
+re-deriving a new theoretical number for the boss specifically — 145 is a
+real measurement and beats another guess.
 
-## Where the run should feel dangerous (unchanged intent, re-verified)
+`bamboo_spirit_lord.hp`: **4000 → 8000**. At the observed 145 dps that's a
+55.2s time-to-kill, centered in the 45-70s window this fight was designed
+for. (8000 / 145 ≈ 55.17s; the previous 4000 / 145 ≈ 27.6s matches the
+reported measurement exactly, confirming 145 dps as the right number to
+tune against rather than the model's 57.6.)
 
-1. **Minute 6** — `bamboo_brute`'s introduction. Margin is still generous
-   (8.68x); the danger is reactive (18 dmg / 70 spd charge), not a DPS
-   problem, same as originally designed.
-2. **Minute 7** — first minute all three trash types overlap. Margin drops
-   from 8.68x to 3.47x, the sharpest relative drop in the run.
+Two other levers were on the table and both are out of this worktree's
+reach: a damage-reduction/invulnerability phase (boss AI, `scripts/combat/
+boss.gd`) and restricting how early rare-grade weapons enter the
+`weapon_new` pool (choice-pool logic, `scripts/core/run_state.gd`). Both are
+engine behaviour, not data — reported here rather than attempted, per the
+ownership boundary; either would be a legitimate alternative to a flat HP
+increase if combat wants a more textured fight (e.g. a phase break instead
+of one long tank-and-spank), and the coordinator can route that if wanted.
+
+`bamboo_spirit_lord.damage` (35/hit) against a Taoist with `base_hp: 100`
+plus whatever `max_hp` stacks were picked still means the fight has to be
+won by kiting, not tanking, per the GDD's movement-only combat model — an
+8000 hp boss doesn't change that math, it only changes how long the kiting
+has to hold up.
+
+## Where the run should feel dangerous (revised — minute 6, not minute 7)
+
+1. **Minute 6** — the real step-up, confirmed by the corrected pressure
+   column: margin drops from minute 5's 6.70x to 4.47x, the sharpest single-
+   minute drop in the run. This lines up with `bamboo_brute`'s introduction
+   (18 dmg / 70 spd charger) *and* a 16-goblin wave landing in the same
+   60-second window — previously described as two separate, milder effects
+   split across minutes 6 and 7, but they're the same minute.
+2. **Minute 7** — pressure eases (585 vs. minute 6's 660), margin recovers
+   to 5.36x. Previously mis-described as the sharper of the two.
 3. **Minute 9-10** — sustained pressure into the boss, margin bottoming out
-   at 2.22x at minute 10, directly into a 4000 hp / 35 dmg boss.
+   at 2.22x at minute 10, directly into an 8000 hp / 35 dmg boss.
 
 Minutes 1-5 stay above ~4x margin (with an extreme 19.65x lull at minute 4)
 — consistent with the GDD's "learn the loop" framing for the first half of a
-10-15 minute session.
+10-15 minute session. Given the DPS column's uncalibrated-floor caveat above,
+every margin number in this table should be read as a lower bound — the run
+is probably somewhat safer than this table states, not more dangerous.
+
+## Evolution reachability
+
+**Previously unreachable.** combat verified the evolution *trigger* is
+correctly implemented (forcing it works, `weapon_evolved` fires), so the
+defect was entirely in the thresholds: `min_weapon_level: 5,
+min_passive_stacks: 3` on one named passive, drawn from a pool of up to
+~15 concurrent options (owned-weapon upgrades + unowned weapons while under
+the 4-slot cap + 8 passives) across only 14-16 total level-ups in a full
+run. Getting one specific weapon to level 5 *and* one specific passive to 3
+stacks needs roughly half of an entire run's picks funneled into a single
+combo — the "Weapon/passive growth" table above shows *average* weapon
+level never exceeds ~1.8-2.3 and *average* per-passive stacks never exceeds
+~1.1 by minute 10, so 5/3 was multiple run-lengths above what real play
+produces even when somewhat lucky.
+
+**Retuned:** every rule in `evolutions.json` now reads `min_weapon_level: 3,
+min_passive_stacks: 2` — roughly the level a focused-but-not-perfect player
+reaches on their starting weapon and one passive they lean into, not the
+run-average. Still not guaranteed every run (that's the point — it's a
+build-defining payoff, not a freebie), but no longer arithmetically
+foreclosed by the pick pool's own math.
+
+**`old_talisman.evolves_to: "fire_talisman"` had no matching rule** — the
+single most visible dead evolution pointer in the game, since it's on the
+default character's starting weapon. Fixed by adding the rule (`old_talisman`
++ `skill_power` → `fire_talisman`) rather than repointing, since GDD section
+7's stated chain is Old Talisman → Fire Talisman → ... and repointing would
+have broken that chain instead of completing it. This also makes
+`fire_talisman` the fourth `evolution_only` weapon alongside
+`phoenix_talisman`, `twin_sword`, `divine_bow` — all four M1 evolution
+results are now excluded from the ordinary `weapon_new` pool
+(ARCHITECTURE.md section 4), so reaching a rule's threshold buys something
+the pool can't hand over for free.
 
 ## Sprite scale and `collision_radius` (now a required, authoritative field)
 
