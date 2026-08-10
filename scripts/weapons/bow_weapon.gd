@@ -32,6 +32,7 @@ func _fire() -> bool:
 		arrow.radius_px = RADIUS_PX * area_scale()
 		arrow.tint = TINT
 		arrow.texture = vfx_texture()
+		arrow.impact_effect = EffectPool.weapon_effect(weapon_id)
 		arrow.direction = direction
 		arrow.global_position = archer.global_position
 		arrow.configure_for_player()

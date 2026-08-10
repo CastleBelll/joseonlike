@@ -122,6 +122,7 @@ func take_damage(amount: float, _is_crit: bool = false) -> void:
 		return
 	hp -= amount
 	CombatAudio.play_hit()
+	EffectPool.play(EffectPool.HIT, global_position)
 	_hit_flash_left = HIT_FLASH_SEC
 	if _sprite != null:
 		_sprite.modulate = HIT_FLASH_TINT

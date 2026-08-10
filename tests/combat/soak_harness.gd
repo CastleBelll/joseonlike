@@ -79,6 +79,7 @@ func _physics_process(delta: float) -> void:
 	_clock += delta
 	_kite()
 	_sample_boss()
+	_observe_effects()
 	_trace_motion()
 	_sample_presentation()
 	if _clock >= _next_sample:
@@ -157,6 +158,7 @@ func _sample() -> void:
 		_loadout(),
 		RunState.passives,
 	])
+	_report_effects()
 	_kills_at_sample = RunState.kills
 	_cleared_hp_at_sample = _cleared_hp
 	_damage_at_sample = _damage_taken
@@ -246,6 +248,7 @@ func _on_run_ended(result: Dictionary) -> void:
 		_levelups, _evolutions, _cleared_hp, _damage_taken, RunState.kills, RunState.level,
 	])
 	_report_pool_and_closest()
+	_report_effects()
 	_report_death_state(result)
 	_report_router.call_deferred()
 
@@ -436,3 +439,27 @@ func _report_death_state(result: Dictionary) -> void:
 		bool(result.get("victory", false)), eligible_rules,
 	])
 	print("SOAK death_state %s" % [states])
+
+
+## Which effect sets actually played, read off the live pool sprites rather than
+## from a counter inside production code.
+var _effects_seen: Dictionary = {}
+var _effect_peak: int = 0
+
+
+func _observe_effects() -> void:
+	var pool: Node = _stage.get_node_or_null(^"Effects")
+	if pool == null:
+		return
+	_effect_peak = maxi(_effect_peak, int(pool.call(&"active_count")))
+	for child in pool.get_children():
+		var sprite: Sprite2D = child as Sprite2D
+		if sprite == null or not sprite.visible or sprite.texture == null:
+			continue
+		_effects_seen[sprite.texture.resource_path.get_base_dir().get_file()] = true
+
+
+func _report_effects() -> void:
+	print("SOAK effects seen=%s peak_concurrent=%d/%d" % [
+		_effects_seen.keys(), _effect_peak, EffectPool.MAX_CONCURRENT_EFFECTS,
+	])
