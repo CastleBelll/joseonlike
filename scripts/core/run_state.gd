@@ -46,6 +46,7 @@ const FIELD_MAX_STACKS := "max_stacks"
 const FIELD_PER_STACK := "per_stack"
 const FIELD_STAT := "stat"
 const FIELD_STARTING_WEAPON := "starting_weapon"
+const FIELD_EVOLUTION_ONLY := "evolution_only"
 
 var character_id: String = ""
 var stage_id: String = ""
@@ -275,6 +276,13 @@ func _new_weapon_choices() -> Array[Dictionary]:
 	for data: Dictionary in _content().all_weapons():
 		var weapon_id: String = String(data.get(CHOICE_ID, ""))
 		if weapon_id.is_empty() or weapon_level(weapon_id) > 0:
+			continue
+
+		# An evolution result must be earned through its rule, never handed out as
+		# a plain pick, or meeting the rule's level and stack requirements buys
+		# nothing. Absent flag means false so a not-yet-authored entry still
+		# appears rather than the pool silently emptying.
+		if bool(data.get(FIELD_EVOLUTION_ONLY, false)):
 			continue
 
 		var name_ko: String = String(data.get(FIELD_NAME_KO, weapon_id))
