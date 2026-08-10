@@ -23,6 +23,9 @@ var direction: Vector2 = Vector2.RIGHT
 var lifetime_sec: float = DEFAULT_LIFETIME_SEC
 var radius_px: float = DEFAULT_RADIUS_PX
 var tint: Color = Color.WHITE
+## Authored VFX from asset/weapon/projectiles. Left null by enemy shots,
+## which have no weapon id and fall back to the tinted placeholder.
+var texture: Texture2D = null
 var target_group: StringName = &"enemy"
 
 ## Radians per second the heading may bend toward the nearest target. 0 = straight.
@@ -134,8 +137,11 @@ func _ensure_sprite() -> void:
 		return
 	var sprite := Sprite2D.new()
 	sprite.name = "Sprite2D"
-	sprite.texture = PlaceholderArt.placeholder(tint)
-	sprite.scale = Vector2.ONE * PLACEHOLDER_SCALE
+	if texture != null:
+		sprite.texture = texture
+	else:
+		sprite.texture = PlaceholderArt.placeholder(tint)
+		sprite.scale = Vector2.ONE * PLACEHOLDER_SCALE
 	add_child(sprite)
 
 

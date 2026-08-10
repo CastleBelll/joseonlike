@@ -30,6 +30,8 @@ var _has_ended: bool = false
 @onready var _actors: Node2D = $Actors
 @onready var _pickups: Node2D = $Pickups
 @onready var _projectiles: Node2D = $Projectiles
+@onready var _ground: StageGround = $Ground
+@onready var _audio: CombatAudio = $CombatAudio
 @onready var _spawner: Spawner = $Spawner
 @onready var _boss: BossController = $BossController
 
@@ -41,6 +43,8 @@ func _ready() -> void:
 	_projectiles.add_to_group(PROJECTILE_ROOT_GROUP)
 
 	_stage_data = _load_stage()
+	_ground.setup(stage_id)
+	_audio.start_ambience()
 	_spawn_player()
 	_spawner.configure(_stage_data)
 	_boss.configure(_stage_data, _spawner)
@@ -146,6 +150,7 @@ func _end_run(victory: bool) -> void:
 	_is_choice_open = false
 	get_tree().paused = false
 	_spawner.release_all()
+	_audio.stop_ambience()
 	var result: Dictionary = {
 		KEY_VICTORY: victory,
 		KEY_TIME_SEC: elapsed_sec,

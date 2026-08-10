@@ -75,6 +75,7 @@ func _physics_process(delta: float) -> void:
 	_clock += delta
 	_kite()
 	_sample_boss()
+	_sample_presentation()
 	if _clock >= _next_sample:
 		_sample()
 		_next_sample += SAMPLE_SEC
@@ -311,3 +312,43 @@ func _report_pool_and_closest() -> void:
 	])
 	for rule_key: Variant in _closest.keys():
 		print("SOAK closest %s: gap=%d %s" % [rule_key, int(_closest[rule_key]["gap"]), _closest[rule_key]["text"]])
+
+
+var _presentation_reported: bool = false
+
+## One-shot audit that the art actually reached the tree: ground texture and
+## region, the players authored rotation and its whole-pixel offset, and the
+## textures on live projectile and melee VFX.
+func _sample_presentation() -> void:
+	if _presentation_reported or _clock < 3.0:
+		return
+	_presentation_reported = true
+	var ground: Sprite2D = _stage.get_node_or_null(^"Ground") as Sprite2D
+	if ground != null:
+		print("SOAK ground texture=%s size=%s repeat=%d region=%s z=%d" % [
+			ground.texture.resource_path if ground.texture != null else "<null>",
+			ground.texture.get_size() if ground.texture != null else Vector2.ZERO,
+			ground.texture_repeat, ground.region_rect.size, ground.z_index,
+		])
+	var player: Node2D = get_tree().get_first_node_in_group(&"player") as Node2D
+	if player != null:
+		var sprite: Sprite2D = player.get_node_or_null(^"Sprite2D") as Sprite2D
+		if sprite != null:
+			print("SOAK player texture=%s offset=%s integer=%s scale=%s rot=%.1f" % [
+				sprite.texture.resource_path if sprite.texture != null else "<null>",
+				sprite.position,
+				sprite.position == sprite.position.round(),
+				sprite.scale, sprite.rotation,
+			])
+	var projectiles: Node = _stage.get_node_or_null(^"Projectiles")
+	if projectiles == null:
+		return
+	for child in projectiles.get_children():
+		var vfx: Node = child.get_node_or_null(^"Sprite2D")
+		if vfx == null:
+			vfx = child.get_node_or_null(^"Visual")
+		var texture: Texture2D = vfx.get(&"texture") if vfx != null else null
+		print("SOAK vfx %s node=%s texture=%s" % [
+			child.get_class(), vfx.name if vfx != null else "<none>",
+			texture.resource_path if texture != null else "<placeholder>",
+		])
