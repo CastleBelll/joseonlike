@@ -1,6 +1,6 @@
 """Convert a generated image into a sprite that matches a reference sprite's style.
 
-Usage: python sprite_pixelize.py <in.png> <out.png> <content_height> <palette_dir>
+Usage: python sprite_pixelize.py <in.png> <out.png> <content_height> <palette_dir> [canvas_size]
 
 Style match is three separate things, and the earlier cut script only did the first:
 
@@ -129,10 +129,27 @@ def quantise(image, palette):
     return image
 
 
+def fit_to_canvas(image, canvas_size):
+    """Fit and centre a sprite on an exact transparent square icon canvas."""
+    if image.width > canvas_size or image.height > canvas_size:
+        scale = min(canvas_size / image.width, canvas_size / image.height)
+        image = image.resize(
+            (max(1, round(image.width * scale)), max(1, round(image.height * scale))),
+            Image.Resampling.NEAREST,
+        )
+    canvas = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
+    canvas.alpha_composite(
+        image,
+        ((canvas_size - image.width) // 2, (canvas_size - image.height) // 2),
+    )
+    return canvas
+
+
 def main():
     source_path, out_path = sys.argv[1], sys.argv[2]
     content_height = int(sys.argv[3])
     palette_dir = sys.argv[4]
+    canvas_size = int(sys.argv[5]) if len(sys.argv) > 5 else None
 
     image = Image.open(source_path).convert("RGBA")
     image = key_out(image, corner_colour(image))
@@ -148,6 +165,9 @@ def main():
 
     palette = reference_palette(palette_dir) + subject_colours(image, SUBJECT_COLOURS)
     image = quantise(image, palette)
+
+    if canvas_size is not None:
+        image = fit_to_canvas(image, canvas_size)
 
     used = {pixel[:3] for pixel in flattened(image) if pixel[3] > 0}
     image.save(out_path)
