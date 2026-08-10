@@ -1,0 +1,384 @@
+{
+  "method": "exact RGBA ImageChops difference on full 92x92 canvases",
+  "motion": "walk",
+  "canvas_pixels": 8464,
+  "directions": {
+    "south": {
+      "idle_bbox": [
+        27,
+        23,
+        64,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/south_0.png",
+          "changed_pixels": 863,
+          "changed_percent_canvas": 10.2,
+          "alpha_changed_pixels": 97,
+          "lower_changed_pixels": 284,
+          "lower_alpha_changed_pixels": 38,
+          "lower_share_percent": 32.91,
+          "upper_changed_pixels": 579,
+          "upper_alpha_changed_pixels": 59,
+          "head_changed_pixels": 287,
+          "head_alpha_changed_pixels": 30,
+          "head_share_percent": 33.26,
+          "opaque_colours": 68,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/south_1.png",
+          "changed_pixels": 1167,
+          "changed_percent_canvas": 13.79,
+          "alpha_changed_pixels": 387,
+          "lower_changed_pixels": 368,
+          "lower_alpha_changed_pixels": 130,
+          "lower_share_percent": 31.53,
+          "upper_changed_pixels": 799,
+          "upper_alpha_changed_pixels": 257,
+          "head_changed_pixels": 440,
+          "head_alpha_changed_pixels": 160,
+          "head_share_percent": 37.7,
+          "opaque_colours": 69,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 1183,
+        "alpha_changed_pixels": 392
+      }
+    },
+    "south-east": {
+      "idle_bbox": [
+        30,
+        23,
+        63,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/south-east_0.png",
+          "changed_pixels": 634,
+          "changed_percent_canvas": 7.49,
+          "alpha_changed_pixels": 50,
+          "lower_changed_pixels": 189,
+          "lower_alpha_changed_pixels": 16,
+          "lower_share_percent": 29.81,
+          "upper_changed_pixels": 445,
+          "upper_alpha_changed_pixels": 34,
+          "head_changed_pixels": 232,
+          "head_alpha_changed_pixels": 20,
+          "head_share_percent": 36.59,
+          "opaque_colours": 66,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/south-east_1.png",
+          "changed_pixels": 808,
+          "changed_percent_canvas": 9.55,
+          "alpha_changed_pixels": 136,
+          "lower_changed_pixels": 232,
+          "lower_alpha_changed_pixels": 50,
+          "lower_share_percent": 28.71,
+          "upper_changed_pixels": 576,
+          "upper_alpha_changed_pixels": 86,
+          "head_changed_pixels": 322,
+          "head_alpha_changed_pixels": 54,
+          "head_share_percent": 39.85,
+          "opaque_colours": 67,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 803,
+        "alpha_changed_pixels": 126
+      }
+    },
+    "east": {
+      "idle_bbox": [
+        27,
+        23,
+        61,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/east_0.png",
+          "changed_pixels": 651,
+          "changed_percent_canvas": 7.69,
+          "alpha_changed_pixels": 208,
+          "lower_changed_pixels": 176,
+          "lower_alpha_changed_pixels": 66,
+          "lower_share_percent": 27.04,
+          "upper_changed_pixels": 475,
+          "upper_alpha_changed_pixels": 142,
+          "head_changed_pixels": 276,
+          "head_alpha_changed_pixels": 72,
+          "head_share_percent": 42.4,
+          "opaque_colours": 65,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/east_1.png",
+          "changed_pixels": 667,
+          "changed_percent_canvas": 7.88,
+          "alpha_changed_pixels": 202,
+          "lower_changed_pixels": 178,
+          "lower_alpha_changed_pixels": 66,
+          "lower_share_percent": 26.69,
+          "upper_changed_pixels": 489,
+          "upper_alpha_changed_pixels": 136,
+          "head_changed_pixels": 289,
+          "head_alpha_changed_pixels": 68,
+          "head_share_percent": 43.33,
+          "opaque_colours": 67,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 776,
+        "alpha_changed_pixels": 312
+      }
+    },
+    "north-east": {
+      "idle_bbox": [
+        28,
+        23,
+        64,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/north-east_0.png",
+          "changed_pixels": 417,
+          "changed_percent_canvas": 4.93,
+          "alpha_changed_pixels": 5,
+          "lower_changed_pixels": 145,
+          "lower_alpha_changed_pixels": 5,
+          "lower_share_percent": 34.77,
+          "upper_changed_pixels": 272,
+          "upper_alpha_changed_pixels": 0,
+          "head_changed_pixels": 127,
+          "head_alpha_changed_pixels": 0,
+          "head_share_percent": 30.46,
+          "opaque_colours": 61,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/north-east_1.png",
+          "changed_pixels": 868,
+          "changed_percent_canvas": 10.26,
+          "alpha_changed_pixels": 360,
+          "lower_changed_pixels": 271,
+          "lower_alpha_changed_pixels": 126,
+          "lower_share_percent": 31.22,
+          "upper_changed_pixels": 597,
+          "upper_alpha_changed_pixels": 234,
+          "head_changed_pixels": 306,
+          "head_alpha_changed_pixels": 85,
+          "head_share_percent": 35.25,
+          "opaque_colours": 64,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 891,
+        "alpha_changed_pixels": 357
+      }
+    },
+    "north": {
+      "idle_bbox": [
+        28,
+        23,
+        66,
+        68
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/north_0.png",
+          "changed_pixels": 1112,
+          "changed_percent_canvas": 13.14,
+          "alpha_changed_pixels": 373,
+          "lower_changed_pixels": 368,
+          "lower_alpha_changed_pixels": 112,
+          "lower_share_percent": 33.09,
+          "upper_changed_pixels": 744,
+          "upper_alpha_changed_pixels": 261,
+          "head_changed_pixels": 424,
+          "head_alpha_changed_pixels": 173,
+          "head_share_percent": 38.13,
+          "opaque_colours": 73,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/north_1.png",
+          "changed_pixels": 972,
+          "changed_percent_canvas": 11.48,
+          "alpha_changed_pixels": 471,
+          "lower_changed_pixels": 345,
+          "lower_alpha_changed_pixels": 193,
+          "lower_share_percent": 35.49,
+          "upper_changed_pixels": 627,
+          "upper_alpha_changed_pixels": 278,
+          "head_changed_pixels": 344,
+          "head_alpha_changed_pixels": 132,
+          "head_share_percent": 35.39,
+          "opaque_colours": 65,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 987,
+        "alpha_changed_pixels": 400
+      }
+    },
+    "north-west": {
+      "idle_bbox": [
+        31,
+        23,
+        64,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/north-west_0.png",
+          "changed_pixels": 965,
+          "changed_percent_canvas": 11.4,
+          "alpha_changed_pixels": 293,
+          "lower_changed_pixels": 306,
+          "lower_alpha_changed_pixels": 96,
+          "lower_share_percent": 31.71,
+          "upper_changed_pixels": 659,
+          "upper_alpha_changed_pixels": 197,
+          "head_changed_pixels": 349,
+          "head_alpha_changed_pixels": 107,
+          "head_share_percent": 36.17,
+          "opaque_colours": 75,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/north-west_1.png",
+          "changed_pixels": 931,
+          "changed_percent_canvas": 11.0,
+          "alpha_changed_pixels": 353,
+          "lower_changed_pixels": 304,
+          "lower_alpha_changed_pixels": 123,
+          "lower_share_percent": 32.65,
+          "upper_changed_pixels": 627,
+          "upper_alpha_changed_pixels": 230,
+          "head_changed_pixels": 332,
+          "head_alpha_changed_pixels": 125,
+          "head_share_percent": 35.66,
+          "opaque_colours": 64,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 1133,
+        "alpha_changed_pixels": 348
+      }
+    },
+    "west": {
+      "idle_bbox": [
+        30,
+        23,
+        64,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/west_0.png",
+          "changed_pixels": 650,
+          "changed_percent_canvas": 7.68,
+          "alpha_changed_pixels": 237,
+          "lower_changed_pixels": 185,
+          "lower_alpha_changed_pixels": 71,
+          "lower_share_percent": 28.46,
+          "upper_changed_pixels": 465,
+          "upper_alpha_changed_pixels": 166,
+          "head_changed_pixels": 260,
+          "head_alpha_changed_pixels": 88,
+          "head_share_percent": 40.0,
+          "opaque_colours": 74,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/west_1.png",
+          "changed_pixels": 845,
+          "changed_percent_canvas": 9.98,
+          "alpha_changed_pixels": 311,
+          "lower_changed_pixels": 240,
+          "lower_alpha_changed_pixels": 96,
+          "lower_share_percent": 28.4,
+          "upper_changed_pixels": 605,
+          "upper_alpha_changed_pixels": 215,
+          "head_changed_pixels": 328,
+          "head_alpha_changed_pixels": 86,
+          "head_share_percent": 38.82,
+          "opaque_colours": 67,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 1028,
+        "alpha_changed_pixels": 460
+      }
+    },
+    "south-west": {
+      "idle_bbox": [
+        26,
+        23,
+        63,
+        69
+      ],
+      "frames": {
+        "0": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/south-west_0.png",
+          "changed_pixels": 993,
+          "changed_percent_canvas": 11.73,
+          "alpha_changed_pixels": 363,
+          "lower_changed_pixels": 289,
+          "lower_alpha_changed_pixels": 92,
+          "lower_share_percent": 29.1,
+          "upper_changed_pixels": 704,
+          "upper_alpha_changed_pixels": 271,
+          "head_changed_pixels": 386,
+          "head_alpha_changed_pixels": 166,
+          "head_share_percent": 38.87,
+          "opaque_colours": 70,
+          "accepted": false
+        },
+        "1": {
+          "path": "asset/character/Taoist/raw/walk_conditioned_cut/south-west_1.png",
+          "changed_pixels": 1076,
+          "changed_percent_canvas": 12.71,
+          "alpha_changed_pixels": 453,
+          "lower_changed_pixels": 306,
+          "lower_alpha_changed_pixels": 126,
+          "lower_share_percent": 28.44,
+          "upper_changed_pixels": 770,
+          "upper_alpha_changed_pixels": 327,
+          "head_changed_pixels": 414,
+          "head_alpha_changed_pixels": 155,
+          "head_share_percent": 38.48,
+          "opaque_colours": 68,
+          "accepted": false
+        }
+      },
+      "frame_pair": {
+        "changed_pixels": 917,
+        "alpha_changed_pixels": 262
+      }
+    }
+  },
+  "summary": {
+    "frames": 16,
+    "accepted_frames": 0,
+    "sheet_accepted": false,
+    "changed_pixels_mean": 851.19,
+    "changed_pixels_min": 417,
+    "changed_pixels_max": 1167,
+    "lower_share_percent_mean": 30.63
+  }
+}
