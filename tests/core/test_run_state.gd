@@ -31,6 +31,7 @@ func run() -> Array[String]:
 	failures.append_array(_test_evolution_only_weapons_are_not_offered())
 	failures.append_array(_test_chained_evolution_is_reachable())
 	failures.append_array(_test_gating_passive_is_favoured())
+	failures.append_array(_test_gating_weapon_upgrade_is_favoured())
 	failures.append_array(_test_weighting_never_guarantees_or_breaks_caps())
 	failures.append_array(_test_stat_total_aggregates_stacks())
 	return failures
@@ -452,6 +453,65 @@ func _test_gating_passive_is_favoured() -> Array[String]:
 		])
 
 	_drop(idle)
+	_drop(run)
+	return failures
+
+
+## An evolution rule is a conjunction, and the first sweep favoured only its
+## passive half: every gating passive ended met or overshot while every gating
+## weapon ended short at 0-2 of the required 3. The weapon half has to be
+## favoured too, or the pool keeps delivering half a requirement.
+func _test_gating_weapon_upgrade_is_favoured() -> Array[String]:
+	var failures: Array[String] = []
+	var run := _new_run()
+
+	# Fixture rule: old_talisman at level 2 plus skill_power. Holding it at level
+	# 1 makes its upgrade the gating half; short_bow gates nothing and is the
+	# control. Both are upgradable, so both sit in the pool.
+	run.grant_weapon("old_talisman")
+	run.grant_weapon("short_bow")
+
+	var gating_hits: int = 0
+	var control_hits: int = 0
+	for _draw: int in range(DISTRIBUTION_DRAWS):
+		for choice: Dictionary in run._build_choices():
+			if String(choice.get("kind", "")) != RUN_STATE_SCRIPT.KIND_WEAPON_UPGRADE:
+				continue
+			match String(choice.get("id", "")):
+				"old_talisman":
+					gating_hits += 1
+				"short_bow":
+					control_hits += 1
+
+	if control_hits == 0:
+		failures.append("the control weapon upgrade was never offered; the fixture pool cannot show a difference")
+	elif float(gating_hits) < float(control_hits) * MIN_FAVOUR_RATIO:
+		failures.append("the gating weapon upgrade was offered %d times against the control's %d, short of the %.1fx margin" % [
+			gating_hits, control_hits, MIN_FAVOUR_RATIO,
+		])
+
+	# Level it to the rule's threshold: that half is satisfied, so it must stop
+	# competing for draws and fall back level with the control.
+	run.grant_weapon("old_talisman")
+	var satisfied_gating: int = 0
+	var satisfied_control: int = 0
+	for _draw: int in range(DISTRIBUTION_DRAWS):
+		for choice: Dictionary in run._build_choices():
+			if String(choice.get("kind", "")) != RUN_STATE_SCRIPT.KIND_WEAPON_UPGRADE:
+				continue
+			match String(choice.get("id", "")):
+				"old_talisman":
+					satisfied_gating += 1
+				"short_bow":
+					satisfied_control += 1
+
+	if satisfied_control == 0:
+		failures.append("the control weapon upgrade vanished once the gating weapon was levelled")
+	elif float(satisfied_gating) > float(satisfied_control) * MIN_FAVOUR_RATIO:
+		failures.append("a weapon already at the rule's level kept its bonus, offered %d against the control's %d" % [
+			satisfied_gating, satisfied_control,
+		])
+
 	_drop(run)
 	return failures
 

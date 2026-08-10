@@ -51,22 +51,37 @@ const FIELD_EVOLUTION_ONLY := "evolution_only"
 ## Evolution rule fields (data/evolutions.json, ARCHITECTURE.md section 4).
 const RULE_REQUIRES_WEAPON := "requires_weapon"
 const RULE_REQUIRES_PASSIVE := "requires_passive"
+const RULE_MIN_WEAPON_LEVEL := "min_weapon_level"
 const RULE_MIN_PASSIVE_STACKS := "min_passive_stacks"
 const RULE_RESULT_WEAPON := "result_weapon"
 
-## Relative draw weight of a passive that is the missing piece of an evolution
-## the run can still reach, against BASE_CHOICE_WEIGHT for everything else.
+## An evolution rule is a conjunction: a weapon at a level AND a passive at a
+## stack count. Both halves are weighted, because favouring one alone makes the
+## pool reliably deliver half a requirement and never complete it.
 ##
-## Why 4. A mid-run pool is about 15 options holding exactly one gating passive,
-## so a uniform draw of three offers it 3/15 = 20% of the time -- which is what
-## the ten-seed sweep measured. Weight 4 lifts that to roughly 55% per level-up
-## (1 - 14/18 * 13/17 * 12/16), a 2.8x improvement. It deliberately stops well
-## short of certainty: 45% of level-ups still do not show it, so builds keep
-## diverging and evolution stays a choice rather than a script. Since
-## min_passive_stacks sits at the schema floor of 1, one accepted offer opens the
-## gate, so the odds across several level-ups compound high without any single
-## draw being guaranteed.
-const GATING_PASSIVE_WEIGHT := 4.0
+## The halves are not symmetric in cost. Weapons enter at level 1 and rules ask
+## for level 3, so the weapon half needs two accepted picks; min_passive_stacks
+## sits at the schema floor of 1, so the passive half needs one. The first sweep
+## weighted the two-pick half at 1 and the one-pick half at 4, which is why runs
+## ended with every gating passive met or overshot and every gating weapon short
+## at 0-2 of 3.
+##
+## The arithmetic behind these numbers, for a mid-run pool of about 11 options
+## where a level-up shows three of them and a random pick takes one in three.
+## At base weight a weapon upgrade is offered 3/11 = 27% of level-ups, so across
+## fifteen level-ups it is accepted 15 * 0.27 / 3 = 1.4 times against the two it
+## needs -- which is exactly the observed "sword at 2/3, bow at 2/3". At weight 4
+## it is offered about 64%, giving 3.2 expected picks against 2 needed. The
+## passive half drops from 4 to 2 because it was overshooting: at weight 2 it is
+## still offered about 37% of level-ups, or 1.9 expected picks against the single
+## pick it needs.
+##
+## Weighting the weapon half up also protects the weak builds rather than
+## starving them, since a gating weapon upgrade is damage in its own right. A run
+## with no reachable rule has no weighted candidates at all and draws uniformly,
+## exactly as it did before any of this.
+const GATING_WEAPON_WEIGHT := 4.0
+const GATING_PASSIVE_WEIGHT := 2.0
 const BASE_CHOICE_WEIGHT := 1.0
 
 var character_id: String = ""
@@ -310,17 +325,19 @@ func _build_choices() -> Array[Dictionary]:
 	return _weighted_sample(pool, CHOICES_PER_LEVEL)
 
 
-## Draws up to `count` distinct options, favouring passives that still gate a
-## reachable evolution. Sampling is without replacement, so an option can never
-## be offered twice in one level-up, and weighting only reorders the odds of
-## candidates the pool already contains -- an exhausted passive was filtered out
-## upstream in _passive_choices() and no weight can bring it back.
+## Draws up to `count` distinct options, favouring both halves of a reachable
+## evolution's requirement. Sampling is without replacement, so an option can
+## never be offered twice in one level-up, and weighting only reorders the odds
+## of candidates the pool already contains -- an exhausted passive or a
+## max-level weapon was filtered out upstream in _passive_choices() and
+## _weapon_upgrade_choices(), and no weight can bring either back.
 func _weighted_sample(pool: Array[Dictionary], count: int) -> Array[Dictionary]:
-	var gating: Dictionary = _gating_passive_ids()
+	var gating_passives: Dictionary = _gating_passive_ids()
+	var gating_weapons: Dictionary = _gating_weapon_ids()
 	var remaining: Array[Dictionary] = pool.duplicate()
 	var weights: Array[float] = []
 	for choice: Dictionary in remaining:
-		weights.append(_choice_weight(choice, gating))
+		weights.append(_choice_weight(choice, gating_passives, gating_weapons))
 
 	var drawn: Array[Dictionary] = []
 	while drawn.size() < count and not remaining.is_empty():
@@ -345,11 +362,18 @@ func _weighted_sample(pool: Array[Dictionary], count: int) -> Array[Dictionary]:
 	return drawn
 
 
-func _choice_weight(choice: Dictionary, gating_passive_ids: Dictionary) -> float:
-	if String(choice.get(CHOICE_KIND, "")) != KIND_PASSIVE:
-		return BASE_CHOICE_WEIGHT
-	if gating_passive_ids.has(String(choice.get(CHOICE_ID, ""))):
-		return GATING_PASSIVE_WEIGHT
+func _choice_weight(choice: Dictionary, gating_passive_ids: Dictionary, gating_weapon_ids: Dictionary) -> float:
+	var choice_id: String = String(choice.get(CHOICE_ID, ""))
+	match String(choice.get(CHOICE_KIND, "")):
+		KIND_PASSIVE:
+			if gating_passive_ids.has(choice_id):
+				return GATING_PASSIVE_WEIGHT
+		KIND_WEAPON_UPGRADE:
+			# Only an upgrade counts. Acquiring the weapon is a separate step and
+			# weighting weapon_new here would push the run into spreading itself
+			# across weapons instead of deepening the one the rule names.
+			if gating_weapon_ids.has(choice_id):
+				return GATING_WEAPON_WEIGHT
 	return BASE_CHOICE_WEIGHT
 
 
@@ -358,8 +382,8 @@ func _choice_weight(choice: Dictionary, gating_passive_ids: Dictionary) -> float
 ## and is short of the rule's stack threshold. Read off the rules themselves, so
 ## content can add an evolution without touching this file.
 ##
-## Once the stacks are met the passive drops back to base weight -- at that point
-## the weapon level is the blocker and weapon upgrades already cover it.
+## Once the stacks are met the passive drops back to base weight, so the pool
+## stops spending draws on a half of the requirement that is already satisfied.
 func _gating_passive_ids() -> Dictionary:
 	var gating: Dictionary = {}
 	for rule: Dictionary in _content().all_evolutions():
@@ -378,6 +402,29 @@ func _gating_passive_ids() -> Dictionary:
 			continue
 
 		gating[passive_id] = true
+
+	return gating
+
+
+## Weapons the run holds below the level an otherwise reachable evolution asks
+## for -- the other half of the same requirement _gating_passive_ids() covers.
+## Once the level is met the weapon drops back to base weight, mirroring the
+## passive side, so a satisfied half stops competing for draws.
+func _gating_weapon_ids() -> Dictionary:
+	var gating: Dictionary = {}
+	for rule: Dictionary in _content().all_evolutions():
+		var source_id: String = String(rule.get(RULE_REQUIRES_WEAPON, ""))
+		if source_id.is_empty() or weapon_level(source_id) <= 0:
+			continue
+
+		var result_id: String = String(rule.get(RULE_RESULT_WEAPON, ""))
+		if not result_id.is_empty() and weapon_level(result_id) > 0:
+			continue
+
+		if weapon_level(source_id) >= int(rule.get(RULE_MIN_WEAPON_LEVEL, 0)):
+			continue
+
+		gating[source_id] = true
 
 	return gating
 
