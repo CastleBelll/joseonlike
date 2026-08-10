@@ -28,17 +28,17 @@ func _ready() -> void:
 	_configure_building(_shrine_button, "building_shrine")
 
 	_start_run_button.text = LocaleText.ui("start_run")
-	UiPalette.apply_button_style(_start_run_button, UiPalette.VERMILION_DARK, UiPalette.TEXT_ON_DARK)
+	UiPalette.apply_button_style(_start_run_button)
 	_start_run_button.pressed.connect(_on_start_run_pressed)
 
 	_panel_close.text = LocaleText.ui("close")
-	UiPalette.apply_button_style(_panel_close, UiPalette.PAPER_DARK, UiPalette.TEXT_ON_PAPER)
+	UiPalette.apply_button_style(_panel_close)
 	_panel_close.pressed.connect(_close_building_panel)
 	_panel_title.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 	_panel_title.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_TITLE)
 	_panel_body.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 	_panel_body.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
-	_building_panel.add_theme_stylebox_override("panel", UiPalette.panel_style(UiPalette.PAPER_DARK, UiPalette.VERMILION, 2, 12))
+	_building_panel.add_theme_stylebox_override("panel", UiPalette.nine_slice_panel())
 	_building_panel.visible = false
 
 	_workshop_button.grab_focus()
@@ -47,11 +47,12 @@ func _ready() -> void:
 func _configure_building(button: Button, label_key: String) -> void:
 	button.text = LocaleText.ui(label_key)
 	button.custom_minimum_size = Vector2(236.0, 128.0)
-	UiPalette.apply_button_style(button, UiPalette.PAPER_DARK, UiPalette.TEXT_ON_PAPER)
+	UiPalette.apply_button_style(button)
 	button.pressed.connect(_open_building_panel.bind(button, label_key))
 
 
 func _open_building_panel(source_button: Button, label_key: String) -> void:
+	UiSound.play_click(self)
 	_return_focus_target = source_button
 	_panel_title.text = LocaleText.ui(label_key)
 	_panel_body.text = LocaleText.ui("building_placeholder_body")
@@ -62,6 +63,7 @@ func _open_building_panel(source_button: Button, label_key: String) -> void:
 func _close_building_panel() -> void:
 	if not _building_panel.visible:
 		return
+	UiSound.play_click(self)
 	_building_panel.visible = false
 	if is_instance_valid(_return_focus_target):
 		_return_focus_target.grab_focus()
@@ -69,6 +71,7 @@ func _close_building_panel() -> void:
 
 
 func _on_start_run_pressed() -> void:
+	UiSound.play_click(self)
 	SceneRouter.goto_character_select()
 
 

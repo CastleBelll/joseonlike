@@ -68,7 +68,17 @@ layout_mode = 2
 horizontal_alignment = 1
 text = "Kills 0"
 
-[node name="GoldLabel" type="Label" parent="ContentRoot/StatsBox"]
+[node name="GoldRow" type="HBoxContainer" parent="ContentRoot/StatsBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 8
+
+[node name="GoldIcon" type="TextureRect" parent="ContentRoot/StatsBox/GoldRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 24)
+stretch_mode = 5
+
+[node name="GoldLabel" type="Label" parent="ContentRoot/StatsBox/GoldRow"]
 layout_mode = 2
 horizontal_alignment = 1
 text = "Gold Earned 0"
