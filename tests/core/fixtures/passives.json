@@ -12,5 +12,47 @@
     "stat": "skill_power",
     "per_stack": 0.1,
     "max_stacks": 2
+  },
+  "attack_damage": {
+    "name_ko": "공격력",
+    "name_en": "Attack Damage",
+    "stat": "attack_damage",
+    "per_stack": 0.1,
+    "max_stacks": 5
+  },
+  "move_speed": {
+    "name_ko": "이동 속도",
+    "name_en": "Move Speed",
+    "stat": "move_speed",
+    "per_stack": 0.06,
+    "max_stacks": 5
+  },
+  "crit_chance": {
+    "name_ko": "치명타 확률",
+    "name_en": "Crit Chance",
+    "stat": "crit_chance",
+    "per_stack": 0.05,
+    "max_stacks": 5
+  },
+  "max_hp": {
+    "name_ko": "최대 체력",
+    "name_en": "Max HP",
+    "stat": "max_hp",
+    "per_stack": 0.12,
+    "max_stacks": 5
+  },
+  "xp_gain": {
+    "name_ko": "경험치 획득",
+    "name_en": "XP Gain",
+    "stat": "xp_gain",
+    "per_stack": 0.07,
+    "max_stacks": 5
+  },
+  "luck": {
+    "name_ko": "행운",
+    "name_en": "Luck",
+    "stat": "luck",
+    "per_stack": 0.04,
+    "max_stacks": 5
   }
 }

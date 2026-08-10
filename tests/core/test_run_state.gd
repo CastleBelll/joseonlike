@@ -30,6 +30,9 @@ func run() -> Array[String]:
 	failures.append_array(_test_weapon_slot_cap_holds())
 	failures.append_array(_test_evolution_only_weapons_are_not_offered())
 	failures.append_array(_test_chained_evolution_is_reachable())
+	failures.append_array(_test_gating_passive_is_favoured())
+	failures.append_array(_test_gating_weapon_upgrade_is_favoured())
+	failures.append_array(_test_weighting_never_guarantees_or_breaks_caps())
 	failures.append_array(_test_stat_total_aggregates_stacks())
 	return failures
 
@@ -388,6 +391,183 @@ func _test_chained_evolution_is_reachable() -> Array[String]:
 		failures.append("EventBus.weapon_evolved never reached RunState; fire_talisman sits at %d" % wired.weapon_level("fire_talisman"))
 
 	_drop(wired)
+	return failures
+
+
+## Draws needed before a frequency comparison means anything. At weight 4 the
+## gap is wide, so this is far more than enough to separate the two rates well
+## outside sampling noise.
+const DISTRIBUTION_DRAWS := 2000
+
+## The gating passive must beat a non-gating one by a clear margin, not by a
+## hair that random drift could produce on its own.
+const MIN_FAVOUR_RATIO := 1.5
+
+
+## The ten-seed sweep showed winning tracks reaching the phoenix chain, and the
+## chain stalls on one specific passive never being offered. Weighting must make
+## that passive measurably likelier -- measured over many draws, because
+## _build_choices slices to three and any single level-up proves nothing.
+func _test_gating_passive_is_favoured() -> Array[String]:
+	var failures: Array[String] = []
+	var run := _new_run()
+
+	# Fixture rule: old_talisman + skill_power -> fire_talisman. Holding the
+	# weapon with no stacks yet makes skill_power the gating passive; every other
+	# passive is a control.
+	run.grant_weapon("old_talisman")
+
+	var gating_hits: int = 0
+	var control_hits: int = 0
+	for _draw: int in range(DISTRIBUTION_DRAWS):
+		for choice: Dictionary in run._build_choices():
+			match String(choice.get("id", "")):
+				"skill_power":
+					gating_hits += 1
+				"attack_speed":
+					control_hits += 1
+
+	if control_hits == 0:
+		failures.append("the control passive was never offered; the fixture pool cannot show a difference")
+	elif float(gating_hits) < float(control_hits) * MIN_FAVOUR_RATIO:
+		failures.append("the gating passive was offered %d times against the control's %d, short of the %.1fx margin" % [
+			gating_hits, control_hits, MIN_FAVOUR_RATIO,
+		])
+
+	# A passive gating nothing this run must not inherit the bonus.
+	var idle := _new_run()
+	var idle_gating: int = 0
+	var idle_control: int = 0
+	for _draw: int in range(DISTRIBUTION_DRAWS):
+		for choice: Dictionary in idle._build_choices():
+			match String(choice.get("id", "")):
+				"skill_power":
+					idle_gating += 1
+				"attack_speed":
+					idle_control += 1
+
+	# No weapon held, so no rule is reachable and the two rates should be level.
+	if float(idle_gating) > float(idle_control) * MIN_FAVOUR_RATIO:
+		failures.append("skill_power was favoured %d to %d with no weapon held, so the bonus is not gated on a reachable rule" % [
+			idle_gating, idle_control,
+		])
+
+	_drop(idle)
+	_drop(run)
+	return failures
+
+
+## An evolution rule is a conjunction, and the first sweep favoured only its
+## passive half: every gating passive ended met or overshot while every gating
+## weapon ended short at 0-2 of the required 3. The weapon half has to be
+## favoured too, or the pool keeps delivering half a requirement.
+func _test_gating_weapon_upgrade_is_favoured() -> Array[String]:
+	var failures: Array[String] = []
+	var run := _new_run()
+
+	# Fixture rule: old_talisman at level 2 plus skill_power. Holding it at level
+	# 1 makes its upgrade the gating half; short_bow gates nothing and is the
+	# control. Both are upgradable, so both sit in the pool.
+	run.grant_weapon("old_talisman")
+	run.grant_weapon("short_bow")
+
+	var gating_hits: int = 0
+	var control_hits: int = 0
+	for _draw: int in range(DISTRIBUTION_DRAWS):
+		for choice: Dictionary in run._build_choices():
+			if String(choice.get("kind", "")) != RUN_STATE_SCRIPT.KIND_WEAPON_UPGRADE:
+				continue
+			match String(choice.get("id", "")):
+				"old_talisman":
+					gating_hits += 1
+				"short_bow":
+					control_hits += 1
+
+	if control_hits == 0:
+		failures.append("the control weapon upgrade was never offered; the fixture pool cannot show a difference")
+	elif float(gating_hits) < float(control_hits) * MIN_FAVOUR_RATIO:
+		failures.append("the gating weapon upgrade was offered %d times against the control's %d, short of the %.1fx margin" % [
+			gating_hits, control_hits, MIN_FAVOUR_RATIO,
+		])
+
+	# Level it to the rule's threshold: that half is satisfied, so it must stop
+	# competing for draws and fall back level with the control.
+	run.grant_weapon("old_talisman")
+	var satisfied_gating: int = 0
+	var satisfied_control: int = 0
+	for _draw: int in range(DISTRIBUTION_DRAWS):
+		for choice: Dictionary in run._build_choices():
+			if String(choice.get("kind", "")) != RUN_STATE_SCRIPT.KIND_WEAPON_UPGRADE:
+				continue
+			match String(choice.get("id", "")):
+				"old_talisman":
+					satisfied_gating += 1
+				"short_bow":
+					satisfied_control += 1
+
+	if satisfied_control == 0:
+		failures.append("the control weapon upgrade vanished once the gating weapon was levelled")
+	elif float(satisfied_gating) > float(satisfied_control) * MIN_FAVOUR_RATIO:
+		failures.append("a weapon already at the rule's level kept its bonus, offered %d against the control's %d" % [
+			satisfied_gating, satisfied_control,
+		])
+
+	_drop(run)
+	return failures
+
+
+## Weighting must tilt the odds without ever becoming a guarantee, and must not
+## resurrect a passive the exhaustion rules already removed.
+func _test_weighting_never_guarantees_or_breaks_caps() -> Array[String]:
+	var failures: Array[String] = []
+	var run := _new_run()
+	run.grant_weapon("old_talisman")
+
+	var offers: int = 0
+	var duplicate_seen: bool = false
+	for _draw: int in range(DISTRIBUTION_DRAWS):
+		var choices: Array[Dictionary] = run._build_choices()
+		if choices.size() > RUN_STATE_SCRIPT.CHOICES_PER_LEVEL:
+			failures.append("a draw returned %d choices, over the %d cap" % [
+				choices.size(), RUN_STATE_SCRIPT.CHOICES_PER_LEVEL,
+			])
+			break
+
+		var seen: Dictionary = {}
+		for choice: Dictionary in choices:
+			var choice_id: String = String(choice.get("id", ""))
+			if seen.has(choice_id):
+				duplicate_seen = true
+			seen[choice_id] = true
+			if choice_id == "skill_power":
+				offers += 1
+
+	if duplicate_seen:
+		failures.append("weighted sampling offered the same option twice in one level-up")
+	if offers == 0:
+		failures.append("the gating passive was never offered across %d draws" % DISTRIBUTION_DRAWS)
+	if offers >= DISTRIBUTION_DRAWS:
+		failures.append("the gating passive was offered in every one of %d draws; weighting became a guarantee" % DISTRIBUTION_DRAWS)
+
+	# Stack it to the cap: exhaustion outranks weighting, so it must vanish.
+	var max_stacks: int = int(run.content.passive("skill_power").get("max_stacks", 0))
+	_mute_expected_errors(true)
+	while run.passive_stacks("skill_power") < max_stacks:
+		run.grant_passive("skill_power")
+	_mute_expected_errors(false)
+
+	if run.passive_stacks("skill_power") != max_stacks:
+		failures.append("could not stack the gating passive to its cap of %d" % max_stacks)
+
+	for _draw: int in range(DISTRIBUTION_DRAWS):
+		for choice: Dictionary in run._build_choices():
+			if String(choice.get("id", "")) == "skill_power":
+				failures.append("a fully stacked passive was offered again because it gates an evolution")
+				break
+		if not failures.is_empty() and failures[failures.size() - 1].begins_with("a fully stacked"):
+			break
+
+	_drop(run)
 	return failures
 
 

@@ -3,10 +3,13 @@ extends Node
 ##
 ## Frozen contract: ARCHITECTURE.md section 3.5.
 ##
-## The camp, character-select, results, and stage scenes are built by the
+## The title, camp, character-select, results, and stage scenes are built by the
 ## meta-ui and combat worktrees. Until they land, routing to them reports the
 ## missing path and leaves the current scene running rather than crashing.
 
+## Boot's destination and the first screen of the GDD flow. Its Start button
+## routes onward through goto_camp().
+const TITLE_SCENE := "res://scenes/ui/title.tscn"
 const CAMP_SCENE := "res://scenes/basecamp/camp.tscn"
 const CHARACTER_SELECT_SCENE := "res://scenes/ui/character_select.tscn"
 const STAGE_SCENE := "res://scenes/combat/stage.tscn"
@@ -15,6 +18,10 @@ const RESULTS_SCENE := "res://scenes/ui/results.tscn"
 ## Payload for the results screen. change_scene_to_file() cannot pass arguments,
 ## so the results controller reads it from here on _ready.
 var last_result: Dictionary = {}
+
+
+func goto_title() -> void:
+	_goto(TITLE_SCENE)
 
 
 func goto_camp() -> void:

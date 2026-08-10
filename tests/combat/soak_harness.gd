@@ -41,8 +41,12 @@ var _closest: Dictionary = {}
 
 
 func _ready() -> void:
-	_rng.seed = _seed_from_args()
-	print("SOAK seed=%d" % _rng.seed)
+	var run_seed: int = _seed_from_args()
+	_rng.seed = run_seed
+	# Crit rolls and spawn placement too, or the run is not reproducible and
+	# a boss-only change can appear to move a death five minutes earlier.
+	CombatRng.begin_deterministic(run_seed)
+	print("SOAK seed=%d" % run_seed)
 	if GameData.load_all() != OK:
 		print("SOAK: data load failed")
 		get_tree().quit(1)
@@ -75,6 +79,8 @@ func _physics_process(delta: float) -> void:
 	_clock += delta
 	_kite()
 	_sample_boss()
+	_observe_effects()
+	_trace_motion()
 	_sample_presentation()
 	if _clock >= _next_sample:
 		_sample()
@@ -152,6 +158,7 @@ func _sample() -> void:
 		_loadout(),
 		RunState.passives,
 	])
+	_report_effects()
 	_kills_at_sample = RunState.kills
 	_cleared_hp_at_sample = _cleared_hp
 	_damage_at_sample = _damage_taken
@@ -241,6 +248,8 @@ func _on_run_ended(result: Dictionary) -> void:
 		_levelups, _evolutions, _cleared_hp, _damage_taken, RunState.kills, RunState.level,
 	])
 	_report_pool_and_closest()
+	_report_effects()
+	_report_death_state(result)
 	_report_router.call_deferred()
 
 
@@ -352,3 +361,105 @@ func _sample_presentation() -> void:
 			child.get_class(), vfx.name if vfx != null else "<none>",
 			texture.resource_path if texture != null else "<placeholder>",
 		])
+
+
+## --- motion trace: is the walk cycle running, or just invisible? ------------
+
+const MOTION_TRACE_START_SEC: float = 2.0
+const MOTION_TRACE_END_SEC: float = 5.0
+
+var _motion_frames: int = 0
+var _motion_offsets_seen: Dictionary = {}
+var _motion_rotations_seen: Dictionary = {}
+var _motion_walking_frames: int = 0
+var _motion_trace_done: bool = false
+
+
+## Logs the real sprite offset and rotation every physics frame for a few
+## seconds of movement, so "the walk does not appear" can be answered with
+## whether the values change rather than by eyeballing a headless run.
+func _trace_motion() -> void:
+	if _motion_trace_done or not OS.get_cmdline_user_args().has("motion"):
+		return
+	if _clock < MOTION_TRACE_START_SEC:
+		return
+	if _clock > MOTION_TRACE_END_SEC:
+		_motion_trace_done = true
+		print("SOAK motion frames=%d walking_frames=%d distinct_offsets=%s rotations=%s" % [
+			_motion_frames, _motion_walking_frames,
+			_motion_offsets_seen.keys(), _motion_rotations_seen.keys(),
+		])
+		return
+	var player: Node2D = get_tree().get_first_node_in_group(&"player") as Node2D
+	if player == null:
+		return
+	var sprite: Sprite2D = player.get_node_or_null(^"Sprite2D") as Sprite2D
+	if sprite == null:
+		return
+	_motion_frames += 1
+	var moving: bool = player.velocity.length_squared() > 0.0
+	if moving:
+		_motion_walking_frames += 1
+	_motion_offsets_seen[str(sprite.position)] = true
+	var rotation_name: String = ""
+	if sprite.texture != null:
+		rotation_name = sprite.texture.resource_path.get_file()
+	_motion_rotations_seen[rotation_name] = true
+	if _motion_frames % 6 == 0:
+		print("SOAK motion t=%.2f moving=%s offset=%s rot=%s vel=%.0f" % [
+			_clock, moving, sprite.position, rotation_name, player.velocity.length(),
+		])
+
+
+## Where the run stood when it ended.
+##
+## The weighted passive pool can only help a run that has already taken a weapon
+## to its rule's min_weapon_level -- that is the condition the weighting keys on.
+## A run that dies before then never draws against an evolution at all, and is a
+## survivability problem rather than a pool problem. This reports which of the
+## two each run was.
+func _report_death_state(result: Dictionary) -> void:
+	var eligible_rules: Array[String] = []
+	var states: Array[String] = []
+	for rule_key: Variant in _rules.keys():
+		var rule: Dictionary = _rules[rule_key]
+		var weapon_id: String = String(rule.get("requires_weapon", ""))
+		var passive_id: String = String(rule.get("requires_passive", ""))
+		var need_level: int = int(rule.get("min_weapon_level", 1))
+		var need_stacks: int = int(rule.get("min_passive_stacks", 1))
+		var have_level: int = RunState.weapon_level(weapon_id)
+		var have_stacks: int = RunState.passive_stacks(passive_id)
+		if have_level >= need_level:
+			eligible_rules.append(String(rule_key))
+		states.append("%s(%s %d/%d, %s %d/%d)" % [
+			rule_key, weapon_id, have_level, need_level, passive_id, have_stacks, need_stacks,
+		])
+	print("SOAK death t=%.1f minute=%d level=%d levelups=%d victory=%s eligible=%s" % [
+		_clock, int(ceil(_clock / SAMPLE_SEC)), RunState.level, _levelups,
+		bool(result.get("victory", false)), eligible_rules,
+	])
+	print("SOAK death_state %s" % [states])
+
+
+## Which effect sets actually played, read off the live pool sprites rather than
+## from a counter inside production code.
+var _effects_seen: Dictionary = {}
+var _effect_peak: int = 0
+
+
+func _observe_effects() -> void:
+	var pool: Node = _stage.get_node_or_null(^"Effects")
+	if pool == null:
+		return
+	_effect_peak = maxi(_effect_peak, int(pool.call(&"active_count")))
+	for child in pool.get_children():
+		var sprite: Sprite2D = child as Sprite2D
+		if sprite == null or not sprite.visible or sprite.texture == null:
+			continue
+		_effects_seen[sprite.texture.resource_path.get_base_dir().get_file()] = true
+
+
+func _report_effects() -> void:
+	print("SOAK effects seen=%s peak_concurrent=%d/%d" % [
+		_effects_seen.keys(), _effect_peak, EffectPool.MAX_CONCURRENT_EFFECTS,
+	])

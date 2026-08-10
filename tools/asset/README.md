@@ -43,7 +43,8 @@ Framing: demand a margin of empty background on all four sides. Asking for the s
 Background: flat chroma for a clean cutout, and pick a colour the subject does not contain.
 A green creature on a green screen keys away to nothing — that cost one regeneration.
 Magenta `#FF00FF` is the safe default; state explicitly that no magenta may appear on the
-subject.
+subject. `pixelize.py` also removes darker/noisy members of the magenta family because
+multi-cell generations sometimes vary the requested flat key slightly between cells.
 
 ## Cutting
 
@@ -67,6 +68,11 @@ contains no green. Style consistency comes from resolution, outline weight and f
 shading — not from identical hues. Outline pixels are forced to pure black so the
 silhouette still reads at sprite size.
 
+If a backend ignores the chroma request and draws a grey transparency checkerboard, retain
+that failure in `raw/` and pass `--checker-background`. The option removes only bright neutral
+pixels connected to a cell edge, so enclosed white effect cores remain intact. Do not use it
+on ordinary chroma sheets.
+
 Keep the pre-cutout generator output under `asset/<kind>/raw/` so a sprite can be recut at
 another size without paying to regenerate it.
 
@@ -75,6 +81,16 @@ Generated contact sheets can be split into recuttable raw cells before pixelizin
 ```bash
 python tools/asset/slice_sheet.py sheet.png asset/ui/raw/cells 5 4 first second _ fourth
 ```
+
+Full-frame generated panels use the same palette/quantisation path without chroma removal:
+
+```bash
+python tools/asset/pixelize.py panel.png backdrop.png 960 \
+  asset/character/Taoist/Idle/rotations 540x960 --opaque-background
+```
+
+`WIDTHxHEIGHT` performs a centred cover crop before quantisation. Use it only for opaque
+panels such as backdrops; sprites still use a square canvas size and chroma-key cutout.
 
 If a generator adds a uniform grid line despite the prompt, pass `--inset=N` before the
 cell names to trim that many source pixels from every cell edge before chroma-keying.
@@ -89,6 +105,16 @@ M1 helper scripts are deterministic and safe to rerun:
 - `measure_motion_sheet.py` compares cut motion cells on the authority's canonical 37x46
   window and writes reproducible JSON using the same pixel-diff denominator as the original
   separate-render test.
+- `measure_conditioned_motion.py` applies that same 1,702-pixel comparison to direct
+  image-to-image edits and separates lower-body changes from stable upper-body, hat, and
+  staff regions. The retained south-direction trial failed because only about 35% of its
+  changes stayed in the lower body and both stable silhouettes moved.
+- `measure_directional_motion.py` compares every generated motion cell against its own
+  direction's 92x92 idle authority and records per-frame lower-body concentration, head
+  silhouette stability, pair differences, and a sheet-level acceptance summary.
+- `measure_effect_sheets.py` records opaque coverage, bright-core pixels, and consecutive
+  frame deltas for the ten four-frame effect sheets. Its final dissipation frame is exempt
+  from the bright-core gate but still must retain a readable silhouette and distinct motion.
 
 ## Import settings
 

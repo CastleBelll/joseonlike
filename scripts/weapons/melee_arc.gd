@@ -30,6 +30,9 @@ func _ready() -> void:
 	collision_mask = ENEMY_LAYER
 	_ensure_shape()
 	_ensure_visual()
+	# The arc is the swing, so the slash plays once here rather than per
+	# enemy hit -- one sweep should not stack four overlapping slashes.
+	EffectPool.play(EffectPool.SLASH, global_position + facing.normalized() * radius_px * 0.6, facing.angle())
 	body_entered.connect(_on_body_entered)
 
 
@@ -60,9 +63,14 @@ func _ensure_shape() -> void:
 	collider.name = "CollisionShape2D"
 	collider.shape = shape
 	collider.position = facing.normalized() * radius_px * 0.6
-	# Deferred: these areas are spawned from inside a physics callback, and the
-	# physics server rejects a new shape while it is flushing queries.
-	add_child.call_deferred(collider)
+	# Deferring only matters inside the tree, where the physics server rejects a
+	# new shape while it is flushing queries. Outside it, a deferred call has no
+	# frame to land on: the callable is dropped once this node is freed and the
+	# collider is left with no owner at all, which is a leak, not a shape.
+	if is_inside_tree():
+		add_child.call_deferred(collider)
+	else:
+		add_child(collider)
 
 
 func _ensure_visual() -> void:

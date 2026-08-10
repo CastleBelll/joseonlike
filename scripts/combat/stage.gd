@@ -32,6 +32,7 @@ var _has_ended: bool = false
 @onready var _projectiles: Node2D = $Projectiles
 @onready var _ground: StageGround = $Ground
 @onready var _audio: CombatAudio = $CombatAudio
+@onready var _effects: EffectPool = $Effects
 @onready var _spawner: Spawner = $Spawner
 @onready var _boss: BossController = $BossController
 
@@ -54,6 +55,7 @@ func _ready() -> void:
 	EventBus.boss_defeated.connect(_on_boss_defeated)
 	EventBus.level_reached.connect(_on_level_reached)
 	EventBus.upgrade_chosen.connect(_on_upgrade_chosen)
+	EventBus.weapon_evolved.connect(_on_weapon_evolved)
 
 
 func _process(delta: float) -> void:
@@ -124,6 +126,7 @@ func _on_xp_collected(amount: int) -> void:
 func _on_level_reached(_level: int, _choices: Array[Dictionary]) -> void:
 	if _has_ended:
 		return
+	_play_cue_on_player(EffectPool.LEVEL_UP)
 	_is_choice_open = true
 	get_tree().paused = true
 
@@ -133,6 +136,18 @@ func _on_upgrade_chosen(_choice_id: String) -> void:
 		return
 	_is_choice_open = false
 	get_tree().paused = false
+
+
+## Evolution and level-up are the two moments a player is most likely to miss,
+## and evolution now fires in most runs, so both get a cue on the hunter.
+func _on_weapon_evolved(_from_id: String, _to_id: String) -> void:
+	_play_cue_on_player(EffectPool.EVOLUTION)
+
+
+func _play_cue_on_player(effect_id: StringName) -> void:
+	var player: Node2D = get_tree().get_first_node_in_group(&"player") as Node2D
+	if player != null:
+		EffectPool.play_cue(effect_id, player.global_position)
 
 
 func _on_player_died() -> void:
