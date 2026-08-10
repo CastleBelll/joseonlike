@@ -127,9 +127,14 @@ func _ensure_shape() -> void:
 	var collider := CollisionShape2D.new()
 	collider.name = "CollisionShape2D"
 	collider.shape = shape
-	# Deferred: these areas are spawned from inside a physics callback, and the
-	# physics server rejects a new shape while it is flushing queries.
-	add_child.call_deferred(collider)
+	# Deferring only matters inside the tree, where the physics server rejects a
+	# new shape while it is flushing queries. Outside it, a deferred call has no
+	# frame to land on: the callable is dropped once this node is freed and the
+	# collider is left with no owner at all, which is a leak, not a shape.
+	if is_inside_tree():
+		add_child.call_deferred(collider)
+	else:
+		add_child(collider)
 
 
 func _ensure_sprite() -> void:
