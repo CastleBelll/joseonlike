@@ -21,6 +21,29 @@ grow_vertical=2
 color=Color(0.9294, 0.8784, 0.7686, 1)
 mouse_filter=2
 
+[node name="StoneLantern" type="TextureRect" parent="."]
+layout_mode=1
+anchor_left=0.0
+anchor_top=0.0
+offset_left=32.0
+offset_top=470.0
+offset_right=152.0
+offset_bottom=650.0
+mouse_filter=2
+stretch_mode=5
+
+[node name="JangseungPair" type="TextureRect" parent="."]
+layout_mode=1
+anchor_left=1.0
+anchor_top=0.0
+offset_left=-152.0
+offset_top=470.0
+offset_right=-32.0
+offset_bottom=650.0
+grow_horizontal=0
+mouse_filter=2
+stretch_mode=5
+
 [node name="CampTitle" type="Label" parent="."]
 layout_mode=1
 anchor_right=1.0
@@ -50,24 +73,112 @@ theme_override_constants/v_separation=20
 layout_mode=2
 custom_minimum_size=Vector2(236, 128)
 focus_mode=2
+text=""
+
+[node name="Box" type="VBoxContainer" parent="BuildingGrid/WorkshopButton"]
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+theme_override_constants/separation=4
+
+[node name="Icon" type="TextureRect" parent="BuildingGrid/WorkshopButton/Box"]
+layout_mode=2
+size_flags_vertical=3
+mouse_filter=2
+stretch_mode=5
+
+[node name="Label" type="Label" parent="BuildingGrid/WorkshopButton/Box"]
+layout_mode=2
+mouse_filter=2
+horizontal_alignment=1
 text="Workshop"
 
 [node name="ArchiveButton" type="Button" parent="BuildingGrid"]
 layout_mode=2
 custom_minimum_size=Vector2(236, 128)
 focus_mode=2
+text=""
+
+[node name="Box" type="VBoxContainer" parent="BuildingGrid/ArchiveButton"]
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+theme_override_constants/separation=4
+
+[node name="Icon" type="TextureRect" parent="BuildingGrid/ArchiveButton/Box"]
+layout_mode=2
+size_flags_vertical=3
+mouse_filter=2
+stretch_mode=5
+
+[node name="Label" type="Label" parent="BuildingGrid/ArchiveButton/Box"]
+layout_mode=2
+mouse_filter=2
+horizontal_alignment=1
 text="Archive"
 
 [node name="TrainingGroundButton" type="Button" parent="BuildingGrid"]
 layout_mode=2
 custom_minimum_size=Vector2(236, 128)
 focus_mode=2
+text=""
+
+[node name="Box" type="VBoxContainer" parent="BuildingGrid/TrainingGroundButton"]
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+theme_override_constants/separation=4
+
+[node name="Icon" type="TextureRect" parent="BuildingGrid/TrainingGroundButton/Box"]
+layout_mode=2
+size_flags_vertical=3
+mouse_filter=2
+stretch_mode=5
+
+[node name="Label" type="Label" parent="BuildingGrid/TrainingGroundButton/Box"]
+layout_mode=2
+mouse_filter=2
+horizontal_alignment=1
 text="Training Ground"
 
 [node name="ShrineButton" type="Button" parent="BuildingGrid"]
 layout_mode=2
 custom_minimum_size=Vector2(236, 128)
 focus_mode=2
+text=""
+
+[node name="Box" type="VBoxContainer" parent="BuildingGrid/ShrineButton"]
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+theme_override_constants/separation=4
+
+[node name="Icon" type="TextureRect" parent="BuildingGrid/ShrineButton/Box"]
+layout_mode=2
+size_flags_vertical=3
+mouse_filter=2
+stretch_mode=5
+
+[node name="Label" type="Label" parent="BuildingGrid/ShrineButton/Box"]
+layout_mode=2
+mouse_filter=2
+horizontal_alignment=1
 text="Shrine"
 
 [node name="StartRunButton" type="Button" parent="."]

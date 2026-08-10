@@ -3,7 +3,21 @@ extends Control
 ## implementations land after M1); "Start Run" is the entry point into a run
 ## via character select. Navigation, focus, and back-navigation are real.
 
+## asset/SECOND_ASSET_BATCH_REPORT.md structures handoff.
+const SPRITE_WORKSHOP := "res://asset/structure/workshop.png"
+const SPRITE_ARCHIVE := "res://asset/structure/archive.png"
+const SPRITE_TRAINING_GROUND := "res://asset/structure/training_ground.png"
+const SPRITE_SHRINE := "res://asset/structure/camp_shrine.png"
+## Scenery dressing for the otherwise-empty gap between the building grid and
+## Start Run. Picked two of the eight available pieces (a flanking pair) so
+## the accent stays modest on a 540-wide portrait screen; the rest didn't
+## clearly improve a screen this tight and were left unused.
+const SPRITE_STONE_LANTERN := "res://asset/structure/stone_lantern.png"
+const SPRITE_JANGSEUNG_PAIR := "res://asset/structure/jangseung_pair.png"
+
 @onready var _title_label: Label = $CampTitle
+@onready var _stone_lantern: TextureRect = $StoneLantern
+@onready var _jangseung_pair: TextureRect = $JangseungPair
 @onready var _workshop_button: Button = $BuildingGrid/WorkshopButton
 @onready var _archive_button: Button = $BuildingGrid/ArchiveButton
 @onready var _training_button: Button = $BuildingGrid/TrainingGroundButton
@@ -22,10 +36,13 @@ func _ready() -> void:
 	_title_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 	_title_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_TITLE)
 
-	_configure_building(_workshop_button, "building_workshop")
-	_configure_building(_archive_button, "building_archive")
-	_configure_building(_training_button, "building_training_ground")
-	_configure_building(_shrine_button, "building_shrine")
+	_configure_building(_workshop_button, "building_workshop", SPRITE_WORKSHOP)
+	_configure_building(_archive_button, "building_archive", SPRITE_ARCHIVE)
+	_configure_building(_training_button, "building_training_ground", SPRITE_TRAINING_GROUND)
+	_configure_building(_shrine_button, "building_shrine", SPRITE_SHRINE)
+
+	_load_texture(_stone_lantern, SPRITE_STONE_LANTERN)
+	_load_texture(_jangseung_pair, SPRITE_JANGSEUNG_PAIR)
 
 	_start_run_button.text = LocaleText.ui("start_run")
 	UiPalette.apply_button_style(_start_run_button)
@@ -44,11 +61,23 @@ func _ready() -> void:
 	_workshop_button.grab_focus()
 
 
-func _configure_building(button: Button, label_key: String) -> void:
-	button.text = LocaleText.ui(label_key)
+func _configure_building(button: Button, label_key: String, sprite_path: String) -> void:
 	button.custom_minimum_size = Vector2(236.0, 128.0)
 	UiPalette.apply_button_style(button)
 	button.pressed.connect(_open_building_panel.bind(button, label_key))
+
+	var label: Label = button.get_node("Box/Label")
+	label.text = LocaleText.ui(label_key)
+	label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+	label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
+	_load_texture(button.get_node("Box/Icon"), sprite_path)
+
+
+## Sprite paths are kept defensive: a missing/renamed asset hides the icon
+## instead of erroring, since the text label alone still identifies the button.
+func _load_texture(target: TextureRect, sprite_path: String) -> void:
+	target.texture = load(sprite_path) if ResourceLoader.exists(sprite_path) else null
+	target.visible = target.texture != null
 
 
 func _open_building_panel(source_button: Button, label_key: String) -> void:
