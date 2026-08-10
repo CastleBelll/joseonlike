@@ -1,7 +1,7 @@
 """Convert a generated image into a sprite that matches a reference sprite's style.
 
 Usage: python sprite_pixelize.py <in.png> <out.png> <content_height> <palette_dir>
-       [canvas_size|WIDTHxHEIGHT] [--opaque-background]
+       [canvas_size|WIDTHxHEIGHT] [--opaque-background] [--checker-background]
 
 Style match is three separate things, and the earlier cut script only did the first:
 
@@ -138,6 +138,44 @@ def quantise(image, palette):
     return image
 
 
+def key_out_checker(image):
+    """Remove a generator-drawn transparency checker connected to cell edges.
+
+    Some backends render a grey checkerboard despite an explicit chroma request.
+    Restricting removal to bright, nearly-neutral pixels reachable from an edge
+    preserves enclosed white effect cores while clearing the synthetic backdrop.
+    """
+    pixels = image.load()
+    width, height = image.size
+    pending = []
+    seen = set()
+    for x in range(width):
+        pending.extend(((x, 0), (x, height - 1)))
+    for y in range(height):
+        pending.extend(((0, y), (width - 1, y)))
+    while pending:
+        x, y = pending.pop()
+        if (x, y) in seen:
+            continue
+        seen.add((x, y))
+        r, g, b, a = pixels[x, y]
+        neutral_background = a and min(r, g, b) >= 140 and max(r, g, b) - min(r, g, b) <= 45
+        already_clear = a == 0
+        if not (neutral_background or already_clear):
+            continue
+        if neutral_background:
+            pixels[x, y] = (r, g, b, 0)
+        if x:
+            pending.append((x - 1, y))
+        if x + 1 < width:
+            pending.append((x + 1, y))
+        if y:
+            pending.append((x, y - 1))
+        if y + 1 < height:
+            pending.append((x, y + 1))
+    return image
+
+
 def fit_to_canvas(image, canvas_size):
     """Fit and centre a sprite on an exact transparent square icon canvas."""
     if image.width > canvas_size or image.height > canvas_size:
@@ -161,9 +199,12 @@ def main():
     canvas_size = None
     output_size = None
     opaque_background = False
+    checker_background = False
     for option in sys.argv[5:]:
         if option == "--opaque-background":
             opaque_background = True
+        elif option == "--checker-background":
+            checker_background = True
         elif "x" in option.lower():
             width_text, height_text = option.lower().split("x", 1)
             output_size = (int(width_text), int(height_text))
@@ -175,6 +216,8 @@ def main():
     image = Image.open(source_path).convert("RGBA")
     if not opaque_background:
         image = key_out(image, corner_colour(image))
+        if checker_background:
+            image = key_out_checker(image)
 
     bbox = image.getbbox()
     if bbox is None:

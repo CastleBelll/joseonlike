@@ -123,6 +123,16 @@ def main():
     for monster_id, height in monster_heights.items():
         for direction in directions:
             check_sprite(f"asset/monster/{monster_id}/rotations/{direction}.png", (92, 92), height)
+    later_monster_heights = {
+        "gwimyeon_dokkaebi": 54, "blue_dokkaebi": 50, "gumiho_scout": 48,
+        "seonbi_wraith": 52, "haetae_guardian": 58, "dokkaebi_king": 76,
+        "cheonyeo_gwisin": 52, "dalgyal_gwisin": 44, "jeoseung_saja": 58,
+        "tomb_jangseung": 58, "imugi_whelp": 52, "ancient_imugi": 76,
+        "wonhon": 50, "dokkaebi_fire": 44, "shadow_dokkaebi": 52,
+        "fox_spirit": 48, "bulgasari": 58, "gumiho": 76,
+    }
+    for monster_id, height in later_monster_heights.items():
+        check_sprite(f"asset/monster/{monster_id}.png", (92, 92), height)
     check_tile("asset/stage/bamboo_forest_ground.png")
     check_tile("asset/stage/abandoned_temple_ground.png")
     for name in ("main_menu", "bamboo_forest", "abandoned_temple"):
@@ -134,6 +144,30 @@ def main():
     )
     for name in prop_names:
         check_sprite(f"asset/prop/{name}.png", (64, 64), 48)
+
+    effects = (
+        "talisman_burst", "spirit_flame", "summon_circle", "fire", "lightning",
+        "poison_cloud", "slash", "impact_hit", "level_up", "evolution_flourish",
+    )
+    for effect in effects:
+        for frame in range(4):
+            check_sprite(f"asset/effect/{effect}/{frame}.png", (64, 64))
+    effect_metrics = json.loads((ROOT / "asset/effect/raw/effect_metrics.json").read_text(encoding="utf-8"))
+    if set(effect_metrics) != set(effects):
+        fail("effect metrics do not cover the ten authored effect sheets")
+    for effect in effects:
+        if not effect_metrics.get(effect, {}).get("accepted"):
+            fail(f"asset/effect/{effect}: failed mobile-readability/progression gate")
+
+    structures = (
+        "workshop", "archive", "training_ground", "camp_shrine", "jangseung_pair",
+        "stone_lantern", "joseon_gate", "roadside_shrine", "stone_pagoda",
+        "wooden_fence", "village_well", "ritual_altar",
+    )
+    for structure in structures:
+        check_sprite(f"asset/structure/{structure}.png", (128, 128))
+    for title in ("joseonlike_en", "joseonlike_ko", "title_frame_blank"):
+        check_sprite(f"asset/title/{title}.png", (480, 96))
 
     audio = {
         "asset/audio/ambience/bamboo_forest_loop.wav": 12.0,
@@ -210,6 +244,7 @@ def main():
     print(f"Direct-conditioned retry rejected: south walk frames {conditioned_changed[0]}/1702 and {conditioned_changed[1]}/1702")
     print("Directional additions verified: 14 class rotations + 32 monster rotations, 3 backdrops, 12 props")
     print(f"Six multi-reference motion sheets rejected: {accepted_current}/{measured_current} frames passed the regional stability gate")
+    print("Expansion assets verified: 18 folklore monsters, 40 effect frames, 12 structures, 3 title assets")
 
 
 if __name__ == "__main__":
