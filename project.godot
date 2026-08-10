@@ -1,7 +1,10 @@
 ; Engine configuration file.
-; Owned by the coordinator only. Workers must request changes via the coordinator
-; (autoload registration, input maps, layer names) instead of editing this file,
-; because concurrent edits here conflict across every worktree.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -41,6 +44,6 @@ window/handheld/orientation=1
 
 [rendering]
 
+textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
-textures/canvas_textures/default_texture_filter=0

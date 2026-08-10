@@ -1,5 +1,73 @@
 # JOSEONLIKE M1 asset handoff
 
+## Single-image motion-sheet retry
+
+The follow-up tested the strongest practical diffusion workaround: all motion frames packed
+into one 4x3 image so they share generation context. Higgsfield job
+`242d1780-6751-479c-94bb-354e9ad6c0d9` cost the preflighted 2 credits, moving the balance
+from 1064.55 to 1062.55. Unlike the earlier multi-result preflight, this was exactly one
+submitted job, so the estimate and final balance agree.
+
+The raw 1200x896 sheet is
+`asset/character/Taoist/raw/taoist_motion_sheet_higgsfield.png`. The model added visible
+grid lines despite the prompt; `slice_sheet.py --inset=4` removed those regular borders,
+then every cell passed through `pixelize.py` at 46px content height on a 92x92 canvas.
+Recuttable cells are under `asset/character/Taoist/raw/motion_cells/`, measured cutouts are
+under `asset/character/Taoist/raw/motion_cut/`, and the machine-readable results are in
+`asset/character/Taoist/raw/motion_metrics.json`.
+
+Logical cell order, left-to-right then top-to-bottom:
+
+```text
+idle_0, idle_1, walk_0, walk_1,
+walk_2, walk_3, attack_0, attack_1,
+attack_2, attack_3, EMPTY, EMPTY
+```
+
+The exact earlier ImageChops method was reused on the authority's canonical 37x46 window,
+so every percentage has the same 1,702-pixel denominator as the 449-pixel separate-render
+baseline.
+
+| Comparison | Changed pixels | Percent | Alpha changed |
+|---|---:|---:|---:|
+| Separate-render baseline | 449 | 26.38% | 0 |
+| idle_0 -> idle_1 | 510 | 29.96% | 6 |
+| walk_0 -> walk_1 | 926 | 54.41% | 281 |
+| walk_1 -> walk_2 | 965 | 56.70% | 313 |
+| walk_2 -> walk_3 | 1004 | 58.99% | 381 |
+| walk_3 -> walk_0 | 972 | 57.11% | 341 |
+| attack_0 -> attack_1 | 1084 | 63.69% | 284 |
+| attack_1 -> attack_2 | 1233 | 72.44% | 463 |
+| attack_2 -> attack_3 | 1200 | 70.51% | 444 |
+
+Against the authority, individual frames changed as follows:
+
+| Frame | Changed pixels | Percent | Alpha changed |
+|---|---:|---:|---:|
+| idle_0 | 840 | 49.35% | 103 |
+| idle_1 | 832 | 48.88% | 101 |
+| walk_0 | 969 | 56.93% | 180 |
+| walk_1 | 1011 | 59.40% | 355 |
+| walk_2 | 731 | 42.95% | 64 |
+| walk_3 | 1039 | 61.05% | 417 |
+| attack_0 | 1050 | 61.69% | 274 |
+| attack_1 | 978 | 57.46% | 246 |
+| attack_2 | 1207 | 70.92% | 505 |
+| attack_3 | 626 | 36.78% | 81 |
+
+Decision: **do not ship the sheet frames.** Packing did not beat the baseline even for the
+near-identical idle pair: it regressed by 61 pixels / 3.58 percentage points. The four walk
+frames alternate between carrying the staff and having no staff at all, which reads as a
+large pop rather than locomotion. Attack frames retain the staff but still change 63.69% to
+72.44% between consecutive cells. This is a second measured negative result, so no Warrior
+or Archer credits were spent.
+
+Combat must consume **no new motion paths** from this retry; everything under the Taoist
+`raw/` directory is evidence only. Keep loading the existing eight
+`asset/character/Taoist/Idle/rotations/*.png` direction sprites and retain the procedural
+idle/walk/attack implementation specified below. The intended frame order above is recorded
+only so a future human retouch pass can reuse the sheet layout; it is not an integration API.
+
 ## Engineering decision: procedural character motion
 
 The style authority was independently measured as a 92x92 canvas with opaque bounds
@@ -180,3 +248,50 @@ WARNING: Loaded resource as image file, this will not work on export: 'res://ass
 
 The four validator warnings predate this asset set and arise because the validator itself
 loads monster PNGs as raw `Image` objects. No monster sprite or collision dimension changed.
+
+### Single-sheet retry verification (real output)
+
+```text
+$ python tools/asset/verify_assets.py
+M1 assets verified: 20 UI icons + 4 chrome assets, 14 weapon assets, 2 characters, 2 seamless tiles, 6 audio files
+Motion-generation rejection evidence: 449/1702 pixels changed between same-pose frames
+Single-sheet retry rejected: idle pair 510/1702 versus separate baseline 449/1702
+(exit 0)
+
+$ godot --headless --path . --import
+(no stdout or stderr; exit 0)
+
+$ godot --headless --path . --quit
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+(exit 0)
+
+$ godot --headless --path . --script tools/validate_data.gd
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+PASS data validation: no errors
+WARNING: Loaded resource as image file, this will not work on export: 'res://asset/monster/forest_goblin.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load (core/io/image.cpp:2770)
+   GDScript backtrace (most recent call first):
+       [0] _validate_monsters (res://tools/validate_data.gd:345)
+       [1] validate_all (res://tools/validate_data.gd:76)
+       [2] _init (res://tools/validate_data.gd:49)
+WARNING: Loaded resource as image file, this will not work on export: 'res://asset/monster/forest_spirit.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load (core/io/image.cpp:2770)
+   GDScript backtrace (most recent call first):
+       [0] _validate_monsters (res://tools/validate_data.gd:345)
+       [1] validate_all (res://tools/validate_data.gd:76)
+       [2] _init (res://tools/validate_data.gd:49)
+WARNING: Loaded resource as image file, this will not work on export: 'res://asset/monster/bamboo_brute.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load (core/io/image.cpp:2770)
+   GDScript backtrace (most recent call first):
+       [0] _validate_monsters (res://tools/validate_data.gd:345)
+       [1] validate_all (res://tools/validate_data.gd:76)
+       [2] _init (res://tools/validate_data.gd:49)
+WARNING: Loaded resource as image file, this will not work on export: 'res://asset/monster/bamboo_spirit_lord.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load (core/io/image.cpp:2770)
+   GDScript backtrace (most recent call first):
+       [0] _validate_monsters (res://tools/validate_data.gd:345)
+       [1] validate_all (res://tools/validate_data.gd:76)
+       [2] _init (res://tools/validate_data.gd:49)
+(exit 0)
+```

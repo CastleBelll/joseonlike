@@ -26,7 +26,7 @@ func _ready() -> void:
 	_title_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_TITLE)
 
 	_back_button.text = LocaleText.ui("back_button")
-	UiPalette.apply_button_style(_back_button, UiPalette.PAPER_DARK, UiPalette.TEXT_ON_PAPER)
+	UiPalette.apply_button_style(_back_button)
 	_back_button.pressed.connect(_on_back_pressed)
 	_back_button.custom_minimum_size = Vector2(96, 48)
 
@@ -136,12 +136,14 @@ func _set_state(state: State) -> void:
 
 
 func _on_character_selected(character_id: String) -> void:
+	UiSound.play_click(self)
 	AchievementTracker.snapshot_before_run()
 	RunState.begin(character_id, M1_STAGE_ID)
 	SceneRouter.goto_stage(M1_STAGE_ID)
 
 
 func _on_back_pressed() -> void:
+	UiSound.play_click(self)
 	SceneRouter.goto_camp()
 
 
