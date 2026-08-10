@@ -28,11 +28,11 @@ var level: int = CombatMath.MIN_LEVEL
 
 var _data: Dictionary = {}
 var _cooldown_left: float = 0.0
-var _rng := RandomNumberGenerator.new()
+var _rng: RandomNumberGenerator = null
 
 
 func _ready() -> void:
-	_rng.randomize()
+	_rng = CombatRng.create()
 	set_process(not _data.is_empty())
 
 
