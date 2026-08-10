@@ -17,6 +17,8 @@ const STAGE_SCENE: PackedScene = preload("res://scenes/combat/stage.tscn")
 const CHARACTER_ID := "taoist"
 const STAGE_ID := "bamboo_forest"
 const SAMPLE_SEC := 60.0
+const DEFAULT_SEED := 20260810
+const EVOLUTIONS_PATH := "res://data/evolutions.json"
 
 var _stage: Node = null
 var _rng := RandomNumberGenerator.new()
@@ -31,10 +33,16 @@ var _boss_kill_sec: float = -1.0
 var _levelups: int = 0
 var _evolutions: Array[String] = []
 var _clock: float = 0.0
+var _pool_min: int = 99
+var _pool_counts: Dictionary = {}
+var _empty_weapon_new_levels: int = 0
+var _rules: Dictionary = {}
+var _closest: Dictionary = {}
 
 
 func _ready() -> void:
-	_rng.seed = 20260810
+	_rng.seed = _seed_from_args()
+	print("SOAK seed=%d" % _rng.seed)
 	if GameData.load_all() != OK:
 		print("SOAK: data load failed")
 		get_tree().quit(1)
@@ -46,6 +54,7 @@ func _ready() -> void:
 	EventBus.boss_spawned.connect(_on_boss_spawned)
 	EventBus.boss_defeated.connect(_on_boss_defeated)
 	EventBus.run_ended.connect(_on_run_ended)
+	_rules = _load_rules()
 	RunState.begin(CHARACTER_ID, STAGE_ID)
 	if OS.get_cmdline_user_args().has("forceevo"):
 		# Seed the evolutions.json thresholds for bow + attack_speed directly, so
@@ -171,6 +180,8 @@ func _on_level_reached(level: int, choices: Array[Dictionary]) -> void:
 		return
 	# Agnostic player: uniform pick among the offered options, matching the
 	# model data/BALANCE.md uses.
+	_record_pool(level, choices)
+	_record_closest()
 	var pick: Dictionary = _choose(choices)
 	_pick.call_deferred(String(pick.get("id", "")), level)
 
@@ -228,8 +239,75 @@ func _on_run_ended(result: Dictionary) -> void:
 	print("SOAK totals levelups=%d evolutions=%s clearedHP=%.0f dmg_taken=%.0f RunState.kills=%d RunState.level=%d" % [
 		_levelups, _evolutions, _cleared_hp, _damage_taken, RunState.kills, RunState.level,
 	])
+	_report_pool_and_closest()
 	_report_router.call_deferred()
 
 
 func _report_router() -> void:
 	print("SOAK SceneRouter.last_result=%s" % [SceneRouter.last_result])
+
+
+## --- question 4: is the weapon_new pool starved by evolution_only? ----------
+
+func _seed_from_args() -> int:
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("seed="):
+			return int(arg.substr(5))
+	return DEFAULT_SEED
+
+
+func _record_pool(level: int, choices: Array[Dictionary]) -> void:
+	var by_kind: Dictionary = {}
+	for choice: Dictionary in choices:
+		var kind: String = String(choice.get("kind", "?"))
+		by_kind[kind] = int(by_kind.get(kind, 0)) + 1
+	_pool_min = mini(_pool_min, choices.size())
+	for kind: Variant in by_kind.keys():
+		_pool_counts[kind] = int(_pool_counts.get(kind, 0)) + int(by_kind[kind])
+	if not by_kind.has("weapon_new"):
+		_empty_weapon_new_levels += 1
+	var flag: String = "  THIN" if choices.size() < 3 else ""
+	print("SOAK pool level=%d offered=%d %s%s" % [level, choices.size(), by_kind, flag])
+
+
+## --- question 2: if no evolution fires, how close did the run get? ----------
+
+func _load_rules() -> Dictionary:
+	if not FileAccess.file_exists(EVOLUTIONS_PATH):
+		return {}
+	var json := JSON.new()
+	if json.parse(FileAccess.get_file_as_string(EVOLUTIONS_PATH)) != OK:
+		return {}
+	return json.data if typeof(json.data) == TYPE_DICTIONARY else {}
+
+
+## Tracks the best progress toward every evolutions.json rule, so a negative
+## result reports "one stack short" instead of just "it did not fire".
+func _record_closest() -> void:
+	for rule_key: Variant in _rules.keys():
+		var rule: Dictionary = _rules[rule_key]
+		var weapon_id: String = String(rule.get("requires_weapon", ""))
+		var passive_id: String = String(rule.get("requires_passive", ""))
+		var need_level: int = int(rule.get("min_weapon_level", 1))
+		var need_stacks: int = int(rule.get("min_passive_stacks", 1))
+		var have_level: int = RunState.weapon_level(weapon_id)
+		var have_stacks: int = RunState.passive_stacks(passive_id)
+		# Distance to the rule, counted in picks still required.
+		var gap: int = maxi(need_level - have_level, 0) + maxi(need_stacks - have_stacks, 0)
+		var prior: Dictionary = _closest.get(rule_key, {"gap": 999})
+		if gap >= int(prior["gap"]):
+			continue
+		_closest[rule_key] = {
+			"gap": gap,
+			"text": "%s@%d/%d + %s x%d/%d at t=%.0f" % [
+				weapon_id, have_level, need_level, passive_id, have_stacks, need_stacks, _clock,
+			],
+		}
+
+
+func _report_pool_and_closest() -> void:
+	print("SOAK pool_summary min_offered=%d totals=%s levels_without_weapon_new=%d" % [
+		_pool_min, _pool_counts, _empty_weapon_new_levels,
+	])
+	for rule_key: Variant in _closest.keys():
+		print("SOAK closest %s: gap=%d %s" % [rule_key, int(_closest[rule_key]["gap"]), _closest[rule_key]["text"]])
