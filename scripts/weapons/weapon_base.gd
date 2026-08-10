@@ -18,8 +18,6 @@ const STAT_CRIT_CHANCE: String = "crit_chance"
 const STAT_SKILL_POWER: String = "skill_power"
 
 signal fired(weapon_id: String)
-signal level_changed(weapon_id: String, level: int)
-
 var weapon_id: String = ""
 var level: int = CombatMath.MIN_LEVEL
 
@@ -48,23 +46,11 @@ func data() -> Dictionary:
 	return _data
 
 
-func can_level_up() -> bool:
-	return level < CombatMath.max_level(_data)
-
-
-func level_up() -> int:
-	if not can_level_up():
-		return level
-	set_level(level + 1)
-	return level
-
-
 func set_level(new_level: int) -> void:
 	var clamped: int = clampi(new_level, CombatMath.MIN_LEVEL, CombatMath.max_level(_data))
 	if clamped == level:
 		return
 	level = clamped
-	level_changed.emit(weapon_id, level)
 
 
 func current_cooldown() -> float:

@@ -41,7 +41,6 @@ var _hit_ids: Array[int] = []
 
 
 func _ready() -> void:
-	monitoring = true
 	_ensure_shape()
 	_ensure_sprite()
 	body_entered.connect(_on_body_entered)
@@ -125,7 +124,9 @@ func _ensure_shape() -> void:
 	var collider := CollisionShape2D.new()
 	collider.name = "CollisionShape2D"
 	collider.shape = shape
-	add_child(collider)
+	# Deferred: these areas are spawned from inside a physics callback, and the
+	# physics server rejects a new shape while it is flushing queries.
+	add_child.call_deferred(collider)
 
 
 func _ensure_sprite() -> void:

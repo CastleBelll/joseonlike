@@ -1,8 +1,10 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/combat/stage.gd" id="1_stage"]
 [ext_resource type="Script" path="res://scripts/combat/spawner.gd" id="2_spawner"]
 [ext_resource type="Script" path="res://scripts/combat/boss.gd" id="3_boss"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="4_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/level_up_choice.tscn" id="5_levelup"]
 
 [node name="Stage" type="Node2D"]
 script = ExtResource("1_stage")
@@ -20,3 +22,7 @@ script = ExtResource("2_spawner")
 
 [node name="BossController" type="Node" parent="."]
 script = ExtResource("3_boss")
+
+[node name="Hud" parent="." instance=ExtResource("4_hud")]
+
+[node name="LevelUpChoice" parent="." instance=ExtResource("5_levelup")]
