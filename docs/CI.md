@@ -18,6 +18,16 @@ summary and exits 1 — a suite that fails to compile, can't be instantiated, or
 `run()` counts as `ERROR`, not a skip. A `_process` backstop guarantees this exit even
 if a suite's `run()` aborts mid-call (previously this hung forever instead of failing).
 
+**Known runner gap: autoload `_ready()` never fires here.** Bare `class_name`/autoload
+identifiers resolve fine (see the import-cache note above), but under this custom
+`SceneTree` main loop the autoload singletons' own `_ready()` callback is never
+invoked — only under a real game run (`godot --headless --path . --quit`) does that
+fire. A test that depends on `_ready()`-driven setup (e.g. a timer built in `_ready`)
+will silently pass without exercising that code. Drive the underlying behavior
+directly instead (e.g. call the timer's callback method, not `Timer.start()`, which
+also refuses to run outside a live scene tree) — see `tests/core/test_save_manager.gd`
+for a worked example.
+
 ## Running data validation locally
 
 `content-data` owns `tools/validate_data.gd`. Until it lands, this step doesn't exist
@@ -45,6 +55,22 @@ On every push and pull request:
    references randomly fail to compile in CI.
 4. Runs `tests/run_tests.gd`.
 5. Runs `tools/validate_data.gd` if present, else logs a `::warning::` and skips.
+
+**Known local-only quirk: intermittent exit 139 on Windows after `--import` completes.**
+`godot --headless --path . --import` has been observed on Windows dev machines to
+segfault (exit 139) *after* the `[ DONE ] reimport` line prints — a crash during
+process teardown once the actual import work is already done, roughly one run in
+eight, only with `.godot` already present, gone on an immediate re-run. This is a
+teardown crash, not a failed import, and it has not been reproduced on Linux: 40
+consecutive warm runs of the exact same command on the actual `ubuntu-latest` GitHub
+Actions runner all exited 0
+(https://github.com/CastleBelll/joseonlike/actions/runs/31384597597). If you hit
+`exit 139` running this locally on Windows, it is this known issue, not your change —
+re-run once and move on. **CI itself is not exposed** (no step was added to tolerate
+it, on purpose: a step that silently swallows a real Linux failure would be worse
+than the flake it's working around). If this ever reproduces on a GitHub runner,
+that would be new information and should reopen this — the conclusion above is
+"unaffected so far under real testing," not "provably impossible."
 
 **GDScript-error gate:** Godot can exit 0 in some headless paths even when a script
 has a parse/compile error. Every step's output is captured and grepped for
