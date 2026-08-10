@@ -810,3 +810,154 @@ This section previously argued for adding `collision_radius` to the schema;
 that argument is now resolved — the coordinator approved it and
 ARCHITECTURE.md section 4 requires it. `tools/validate_data.gd` enforces
 presence, positivity, and the half-sprite-width ceiling described above.
+
+## Future-area bestiary — Capital City, Royal Tomb, Spirit World
+
+**Eighteen monsters added to `data/monsters.json`, art only until now.**
+asset-forge generated sprites for the GDD's three post-M1 areas
+(`asset/SECOND_ASSET_BATCH_REPORT.md`); this pass gives them full schema
+entries. **No stage or wave references these monsters** — Capital City,
+Royal Tomb, and Spirit World are not wired into any `data/stages.json`
+entry, `bamboo_forest` is untouched, and wiring a future area into an
+actual playable stage is explicitly a decision this worktree has not been
+asked to make. This section documents a bestiary, not a balanced encounter.
+
+**These numbers are not tuned against Bamboo Forest's curve, and
+shouldn't be read as if they were.** Every number above this point in the
+document (DPS model, danger model, boss hp) exists because it was measured
+against real play of Bamboo Forest specifically. None of that measurement
+exists for these three areas — there's no stage, no wave table, no player
+loadout progression to size them against yet. What follows is a **tiering
+scheme**, not a validated difficulty curve: internally consistent,
+anchored to Bamboo Forest's shipped numbers as a starting reference point,
+but a placeholder pending real playtesting once these areas actually
+become stages.
+
+**Tiering scheme:** each area is one step in a geometric progression from
+Bamboo Forest (tier 1, ×1.0), applied to `hp`, `damage`, `xp_drop`, and
+`gold_drop`. `speed` is *not* tier-scaled — it reflects movement pace, not
+raw power, and scaling it up per tier would make later areas control
+worse rather than feel harder, which isn't the intent.
+
+| Tier | Area | Multiplier |
+|---|---|---|
+| 1 | Bamboo Forest (shipped) | ×1.0 |
+| 2 | Capital City | ×1.6 |
+| 3 | Royal Tomb | ×2.4 |
+| 4 | Spirit World | ×3.4 |
+
+Each tier's trash monsters are anchored to one of Bamboo Forest's three
+trash archetypes, scaled by that tier's multiplier, with individual
+narrative variance (a "scout" runs faster and hits softer than a
+"guardian," an "elite" named figure like `jeoseung_saja` sits ~10% above
+its archetype baseline) — the same method used for the four Bamboo Forest
+monsters already in this document, just without real playtest data to
+correct it against yet:
+
+| Archetype | Anchor | hp | damage | xp_drop | gold_drop |
+|---|---|---:|---:|---:|---:|
+| `chase` | `forest_goblin` | 20 | 6 | 1 | 1 |
+| `ranged` | `forest_spirit` | 16 | 5 | 5 | 2 |
+| `charger` | `bamboo_brute` | 85 | 18 | 8 | 4 |
+| `boss` | `bamboo_spirit_lord` | 2600 | 35 | 200 | 150 |
+
+`swarm` has no Bamboo Forest anchor (unused there) — extrapolated at
+~60% of the `chase` archetype's hp/damage with higher speed, reflecting
+"individually weak, dangerous in numbers," and flagged here as the one
+archetype baseline that's a pure estimate rather than a scaled-down real
+number.
+
+**Capital City (×1.6) — the first future area, `dokkaebi_king` boss:**
+
+| id | Role | hp | damage | speed | behaviour | Note |
+|---|---|---:|---:|---:|---|---|
+| `gwimyeon_dokkaebi` | standard chase | 32 | 10 | 58 | `chase` | baseline chase archetype |
+| `blue_dokkaebi` | swarm | 19 | 6 | 68 | `swarm` | common variant, meant to appear in numbers |
+| `gumiho_scout` | fast scout | 26 | 9 | 75 | `chase` | lower hp/damage than `gwimyeon_dokkaebi`, faster — a harassment variant, not a fox-in-disguise (that's reserved for the real `gumiho` boss two areas later) |
+| `seonbi_wraith` | ranged | 26 | 8 | 38 | `ranged` | baseline ranged archetype |
+| `haetae_guardian` | charger | 136 | 29 | 65 | `charger` | baseline charger archetype |
+| `dokkaebi_king` | **boss** | 4160 | 56 | 52 | `boss` | baseline boss archetype |
+
+**Royal Tomb (×2.4) — `ancient_imugi` boss:**
+
+| id | Role | hp | damage | speed | behaviour | Note |
+|---|---|---:|---:|---:|---|---|
+| `cheonyeo_gwisin` | ranged | 38 | 12 | 40 | `ranged` | baseline ranged archetype |
+| `dalgyal_gwisin` | chase | 48 | 14 | 50 | `chase` | baseline chase archetype, slower — an unsettling crawl rather than a rush |
+| `jeoseung_saja` | elite charger | 224 | 47 | 72 | `charger` | ~10% above the charger baseline — a named folklore figure (the death-messenger), not a generic beast |
+| `tomb_jangseung` | stationary ranged | 38 | 12 | 15 | `ranged` | ranged archetype stats, speed cut to near-stationary — a totem, not a mobile caster |
+| `imugi_whelp` | weak chase | 41 | 12 | 58 | `chase` | ~15% under the chase baseline — "whelp" is explicitly the young/weak form of `ancient_imugi` |
+| `ancient_imugi` | **boss** | 6240 | 84 | 48 | `boss` | baseline boss archetype |
+
+**Spirit World (×3.4) — `gumiho` boss, the pre-endgame area:**
+
+| id | Role | hp | damage | speed | behaviour | Note |
+|---|---|---:|---:|---:|---|---|
+| `wonhon` | ranged | 54 | 17 | 44 | `ranged` | baseline ranged archetype — the direct thematic escalation of `forest_spirit` (`name_ko` shares the "원혼" root) |
+| `dokkaebi_fire` | ranged | 54 | 17 | 55 | `ranged` | same baseline as `wonhon`, faster — a will-o'-the-wisp flicker rather than a drifting ghost |
+| `shadow_dokkaebi` | fast chase | 62 | 20 | 80 | `chase` | above the chase baseline in hp/damage but the fastest non-boss monster in the bestiary — a stealth ambusher, hits harder when it catches you |
+| `fox_spirit` | swarm | 41 | 14 | 70 | `swarm` | baseline swarm archetype |
+| `bulgasari` | charger | 289 | 61 | 65 | `charger` | baseline charger archetype — the toughest non-boss monster shipped, matching its folklore role as an unstoppable metal-devouring beast |
+| `gumiho` | **boss** | 8840 | 119 | 55 | `boss` | baseline boss archetype — the true nine-tailed fox, distinct from the lesser `gumiho_scout` two tiers earlier |
+
+**`collision_radius` derivation — same method as Bamboo Forest, verified
+independently rather than trusted from the asset report.** All eighteen
+sprites ship on a 92×92 transparent canvas; the asset report states each
+one's opaque content size and a "max radius" (half that content width).
+Measured every sprite's canvas, opaque bounding box, and per-row median
+silhouette width directly (`PIL`, same script as the Bamboo Forest pass) —
+the measured bounding boxes matched the report's stated content sizes
+exactly, confirming the report's numbers rather than just trusting them.
+`collision_radius` is set to half the *median* row width (not the max row
+or the canvas), so a raised weapon or ornament — several of these sprites
+have one, e.g. `jeoseung_saja`'s staff, `haetae_guardian`'s mane — doesn't
+inflate the hitbox past the actual body, consistent with the Bamboo Forest
+derivation above. Every value landed well inside the report's own stated
+ceiling and `tools/validate_data.gd`'s half-sprite-width check (the
+largest, `gumiho` at 29.5, is still under half of the 92px canvas):
+
+| id | Content bbox | Median row width | `collision_radius` |
+|---|---:|---:|---:|
+| `gwimyeon_dokkaebi` | 36×54 | 27 | 13.5 |
+| `blue_dokkaebi` | 38×50 | 28 | 14.0 |
+| `gumiho_scout` | 51×48 | 42 | 21.0 |
+| `seonbi_wraith` | 28×52 | 18 | 9.0 |
+| `haetae_guardian` | 49×58 | 41 | 20.5 |
+| `dokkaebi_king` | 60×76 | 51 | 25.5 |
+| `cheonyeo_gwisin` | 50×52 | 47 | 23.5 |
+| `dalgyal_gwisin` | 47×44 | 47 | 23.5 |
+| `jeoseung_saja` | 58×58 | 51 | 25.5 |
+| `tomb_jangseung` | 29×58 | 18 | 9.0 |
+| `imugi_whelp` | 49×52 | 28 | 14.0 |
+| `ancient_imugi` | 69×76 | 52 | 26.0 |
+| `wonhon` | 38×50 | 26 | 13.0 |
+| `dokkaebi_fire` | 48×44 | 34 | 17.0 |
+| `shadow_dokkaebi` | 44×52 | 29 | 14.5 |
+| `fox_spirit` | 49×48 | 37 | 18.5 |
+| `bulgasari` | 59×58 | 41 | 20.5 |
+| `gumiho` | 76×76 | 59 | 29.5 |
+
+**Directional rotation sprites — not implemented, flagged for a
+coordinator decision.** The asset report's `verify_assets.py` output
+mentions "32 monster rotations" from the first art batch (four existing
+Bamboo Forest monsters × eight directions) that nothing currently
+references, since `monsters.json`'s `sprite` field is a single flat path.
+I did not add a schema field for these. Reasoning: `data/**` is this
+worktree's to design, but a directional-sprite field is only useful if
+combat actually branches rendering on facing direction, and that's a
+`scripts/combat/**` decision (how facing is tracked, whether it's worth
+the render-state complexity for top-down auto-combat where the player
+mostly watches silhouettes in motion, not idle facing) — not something
+content-data should decide unilaterally by inventing a field first and
+hoping combat consumes it. **My recommendation, offered for the
+coordinator to weigh, not acted on:** probably not worth it for M1's
+auto-combat loop specifically — Vampire-Survivors-style games are
+readable from silhouette and movement alone, and eight-direction sprite
+swapping is a meaningful `scripts/combat/**` and `scripts/weapons/**`
+(hooking into whatever already flips/rotates player sprites, see
+`character_motion.gd`) undertaking for a payoff that's mostly idle-frame
+polish. If the coordinator decides it's worth it, the schema shape I'd
+suggest is a `sprite_directions` object (8 keys, one per compass
+direction) alongside the existing flat `sprite` (kept as the idle/default
+fallback so nothing else breaks), added only once combat confirms it will
+actually branch on it.
