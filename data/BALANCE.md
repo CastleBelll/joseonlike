@@ -96,6 +96,17 @@ changes this pass (`phoenix_talisman`'s curve, `bamboo_spirit_lord.hp`),
 one documentation correction (survivability), and one explicit "leave it"
 decision.
 
+**THE M1 BALANCE ROUND IS NOW CLOSED (this pass, no data changed).**
+combat's confirming sweep proved the remaining boss-TTK spread (five win
+TTKs, strictly monotonic in chain time, 40.4-76.1s) is structurally too
+wide for any single `bamboo_spirit_lord.hp` to fit inside the 45-70s
+window this document had been tuning against — see "Boss, round 4." The
+window is retired as an assumption that was never a GDD requirement, not
+patched around. Survivability is confirmed closed at a stable 2/10
+early-death rate across three consecutive sweeps — see "Survivability,
+round 3." Reachability was already closed. Nothing in `data/**` changes
+this pass; this pass is the record of the decision, not a new tuning pass.
+
 ## What changed from the first pass, and why it mattered
 
 `RunState.xp_to_next(L) = round(5 * 1.25^(L-1))` — **geometric**, not the
@@ -661,6 +672,87 @@ shows the fast group still short of 45s or the slow group past 70s, the
 next lever is the same `per_level.damage` compression pushed further,
 informed by which side actually missed.
 
+## Boss, round 4 — the 45-70s window is retired
+
+**combat's confirming sweep on the round-3 projection returned a proof,
+not a number.** Five win TTKs: 40.4s, 44.9s, 55.7s, 68.2s, 76.1s — 2 of 5
+inside the (former) 45-70s window. The flattening genuinely fixed the
+early-chain undershoot the round-3 change targeted: the two unders are now
+within 5s of the 45s floor, not 27-34s below it as before. What replaced
+it is a symmetric late-chain *overshoot* at 76.1s.
+
+**This is structural, not a miscalibration — TTK is now strictly monotonic
+in chain time across every win:**
+
+| Chain time | Win TTK |
+|---:|---:|
+| 130s | 40.4s |
+| 180s | 44.9s |
+| 271s | 55.7s |
+| 373s | 68.2s |
+| 582s | 76.1s |
+
+Every later chain produced a slower kill, in order, with no crossovers.
+That's the same mechanism round 3 identified (an early chain gets more
+post-evolution leveling time before the boss) still operating — round 3's
+`per_level.damage` cut reduced the *slope* of this relationship and the
+`hp` increase raised its *intercept*, but neither changes that it's still
+a slope: **the band-to-window ratio barely moved, 1.89x → 1.88x, against a
+window that is itself only `70/45 = 1.56x` wide.** The band is
+structurally wider than the window. No single `bamboo_spirit_lord.hp`
+value can contain it — proven the same way round 3's proof worked, now
+against real numbers instead of a projection: scaling to bring 76.1s down
+to the 70s ceiling needs `hp ≈ 3311`, which drops the bottom to `40.4 ×
+(3311/3600) ≈ 37.2s`, past the 45s floor. Scaling to bring 40.4s up to the
+45s floor needs `hp ≈ 4010`, which pushes the top to `76.1 × (4010/3600) ≈
+84.8s`, past the 70s ceiling. Every `hp` value that fixes one end breaks
+the other. **`bamboo_spirit_lord.hp` is exhausted as a lever for this
+specific problem** — not under-tuned, not one round away from fitting;
+structurally unable to fit a monotonic 1.88x-wide band into a 1.56x-wide
+window regardless of where it's centered.
+
+**Decision: retire the 45-70s window rather than keep tuning against
+it.** The window was an assumption this document wrote into itself early
+in the balance process — never a GDD requirement. The GDD (section 17)
+asks for 10-15 minute *sessions*, not a specific boss-fight duration within
+one. A boss fight spanning 40-76s inside a ten-minute run is a reasonable
+spread for a roguelike whose entire premise is that builds diverge — chain
+time is exactly the kind of run-to-run variance the genre is built around,
+not a bug to eliminate.
+
+**Why not chase it further instead:** the only remaining lever that could
+narrow the band is attacking chain-time variance directly — retuning
+`evolutions.json`'s thresholds so chains cluster more tightly in time.
+That file was deliberately frozen after "Evolution reachability, round 2"
+specifically to protect the reachability win (mean gating weapon level
+sitting right at the current threshold, not comfortably above it — see
+"Boss, round 3"). Trading a closed, hard-won reachability result to chase
+a boss-fight-length window that was never a real requirement is a worse
+trade than the thing it would buy. **No further `phoenix_talisman` or
+`bamboo_spirit_lord.hp` change is made this pass.** If this decision is
+revisited, it should be revisited deliberately — as a conscious choice to
+spend the reachability margin on tighter chain timing — not re-litigated
+by incrementally re-tuning boss hp or the phoenix curve against a window
+this document no longer holds itself to.
+
+**What held, confirming the round-3 change did exactly what it targeted
+and nothing else:**
+- **Reachability untouched: chain 6/10, any evolution 8/10, both
+  unchanged.** The `per_level.damage` flatten cost nothing in
+  reachability — it's a post-trigger leveling curve, not a threshold, so
+  it was never going to interact with how often a chain fires, only with
+  how strong it gets afterward.
+- **dps floor unchanged to the decimal: 33.9.** This is the expected,
+  necessary result, not a coincidence — the floor is set by an *unevolved*
+  run, and a `phoenix_talisman` stat change structurally cannot move a
+  number that comes from a build that never reaches `phoenix_talisman`.
+  Confirms the round-3 change was correctly scoped to the chained
+  population only.
+- **dps ceiling down 9.8% to 84.7, as intended.** This is the
+  `per_level.damage` compression showing up directly in the one number it
+  was built to move — the late-leveled, high-level-phoenix case that was
+  driving the old spread.
+
 ## Where the run should feel dangerous (confirmed — minute 7 is the intended spike)
 
 **Settled this pass, not just re-derived.** The `forest_spirit.damage`
@@ -786,6 +878,31 @@ demonstrated to be wrong. **No data change made for this item.** If a
 future sweep shows the loss rate drifting materially away from ~4/10 (in
 either direction) as other changes land, that's the signal to revisit this
 decision — not a fixed schedule to keep nudging it.
+
+## Survivability, round 3 — closed
+
+**Early deaths: exactly 2/10, three consecutive sweeps.** Same two seeds
+each time, same characteristics (minute 8, level 13, 12 level-ups) — not a
+range or a trend, a stable, repeated measurement. This is as settled as
+any number in this document gets: three independent controlled sweeps
+landing on the identical figure is confirmation, not coincidence.
+
+**Total losses moved 4/10 → 5/10 this round, and that is not
+survivability drifting — it's a direct, expected consequence of the
+"Boss, round 3" hp raise, not a new failure mode.** Seed 10 chained,
+reached the boss (something it could not do before reachability closed),
+and could not finish the fight before the run's time limit at minute 12.
+That's a *win-rate* effect of raising `bamboo_spirit_lord.hp` for the
+"Boss, round 3" fix, showing up in the loss column because an unfinished
+boss fight counts as a loss — not a new way for a run to die earlier or
+more often. The early-death rate that actually measures survivability
+(2/10) didn't move at all.
+
+**Conclusion: survivability is closed.** The "Survivability, round 2"
+decision above (4/10 as the accepted M1 target, not tuned toward zero)
+stands; the loss-column tick to 5/10 is boss-TTK accounting, not a reason
+to reopen it. No `forest_spirit.damage`, `taoist.base_hp`, or wave change
+is made this pass.
 
 ## Evolution reachability
 
