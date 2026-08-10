@@ -41,5 +41,33 @@
     "speed": 320.0,
     "max_level": 2,
     "per_level": { "damage": 2.0 }
+  },
+  "poison_knife": {
+    "name_ko": "독칼",
+    "name_en": "Poison Knife",
+    "category": "melee",
+    "grade": "common",
+    "damage": 7.0,
+    "cooldown_sec": 0.6,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 0.0,
+    "max_level": 2,
+    "per_level": { "damage": 2.0 }
+  },
+  "spirit_bell": {
+    "name_ko": "요령",
+    "name_en": "Spirit Bell",
+    "category": "spiritual",
+    "grade": "common",
+    "damage": 6.0,
+    "cooldown_sec": 1.4,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.5,
+    "speed": 0.0,
+    "max_level": 2,
+    "per_level": { "damage": 2.0 }
   }
 }

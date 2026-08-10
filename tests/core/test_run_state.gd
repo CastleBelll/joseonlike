@@ -27,6 +27,7 @@ func run() -> Array[String]:
 	failures.append_array(_test_level_reached_offers_valid_choices())
 	failures.append_array(_test_exhausted_pool_shrinks_choices())
 	failures.append_array(_test_apply_choice_mutates_run())
+	failures.append_array(_test_weapon_slot_cap_holds())
 	failures.append_array(_test_stat_total_aggregates_stacks())
 	return failures
 
@@ -194,6 +195,71 @@ func _test_apply_choice_mutates_run() -> Array[String]:
 	return failures
 
 
+## content-data balanced the stage against at most four concurrent weapons, so
+## a regression here silently changes the difficulty of the whole run.
+func _test_weapon_slot_cap_holds() -> Array[String]:
+	var failures: Array[String] = []
+	var run := _new_run()
+	var cap: int = RUN_STATE_SCRIPT.MAX_WEAPON_SLOTS
+
+	var weapon_ids: Array[String] = []
+	for weapon_data: Dictionary in run.content.all_weapons():
+		weapon_ids.append(String(weapon_data.get("id", "")))
+
+	if weapon_ids.size() <= cap:
+		failures.append("the fixture pool holds %d weapons; the cap test needs more than %d" % [
+			weapon_ids.size(), cap,
+		])
+		_drop(run)
+		return failures
+
+	for slot: int in range(cap - 1):
+		run.grant_weapon(weapon_ids[slot])
+
+	# One slot still free: new weapons must remain on offer.
+	if run._new_weapon_choices().is_empty():
+		failures.append("no weapon_new candidates with %d of %d slots filled" % [cap - 1, cap])
+
+	run.grant_weapon(weapon_ids[cap - 1])
+	if run.weapons.size() != cap:
+		failures.append("filling %d slots produced %d weapons" % [cap, run.weapons.size()])
+
+	# Asserted on the candidate list, not on an emitted level-up: _build_choices
+	# shuffles and slices to three, so a sampled check would pass by luck.
+	var new_weapon_candidates: Array[Dictionary] = run._new_weapon_choices()
+	if not new_weapon_candidates.is_empty():
+		failures.append("%d weapon_new candidate(s) survived with all %d slots full" % [
+			new_weapon_candidates.size(), cap,
+		])
+
+	# A further distinct weapon must be refused outright, not appended.
+	var overflow_id: String = weapon_ids[cap]
+	_mute_expected_errors(true)
+	run.grant_weapon(overflow_id)
+	_mute_expected_errors(false)
+
+	if run.weapons.size() != cap:
+		failures.append("grant_weapon pushed past the cap to %d weapons" % run.weapons.size())
+	if run.weapon_level(overflow_id) != 0:
+		failures.append("\"%s\" was taken despite every slot being full" % overflow_id)
+
+	# With the slots full the pool must collapse to upgrades and passives.
+	var captured: Array[Dictionary] = []
+	var handler := func(_new_level: int, choices: Array) -> void:
+		for choice: Dictionary in choices:
+			captured.append(choice)
+
+	EventBus.level_reached.connect(handler)
+	run.add_xp(run.xp_to_next(run.level))
+	EventBus.level_reached.disconnect(handler)
+
+	if captured.is_empty():
+		failures.append("a full-slot run offered no choices at all")
+
+	_drop(run)
+	return failures
+
+
 func _test_stat_total_aggregates_stacks() -> Array[String]:
 	var failures: Array[String] = []
 	var run := _new_run()
@@ -244,10 +310,13 @@ func _owned_amount(run: Node, choice_id: String, kind: String) -> int:
 
 func _max_out_everything(run: Node) -> void:
 	var content: Node = run.content
+	# Filling past the slot cap is expected here and warns; mute that noise.
+	_mute_expected_errors(true)
 	for weapon_data: Dictionary in content.all_weapons():
 		var weapon_id: String = String(weapon_data.get("id", ""))
 		for _step: int in range(int(weapon_data.get("max_level", 1))):
 			run.grant_weapon(weapon_id)
+	_mute_expected_errors(false)
 	for passive_data: Dictionary in content.all_passives():
 		var passive_id: String = String(passive_data.get("id", ""))
 		for _step: int in range(int(passive_data.get("max_stacks", 1))):

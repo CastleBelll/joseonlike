@@ -15,6 +15,11 @@ const CHOICES_PER_LEVEL := 3
 const WEAPON_START_LEVEL := 1
 const PASSIVE_START_STACKS := 1
 
+## Concurrent weapon slots (ARCHITECTURE.md section 3.3). content-data balanced
+## the stage against this holding, so it is enforced at the single point every
+## caller routes through (grant_weapon) as well as in the choice pool.
+const MAX_WEAPON_SLOTS := 4
+
 ## Schema fallbacks, not balance knobs: content is expected to declare these
 ## fields, and an entry that omits them must still cap rather than grow forever.
 const FALLBACK_WEAPON_MAX_LEVEL := 1
@@ -164,6 +169,10 @@ func grant_weapon(weapon_id: String) -> void:
 		owned[WEAPON_LEVEL] = current + 1
 		return
 
+	if weapons.size() >= MAX_WEAPON_SLOTS:
+		push_warning("RunState: cannot take \"%s\"; all %d weapon slots are full" % [weapon_id, MAX_WEAPON_SLOTS])
+		return
+
 	weapons.append({WEAPON_ID: weapon_id, WEAPON_LEVEL: WEAPON_START_LEVEL})
 
 
@@ -258,6 +267,11 @@ func _weapon_upgrade_choices() -> Array[Dictionary]:
 
 func _new_weapon_choices() -> Array[Dictionary]:
 	var choices: Array[Dictionary] = []
+	# With every slot filled the pool must collapse to upgrades and passives,
+	# otherwise the player is offered a weapon that grant_weapon would refuse.
+	if weapons.size() >= MAX_WEAPON_SLOTS:
+		return choices
+
 	for data: Dictionary in _content().all_weapons():
 		var weapon_id: String = String(data.get(CHOICE_ID, ""))
 		if weapon_id.is_empty() or weapon_level(weapon_id) > 0:
