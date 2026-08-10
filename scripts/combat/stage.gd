@@ -21,7 +21,6 @@ const KEY_GOLD_DROP: String = "gold_drop"
 
 var stage_id: String = ""
 var elapsed_sec: float = 0.0
-var kills: int = 0
 var gold: int = 0
 
 var _stage_data: Dictionary = {}
@@ -94,8 +93,10 @@ func _viewport_centre() -> Vector2:
 	return viewport.get_visible_rect().size * 0.5
 
 
+## RunState.kills is the authoritative counter: the HUD reads it live and the
+## results payload reads it back, so combat must not keep a private tally.
 func _on_enemy_killed(monster_id: String, position: Vector2) -> void:
-	kills += 1
+	RunState.kills += 1
 	var data: Dictionary = GameData.monster(monster_id)
 	gold += maxi(int(data.get(KEY_GOLD_DROP, 0)), 0)
 	_drop_xp(maxi(int(data.get(KEY_XP_DROP, 0)), 0), position)
@@ -145,9 +146,13 @@ func _end_run(victory: bool) -> void:
 	_is_choice_open = false
 	get_tree().paused = false
 	_spawner.release_all()
-	EventBus.run_ended.emit({
+	var result: Dictionary = {
 		KEY_VICTORY: victory,
 		KEY_TIME_SEC: elapsed_sec,
-		KEY_KILLS: kills,
+		KEY_KILLS: RunState.kills,
 		KEY_GOLD: gold,
-	})
+	}
+	EventBus.run_ended.emit(result)
+	# Nothing else listens for run_ended to close the loop, and the results
+	# screen reads its payload from SceneRouter, so the stage routes itself out.
+	SceneRouter.goto_results(result)

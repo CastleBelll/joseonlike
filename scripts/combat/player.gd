@@ -44,6 +44,9 @@ var facing: Vector2 = Vector2.RIGHT
 var _invulnerable_left: float = 0.0
 var _input_adapter: Node = null
 var _weapons: Array[WeaponBase] = []
+var _character_data: Dictionary = {}
+## source weapon id -> evolved weapon id, for weapons that have already evolved.
+var _evolution_swaps: Dictionary = {}
 
 @onready var _sprite: Sprite2D = $Sprite2D
 @onready var _hurt_box: Area2D = $HurtBox
@@ -57,10 +60,13 @@ func _ready() -> void:
 	if _input_adapter == null or not _input_adapter.has_method(&"get_move_vector"):
 		push_warning("Player: input adapter missing get_move_vector(), the hunter will not move")
 		_input_adapter = null
-	var character_data: Dictionary = _load_character()
-	_apply_stats(character_data)
-	_apply_sprite(character_data)
-	_build_weapons(character_data)
+	_character_data = _load_character()
+	_apply_stats(_character_data)
+	hp = max_hp
+	_apply_sprite(_character_data)
+	_sync_weapons()
+	if _weapons.is_empty():
+		push_warning("Player: no weapons in RunState and no starting_weapon, entering the stage unarmed")
 	EventBus.upgrade_chosen.connect(_on_upgrade_chosen)
 
 
@@ -112,7 +118,6 @@ func add_weapon(id: String, start_level: int = CombatMath.MIN_LEVEL) -> WeaponBa
 	weapon.name = "Weapon_%s" % id
 	_weapon_root.add_child(weapon)
 	weapon.setup(id, start_level)
-	weapon.level_changed.connect(_on_weapon_level_changed)
 	_weapons.append(weapon)
 	return weapon
 
@@ -168,12 +173,23 @@ func _load_character() -> Dictionary:
 	return GameData.character(character_id)
 
 
+## max_hp and move_speed passives are fractional in data/passives.json
+## (0.10 and 0.05 per stack), so they scale the character base rather than being
+## added to it; scripts/ui/hud.gd reads max_hp the same way.
 func _apply_stats(character_data: Dictionary) -> void:
 	var base_hp: float = float(character_data.get(KEY_BASE_HP, DEFAULT_BASE_HP))
 	var base_speed: float = float(character_data.get(KEY_BASE_SPEED, DEFAULT_BASE_SPEED))
-	max_hp = maxf(base_hp + RunState.stat_total(STAT_MAX_HP), 1.0)
-	hp = max_hp
-	move_speed = maxf(base_speed + RunState.stat_total(STAT_MOVE_SPEED), 0.0)
+	max_hp = maxf(base_hp * (1.0 + RunState.stat_total(STAT_MAX_HP)), 1.0)
+	move_speed = maxf(base_speed * (1.0 + RunState.stat_total(STAT_MOVE_SPEED)), 0.0)
+
+
+## Recomputed after every pick: max_hp and move_speed passives taken mid-run
+## were otherwise dead stats, because _ready() ran before they existed. The
+## damage already taken is preserved so a level-up is not a free heal.
+func _refresh_stats() -> void:
+	var missing_hp: float = max_hp - hp
+	_apply_stats(_character_data)
+	hp = clampf(max_hp - missing_hp, 0.0, max_hp)
 
 
 func _apply_sprite(character_data: Dictionary) -> void:
@@ -184,49 +200,73 @@ func _apply_sprite(character_data: Dictionary) -> void:
 	)
 
 
-func _build_weapons(character_data: Dictionary) -> void:
-	var entries: Array[Dictionary] = RunState.weapons.duplicate()
-	if entries.is_empty():
-		var starting_weapon: String = String(character_data.get(KEY_STARTING_WEAPON, ""))
-		if starting_weapon.is_empty():
-			push_warning("Player: character has no starting_weapon, entering the stage unarmed")
-			return
-		entries.append({KEY_ID: starting_weapon, KEY_LEVEL: CombatMath.MIN_LEVEL})
-	for entry in entries:
-		add_weapon(String(entry.get(KEY_ID, "")), int(entry.get(KEY_LEVEL, CombatMath.MIN_LEVEL)))
+## Deferred so RunState has already applied the pick: both this node and
+## RunState listen to upgrade_chosen, and only RunState knows whether the id was
+## a weapon or a passive.
+func _on_upgrade_chosen(_choice_id: String) -> void:
+	_apply_run_state.call_deferred()
 
 
-## A level-up choice is either a weapon the hunter owns (level it), a new weapon
-## (add it), or a passive (which may unlock an evolution).
-func _on_upgrade_chosen(choice_id: String) -> void:
-	var owned: WeaponBase = find_weapon(choice_id)
-	if owned != null:
-		owned.level_up()
-		return
-	if not GameData.weapon(choice_id).is_empty():
-		add_weapon(choice_id)
-		return
+func _apply_run_state() -> void:
+	_refresh_stats()
 	_check_evolutions()
+	_sync_weapons()
 
 
-func _on_weapon_level_changed(_weapon_id: String, _level: int) -> void:
-	_check_evolutions()
-
-
+## Records any evolution that has become available. Both triggers -- a weapon
+## level-up and a passive stack gain -- arrive through upgrade_chosen, and
+## GameData.evolution_for() decides whether the thresholds are met.
 func _check_evolutions() -> void:
 	if _evolution == null:
 		return
-	for weapon in _weapons:
-		var evolved_id: String = _evolution.evaluate(weapon.weapon_id, weapon.level, RunState.passives)
+	for entry: Dictionary in _run_state_loadout():
+		var source_id: String = String(entry.get(KEY_ID, ""))
+		# Already evolved: the source id still sits in RunState.weapons, and
+		# re-querying it would re-fire the swap on every later level-up.
+		if source_id.is_empty() or _evolution_swaps.has(source_id):
+			continue
+		var evolved_id: String = _evolution.evaluate(source_id, RunState.passives)
 		if evolved_id.is_empty():
 			continue
-		_replace_weapon(weapon, evolved_id)
-		return
+		_evolution_swaps[source_id] = evolved_id
 
 
-## An evolution may cross categories (a talisman into a blade), so the node is
-## rebuilt through the registry instead of only swapping the id in place.
-func _replace_weapon(weapon: WeaponBase, evolved_id: String) -> void:
-	_weapons.erase(weapon)
-	weapon.queue_free()
-	add_weapon(evolved_id)
+## Rebuilds the weapon nodes so they match RunState (with evolutions applied).
+## Idempotent, so it is safe to call after every upgrade.
+func _sync_weapons() -> void:
+	var wanted: Dictionary = _wanted_loadout()
+	for weapon: WeaponBase in _weapons.duplicate():
+		if wanted.has(weapon.weapon_id):
+			weapon.set_level(int(wanted[weapon.weapon_id]))
+			continue
+		_weapons.erase(weapon)
+		weapon.queue_free()
+	for weapon_key: Variant in wanted.keys():
+		var weapon_id: String = String(weapon_key)
+		if find_weapon(weapon_id) == null:
+			add_weapon(weapon_id, int(wanted[weapon_key]))
+
+
+## Owned weapon ids mapped to their level, with evolved weapons substituted for
+## their source. An evolved weapon inherits the source level so a level-up spent
+## before the swap is not thrown away.
+func _wanted_loadout() -> Dictionary:
+	var loadout: Dictionary = {}
+	for entry: Dictionary in _run_state_loadout():
+		var source_id: String = String(entry.get(KEY_ID, ""))
+		if source_id.is_empty():
+			continue
+		var target_id: String = String(_evolution_swaps.get(source_id, source_id))
+		loadout[target_id] = int(entry.get(KEY_LEVEL, CombatMath.MIN_LEVEL))
+	return loadout
+
+
+## RunState is authoritative once a run has begun. The character fallback only
+## matters when scenes/combat/stage.tscn is played directly during development.
+func _run_state_loadout() -> Array[Dictionary]:
+	if not RunState.weapons.is_empty():
+		return RunState.weapons
+	var starting_weapon: String = String(_character_data.get(KEY_STARTING_WEAPON, ""))
+	if starting_weapon.is_empty():
+		return []
+	return [{KEY_ID: starting_weapon, KEY_LEVEL: CombatMath.MIN_LEVEL}]
