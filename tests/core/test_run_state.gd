@@ -29,6 +29,7 @@ func run() -> Array[String]:
 	failures.append_array(_test_apply_choice_mutates_run())
 	failures.append_array(_test_weapon_slot_cap_holds())
 	failures.append_array(_test_evolution_only_weapons_are_not_offered())
+	failures.append_array(_test_chained_evolution_is_reachable())
 	failures.append_array(_test_stat_total_aggregates_stacks())
 	return failures
 
@@ -306,6 +307,87 @@ func _test_evolution_only_weapons_are_not_offered() -> Array[String]:
 		failures.append("owning \"%s\" did not put its upgrade in the pool" % evolved_id)
 
 	_drop(run)
+	return failures
+
+
+## Combat found the second-stage evolution structurally unreachable: RunState
+## kept naming the source weapon, so evolution_for saw the evolved one at level 0
+## forever. Asserted on run state, never on a sampled level-up.
+func _test_chained_evolution_is_reachable() -> Array[String]:
+	var failures: Array[String] = []
+	var run := _new_run()
+	var content: Node = run.content
+
+	# Fixture chain, mirroring data/evolutions.json at fixture scale:
+	# old_talisman -> fire_talisman -> phoenix_talisman, each needing the weapon
+	# at level 2 and skill_power at 2 stacks.
+	run.grant_weapon("old_talisman")
+	run.grant_weapon("old_talisman")
+	run.grant_passive("skill_power")
+	run.grant_passive("skill_power")
+
+	var first_stage: String = content.evolution_for("old_talisman", "skill_power")
+	if first_stage != "fire_talisman":
+		failures.append("stage one resolved to \"%s\", expected fire_talisman" % first_stage)
+
+	var source_level: int = run.weapon_level("old_talisman")
+	run.evolve_weapon("old_talisman", first_stage)
+
+	if run.weapon_level("old_talisman") != 0:
+		failures.append("the source weapon is still listed at level %d after evolving" % run.weapon_level("old_talisman"))
+
+	# Inherited, not restarted. A restart would strand the chain: the second rule
+	# gates on a level the evolved weapon could not reach again inside one run.
+	if run.weapon_level("fire_talisman") != source_level:
+		failures.append("the evolved weapon sits at level %d, expected the inherited %d" % [
+			run.weapon_level("fire_talisman"), source_level,
+		])
+
+	if run.weapons.size() != 1:
+		failures.append("evolving changed the weapon count to %d; it must replace in place" % run.weapons.size())
+
+	# The reported bug: with the source id still listed this returned "".
+	var second_stage: String = content.evolution_for("fire_talisman", "skill_power")
+	if second_stage != "phoenix_talisman":
+		failures.append("the chained evolution resolved to \"%s\", expected phoenix_talisman" % second_stage)
+
+	# The evolved weapon must keep levelling, which is what the old design bought.
+	var upgrade_offered: bool = false
+	for choice: Dictionary in run._weapon_upgrade_choices():
+		if String(choice.get("id", "")) == "fire_talisman":
+			upgrade_offered = true
+
+	if not upgrade_offered:
+		failures.append("the evolved weapon lost its upgrade path")
+
+	# Chain all the way through, so a two-step run really lands on the end weapon.
+	run.evolve_weapon("fire_talisman", second_stage)
+	if run.weapon_level("phoenix_talisman") != source_level:
+		failures.append("the second evolution left phoenix_talisman at level %d" % run.weapon_level("phoenix_talisman"))
+
+	# A swap the run does not hold must be refused, not fabricated.
+	_mute_expected_errors(true)
+	run.evolve_weapon("short_bow", "fire_talisman")
+	_mute_expected_errors(false)
+	if run.weapon_level("fire_talisman") != 0 or run.weapons.size() != 1:
+		failures.append("evolving an unowned weapon mutated the run")
+
+	_drop(run)
+
+	# The signal path itself, not just the method. Autoload _ready() never fires
+	# under the headless runner -- the nodes are parented to root but the tree is
+	# never processed -- so wire a throwaway instance by hand and emit the real
+	# signal combat emits. Freeing the instance drops the connection again.
+	var wired := _new_run()
+	wired._ready()
+	wired.grant_weapon("old_talisman")
+	wired.grant_weapon("old_talisman")
+	EventBus.weapon_evolved.emit("old_talisman", "fire_talisman")
+
+	if wired.weapon_level("fire_talisman") != 2:
+		failures.append("EventBus.weapon_evolved never reached RunState; fire_talisman sits at %d" % wired.weapon_level("fire_talisman"))
+
+	_drop(wired)
 	return failures
 
 

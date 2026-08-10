@@ -70,6 +70,10 @@ func _ready() -> void:
 	# RunState owns run mutation, so it applies the pick itself; the UI only
 	# reports which choice id the player took.
 	EventBus.upgrade_chosen.connect(_on_upgrade_chosen)
+	# Combat swaps the weapon node-side and announces it here. Without this the
+	# weapons array keeps naming the source, so evolution_for never sees the
+	# evolved weapon's level and a chained evolution can never fire.
+	EventBus.weapon_evolved.connect(_on_weapon_evolved)
 
 
 func begin(new_character_id: String, new_stage_id: String) -> void:
@@ -175,6 +179,52 @@ func grant_weapon(weapon_id: String) -> void:
 		return
 
 	weapons.append({WEAPON_ID: weapon_id, WEAPON_LEVEL: WEAPON_START_LEVEL})
+
+
+## Records that `from_id` has become `to_id`, so the run tracks the weapon the
+## player actually wields.
+##
+## The evolved weapon INHERITS the source's level rather than restarting at 1.
+## Two reasons: combat already carries the level across the swap node-side
+## (Player._wanted_loadout), so restarting here would leave the two authorities
+## disagreeing about the same weapon; and a restart would strand every chained
+## evolution, since the second-stage rule gates on the evolved weapon reaching a
+## level it could not reach again inside one run. The level is clamped to the
+## target's own max_level in case it is shorter than the source's.
+##
+## The entry is rewritten in place. Evolution transforms a weapon, so it must not
+## consume a second slot -- and Player._check_evolutions() emits this signal while
+## iterating the live weapons array, where appending or erasing would be unsafe.
+func evolve_weapon(from_id: String, to_id: String) -> void:
+	if from_id.is_empty() or to_id.is_empty() or from_id == to_id:
+		push_warning("RunState.evolve_weapon: ignoring the meaningless swap \"%s\" -> \"%s\"" % [from_id, to_id])
+		return
+
+	var target_data: Dictionary = _content().weapon(to_id)
+	if target_data.is_empty():
+		# GameData already reported the unknown id. Keep the source rather than
+		# replacing a real weapon with one the content does not define.
+		return
+
+	if weapon_level(to_id) > 0:
+		push_warning("RunState.evolve_weapon: \"%s\" is already owned; leaving \"%s\" alone" % [to_id, from_id])
+		return
+
+	for owned: Dictionary in weapons:
+		if String(owned.get(WEAPON_ID, "")) != from_id:
+			continue
+
+		var inherited: int = int(owned.get(WEAPON_LEVEL, WEAPON_START_LEVEL))
+		var target_max: int = int(target_data.get(FIELD_MAX_LEVEL, FALLBACK_WEAPON_MAX_LEVEL))
+		owned[WEAPON_ID] = to_id
+		owned[WEAPON_LEVEL] = mini(inherited, target_max)
+		return
+
+	push_warning("RunState.evolve_weapon: the run does not hold \"%s\"" % from_id)
+
+
+func _on_weapon_evolved(from_id: String, to_id: String) -> void:
+	evolve_weapon(from_id, to_id)
 
 
 ## Adds one passive stack, capped by the content-declared max_stacks.
