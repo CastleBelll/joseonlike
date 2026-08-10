@@ -8,7 +8,7 @@
     "xp_drop": 1,
     "gold_drop": 1,
     "behaviour": "chase",
-    "sprite": "res://assets/monsters/forest_goblin.png"
+    "sprite": "res://asset/monster/forest_goblin.png"
   },
   "forest_spirit": {
     "name_ko": "숲의 원혼",
@@ -19,7 +19,7 @@
     "xp_drop": 5,
     "gold_drop": 2,
     "behaviour": "ranged",
-    "sprite": "res://assets/monsters/forest_spirit.png"
+    "sprite": "res://asset/monster/forest_spirit.png"
   },
   "bamboo_brute": {
     "name_ko": "죽림 거한",
@@ -30,7 +30,7 @@
     "xp_drop": 8,
     "gold_drop": 4,
     "behaviour": "charger",
-    "sprite": "res://assets/monsters/bamboo_brute.png"
+    "sprite": "res://asset/monster/bamboo_brute.png"
   },
   "bamboo_spirit_lord": {
     "name_ko": "죽림 정령왕",
@@ -41,6 +41,6 @@
     "xp_drop": 200,
     "gold_drop": 150,
     "behaviour": "boss",
-    "sprite": "res://assets/monsters/bamboo_spirit_lord.png"
+    "sprite": "res://asset/monster/bamboo_spirit_lord.png"
   }
 }
