@@ -18,6 +18,16 @@ summary and exits 1 — a suite that fails to compile, can't be instantiated, or
 `run()` counts as `ERROR`, not a skip. A `_process` backstop guarantees this exit even
 if a suite's `run()` aborts mid-call (previously this hung forever instead of failing).
 
+**Known runner gap: autoload `_ready()` never fires here.** Bare `class_name`/autoload
+identifiers resolve fine (see the import-cache note above), but under this custom
+`SceneTree` main loop the autoload singletons' own `_ready()` callback is never
+invoked — only under a real game run (`godot --headless --path . --quit`) does that
+fire. A test that depends on `_ready()`-driven setup (e.g. a timer built in `_ready`)
+will silently pass without exercising that code. Drive the underlying behavior
+directly instead (e.g. call the timer's callback method, not `Timer.start()`, which
+also refuses to run outside a live scene tree) — see `tests/core/test_save_manager.gd`
+for a worked example.
+
 ## Running data validation locally
 
 `content-data` owns `tools/validate_data.gd`. Until it lands, this step doesn't exist
