@@ -143,6 +143,14 @@ func all_passives() -> Array[Dictionary]:
 	return _all(COLLECTION_PASSIVES)
 
 
+## Every evolution rule, id injected. evolution_for() only answers "is this pair
+## satisfied right now"; a caller that must reason about a rule the run has not
+## met yet -- such as weighting the passive still gating it -- needs the rules
+## themselves.
+func all_evolutions() -> Array[Dictionary]:
+	return _all(COLLECTION_EVOLUTIONS)
+
+
 func _lookup(collection_name: String, id: String) -> Dictionary:
 	if not _loaded:
 		push_error("GameData.%s(\"%s\") called before load_all()" % [collection_name, id])
