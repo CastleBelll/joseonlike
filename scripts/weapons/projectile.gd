@@ -127,7 +127,7 @@ func _on_body_entered(body: Node2D) -> void:
 	if _hit_ids.has(body_id):
 		return
 	_hit_ids.append(body_id)
-	EffectPool.play(impact_effect, global_position)
+	EffectPool.play(impact_effect, body.global_position)
 	body.take_damage(damage, is_crit)
 	if pierce_left <= 0:
 		_despawn()

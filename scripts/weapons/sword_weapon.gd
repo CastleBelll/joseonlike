@@ -25,6 +25,7 @@ func _fire() -> bool:
 		arc.lifetime_sec = ARC_LIFETIME_SEC
 		arc.facing = direction
 		arc.texture = WeaponArt.melee_texture(weapon_id)
+		arc.impact_effect = WeaponArt.impact_for_weapon(weapon_id)
 		arc.global_position = wielder.global_position
 		root.add_child(arc)
 	return true
