@@ -126,6 +126,23 @@ M1 helper scripts are deterministic and safe to rerun:
 - `measure_effect_sheets.py` records opaque coverage, bright-core pixels, and consecutive
   frame deltas for the thirteen four-frame effect sheets. Its final dissipation frame is exempt
   from the bright-core gate but still must retain a readable silhouette and distinct motion.
+- `build_rotation_contact_sheets.py` lays out every character and monster in the semantic
+  order south, south-east, east, north-east, north, north-west, west, south-west. View all
+  four overview pages before accepting directional art; filenames and pixel differences do
+  not prove that a sprite actually faces its label.
+- `audit_rotation_facing.py --write` records a manual contact-sheet decision and binds it to
+  the SHA-256 of all 200 reviewed cells. `verify_assets.py` rejects any later cell change
+  until its contact sheet is rebuilt, viewed, and the manifest is deliberately renewed. The
+  retained pixel diagnostics are evidence, not a classifier: correct asymmetric weapons and
+  tails produce false positives under a universal mirror or distance threshold.
+
+Rotation sheets are not the default generation method. A model may ignore the requested
+layout, which makes fixed-grid slicing put grid lines, neighboring figures, or the wrong
+facing into a named cell. Prefer direct per-direction generation for new rotation work. A
+sheet is acceptable only when every sliced cell is inspected individually, contains exactly
+one complete figure with no grid/caption bleed, matches its semantic direction, and passes
+the mechanical asset checks; if any of those fail, stop slicing that sheet and regenerate
+the affected directions directly.
 
 ## Import settings
 

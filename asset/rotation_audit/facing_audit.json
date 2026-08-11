@@ -1,0 +1,1277 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-11",
+  "review_method": "manual contact-sheet review, hash-bound per cell",
+  "direction_order": [
+    "south",
+    "south-east",
+    "east",
+    "north-east",
+    "north",
+    "north-west",
+    "west",
+    "south-west"
+  ],
+  "expected_facing": {
+    "south": "front",
+    "south-east": "front",
+    "east": "profile-east",
+    "north-east": "back",
+    "north": "back",
+    "north-west": "back",
+    "west": "profile-west",
+    "south-west": "front"
+  },
+  "sets": {
+    "Taoist": {
+      "root": "asset/character/Taoist/Idle/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/Taoist.png",
+      "contact_sheet_sha256": "88c9faabcbd09722fe92244a9a6f9c25be16571d627f471c07f5efef2472f64e",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "fa9ecf1e39b00e9b0423fa61e5ac0f8958f60d3ec4517e53e54f856fac4953ac"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "aad70683333c1b161a0ad4caad313964ea9f4eb9912479b07fc9e45fd9e2fe76"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "2bf9b440471c5f56327faafc99e8d13bdec45fb6a0611908ddda4699ff2c2c26"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "ae3327a4db1f716d13995d249838b5fac9eae5436cec32f187433d2d9162d4e0"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "f1fb7f6c9910f78919b6bb4b52a09e32de3fa0d82256021dd6c58678c59fab0f"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "4cee6a1bd133e4719b4812ab8ad68ba5b7ccc3d5cff7dccbb92fc77815a6afc8"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "32ec7c3ee13ddc906ebc38142e6fe91c02ac6c91f518303ca06123c136e9c1b0"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "2cfff76c4ef3533eece4f50f30555690a85670cb925a74f2b3cc243c771ab5a8"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 898.0,
+        "back_internal_mean": 800.0,
+        "front_back_mean": 951.67,
+        "east_west_direct_changed": 645,
+        "east_mirrored_to_west_changed": 446,
+        "east_west_mirror_ratio": 0.6915
+      }
+    },
+    "Warrior": {
+      "root": "asset/character/Warrior/Idle/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/Warrior.png",
+      "contact_sheet_sha256": "1bc546858086251ca219dd37d3069af2da26fa9e2296553abef0a9fe66c9df29",
+      "regenerated_in_audit": true,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "fdc6dbc2e60df302252d7324ae2a56ff9bd011953ed9f4588b68fac92ebe6fa2"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "c9cc2b5321a9d671f2f5120a52b18fc793b2cfb1c9a3557faea9c65bc97e6b85"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "535eb10d7d5c6403c2c9ae9929db171e05c4355b2c5bd6d110ccf442d179cd31"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "177016077c6e90bf5d5714f7d21eedd13cc95f1d528d57c6b209534aa4633adf"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "5b9f56f9e69d94f9434255b3d4feb714b955c2355dcc7996606fdaefd9e450d2"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "7d17cb099d4cf6c98dc72839fb1fc54ebf007c0fb6b9cde73a64ca445f5a5ee2"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "7954e3a6050e879722bb17b76a5668323d40b6f0d9f1869b794fcb645f766944"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "bb39e74b407e09488100905cae5be4212a16dcb6cf9d03e5991f15f4f3f32c77"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 824.0,
+        "back_internal_mean": 697.67,
+        "front_back_mean": 831.67,
+        "east_west_direct_changed": 575,
+        "east_mirrored_to_west_changed": 543,
+        "east_west_mirror_ratio": 0.9443
+      }
+    },
+    "Archer": {
+      "root": "asset/character/Archer/Idle/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/Archer.png",
+      "contact_sheet_sha256": "75e1ef26da09cf197910314aa0934f71594fc789f33d17a15714fa6c189cf1ff",
+      "regenerated_in_audit": true,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "6eb920c54a39d1adff5823e4615da94d224d88010c40566a660e6b9cb0b966bc"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "61eb9007a503e11d06440ac4a77a4c1f4dd8907f4f2579fa2b5f9e84844197ab"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "f8ecb56f4905986209db77147bd1f941420301d3c418e632de8ebf32f0cb39a2"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "53b369fa39fe1d41575732a5faf73976e22c6224f587f39eba603cd055e98f4b"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "b80364f5f9d428325d392ad1c374387cfbc861bff9aa4817bebdc26856a2c4ba"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "eade9a78787f069c77a613969cd0634ede2703b5b7aac80d60d89f5dfcd4bf02"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "1e6f03b4d9bd65db4324521dc704b3b3ac6d09b4e6fd62df700880279ce66639"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "c8628bebbd46565ef8fd53f2541a229357bd530a03d376b90eff7020c04cbda9"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 1027.0,
+        "back_internal_mean": 967.0,
+        "front_back_mean": 1042.11,
+        "east_west_direct_changed": 843,
+        "east_mirrored_to_west_changed": 658,
+        "east_west_mirror_ratio": 0.7805
+      }
+    },
+    "ancient_imugi": {
+      "root": "asset/monster/ancient_imugi/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/ancient_imugi.png",
+      "contact_sheet_sha256": "1e0fea5ce6d68a6431c83aff46da954602eaec2d85c6a1d533ae8b6636ea2551",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "47e9fd2e0d14bc488ea2a7d8b5c4fa665c8aea49196dd1802a7a1fd72d5bb58f"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "e07e86993d6e6be38d62eb1ccfa4cd90bbf0c44b34a81882e5146bbe55127a91"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "c3d490916d4ce9cf6df9c977a02f4689e97933c2e9c7717fe5b9fe73d7fc6232"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "0f92f9dea47d67067dde8993744f71ac6ced664778ecb8a71a1e3e03e73fb31f"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "da50363398261966ea0262459c36bbb33802537cbe3f33a9131343b8bb105350"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "35b07596130661002e4595fd08778d36a07bd178c7cc62c73556cccb5eecafbd"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "0b12fe80535875997f2da9474edc80cb438b5d12fddb36e85341c33970198df5"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "ace0406df61c9e1f9ff2e30b4f7bdae1e33faf09cae7e04c3419890d40791057"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 3387.0,
+        "back_internal_mean": 3692.0,
+        "front_back_mean": 3732.67,
+        "east_west_direct_changed": 3602,
+        "east_mirrored_to_west_changed": 3164,
+        "east_west_mirror_ratio": 0.8784
+      }
+    },
+    "bamboo_brute": {
+      "root": "asset/monster/bamboo_brute/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/bamboo_brute.png",
+      "contact_sheet_sha256": "13d568f0d9c30a08c783b87d9071897050bfda59cd1ac03906bc594f6c69a816",
+      "regenerated_in_audit": true,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "9a80ca39f90aa96a3660b25ed8f47dcc9b560dc0fc4366792df668422950ea51"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "41c3bf690c39b11c1c8ae6ac3da62bc94ea9a988aa1d788a4cdaf084c1f0d5f6"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "c09e10edfa8de4dc02564d86204f05e9be556dbfd5f3c964393746dadc6c66e7"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "681978829ef1ce76ae22283500de91dceefc0b25710d6180134b07ddd641c491"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "b96e484634d3fec777c90ca211fb367b4ab463e667455611a9ab81acba6392f4"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "7df30a61821dbdc37807ee09fd15268a8042a5d2f452d569403597539e12e7fe"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "6302e25d87688458fbaa2cdb2aeec020bda1bd126441c501ca5e117815f9381d"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "ba0cfcdec1020276bbd95046d218c4adf40f5f24ea15e30bb26fbf4af29fcd3a"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 2065.33,
+        "back_internal_mean": 2106.0,
+        "front_back_mean": 2047.89,
+        "east_west_direct_changed": 1314,
+        "east_mirrored_to_west_changed": 1244,
+        "east_west_mirror_ratio": 0.9467
+      }
+    },
+    "bamboo_spirit_lord": {
+      "root": "asset/monster/bamboo_spirit_lord/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/bamboo_spirit_lord.png",
+      "contact_sheet_sha256": "67cf81534cb5d4b1a3dba75796f71c44c241854769b38e70ccdf157be72da7fb",
+      "regenerated_in_audit": true,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "26c65623d28ab31c98dd8df43f76832b7fa5e1274bff1201e0bf5e20e5e1da00"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "f12b7a1e4ffa83982a954a0b441b0cf98b2db0f24aed6f4640731fbba5853ae7"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "debe2ede83b2f98b8736c0d787fe8c4fa94a5fb5b619fd71140e57a9ea6c6704"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "38cd18ed25010b5c580ff4d2aa66dbc6580122f3d468cd8edd3d64a0f9d6c870"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "a972abc3d6a53aae0208c17f340f013f8d84a535bed87bfa49c44ffec141df72"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "79f88da4de5a6dada66b6e7767de03370d9762c9b548cb8ab020211e1646aee7"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "2e4daf8599e8214afa42198c408f869d509ae4bf582c71fa04058816b417e80f"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "4f1d9926f05d5b41daaba6cc5748e0a3d1bf6d04c40bd8727c242d5f9a46ea68"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 2847.67,
+        "back_internal_mean": 2657.33,
+        "front_back_mean": 2848.78,
+        "east_west_direct_changed": 2303,
+        "east_mirrored_to_west_changed": 1691,
+        "east_west_mirror_ratio": 0.7343
+      }
+    },
+    "blue_dokkaebi": {
+      "root": "asset/monster/blue_dokkaebi/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/blue_dokkaebi.png",
+      "contact_sheet_sha256": "ebe020e72b5186f69bbb9c414988d9481f413a09f09d62a7fe2da87612814bd6",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "92e1c1962cc3d74bd8ce738dc7db5a8dcbd429bc8a1b0a1065b24b9ff0db2bd8"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "bd1d9865e33f601df8ceb39d17099d2b7bb832e2679db7d3c5de61a3cec11cd5"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "24ffb61aa28709b1bd6834ff2d4b0384813cc6c2c0b634eb50e8eba65d2f0263"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "19c97015e90aab0f348de21e2d3acb1779341706d36b379fe1516532f592d2af"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "3709cc304d0b5836f5c2bb3239497f4975760c7f600f1beaa04b7b6777b70eb0"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "978e15e6e5c2cb6fdeb4edf5a3a45ee445c0155dc654d1a30a1a9b49488475d9"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "9965bef3086b4f9e71296d8c6e72940592c71f653feb061df99e549276ec8c71"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "0f3c7f8be7e502bcf00227f10e0aafa3dea51820b92c7b7dac5cc1b6fc74df14"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 1164.67,
+        "back_internal_mean": 1223.33,
+        "front_back_mean": 1500.56,
+        "east_west_direct_changed": 884,
+        "east_mirrored_to_west_changed": 1000,
+        "east_west_mirror_ratio": 1.1312
+      }
+    },
+    "bulgasari": {
+      "root": "asset/monster/bulgasari/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/bulgasari.png",
+      "contact_sheet_sha256": "ade84f6975d18c3f4384955c1cfb3a7c7393e9a070493b4c7b040c8e08045934",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "04eb0c8a97c5f2e6112d5898a868096edf18622940b162c9feceecd5116af767"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "97c4ae4d830f87879bf9a6f17246c7056ae493c0afffc39dac6ad6921f0a4caf"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "b5ae33fb2f809855718d96cb9932c5f96233a75a72723745579e0b3a8d44716a"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "e23333027b3e208fc72b674430b388f0f81773972b2b3290f861aad4ff2f9f25"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "c8aaf7e45b09be838a449b16373ad9dd5b130ce7d1985ad7df82a34a921f1627"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "ffc14881d846970d6831db692df232c2fa18a78ad57d6deb079e88c4ae630fd9"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "048e22a5937e3d5580a4a2ac296c9e9f7d0e78ac4ed2d50c06c8ef1c4b1af52b"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "03ce8731fae5b89d29e4e757360a6853d38c6d10162266583b806340060b5758"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 2235.33,
+        "back_internal_mean": 2108.0,
+        "front_back_mean": 2100.89,
+        "east_west_direct_changed": 1733,
+        "east_mirrored_to_west_changed": 1347,
+        "east_west_mirror_ratio": 0.7773
+      }
+    },
+    "cheonyeo_gwisin": {
+      "root": "asset/monster/cheonyeo_gwisin/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/cheonyeo_gwisin.png",
+      "contact_sheet_sha256": "c83208fd3cab4256a04aced249795ab76dc1913bf6d03691e743ee76fa7c0532",
+      "regenerated_in_audit": true,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "8d8e0ed277de511e1bd85c4ea91dab3bbe0aa63c53ee3af735eb1f16bb77e002"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "dda33c010420919515c548704ff22a8d389cd2a26d28bdf1bda6b6d8203c1019"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "a93d3d605aa75f428262a3f8a4eb6895d4495af4bb68e1dd1d8debd02bca5487"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "cbc6f2661fd307ecf0553cf66eed54d59bafd71153d9dfbedea2be03bd4a9d70"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "4925c392142a8dfe7e77fa985c8babb805722155ed4561400c6b60f641efcaa1"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "ea140a4bb5eea6a1e774f69fd6fc7a79662d50042c87cdf5d4f19b5f203354ad"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "1f0434c587544b087a9eae59b5bc6c88d979369c55e65d88a9f75e18ad72b25b"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "cfca62633616d862c93875201791e2573b67a372f0b8fecffccc6d60c37441f5"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 861.33,
+        "back_internal_mean": 907.33,
+        "front_back_mean": 976.0,
+        "east_west_direct_changed": 929,
+        "east_mirrored_to_west_changed": 636,
+        "east_west_mirror_ratio": 0.6846
+      }
+    },
+    "dalgyal_gwisin": {
+      "root": "asset/monster/dalgyal_gwisin/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/dalgyal_gwisin.png",
+      "contact_sheet_sha256": "1ed2eebd26c0a58c66f0d3a23534dce5b942680011d5ad211aaa74b1f9cbf414",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "b5f516f2cdcbb0e1f2653573f6865c858fe69e316ee9a7137c621b6766cb45f2"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "005007471f49af24fa46b21f5c032fb061012e9cb64e071ce794820dbafe22cd"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "29c5ee0e61964d16721078a5bc1585c30a1b73287f4d596e109aec2e9a12cde7"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "835ecb36ad84561b903a206829967664d2d08dda4d5650a8cb40c1cc7059833b"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "0d722a9e85b3b8a5bccce4a5179e97de4cef4e5f6d9891bc35fbd8f625e8b8ff"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "a398c6b810a6a656bd5967f1ec71614102c54256a989751e790d7a06f5eab24f"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "a445817d92d569dceb01ecf436273d165bf310a96bb50d4bffdfc4507eb914dd"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "fbc8615da12ec1c606bad37b1147f50bf21f5415e79f6c53420cfa22980c1632"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 1195.33,
+        "back_internal_mean": 1019.0,
+        "front_back_mean": 1212.0,
+        "east_west_direct_changed": 631,
+        "east_mirrored_to_west_changed": 692,
+        "east_west_mirror_ratio": 1.0967
+      }
+    },
+    "dokkaebi_fire": {
+      "root": "asset/monster/dokkaebi_fire/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/dokkaebi_fire.png",
+      "contact_sheet_sha256": "b388ac7e81364fbdede477e1ffa0e7ebf2ed292ea71920e850ed736a5da82935",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "d72d8f9fbf403b9d3c77f0f19c06e874c7cc4823bbae80ff07a679f72886585b"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "8f63f6986aa5a1348e009709464786acb6f56c261b0cc91f0b22d7c4d5ef67aa"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "19a0760b095a7049bec0900a58f45e1626b9dafc5b63f125ba063808235a1cb4"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "5dca19167de24b70c6363035c644a5fab31de0ba1979072fa2c4f1644a5053bf"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "ff0d3fcc6e7fd85639ce65e36c8d8b347e2dc09487fa494224056da44accaa13"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "8fb38a0230f1af2b4a35a27aa5aeac3bf0292986c520011b72767c202a6fd412"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "691990ee2023d6b6e2dd6469f07a45ecbd33597a3b253cc27c75ee088b41293a"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "d25ae2479ec2ed967eaed7c3f4bce7bd25e0d8bd7d3414a1654ee2924a3f684b"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 1269.67,
+        "back_internal_mean": 1161.0,
+        "front_back_mean": 1224.44,
+        "east_west_direct_changed": 882,
+        "east_mirrored_to_west_changed": 862,
+        "east_west_mirror_ratio": 0.9773
+      }
+    },
+    "dokkaebi_king": {
+      "root": "asset/monster/dokkaebi_king/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/dokkaebi_king.png",
+      "contact_sheet_sha256": "0919f07d8ad9805a10df35e91d33c7ddd81044ace585ab1fa4aaf72a27d3ed0d",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "27b59d416e701d7f004a561b5a65455b13c7c6918ab6b8a2e52d4afdd1c694b3"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "ad2e6e5b6f4fdc8314d35a4069307724377772a598f5aafccb7dacd952b45727"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "e089ea240fe94423d17f854f53ee4faea1bfc303c5a79a1966254c064a39a509"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "60531a1cad2a23027d7cb2bf5a875d09dc564f7e4faa6111d9472c5defdb4765"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "a27842d01ed0355733e3bcd0b91c7c3680d50dfb77ca4b53b20d4cdd0db6eb70"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "4fc9e05d2905ff1f42374fee3e744930e8dc26e4c74155a6a5761cdbe74cb244"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "7c41476dd9cd4abbe77422a835408c90a3753fc3149567a39737239bfc279aac"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "ba6b670477e0b8742c4c9ad75cdf7c2b73a2367fda1a392426e1051ac4dc9e20"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 2852.67,
+        "back_internal_mean": 2437.33,
+        "front_back_mean": 3469.44,
+        "east_west_direct_changed": 1540,
+        "east_mirrored_to_west_changed": 1623,
+        "east_west_mirror_ratio": 1.0539
+      }
+    },
+    "forest_goblin": {
+      "root": "asset/monster/forest_goblin/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/forest_goblin.png",
+      "contact_sheet_sha256": "18dc2626e2f5a8256381d9af3c16540841d57fc776a86451b519c1ded184997c",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "b376e49edd42b5a2a38e52efa4e45d519ea6048d8c2aafcba8b57d158c01058f"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "197a4ec6f8db68cbb973b8da7d2dd3a820c528b995adb5d16183afdec89280e2"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "358e2ee8da6eb1b75f330b499126a1853806eb802d5d8474913ef345de1aef97"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "bfad9381ec96d94cb6329a1562e49a5584a623453cb0fbdd0bcce86d2fc4e24a"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "e8b49fdda7a9b9f6ecf318fadbca1f191fbcc7fcb05c122cb2adc0350dd091f5"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "5f1f3f1775c13bf7a7c433fea0ea986066d33857cc7b21ba45b403a4aeda88ef"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "92a779506c955f876091b428e546833f3e28b6fe0d938aa0145066f94ae446cf"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "631aca4c5e5e9b0ef45c5b455fdbb169c8d063f4ae0c76574694bceac22254fc"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 785.0,
+        "back_internal_mean": 560.0,
+        "front_back_mean": 1073.33,
+        "east_west_direct_changed": 560,
+        "east_mirrored_to_west_changed": 453,
+        "east_west_mirror_ratio": 0.8089
+      }
+    },
+    "forest_spirit": {
+      "root": "asset/monster/forest_spirit/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/forest_spirit.png",
+      "contact_sheet_sha256": "93acb0523b2408008f33d01147582131b48537d0c8338edb7e0a0762479d18c7",
+      "regenerated_in_audit": true,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "239e8c2c2a7e0544d588c3694c6002636c1271bf69639bce124b750d0036402a"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "10f4da9e26ccb13b43ed67db2ace7d85143d8501f0eff01585cfb2e12563a7df"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "9f62f4a42ebd6dcdb853cdf63d21ca1b5abda9883ae11170bab5628278f99486"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "c5691d24c0c260a9a90572d42b6c707c8ac37b03c46d14ef6cbbd3d942ce20a5"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "1f5e9823aded5b9456b4c5c54502c5a40a5388e83b6f41d70f78d1712f379bd3"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "4bb2c09aaa8b0832c6d0f9c46528744f30282ed4f341fe3a445d393b94f3cca8"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "241682aed1ed339313259a1be5f4039a510530f84ac9c3dd4bdba545ee8c63d3"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "2c97276b24f1870a12280ecb83b2140cd5808ec921bc1128e09ba3e7d312b4e9"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 649.67,
+        "back_internal_mean": 513.0,
+        "front_back_mean": 645.0,
+        "east_west_direct_changed": 489,
+        "east_mirrored_to_west_changed": 362,
+        "east_west_mirror_ratio": 0.7403
+      }
+    },
+    "fox_spirit": {
+      "root": "asset/monster/fox_spirit/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/fox_spirit.png",
+      "contact_sheet_sha256": "9983bda053d2eebb62f7a36834eca07d26c83c42737dc09a37b3c27ba0a43151",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "4b0a69b5c37f821f410e30c5bd43ac751591f231a166cf78d2047847a4f267db"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "ede038675c80153285c3d1a1827e62ce3c5b65cd9f9de5aaf64914cd4f2a6cf8"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "b358eaa5a5a8261067232a560d7f80279c7873e20d73f39a49b76370cc148e77"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "f9ad979db9e3556fa8f1068a72e212394903ce9477804f63b59c0218ae129b01"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "5b541de321df6f75428c34f2d02b9c374ad46e33f8ce2487a85b63093760185a"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "a90581dbbd432b0521c5c16d3365a19ea8e3918c590dab2117b6dcab18e53ea7"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "f882786d9fade562a69e51ab5a3d0ef746a98a9173fe7ddd0a5f5c45e1b60ab2"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "29019aea2217ccd04418ce82ccef28f530d9ea181cdd255135ceabd210f58cb9"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 1710.67,
+        "back_internal_mean": 1711.33,
+        "front_back_mean": 1713.44,
+        "east_west_direct_changed": 1720,
+        "east_mirrored_to_west_changed": 1469,
+        "east_west_mirror_ratio": 0.8541
+      }
+    },
+    "gumiho": {
+      "root": "asset/monster/gumiho/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/gumiho.png",
+      "contact_sheet_sha256": "4b6ac938e37252e90dd056627247cc723f0c4ba586f67c95021e55d2e3421d8d",
+      "regenerated_in_audit": true,
+      "exact_east_west_mirror_required": true,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "8297c8638b2b28bbf317685eb85e529413ac97a20c5c3f0fcc85786e729478e9"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "fa8b8bfd4a77503aa5d085142ec3a407f0efd74cd777d0b7ee5785d9b39a0dab"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "a60e69d732197bc88d0fde38d8d53a42d6444a462747e39f5acd30e2ca690f8c"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "60a98351d63b2ca11b8ef147696073617c747c100deeefa1fa30a83e8fa25cb6"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "e287cceff6b10d60860877dd9f775dd394331aef15bfa5d45210c0191e7e73ae"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "3230d923026f8ed03be326c150ef0e525a1bfe708f1ee189e54ab1a046aeca74"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "4efb2a83f57c5dfd8aafddf232f7935225957bddf9995c7ed717a3cda71eee88"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "410a4894a25fd025906a8907e57c3ae723036bd65905683faa3ef20b2fed3bd4"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 3763.0,
+        "back_internal_mean": 4048.33,
+        "front_back_mean": 3874.67,
+        "east_west_direct_changed": 3800,
+        "east_mirrored_to_west_changed": 0,
+        "east_west_mirror_ratio": 0.0
+      }
+    },
+    "gumiho_scout": {
+      "root": "asset/monster/gumiho_scout/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/gumiho_scout.png",
+      "contact_sheet_sha256": "7333d453be1fb03093d3c81f22931a2fb7438e9e1cdd3b385c1b25a0d9872f86",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "7a9a9def1f8365572b224fcb0d56586e69a99677e511d3c4ef0c62bd225d52fe"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "1cd65f4568bb342914bb6aa71c8f46fba57144b2ef600069f1d45f21569a0831"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "3b8cd06a1e5fda74fda274c0d1287f2544b72c7d1dfc03a97078200dadcfd64f"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "21a8d065f53c217cbe92949faacbab0a3a703b6946540da646307e1dee5acc2b"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "7d063146ec831e0a1a89314a9ea6d4fee3627028df73c70b552d7ad086893812"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "ac13bbb28d84b0d53ed7569392bb1eb2039013bdfaaca69bd4ac060ca46335d5"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "26c891bc0f533fdd8687c82f1fbcb35ec812140e1a76823918db9aa0f1083f7c"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "8c5c55ecebbdd040c0bd46236e6e1b2ed842dde438309f88f60cc46a3c1aba58"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 1547.0,
+        "back_internal_mean": 1668.0,
+        "front_back_mean": 1615.0,
+        "east_west_direct_changed": 1733,
+        "east_mirrored_to_west_changed": 1465,
+        "east_west_mirror_ratio": 0.8454
+      }
+    },
+    "gwimyeon_dokkaebi": {
+      "root": "asset/monster/gwimyeon_dokkaebi/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/gwimyeon_dokkaebi.png",
+      "contact_sheet_sha256": "45f32b64f6dc51dfa35179b1a7ab9bcbe0fd0a4eb19c40b70578e4a082ad9f49",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "95fc5c8c51f03d61e5c33ce90efcd8d539ae0c2dfb47a8c587e716cffed0a947"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "28f30100571507538b570b5b2f768a5ae78fdbe200c577eb59bfc2c1c5ba3a59"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "dc3aaade9f9e4a8f7612dc9db2b14bd8f2a535d67bad4c4e1aa4d049edd5fc2d"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "af87e7bd3cbe2587fb8e0e4cc927e2eca5cdba8a46ba00bb739618b16dd414da"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "1cccaa71c6bcbb0996be2f47d314fa2f627f8c9106daf42565f0f87fead6386e"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "5811ae7c41a5689dd3fb6dd2974ec30c578a3c7112641e5af6b0746ee1e8ceea"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "cec0aeece75b79de8e7cdc29e8edd4dd05dde4085fcc3812fb98942778203f95"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "ea1a696d53e65395ae3f5ebd7644e48d07219c04835f1b2fab7c3065df30c82d"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 994.67,
+        "back_internal_mean": 964.67,
+        "front_back_mean": 1476.78,
+        "east_west_direct_changed": 945,
+        "east_mirrored_to_west_changed": 1502,
+        "east_west_mirror_ratio": 1.5894
+      }
+    },
+    "haetae_guardian": {
+      "root": "asset/monster/haetae_guardian/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/haetae_guardian.png",
+      "contact_sheet_sha256": "1fd14341ea3dd62de8ca9c6693e1f841d2dc1d59cb4383a4280d0a1eae14b861",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "96eef599331640b328cb12213a2d60c026a212b348bdb09720a8df621edf1d40"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "961bba57958d5413ac255a0614b74d6a2afbee57545eea667c1766b4883a8d67"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "ff57536bd5db07069454e58f6f453a33a8cb3c9d3cc0bbd380ebf7d36c2cfd9f"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "813f90652545f0e1a1764d84c1403a086ac4ed2b8cb098537a856d20187a3932"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "2d2c646a1f1536707eef80aa18fca57633e31a296446f7a681648b502bdca88c"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "061ed2117daeb25313d965a53135924be40a82884a3fcfbe5cf84996392836d5"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "cbf0d354ad81a36c7f716fc95c1332ebcb25ffb2056073d15bd440ef2ab1a8df"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "7ff1c860abd562adb58e26c8f544beac2543dc530d930ab6d8f77a7a92e845f6"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 1933.0,
+        "back_internal_mean": 1922.33,
+        "front_back_mean": 2088.89,
+        "east_west_direct_changed": 2363,
+        "east_mirrored_to_west_changed": 2051,
+        "east_west_mirror_ratio": 0.868
+      }
+    },
+    "imugi_whelp": {
+      "root": "asset/monster/imugi_whelp/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/imugi_whelp.png",
+      "contact_sheet_sha256": "c083a4d75b157cc5ce5bd2762a890a6a3e0be7a234dbd3fd26a865c2001ce1d4",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": true,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "62a3d7866633644de8d29e8a8f07a80a94aa36b69e37d5df028ebe8e33ba5196"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "e7b5c259d353e3bfdbc212c1387437de06e16932cd8a87e6dba48daadbbacdce"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "00011bf181e18f462a3f60312f30de8cea3f265d2b2afd9d1ebd25e86c909741"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "0fc38bf5b20d85c95c90ff20b9b2a79615991b478e9336ccea4b12141971b331"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "1596d75ca68037ee4a4720cec0ebcd77c97de9609b2fd18a93b3850c0331a5b4"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "2a9f17c6a754a2058b6865d2e285592c4536779f33b8ab09a73f08d0fd7d05b5"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "8deb01f87ee06475cc58a2b7fbccbaa7928323d2e86ae4ae34ad7aa0da57996a"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "675b2a469e5e0bd2d0a374295d93e99ab2be8fb1129c8f100e321f5be7636f8d"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 1517.0,
+        "back_internal_mean": 1454.0,
+        "front_back_mean": 1478.0,
+        "east_west_direct_changed": 1574,
+        "east_mirrored_to_west_changed": 0,
+        "east_west_mirror_ratio": 0.0
+      }
+    },
+    "jeoseung_saja": {
+      "root": "asset/monster/jeoseung_saja/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/jeoseung_saja.png",
+      "contact_sheet_sha256": "192cbe096fe5e1a6df8dfe0d77faa2c7f1d528845049712a5d9ad5e181cab8f1",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "423411b34036655eaa66ba24fbd9989dac328a87ccc42c1d227f5ac8f3d2de9c"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "998eb07e72f7e5adfef87941944928e56d3e26acba804354ca276456169ce9d1"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "1fd1b3a1cfe19afc01d980bd8b8e08f2a8014f5108fea9753147b7684efe5635"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "5030e1455be4fed7845542dc02e01efe50e0152a237117bb07849a67682864a2"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "bf97358aebeea4750620e3cc97d10403dea237d19300260c810cc2b386e5a446"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "b3c6a5bd72e30ed1485b37a33183b25eba93efe8b43c2d7e1c628402d593082e"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "4b3939f18d4804cf402ec1759ce8d5b6fae401eaae468341c3cde3a4a7d1f21a"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "f3a7df81b93d9742c9c172ce44e67e2e855a79d640737c5dd63c06cb5e0a806f"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 1100.33,
+        "back_internal_mean": 924.33,
+        "front_back_mean": 1178.33,
+        "east_west_direct_changed": 866,
+        "east_mirrored_to_west_changed": 947,
+        "east_west_mirror_ratio": 1.0935
+      }
+    },
+    "seonbi_wraith": {
+      "root": "asset/monster/seonbi_wraith/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/seonbi_wraith.png",
+      "contact_sheet_sha256": "ddf49ea730eeae27364bf01fea73a3a8ecf63b3043c6b15ae949f65c1f741eaf",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "5408d4b8096bfb57819517cfdcc3a85778faf60ab7ad66557e335074f23fcfbe"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "e7d0f22c4495d17c3690e5001718aab9b18b03f183e8916569156f278ed31bba"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "015cf4c9b48ca518fe4ad7e9fc04d1a683b7cdff3a6d3c530e7b9e986b075f4f"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "ee941398cc75f8eb5a0b77ab0a3960ac2ff559f6d8ea5e315794d8fbc11b8c80"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "1e3bd37828218e16ad35592e2341b7c3ea09655231d0ee6e05d0fa31e0ca08ca"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "bb8b88650a6024b537726548fa56c2870611896bfc9a51a4771ccc1657da22b0"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "c837d00f58f655bd7ae6b69315eab2552be83f64ff173bbcf33ac017bb2ed20a"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "07c22af958c8b0da4ac007055f244789ea9bf7d0dd3fe6277b6cdadfccb7da6d"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 1212.33,
+        "back_internal_mean": 888.33,
+        "front_back_mean": 1449.89,
+        "east_west_direct_changed": 799,
+        "east_mirrored_to_west_changed": 677,
+        "east_west_mirror_ratio": 0.8473
+      }
+    },
+    "shadow_dokkaebi": {
+      "root": "asset/monster/shadow_dokkaebi/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/shadow_dokkaebi.png",
+      "contact_sheet_sha256": "cea5d0e69c015f9c12aa27890787b24afbdb0a674a20bda4fcdafabe4e874c85",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "d6a0560b2af00d3b51508b7037762ae9f380c2a3b89d7a10a621cf157e81bacd"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "d2c14f6b3f4a2d321b18abf4c47b1ae27c85797075e0fdb91fa58f2d5542abe8"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "57b24ba660a3ebfbcf99195ed4ea70dde3b4dc570602f8b1df0fde903c147cbb"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "e08dbe9a92cecc043dc28b023022b548240602f5ed27eb56eeca9e01a3a1ac63"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "0fd9303ec03834389a997eaf3f4dda9b936d75fd27c6fde20750ba640732541d"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "513daf239947f57d31aba96a45a3dddfdd89a23da97d6c49a6e416ce32dc7aec"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "3a0d651424dd16370bd819c7980acd1e9282d072c40622e2c3af262fa29904c0"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "8ef38dd07319bb15f6bee9b37c32bbd4463ab98dfa4b9013cc1e22aa9c4f1891"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 1443.67,
+        "back_internal_mean": 1052.33,
+        "front_back_mean": 1527.22,
+        "east_west_direct_changed": 1002,
+        "east_mirrored_to_west_changed": 606,
+        "east_west_mirror_ratio": 0.6048
+      }
+    },
+    "tomb_jangseung": {
+      "root": "asset/monster/tomb_jangseung/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/tomb_jangseung.png",
+      "contact_sheet_sha256": "95e04f829430962196af4628a4fdc386ef17ff99d1677d7bff6da5d96cc2a5ab",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": true,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "f00be913f7fd601965570104458f6f326f5b7ff1867e73ce7ad5ac3af0a648ff"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "8ecad0483bce8401e5768fe1131cda35ffdbd063b1880b49d776c93d18ed5687"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "4b2d2c592edd1e77b342128599059dc5b2cff885e67c258eb8257ec1457f25de"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "a50847728aac3fa96cbbe6c7189fc3a56b0977433e2dba2808f6bee8b3250b1a"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "3f1634e6b7fb5cfe3ea2427fdb879f702342c4471fec2156de8d1f096f78906f"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "ee558cec6ef7814e34c37b5923c758390e6211a69a3e9c9deb8fa977ad5071f3"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "f942c09993a6067831c2637c0a27d7ebc9c8430ac40fbcb369380ec97e12d3c1"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "cdae04fc38618ef3630be9d1c7439fdc99d873b6d795d1467f43a43c32c7b15d"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 1149.0,
+        "back_internal_mean": 1148.33,
+        "front_back_mean": 1133.33,
+        "east_west_direct_changed": 1056,
+        "east_mirrored_to_west_changed": 0,
+        "east_west_mirror_ratio": 0.0
+      }
+    },
+    "wonhon": {
+      "root": "asset/monster/wonhon/rotations",
+      "review": "accepted_manual_contact_sheet",
+      "contact_sheet": "asset/rotation_audit/contact_sheets/wonhon.png",
+      "contact_sheet_sha256": "323767fc77644c5b93c591bdddee458ff82110b446be0f27255c0e63d4a67daa",
+      "regenerated_in_audit": false,
+      "exact_east_west_mirror_required": false,
+      "cells": {
+        "south": {
+          "expected_facing": "front",
+          "sha256": "cb45f2fcb16da0ea0ce5516506510df0e31fdfb8325b1241a668bc9a3e785651"
+        },
+        "south-east": {
+          "expected_facing": "front",
+          "sha256": "a69e1b59e6423dc652b7ebd2917a666df240e7fa72c869331014ec781b28c87f"
+        },
+        "east": {
+          "expected_facing": "profile-east",
+          "sha256": "b0b717d254f2422b3569b47db3d28b27c041ba88049546015cc3a526c7be889c"
+        },
+        "north-east": {
+          "expected_facing": "back",
+          "sha256": "f05ca005f06bf4fe5ad480861ab5dbd055452202ddd6ce197852b8fe745099d5"
+        },
+        "north": {
+          "expected_facing": "back",
+          "sha256": "3d390b5712c963aee4f602f49aeb462b928aef70d031d90dd11b1f1605dd8ccc"
+        },
+        "north-west": {
+          "expected_facing": "back",
+          "sha256": "94e87643f6d4126c4f8a6272ba984daf688803d8f12ab2d2eb9c70aac4425a63"
+        },
+        "west": {
+          "expected_facing": "profile-west",
+          "sha256": "0997758c8b137748d65657f7551ce42e302b01425ab29e6e54f13a2bcd2df76a"
+        },
+        "south-west": {
+          "expected_facing": "front",
+          "sha256": "7f3ca117a424524fa1894e6e85778bb19cd76edcb18ad3333da5ffe5dd372500"
+        }
+      },
+      "diagnostics": {
+        "front_internal_mean": 1134.0,
+        "back_internal_mean": 1024.0,
+        "front_back_mean": 1199.67,
+        "east_west_direct_changed": 945,
+        "east_mirrored_to_west_changed": 869,
+        "east_west_mirror_ratio": 0.9196
+      }
+    }
+  }
+}
