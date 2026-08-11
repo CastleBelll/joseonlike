@@ -144,6 +144,16 @@ M1 helper scripts are deterministic and safe to rerun:
   until its contact sheet is rebuilt, viewed, and the manifest is deliberately renewed. The
   retained pixel diagnostics are evidence, not a classifier: correct asymmetric weapons and
   tails produce false positives under a universal mirror or distance threshold.
+- `process_ui_journey.py` slices the visually audited Higgsfield UI sheets by their actual
+  layouts, sends every selected generated cell through `pixelize.py`, and then calls
+  `build_ui_furniture.py` for exact-palette state frames, bars, toggles, and nine-slices.
+  Generator sheet layout is not trusted: this batch returned 2x2 and irregular 5/5/4 grids
+  despite explicit 4x1 or 5x3 requests. Generated pseudo-lettering is also never accepted as
+  UI copy; use real font rendering or a non-text symbolic replacement.
+- `build_ui_journey_overview.py` builds three review pages for the final icons,
+  illustrations, and furniture. `measure_ui_journey.py` writes the reproducible inventory,
+  state-shape, hard-alpha, chroma, exact-palette, and WCAG-AA evidence used by
+  `verify_assets.py`.
 
 Rotation sheets are not the default generation method. A model may ignore the requested
 layout, which makes fixed-grid slicing put grid lines, neighboring figures, or the wrong
