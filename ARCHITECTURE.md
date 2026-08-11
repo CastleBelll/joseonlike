@@ -55,6 +55,40 @@ asset/            art and audio, singular. Owned by asset-forge; others referenc
   monster/raw/<id>_raw.png                             pre-cutout generator output
 ```
 
+## Asset sets, not asset images
+
+Art is commissioned, generated and reviewed as a **complete set per entity**, never as loose
+images. A set that is missing members is unfinished, not partially delivered — earlier rounds
+shipped rotations with no motion and weapons with no attack art, and each gap only surfaced
+when someone looked.
+
+| Set | Required members |
+|---|---|
+| Character | 8 idle rotations, walk, attack, death |
+| Monster | 8 idle rotations, walk, death |
+| Weapon | 32x32 icon, projectile or VFX art, attack effect |
+| Effect | 4 frames: anticipation, expansion, peak, dissipation |
+
+Every member must either exist, or be **explicitly recorded as satisfied another way** with the
+measurement behind it. Character walk and attack are currently satisfied by pixel-snapped
+procedural motion because generated frames were rejected four separate ways; that is a
+documented answer, not a missing member. Silently shipping a partial set is the failure mode
+this table exists to prevent.
+
+Review is per set, never per image:
+
+- **Facing** — south, south-east and south-west show the face; east and west are opposite
+  profiles; north, north-east and north-west show the back. Adjacent directions must be
+  distinguishable by eye, not merely different in pixel count. A pixel-distance check cannot see
+  this: two back views differ numerically while both remain back views.
+- **Progression** — a motion sequence must advance. Death is judged on irreversible collapse,
+  which is why it passed where walk's identity gate failed.
+- **Coherence** — every member of a set reads as the same entity at the same scale, cut through
+  `pixelize.py` against the same palette.
+
+`tools/asset/verify_assets.py` enforces what can be automated. Anything it cannot check is
+checked by looking at a contact sheet before the set is reported done.
+
 **Asset paths are `res://asset/...`, singular, not `assets/`.** The directory layout
 above is what actually exists on disk; data files and scenes must match it exactly.
 Sprites are chroma-keyed and downscaled with nearest-neighbour, and the project sets
