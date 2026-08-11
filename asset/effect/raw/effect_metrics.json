@@ -443,6 +443,80 @@
     },
     "accepted": true
   },
+  "seal_field": {
+    "frames": {
+      "0": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          43,
+          42
+        ],
+        "opaque_pixels": 883,
+        "coverage_percent": 21.56,
+        "bright_core_pixels": 98,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "1": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          48,
+          54
+        ],
+        "opaque_pixels": 1639,
+        "coverage_percent": 40.01,
+        "bright_core_pixels": 299,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "2": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          48,
+          54
+        ],
+        "opaque_pixels": 1664,
+        "coverage_percent": 40.62,
+        "bright_core_pixels": 439,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "3": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          45,
+          54
+        ],
+        "opaque_pixels": 516,
+        "coverage_percent": 12.6,
+        "bright_core_pixels": 86,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      }
+    },
+    "transitions_changed_pixels": {
+      "0->1": 1667,
+      "1->2": 2302,
+      "2->3": 1873
+    },
+    "accepted": true
+  },
   "slash": {
     "frames": {
       "0": {
@@ -514,6 +588,80 @@
       "0->1": 1281,
       "1->2": 1626,
       "2->3": 1428
+    },
+    "accepted": true
+  },
+  "spirit_beam": {
+    "frames": {
+      "0": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          19,
+          20
+        ],
+        "opaque_pixels": 314,
+        "coverage_percent": 7.67,
+        "bright_core_pixels": 37,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "1": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          37,
+          20
+        ],
+        "opaque_pixels": 582,
+        "coverage_percent": 14.21,
+        "bright_core_pixels": 156,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "2": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          37,
+          42
+        ],
+        "opaque_pixels": 1554,
+        "coverage_percent": 37.94,
+        "bright_core_pixels": 296,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "3": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          30,
+          38
+        ],
+        "opaque_pixels": 607,
+        "coverage_percent": 14.82,
+        "bright_core_pixels": 38,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      }
+    },
+    "transitions_changed_pixels": {
+      "0->1": 597,
+      "1->2": 1486,
+      "2->3": 1536
     },
     "accepted": true
   },
@@ -736,6 +884,80 @@
       "0->1": 777,
       "1->2": 1151,
       "2->3": 1416
+    },
+    "accepted": true
+  },
+  "ward_barrier": {
+    "frames": {
+      "0": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          26,
+          26
+        ],
+        "opaque_pixels": 504,
+        "coverage_percent": 12.3,
+        "bright_core_pixels": 14,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "1": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          53,
+          47
+        ],
+        "opaque_pixels": 1358,
+        "coverage_percent": 33.15,
+        "bright_core_pixels": 84,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "2": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          60,
+          52
+        ],
+        "opaque_pixels": 2031,
+        "coverage_percent": 49.58,
+        "bright_core_pixels": 358,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "3": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          58,
+          52
+        ],
+        "opaque_pixels": 1606,
+        "coverage_percent": 39.21,
+        "bright_core_pixels": 107,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      }
+    },
+    "transitions_changed_pixels": {
+      "0->1": 1582,
+      "1->2": 2111,
+      "2->3": 1833
     },
     "accepted": true
   }

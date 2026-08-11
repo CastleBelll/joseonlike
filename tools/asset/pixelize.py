@@ -2,6 +2,7 @@
 
 Usage: python sprite_pixelize.py <in.png> <out.png> <content_height> <palette_dir>
        [canvas_size|WIDTHxHEIGHT] [--opaque-background] [--checker-background]
+       [--fixed-cell]
 
 Style match is three separate things, and the earlier cut script only did the first:
 
@@ -200,11 +201,14 @@ def main():
     output_size = None
     opaque_background = False
     checker_background = False
+    fixed_cell = False
     for option in sys.argv[5:]:
         if option == "--opaque-background":
             opaque_background = True
         elif option == "--checker-background":
             checker_background = True
+        elif option == "--fixed-cell":
+            fixed_cell = True
         elif "x" in option.lower():
             width_text, height_text = option.lower().split("x", 1)
             output_size = (int(width_text), int(height_text))
@@ -212,6 +216,8 @@ def main():
             canvas_size = int(option)
     if canvas_size is not None and output_size is not None:
         raise SystemExit("choose either a square canvas_size or WIDTHxHEIGHT, not both")
+    if fixed_cell and canvas_size is None:
+        raise SystemExit("--fixed-cell requires a square canvas_size")
 
     image = Image.open(source_path).convert("RGBA")
     if not opaque_background:
@@ -222,9 +228,28 @@ def main():
     bbox = image.getbbox()
     if bbox is None:
         raise SystemExit("%s: keying removed everything; check the background colour" % source_path)
-    image = image.crop(bbox)
 
-    if output_size is not None:
+    if fixed_cell:
+        # Animation sheets use one common source scale. Cropping each frame to
+        # its own subject would enlarge a collapsed body back to standing size,
+        # destroying the death progression we need to measure and display.
+        scale = min(canvas_size / image.width, canvas_size / image.height)
+        resized = image.resize(
+            (max(1, round(image.width * scale)), max(1, round(image.height * scale))),
+            Image.Resampling.BOX,
+        )
+        image = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
+        image.alpha_composite(
+            resized,
+            ((canvas_size - resized.width) // 2, (canvas_size - resized.height) // 2),
+        )
+        target_width = target_height = canvas_size
+    else:
+        image = image.crop(bbox)
+
+    if fixed_cell:
+        pass
+    elif output_size is not None:
         image = ImageOps.fit(
             image,
             output_size,
@@ -241,7 +266,7 @@ def main():
     palette = reference_palette(palette_dir) + subject_colours(image, SUBJECT_COLOURS)
     image = quantise(image, palette)
 
-    if canvas_size is not None:
+    if canvas_size is not None and not fixed_cell:
         image = fit_to_canvas(image, canvas_size)
 
     used = {pixel[:3] for pixel in flattened(image) if pixel[3] > 0}
