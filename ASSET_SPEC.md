@@ -79,6 +79,32 @@ images. A set missing members is unfinished, not partially delivered.
 | Monster | 8 idle rotations, walk, death |
 | Weapon | 32x32 icon, projectile or VFX art, attack effect |
 | Effect | 4 frames: anticipation, expansion, peak, dissipation |
+| Title screen | 6 stacked layers, fog strip, mote — see below |
+
+### The title screen is a layered set, not a picture
+
+`asset/stage/backdrops/main_menu.png` is one flat 540x960 image. Nothing in a flat image
+can move, so the title screen is static for a structural reason, not for want of a tween.
+Its replacement is a stack:
+
+| File | Canvas | Content |
+|---|---|---|
+| `asset/title/layers/sky.png` | 540x960, opaque | sky, moon, far mountains |
+| `asset/title/layers/moon_glow.png` | 540x960, transparent | halo only, already positioned over the moon |
+| `asset/title/layers/palace.png` | 540x960, transparent | mid-ground palace |
+| `asset/title/layers/bamboo_far.png` | 540x960, transparent | thin distant stalks |
+| `asset/title/layers/bamboo_near.png` | 540x960, transparent | thick framing stalks, left and right |
+| `asset/title/layers/ground.png` | 540x960, transparent | foreground undergrowth |
+| `asset/title/fog_strip.png` | 1080x320, transparent | seamless when tiled horizontally |
+| `asset/title/mote.png` | 8x8, transparent | one spirit mote |
+
+**Every layer is the full 540x960 canvas and stacks at the origin.** No offsets, no anchor
+points, no companion manifest of coordinates. A layer that must be positioned by a number
+stored somewhere else is a number that drifts out of sync with the art the first time
+either side is re-cut; a pre-positioned full-canvas layer cannot drift.
+
+Layers are generated individually, not sliced from one sheet — a mis-slice here would put
+a bamboo stalk into the sky layer, and the composite would still look almost right.
 
 Every member must **exist**, or be **recorded as satisfied another way with the measurement
 behind it**. Those are the only two acceptable states. Silently absent is not one.
@@ -124,6 +150,37 @@ can be recut at another size without paying to regenerate it.
 `data/monsters.json` points at the flat sprite and the validator ties `collision_radius` to its
 pixel width. **Changing a flat sprite's dimensions breaks data validation in a worktree that
 does not own the art** — report new dimensions to the coordinator instead of editing data.
+
+### Audio
+
+```
+asset/audio/bgm/<id>.<mp3|ogg>     long looping music, one file per track id
+asset/audio/sfx/<id>.wav           one-shots
+asset/audio/ambience/<id>.wav      looping beds
+asset/audio/raw/...                as-delivered files, before trim and levelling
+```
+
+Music files stay in `bgm/`, effects in `sfx/`. A one-shot sitting in `bgm/` is not a
+filing quibble: `MusicDirector`'s track table and the effects verification list both read
+the folder as the type, so a misfiled sound is a sound that never gets checked.
+
+**Every sound is trimmed and levelled before it lands.** Two measured reasons, both from
+the author-supplied batch:
+
+- `button_click.wav` peaked at **0.044 (-27 dBFS)** in one second that is almost all
+  silence. Dropped in as-is next to the 0.708-peak effects already shipped, it is a click
+  nobody hears — and the failure looks exactly like a wiring bug, so the search starts in
+  the wrong place.
+- `Monster_Die.wav` peaked at **1.000 (0 dBFS)** across three seconds. `verify_assets.py`
+  fails anything above -3 dBFS, and with up to 200 pooled enemies a wave can put dozens of
+  these into one physics frame.
+
+Peak ceiling **-3 dBFS**, trimmed to actual content, and a one-shot that outlasts the event
+it describes gets cut down rather than played over itself. Retain the delivered file under
+`asset/audio/raw/` — re-levelling from the original beats re-levelling a re-level.
+
+`tools/asset/verify_assets.py` hardcodes an expected duration per audio file; trimming one
+without updating that table turns a real check into a failing one.
 
 ---
 

@@ -213,6 +213,33 @@ func goto_stage(stage_id: String) -> void
 func goto_results(result: Dictionary) -> void
 ```
 
+### 3.6 `MusicDirector` (autoload) — background music
+
+```gdscript
+# scripts/services/music_director.gd
+func play(track_id: String) -> void   # cross-fades in; no-op if that track is already playing
+func stop() -> void                   # fades out
+```
+
+Track ids are `title`, `camp`, `bamboo_forest`. They resolve to files through a table
+inside `music_director.gd`, and callers pass **ids, never `res://` paths** — `asset/`
+belongs to asset-forge, which renames and re-cuts files, and a path baked into a UI or
+combat script silently breaks the next time it does.
+
+`play()` is idempotent by design so that re-entering a screen does not restart the track.
+Camp → stage → results → camp must not chop the music into pieces every transition.
+
+### 3.7 Audio buses
+
+Three buses, defined in `default_bus_layout.tres` (coordinator-owned): `Master`,
+`Music`, `Effects`, the latter two both sending to `Master`.
+
+Every player must name its bus. Music goes to `Music`, every sound effect to `Effects`.
+The settings screen has shipped master/music/effects sliders since M1, but only `Master`
+existed, so two of the three sliders persisted a value and changed nothing audible —
+meta-ui reported that as a gap rather than faking a working control, and this is the
+other half of the fix. A player left on the default bus re-opens exactly that hole.
+
 ---
 
 ## 4. Data Schemas (`data/*.json`)
