@@ -203,6 +203,28 @@ A structural pass is not a review. The verifier once reported every rotation set
 set contained grid lines and another contained two figures per cell, because nothing it checked
 could see either. When reporting a set as verified, state **what was verified**.
 
+### The facing rule has a known blind spot
+
+The face / profile / back rule of section 2 **cannot distinguish `south-east` from `south-west`,
+nor `north-east` from `north-west`** — both members of each pair satisfy it. A mislabeled or
+duplicated diagonal therefore passes the facing gate silently. This reached a player: the Warrior
+showed the up-right sprite when moving up-left, and it took someone playing the game to find it.
+The engine was proven innocent first — the mapping resolves up-left to `north-west.png` and takes
+no character argument, so it could not be right for one character and wrong for another.
+
+Two mitigations, and the difference between them matters:
+
+- **Near-duplicate detection, automated.** Compare all eight cells pairwise; a pair below a mean
+  RGBA distance of **2.50** fails, naming both cells. Calibrated against real numbers: the defect
+  measured 1.92 and a second, unreported one 1.76, while known-good minima are Taoist 5.11,
+  Warrior 2.88 and Archer 4.58. This catches duplicated cells, and it found a defect nobody had
+  reported.
+- **Diagonal handedness, human only.** No pixel metric can detect a swapped `south-east` /
+  `south-west` pair, because swapping two mirror images leaves them a mirror pair. Judge it by
+  which shoulder leads and where the weapon sits, against the set's own `south` and `east` cells.
+  Recorded as a documented limit rather than dressed up as a check — a gate that looks rigorous
+  and proves nothing is worse than an honest gap, because it stops people from looking.
+
 ---
 
 ## 9. Reporting
