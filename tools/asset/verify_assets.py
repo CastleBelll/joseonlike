@@ -1,5 +1,6 @@
 """Verify the authored M1 asset contract without importing Godot."""
 from pathlib import Path
+import hashlib
 import json
 import math
 import struct
@@ -83,6 +84,70 @@ def check_audio(path, expected_duration):
             fail(f"{path}: peak {dbfs:.2f} dBFS exceeds -3 dBFS")
 
 
+def check_rotation_facing_audit():
+    """Require semantic review of the exact bytes in every rotation cell."""
+    manifest_path = ROOT / "asset/rotation_audit/facing_audit.json"
+    if not manifest_path.exists():
+        fail("rotation facing audit manifest is missing")
+        return
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    directions = (
+        "south", "south-east", "east", "north-east",
+        "north", "north-west", "west", "south-west",
+    )
+    expected_facing = {
+        "south": "front", "south-east": "front", "east": "profile-east",
+        "north-east": "back", "north": "back", "north-west": "back",
+        "west": "profile-west", "south-west": "front",
+    }
+    expected_sets = {"Taoist", "Warrior", "Archer"} | {
+        path.parent.name for path in ROOT.glob("asset/monster/*/rotations") if path.is_dir()
+    }
+    if manifest.get("direction_order") != list(directions):
+        fail("rotation facing audit: direction order changed")
+    if manifest.get("expected_facing") != expected_facing:
+        fail("rotation facing audit: semantic direction labels changed")
+    sets = manifest.get("sets", {})
+    if set(sets) != expected_sets:
+        fail(
+            "rotation facing audit: expected exact set coverage "
+            f"{sorted(expected_sets)}, got {sorted(sets)}"
+        )
+    for name in sorted(expected_sets & set(sets)):
+        record = sets[name]
+        if record.get("review") != "accepted_manual_contact_sheet":
+            fail(f"rotation facing audit: {name} lacks manual approval")
+        contact_sheet = ROOT / record.get("contact_sheet", "")
+        if not contact_sheet.is_file():
+            fail(f"rotation facing audit: {name} contact sheet is missing")
+        elif hashlib.sha256(contact_sheet.read_bytes()).hexdigest() != record.get("contact_sheet_sha256"):
+            fail(f"rotation facing audit: {name} contact sheet changed after visual review")
+        cells = record.get("cells", {})
+        if set(cells) != set(directions):
+            fail(f"rotation facing audit: {name} does not cover all eight cells")
+            continue
+        rotation_root = ROOT / record.get("root", "")
+        for direction in directions:
+            cell = cells[direction]
+            if cell.get("expected_facing") != expected_facing[direction]:
+                fail(f"rotation facing audit: {name}/{direction} has wrong semantic label")
+            path = rotation_root / f"{direction}.png"
+            if not path.is_file():
+                fail(f"rotation facing audit: missing {path.relative_to(ROOT)}")
+                continue
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            if digest != cell.get("sha256"):
+                fail(
+                    f"rotation facing audit: {name}/{direction} changed after visual review; "
+                    "rebuild and inspect its contact sheet, then renew the manifest"
+                )
+        if record.get("exact_east_west_mirror_required"):
+            east = image(f"{record['root']}/east.png")
+            west = image(f"{record['root']}/west.png")
+            if ImageChops.difference(east.transpose(Image.Transpose.FLIP_LEFT_RIGHT), west).getbbox():
+                fail(f"rotation facing audit: {name} east/west are not opposite mirrored profiles")
+
+
 def main():
     passive_ids = ("attack_damage", "attack_speed", "move_speed", "crit_chance", "max_hp", "xp_gain", "luck", "skill_power")
     achievement_ids = ("first_boss", "boss_slayer", "goblin_hunter", "monster_collector", "survivor", "veteran_survivor", "rising_star", "weapon_master")
@@ -140,6 +205,7 @@ def main():
         check_sprite(f"asset/monster/{monster_id}.png", (92, 92), height)
         for direction in directions:
             check_sprite(f"asset/monster/{monster_id}/rotations/{direction}.png", (92, 92), height)
+    check_rotation_facing_audit()
 
     death_sequences = {
         "Taoist": "asset/character/Taoist/Death",
@@ -282,6 +348,7 @@ def main():
     print(f"Six multi-reference motion sheets rejected: {accepted_current}/{measured_current} frames passed the regional stability gate")
     print("Expansion assets verified: 18 folklore monsters + 144 rotations, 52 effect frames, 12 structures, 3 title assets")
     print("Round-two additions verified: 28 death frames, 4 summoned creatures, 20 weapon icons/projectiles")
+    print("Directional-facing audit verified: 25/25 sets, 200 hash-bound cells manually reviewed")
 
 
 if __name__ == "__main__":
