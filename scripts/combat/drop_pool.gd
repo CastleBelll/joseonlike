@@ -182,6 +182,7 @@ func _attract(drop: Dictionary, player: Node2D, delta: float) -> void:
 func _begin_collect(drop: Dictionary) -> void:
 	drop["collecting"] = true
 	drop["collect_elapsed"] = 0.0
+	CombatAudio.play_pickup()
 	drop_collected.emit(int(drop["xp"]), int(drop["gold"]))
 
 

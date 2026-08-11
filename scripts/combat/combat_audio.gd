@@ -12,7 +12,13 @@ extends Node
 const HIT_SFX: String = "res://asset/audio/sfx/combat_hit.wav"
 const DEATH_SFX: String = "res://asset/audio/sfx/enemy_death.wav"
 const BOSS_SPAWN_SFX: String = "res://asset/audio/sfx/boss_spawn.wav"
+const PICKUP_SFX: String = "res://asset/audio/sfx/energy_sound.wav"
 const AMBIENCE: String = "res://asset/audio/ambience/bamboo_forest_loop.wav"
+
+## Every player names its bus (ARCHITECTURE.md §3.7). Left on the default these
+## land on Master, which is what makes the settings screen's effects slider
+## persist a value and change nothing audible.
+const EFFECTS_BUS: String = "Effects"
 
 const VOICE_COUNT: int = 8
 const SFX_VOLUME_DB: float = -6.0
@@ -32,6 +38,7 @@ func _ready() -> void:
 		var voice := AudioStreamPlayer.new()
 		voice.name = "Voice%d" % index
 		voice.volume_db = SFX_VOLUME_DB
+		voice.bus = EFFECTS_BUS
 		add_child(voice)
 		_voices.append(voice)
 	_instance = self
@@ -58,6 +65,12 @@ static func play_boss_spawn() -> void:
 	_play(BOSS_SPAWN_SFX)
 
 
+## A drop being taken. Shares the pool deliberately: the per-frame dedupe is
+## what stops one magnet pull collecting a clump from firing a voice per orb.
+static func play_pickup() -> void:
+	_play(PICKUP_SFX)
+
+
 static func _play(path: String) -> void:
 	if _instance != null:
 		_instance._play_once(path)
@@ -79,6 +92,7 @@ func start_ambience() -> void:
 	_ambience_player.name = "Ambience"
 	_ambience_player.stream = stream
 	_ambience_player.volume_db = AMBIENCE_VOLUME_DB
+	_ambience_player.bus = EFFECTS_BUS
 	add_child(_ambience_player)
 	_ambience_player.play()
 

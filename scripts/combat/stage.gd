@@ -16,6 +16,12 @@ const KEY_GOLD: String = "gold"
 const KEY_XP_DROP: String = "xp_drop"
 const KEY_GOLD_DROP: String = "gold_drop"
 
+## MusicDirector track id (ARCHITECTURE.md §3.6), never a res:// path — asset-forge
+## renames files under asset/audio/bgm/ and the track table absorbs that.
+## M1 ships one stage, so the id is named rather than derived from stage_id: a
+## second stage without its own track would silently resolve to nothing.
+const STAGE_TRACK: String = "bamboo_forest"
+
 ## Used when the scene is played directly instead of through SceneRouter.
 @export var stage_id_override: String = ""
 
@@ -46,6 +52,10 @@ func _ready() -> void:
 
 	_stage_data = _load_stage()
 	_ground.setup(stage_id)
+	# play() is idempotent by contract, so re-entering the stage does not restart
+	# the track, and no stop() at run end: results routes onward and a hard
+	# silence at every transition is worse than a track that keeps going.
+	MusicDirector.play(STAGE_TRACK)
 	_audio.start_ambience()
 	_spawn_player()
 	_spawner.configure(_stage_data)
