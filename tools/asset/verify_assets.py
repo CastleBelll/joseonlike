@@ -247,11 +247,13 @@ def main():
         "forest_goblin": 44,
         "forest_spirit": 46,
         "bamboo_brute": 58,
-        "bamboo_spirit_lord": 76,
+        "bamboo_spirit_lord": 150,
     }
     for monster_id, height in monster_heights.items():
+        canvas = (192, 192) if monster_id == "bamboo_spirit_lord" else (92, 92)
         for direction in directions:
-            check_sprite(f"asset/monster/{monster_id}/rotations/{direction}.png", (92, 92), height)
+            check_sprite(f"asset/monster/{monster_id}/rotations/{direction}.png", canvas, height)
+    check_sprite("asset/monster/bamboo_spirit_lord.png", (120, 150), 150)
     later_monster_heights = {
         "gwimyeon_dokkaebi": 54, "blue_dokkaebi": 50, "gumiho_scout": 48,
         "seonbi_wraith": 52, "haetae_guardian": 58, "dokkaebi_king": 76,
@@ -293,9 +295,10 @@ def main():
         "bulgasari": "asset/monster/bulgasari/death",
         "gumiho": "asset/monster/gumiho/death",
     }
-    for sequence_root in death_sequences.values():
+    for sequence_name, sequence_root in death_sequences.items():
+        canvas = (192, 192) if sequence_name == "bamboo_spirit_lord" else (92, 92)
         for frame in range(4):
-            check_sprite(f"{sequence_root}/{frame}.png", (92, 92))
+            check_sprite(f"{sequence_root}/{frame}.png", canvas)
             check_no_edge_grid_line(f"{sequence_root}/{frame}.png")
     death_metrics = json.loads((ROOT / "asset/character/raw/death_metrics.json").read_text(encoding="utf-8"))
     if set(death_metrics) != set(death_sequences):
@@ -303,6 +306,23 @@ def main():
     for sequence in death_sequences:
         if not death_metrics.get(sequence, {}).get("accepted"):
             fail(f"{death_sequences[sequence]}: failed irreversible-collapse gate")
+
+    drop_ids = (
+        "xp_small", "xp_medium", "xp_large", "gold_coin", "gold_pile",
+        "health_gourd", "magnet", "chest_common", "chest_rare", "chest_epic",
+        "chest_legendary", "chest_mythic",
+    )
+    for drop_id in drop_ids:
+        check_sprite(f"asset/drop/{drop_id}/idle.png", (24, 24))
+        check_no_edge_grid_line(f"asset/drop/{drop_id}/idle.png")
+        for frame in range(4):
+            check_sprite(f"asset/drop/{drop_id}/collect/{frame}.png", (32, 32))
+            check_no_edge_grid_line(f"asset/drop/{drop_id}/collect/{frame}.png")
+    drop_metrics = json.loads((ROOT / "asset/drop/raw/drop_metrics.json").read_text(encoding="utf-8"))
+    if set(drop_metrics.get("sets", {})) != set(drop_ids):
+        fail("drop metrics do not cover the twelve authored pickup sets")
+    if not drop_metrics.get("accepted"):
+        fail("asset/drop: failed pickup readability/progression/grade-shape gate")
     check_tile("asset/stage/bamboo_forest_ground.png")
     check_tile("asset/stage/abandoned_temple_ground.png")
     for name in ("main_menu", "bamboo_forest", "abandoned_temple"):
@@ -458,6 +478,7 @@ def main():
     print(f"Six multi-reference motion sheets rejected: {accepted_current}/{measured_current} frames passed the regional stability gate")
     print("Expansion assets verified: 18 folklore monsters + 144 rotations, 60 effect frames, 12 structures, 3 title assets")
     print("Set-gap additions verified: 100 death frames, 22 procedural walk records, 5 travel sprites, 4 melee swings")
+    print("Loot and boss-scale assets verified: 12 pickup sets (48 collect frames) + 120x150 boss with 8 rotations and 4 death frames")
     print("Directional-facing audit verified: 25/25 sets, 200 hash-bound cells manually reviewed")
     print("UI journey verified: 47 icons, 11 illustrations, 31 nine-slices, 3 fixed controls; WCAG-AA/state gates passed")
 

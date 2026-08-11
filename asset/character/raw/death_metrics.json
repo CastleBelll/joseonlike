@@ -297,49 +297,49 @@
     "frames": {
       "0": {
         "empty": false,
-        "opaque_pixels": 2792,
+        "opaque_pixels": 7899,
         "bbox": [
-          52,
-          83
+          82,
+          160
         ],
-        "centroid_y": 46.45
+        "centroid_y": 86.64
       },
       "1": {
         "empty": false,
-        "opaque_pixels": 2835,
+        "opaque_pixels": 6931,
         "bbox": [
-          53,
-          92
+          79,
+          148
         ],
-        "centroid_y": 46.59
+        "centroid_y": 96.24
       },
       "2": {
         "empty": false,
-        "opaque_pixels": 2343,
+        "opaque_pixels": 5766,
         "bbox": [
-          53,
-          92
+          85,
+          132
         ],
-        "centroid_y": 46.09
+        "centroid_y": 103.66
       },
       "3": {
         "empty": false,
-        "opaque_pixels": 264,
+        "opaque_pixels": 2088,
         "bbox": [
-          37,
-          92
+          85,
+          122
         ],
-        "centroid_y": 45.75
+        "centroid_y": 156.44
       }
     },
     "transitions_changed_pixels": [
-      2947,
-      3020,
-      2326
+      8838,
+      7717,
+      7331
     ],
-    "terminal_changed_pixels": 2861,
-    "final_to_first_height_ratio": 1.108,
-    "final_to_first_area_ratio": 0.095,
+    "terminal_changed_pixels": 9466,
+    "final_to_first_height_ratio": 0.762,
+    "final_to_first_area_ratio": 0.264,
     "accepted": true
   },
   "gwimyeon_dokkaebi": {
