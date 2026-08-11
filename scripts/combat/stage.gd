@@ -33,6 +33,7 @@ var _has_ended: bool = false
 @onready var _ground: StageGround = $Ground
 @onready var _audio: CombatAudio = $CombatAudio
 @onready var _effects: EffectPool = $Effects
+@onready var _drops: DropPool = $Drops
 @onready var _spawner: Spawner = $Spawner
 @onready var _boss: BossController = $BossController
 
@@ -56,6 +57,7 @@ func _ready() -> void:
 	EventBus.level_reached.connect(_on_level_reached)
 	EventBus.upgrade_chosen.connect(_on_upgrade_chosen)
 	EventBus.weapon_evolved.connect(_on_weapon_evolved)
+	_drops.drop_collected.connect(_on_drop_collected)
 
 
 func _process(delta: float) -> void:
@@ -104,21 +106,16 @@ func _viewport_centre() -> Vector2:
 func _on_enemy_killed(monster_id: String, position: Vector2) -> void:
 	RunState.kills += 1
 	var data: Dictionary = GameData.monster(monster_id)
-	gold += maxi(int(data.get(KEY_GOLD_DROP, 0)), 0)
-	_drop_xp(maxi(int(data.get(KEY_XP_DROP, 0)), 0), position)
+	# Gold and experience are now earned off the ground rather than credited on
+	# death, so the player sees what a kill paid.
+	DropPool.spawn_for_kill(data, position)
 
 
-func _drop_xp(amount: int, position: Vector2) -> void:
-	if amount <= 0:
-		return
-	var orb := XpPickup.new()
-	orb.collected.connect(_on_xp_collected)
-	_pickups.add_child(orb)
-	orb.setup(amount, position)
-
-
-func _on_xp_collected(amount: int) -> void:
-	RunState.add_xp(amount)
+## A drop pays out as its collect sequence begins.
+func _on_drop_collected(xp_amount: int, gold_amount: int) -> void:
+	if xp_amount > 0:
+		RunState.add_xp(xp_amount)
+	gold += maxi(gold_amount, 0)
 
 
 ## A level-up choice freezes the field. The choice UI lives in meta-ui and only
