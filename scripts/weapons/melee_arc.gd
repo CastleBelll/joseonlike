@@ -24,6 +24,9 @@ var facing: Vector2 = Vector2.RIGHT
 ## facing; the collision circle is placed, never spun, so hit geometry stays
 ## exactly what it was before the art landed.
 var texture: Texture2D = null
+## Paired arrival art for the weapon that swung. One burst per enemy hit,
+## which is separate from the one-swing-per-sweep rule above.
+var impact_effect: StringName = EffectPool.HIT
 
 var _age_sec: float = 0.0
 var _hit_ids: Array[int] = []
@@ -50,6 +53,7 @@ func _on_body_entered(body: Node2D) -> void:
 	if _hit_ids.has(body_id):
 		return
 	_hit_ids.append(body_id)
+	EffectPool.play(impact_effect, body.global_position)
 	body.take_damage(damage, is_crit)
 
 

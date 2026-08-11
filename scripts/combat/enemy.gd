@@ -25,6 +25,7 @@ const KEY_BEHAVIOUR: String = "behaviour"
 const KEY_XP_DROP: String = "xp_drop"
 const KEY_GOLD_DROP: String = "gold_drop"
 const KEY_SPRITE: String = "sprite"
+const KEY_COLLISION_RADIUS: String = "collision_radius"
 
 const DEFAULT_HP: float = 10.0
 const DEFAULT_DAMAGE: float = 5.0
@@ -32,7 +33,6 @@ const DEFAULT_SPEED: float = 50.0
 
 const PLACEHOLDER_TINT: Color = Color(0.85, 0.35, 0.4)
 const BOSS_TINT: Color = Color(0.75, 0.25, 0.85)
-const BOSS_SCALE: float = 2.2
 const HIT_FLASH_SEC: float = 0.08
 const HIT_FLASH_TINT: Color = Color(2.0, 2.0, 2.0)
 
@@ -111,6 +111,7 @@ func activate(new_monster_id: String, data: Dictionary, spawn_position: Vector2)
 	_hit_flash_left = 0.0
 
 	_apply_visuals(data)
+	_apply_collision(data)
 	_set_enabled(true)
 
 
@@ -126,7 +127,9 @@ func take_damage(amount: float, _is_crit: bool = false) -> void:
 		return
 	hp -= amount
 	CombatAudio.play_hit()
-	EffectPool.play(EffectPool.HIT, global_position)
+	# No impact burst here: the damage source plays it, because only the
+	# source knows which weapon landed and therefore which paired art to
+	# use. Emitting from both stacked two bright cores on one hit.
 	_hit_flash_left = HIT_FLASH_SEC
 	if _sprite != null:
 		_sprite.modulate = HIT_FLASH_TINT
@@ -276,7 +279,27 @@ func _apply_visuals(data: Dictionary) -> void:
 	var tint: Color = BOSS_TINT if is_boss() else PLACEHOLDER_TINT
 	_sprite.texture = PlaceholderArt.texture_or_placeholder(String(data.get(KEY_SPRITE, "")), tint)
 	_sprite.modulate = Color.WHITE
-	scale = Vector2.ONE * (BOSS_SCALE if is_boss() else 1.0)
+
+
+## Hit size comes from data, not from a root scale.
+##
+## The boss used to get its size from scale = 2.2 on the root, which also scaled
+## the collision circle to ~17.6px as a side effect. With the root no longer
+## scaled the shape has to be sized explicitly, and monsters.json already ships
+## collision_radius for every monster. Pooled instances share the scene's shape
+## resource, so it is duplicated per enemy before being resized.
+func _apply_collision(data: Dictionary) -> void:
+	if _collider == null:
+		return
+	var radius: float = float(data.get(KEY_COLLISION_RADIUS, 0.0))
+	if radius <= 0.0:
+		return
+	var circle: CircleShape2D = _collider.shape as CircleShape2D
+	if circle == null or circle.radius == radius:
+		return
+	circle = circle.duplicate() as CircleShape2D
+	circle.radius = radius
+	_collider.shape = circle
 
 
 func _set_enabled(enabled: bool) -> void:
