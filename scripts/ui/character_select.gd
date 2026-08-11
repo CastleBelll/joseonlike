@@ -3,10 +3,6 @@ extends Control
 ## visible with their unlock condition. Selecting an unlocked character seeds
 ## RunState and routes into the stage via SceneRouter.
 
-## M1 vertical slice is fixed to Bamboo Forest (ARCHITECTURE.md section 7);
-## a stage-select step is out of scope until content expands past M1.
-const M1_STAGE_ID := "bamboo_forest"
-
 const CardScene := preload("res://scenes/ui/character_card.tscn")
 
 enum State { LOADING, EMPTY, ERROR, READY }
@@ -135,11 +131,13 @@ func _set_state(state: State) -> void:
 			_scroll.visible = true
 
 
+## RunState.begin() (which resets the run and emits run_started) happens in
+## area_select.gd once an area is actually chosen -- this only remembers
+## which character area_select should read back.
 func _on_character_selected(character_id: String) -> void:
 	UiSound.play_click(self)
-	AchievementTracker.snapshot_before_run()
-	RunState.begin(character_id, M1_STAGE_ID)
-	SceneRouter.goto_stage(M1_STAGE_ID)
+	RunState.character_id = character_id
+	SceneRouter.goto_area_select()
 
 
 func _on_back_pressed() -> void:
