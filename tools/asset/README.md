@@ -107,13 +107,14 @@ M1 helper scripts are deterministic and safe to rerun:
 - `make_seamless_tile.py` darkens, quantises, and mirror-wraps generated ground concepts.
 - `build_ui_chrome.py` rebuilds the ink/paper/vermilion nine-slice chrome and currency icons.
 - `synthesize_audio.py` rebuilds the original peak-safe M1 WAV set.
-- `process_author_audio.py` retains the six author deliveries under `asset/audio/raw/`,
-  files the three MP3s losslessly, and trims/resamples/levels the replacement one-shots.
+- `process_author_audio.py` retains the seven author deliveries under `asset/audio/raw/`,
+  files the three MP3s losslessly, and trims/resamples/levels the four replacement one-shots.
 - `process_title_layers.py` cuts the eight individually generated title members at their
   registered canvases, extracts the valid halo/mote from two over-generated raws, builds the
   review composite, and mirror-wraps the horizontal fog seam.
 - `verify_assets.py` checks fixed canvases, hard alpha, chroma removal, tile seams, palettes,
-  audio formats/peaks, and the retained motion-consistency evidence.
+  audio formats/peaks, rejects unregistered runtime audio, and checks the retained
+  motion-consistency evidence.
 - `measure_motion_sheet.py` compares cut motion cells on the authority's canonical 37x46
   window and writes reproducible JSON using the same pixel-diff denominator as the original
   separate-render test.

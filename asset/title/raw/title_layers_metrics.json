@@ -12,7 +12,13 @@
     960
   ],
   "old_lower_two_thirds_luminance": 21.252407556712964,
-  "new_lower_two_thirds_luminance": 47.31547986747685,
+  "new_lower_two_thirds_luminance": 55.624810741898145,
+  "action_band": {
+    "mean_luminance": 50.60901531402034,
+    "local_8px_stddev": 0.543201472734426,
+    "min_luminance": 46.9306,
+    "max_luminance": 60.608999999999995
+  },
   "layers": {
     "sky": {
       "size": [
@@ -64,8 +70,8 @@
         540,
         960
       ],
-      "opaque_pixels": 246723,
-      "transparent_pixels": 271677,
+      "opaque_pixels": 394634,
+      "transparent_pixels": 123766,
       "colours": 48
     }
   },

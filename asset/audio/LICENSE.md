@@ -6,7 +6,7 @@ recordings, model outputs, or third-party source material. The project may use,
 modify, ship, and redistribute those files without attribution or additional
 licence obligations.
 
-The three music tracks and three replacement effects retained under
+The three music tracks and four replacement effects retained under
 `asset/audio/raw/` are author-supplied project material. Their processed or
 losslessly filed runtime copies were made by `tools/asset/process_author_audio.py`;
 no third-party licence is asserted here beyond the project's rights in the
