@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageOps
@@ -70,6 +71,57 @@ def transparent_layer(name: str) -> Image.Image:
     return quantise(key_magenta(fit_raw(name)))
 
 
+def ground_layer() -> Image.Image:
+    """Move path interest above the controls and quiet the action band.
+
+    The targeted image edit supplies a cleaner inhabited-earth source but still
+    placed its main path around y530. Shift that authored interest upward, then
+    use its low ground texture at deliberately compressed contrast below the
+    middle band so five button labels never compete with stones or black holes.
+    """
+    edited_path = RAW / "ground_action_band_edit_openai.png"
+    if not edited_path.is_file():
+        raise FileNotFoundError(f"missing targeted ground edit: {edited_path}")
+    fitted = ImageOps.fit(
+        Image.open(edited_path).convert("RGB"),
+        CANVAS,
+        method=Image.Resampling.BOX,
+    )
+    keyed = key_magenta(fitted)
+
+    moved = Image.new("RGBA", CANVAS, (0, 0, 0, 0))
+    moved.alpha_composite(keyed, (0, -300))
+
+    base = (38, 42, 48)
+    fitted_pixels = fitted.load()
+    keyed_alpha = keyed.getchannel("A").load()
+    moved_pixels = moved.load()
+    quiet_start = 320
+    quiet_end = 520
+    for y in range(quiet_start, CANVAS[1]):
+        quiet_strength = min(1.0, (y - quiet_start) / (quiet_end - quiet_start))
+        for x in range(CANVAS[0]):
+            texture_y = min(CANVAS[1] - 1, y + 220)
+            if keyed_alpha[x, texture_y]:
+                sr, sg, sb = fitted_pixels[x, texture_y]
+            else:
+                sr, sg, sb = base
+            # Keep subtle earth texture while compressing the controls' value
+            # range. Cross-fade into it to avoid a horizontal processing seam.
+            qr = base[0] * 0.70 + sr * 0.30
+            qg = base[1] * 0.70 + sg * 0.30
+            qb = base[2] * 0.70 + sb * 0.30
+            mr, mg, mb, ma = moved_pixels[x, y]
+            if ma == 0:
+                mr, mg, mb = qr, qg, qb
+            r = round(mr * (1.0 - quiet_strength) + qr * quiet_strength)
+            g = round(mg * (1.0 - quiet_strength) + qg * quiet_strength)
+            b = round(mb * (1.0 - quiet_strength) + qb * quiet_strength)
+            moved_pixels[x, y] = (r, g, b, 255)
+
+    return quantise(moved)
+
+
 def moon_glow() -> Image.Image:
     """Extract the valid generated upper ring and pre-position it over the moon."""
     raw = Image.open(RAW / "moon_glow_higgsfield.png").convert("RGBA")
@@ -131,6 +183,33 @@ def luminance(image: Image.Image, box: tuple[int, int, int, int]) -> float:
     return sum(values) / len(values)
 
 
+def action_band_metrics(image: Image.Image) -> dict[str, float]:
+    """Match the coordinator's x32..508/y556..936 Rec.709 8px metric."""
+    rgb = image.convert("RGB")
+    values = [
+        [
+            0.2126 * rgb.getpixel((x, y))[0]
+            + 0.7152 * rgb.getpixel((x, y))[1]
+            + 0.0722 * rgb.getpixel((x, y))[2]
+            for x in range(32, 508)
+        ]
+        for y in range(556, 936)
+    ]
+    flattened_values = [value for row in values for value in row]
+    block_stds = []
+    for by in range(0, 376, 8):
+        for bx in range(0, 472, 8):
+            block = [values[by + dy][bx + dx] for dy in range(8) for dx in range(8)]
+            mean = sum(block) / len(block)
+            block_stds.append(math.sqrt(sum((value - mean) ** 2 for value in block) / len(block)))
+    return {
+        "mean_luminance": sum(flattened_values) / len(flattened_values),
+        "local_8px_stddev": sum(block_stds) / len(block_stds),
+        "min_luminance": min(flattened_values),
+        "max_luminance": max(flattened_values),
+    }
+
+
 def main() -> None:
     LAYERS.mkdir(parents=True, exist_ok=True)
     built = {
@@ -139,7 +218,7 @@ def main() -> None:
         "palace": transparent_layer("palace"),
         "bamboo_far": transparent_layer("bamboo_far"),
         "bamboo_near": transparent_layer("bamboo_near"),
-        "ground": transparent_layer("ground"),
+        "ground": ground_layer(),
     }
 
     # Distant bamboo must form a real value step behind the near framing.
@@ -175,6 +254,7 @@ def main() -> None:
         "canvas": list(CANVAS),
         "old_lower_two_thirds_luminance": luminance(old, (0, 320, 540, 960)),
         "new_lower_two_thirds_luminance": luminance(composite, (0, 320, 540, 960)),
+        "action_band": action_band_metrics(composite),
         "layers": {},
     }
     for name, image in built.items():

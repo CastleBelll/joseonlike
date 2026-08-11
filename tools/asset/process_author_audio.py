@@ -1,4 +1,4 @@
-"""File and normalise the author's six delivered audio files.
+"""File and normalise the author's seven delivered audio files.
 
 The originals are retained byte-for-byte under asset/audio/raw. Music is copied
 without re-encoding; effects are downmixed, trimmed, resampled to the project's
@@ -36,6 +36,7 @@ EFFECTS = {
     "button_click.wav": "ui_click.wav",
     "Monster_Die.wav": "enemy_death.wav",
     "Chracter_Die.wav": "player_death.wav",
+    "energy_sound.wav": "energy_sound.wav",
 }
 RUNTIME_CAPS = {
     # Combat has eight round-robin death voices and can recycle each in ~0.13s.

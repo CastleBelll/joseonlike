@@ -147,6 +147,50 @@ def check_audio(path, expected_duration):
             fail(f"{path}: peak {dbfs:.2f} dBFS exceeds -3 dBFS")
 
 
+def check_audio_inventory(expected_paths):
+    """Reject runtime audio that bypasses the format/level allowlist."""
+    extensions = {".wav", ".mp3", ".ogg"}
+    actual = {
+        path.relative_to(ROOT).as_posix()
+        for directory in ("asset/audio/ambience", "asset/audio/bgm", "asset/audio/sfx")
+        for path in (ROOT / directory).rglob("*")
+        if path.is_file() and path.suffix.lower() in extensions
+    }
+    missing = sorted(expected_paths - actual)
+    unexpected = sorted(actual - expected_paths)
+    if missing:
+        fail(f"audio inventory: missing registered runtime files: {', '.join(missing)}")
+    if unexpected:
+        fail(f"audio inventory: unregistered runtime files: {', '.join(unexpected)}")
+
+
+def measure_title_action_band(composite):
+    """Recompute the coordinator's Rec.709 x32..508/y556..936 metric."""
+    rgb = composite.convert("RGB")
+    values = [
+        [
+            0.2126 * rgb.getpixel((x, y))[0]
+            + 0.7152 * rgb.getpixel((x, y))[1]
+            + 0.0722 * rgb.getpixel((x, y))[2]
+            for x in range(32, 508)
+        ]
+        for y in range(556, 936)
+    ]
+    flattened_values = [value for row in values for value in row]
+    block_stds = []
+    for by in range(0, 376, 8):
+        for bx in range(0, 472, 8):
+            block = [values[by + dy][bx + dx] for dy in range(8) for dx in range(8)]
+            mean = sum(block) / len(block)
+            block_stds.append(math.sqrt(sum((value - mean) ** 2 for value in block) / len(block)))
+    return {
+        "mean_luminance": sum(flattened_values) / len(flattened_values),
+        "local_8px_stddev": sum(block_stds) / len(block_stds),
+        "min_luminance": min(flattened_values),
+        "max_luminance": max(flattened_values),
+    }
+
+
 def check_title_layers():
     """Verify the full-canvas registered title stack and scrolling members."""
     layer_names = ("sky", "moon_glow", "palace", "bamboo_far", "bamboo_near", "ground")
@@ -204,6 +248,20 @@ def check_title_layers():
         fail(f"title composite: lower value range was not lifted enough ({old_luma:.2f} -> {new_luma:.2f})")
     if metrics.get("fog_horizontal_seam_changed_pixels") != 0:
         fail("title metrics: fog seam has changed pixels")
+    band = measure_title_action_band(composite)
+    recorded_band = metrics.get("action_band", {})
+    if any(abs(recorded_band.get(key, math.inf) - value) > 1e-6 for key, value in band.items()):
+        fail("title action band: recorded metrics do not match the review composite")
+    band_mean = band.get("mean_luminance", math.inf)
+    band_stddev = band.get("local_8px_stddev", math.inf)
+    band_max = band.get("max_luminance", math.inf)
+    if not 40.0 <= band_mean <= 55.0:
+        fail(f"title action band: mean luminance {band_mean:.2f} is outside 40..55")
+    if band_stddev > 7.0:
+        fail(f"title action band: 8px local stddev {band_stddev:.2f} exceeds 7.0")
+    if band_max > 110.0:
+        fail(f"title action band: max luminance {band_max:.2f} exceeds 110")
+    return band
 
 
 def check_rotation_facing_audit():
@@ -575,7 +633,7 @@ def main():
     check_tile("asset/stage/abandoned_temple_ground.png")
     for name in ("main_menu", "bamboo_forest", "abandoned_temple"):
         check_backdrop(f"asset/stage/backdrops/{name}.png")
-    check_title_layers()
+    title_action_band = check_title_layers()
     prop_names = (
         "wooden_crate", "small_box", "broken_crate", "storage_chest",
         "bamboo_cluster", "fallen_log", "mossy_rock", "stone_lantern",
@@ -658,7 +716,14 @@ def main():
         "asset/audio/sfx/level_up.wav": 0.72,
         "asset/audio/sfx/boss_spawn.wav": 1.50,
         "asset/audio/sfx/ui_click.wav": 0.17,
+        "asset/audio/sfx/energy_sound.wav": 0.51,
     }
+    music = {
+        "asset/audio/bgm/joseonlike.mp3",
+        "asset/audio/bgm/moonlit_sanctuary.mp3",
+        "asset/audio/bgm/bamboo_forest_spirits.mp3",
+    }
+    check_audio_inventory(set(audio) | music)
     for path, duration in audio.items():
         check_audio(path, duration)
 
@@ -720,7 +785,7 @@ def main():
 
     if ERRORS:
         raise SystemExit("\n".join(ERRORS))
-    print("M1 assets verified: 20 UI icons + 5 chrome assets, 34 weapon assets, 2 characters, 4 seamless tiles, 7 audio files")
+    print("M1 assets verified: 20 UI icons + 5 chrome assets, 34 weapon assets, 2 characters, 4 seamless tiles, 8 checked WAVs + 3 inventoried music tracks")
     print(f"Motion-generation rejection evidence: {changed}/1702 pixels changed between same-pose frames")
     print(f"Single-sheet retry rejected: idle pair {retry_idle}/1702 versus separate baseline {baseline}/1702")
     print(f"Direct-conditioned retry rejected: south walk frames {conditioned_changed[0]}/1702 and {conditioned_changed[1]}/1702")
@@ -742,7 +807,12 @@ def main():
     print("UI journey verified: 47 icons, 11 illustrations, 31 nine-slices, 3 fixed controls; WCAG-AA/state gates passed")
     print("Camp identity verified: 2 warm seamless tiles + 3 rotatable north-facing transition overlays")
     print("Button redesign verified: 3 directions x 4 states; selected royal_seal, 6x8 margins, WCAG-AA/pressed-shape gates passed")
-    print("Layered title verified: 6 registered 540x960 layers + seamless 1080x320 fog + 8x8 mote; lower-scene value range lifted")
+    print(
+        "Layered title verified: 6 registered 540x960 layers + seamless 1080x320 fog + "
+        f"8x8 mote; action band mean={title_action_band['mean_luminance']:.2f}, "
+        f"local8={title_action_band['local_8px_stddev']:.2f}, "
+        f"max={title_action_band['max_luminance']:.2f}"
+    )
 
 
 if __name__ == "__main__":

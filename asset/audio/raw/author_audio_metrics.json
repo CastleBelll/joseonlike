@@ -106,6 +106,35 @@
         "peak": 0.7071443830683309,
         "peak_dbfs": -3.0098380785750294
       }
+    },
+    "energy_sound.wav": {
+      "source": "asset/audio/raw/energy_sound.wav",
+      "destination": "asset/audio/sfx/energy_sound.wav",
+      "source_sha256": "1c4213a6eec41714ead377401e784264838dbb2ed501bcdf63c496e4a3b375d9",
+      "natural_trim_end_seconds": 0.51,
+      "runtime_cap_seconds": null,
+      "trim_end_seconds": 0.51,
+      "source_energy_retained": 0.9998422105882996,
+      "gate": {
+        "window_seconds": 0.02,
+        "noise_floor_rms": 0.00013363877815908887,
+        "activity_threshold_rms": 0.006657165834729735,
+        "last_sustained_window": 23
+      },
+      "before": {
+        "channels": 2,
+        "sample_rate": 48000,
+        "duration_seconds": 1.0,
+        "peak": 0.895782470703125,
+        "peak_dbfs": -0.9559488077170193
+      },
+      "after": {
+        "channels": 1,
+        "sample_rate": 22050,
+        "duration_seconds": 0.5100226757369615,
+        "peak": 0.7071443830683309,
+        "peak_dbfs": -3.0098380785750294
+      }
     }
   }
 }
