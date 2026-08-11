@@ -147,6 +147,80 @@
     },
     "accepted": true
   },
+  "fireball_impact": {
+    "frames": {
+      "0": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          10,
+          10
+        ],
+        "opaque_pixels": 81,
+        "coverage_percent": 1.98,
+        "bright_core_pixels": 4,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "1": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          37,
+          36
+        ],
+        "opaque_pixels": 886,
+        "coverage_percent": 21.63,
+        "bright_core_pixels": 196,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "2": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          62,
+          64
+        ],
+        "opaque_pixels": 2893,
+        "coverage_percent": 70.63,
+        "bright_core_pixels": 1851,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "3": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          51,
+          48
+        ],
+        "opaque_pixels": 366,
+        "coverage_percent": 8.94,
+        "bright_core_pixels": 7,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      }
+    },
+    "transitions_changed_pixels": {
+      "0->1": 886,
+      "1->2": 2893,
+      "2->3": 2893
+    },
+    "accepted": true
+  },
   "impact_hit": {
     "frames": {
       "0": {
@@ -662,6 +736,80 @@
       "0->1": 597,
       "1->2": 1486,
       "2->3": 1536
+    },
+    "accepted": true
+  },
+  "spirit_bolt_impact": {
+    "frames": {
+      "0": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          10,
+          12
+        ],
+        "opaque_pixels": 48,
+        "coverage_percent": 1.17,
+        "bright_core_pixels": 29,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "1": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          41,
+          46
+        ],
+        "opaque_pixels": 639,
+        "coverage_percent": 15.6,
+        "bright_core_pixels": 478,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "2": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          48,
+          56
+        ],
+        "opaque_pixels": 987,
+        "coverage_percent": 24.1,
+        "bright_core_pixels": 535,
+        "silhouette_readable": true,
+        "bright_core_present": true,
+        "readable": true
+      },
+      "3": {
+        "canvas": [
+          64,
+          64
+        ],
+        "bbox": [
+          27,
+          47
+        ],
+        "opaque_pixels": 104,
+        "coverage_percent": 2.54,
+        "bright_core_pixels": 0,
+        "silhouette_readable": true,
+        "bright_core_present": false,
+        "readable": false
+      }
+    },
+    "transitions_changed_pixels": {
+      "0->1": 686,
+      "1->2": 1179,
+      "2->3": 1006
     },
     "accepted": true
   },

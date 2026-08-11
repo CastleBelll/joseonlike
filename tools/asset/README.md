@@ -119,12 +119,21 @@ M1 helper scripts are deterministic and safe to rerun:
 - `measure_directional_motion.py` compares every generated motion cell against its own
   direction's 92x92 idle authority and records per-frame lower-body concentration, head
   silhouette stability, pair differences, and a sheet-level acceptance summary.
-- `measure_death_sheets.py` measures the seven four-frame death sequences as irreversible
+- `process_monster_death_sheets.py` slices and pixelizes the eighteen folklore-monster
+  death sheets with their audited layouts; `normalize_death_sequence.py` preserves the
+  common sheet scale, and `clean_tiny_components.py` removes isolated generator specks.
+- `measure_death_sheets.py` measures all twenty-five four-frame death sequences as irreversible
   collapse: every transition and the terminal state must differ materially, and the final
   silhouette must lose height or opaque area. This is deliberately not the identity gate
   that correctly rejects generated walk and attack frames.
+- `process_monster_walk_trials.py` and `measure_monster_walk_trials.py` retain the four-body-plan
+  monster walk experiment. All four conditioned two-frame trials failed upper-body stability;
+  `asset/monster/WALK_STATUS.json` records the measured procedural replacement for all 22 sets.
+- `process_combat_effects.py` slices and pixelizes canonical east-facing travel/melee art and
+  the paired fireball/spirit-bolt impacts; `measure_combat_art.py` checks their small-screen
+  silhouettes and bright cores.
 - `measure_effect_sheets.py` records opaque coverage, bright-core pixels, and consecutive
-  frame deltas for the thirteen four-frame effect sheets. Its final dissipation frame is exempt
+  frame deltas for the fifteen four-frame effect sheets. Its final dissipation frame is exempt
   from the bright-core gate but still must retain a readable silhouette and distinct motion.
 - `build_rotation_contact_sheets.py` lays out every character and monster in the semantic
   order south, south-east, east, north-east, north, north-west, west, south-west. View all
