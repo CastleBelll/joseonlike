@@ -12,11 +12,6 @@ const ENEMY_GROUP: StringName = &"enemy"
 ## do not inherit the player's transform.
 const PROJECTILE_ROOT_GROUP: StringName = &"projectile_root"
 
-## Gameplay VFX is named by weapon id (asset/M1_ASSET_REPORT.md), so the path
-## is derived rather than configured; a missing file falls back to the
-## placeholder instead of blocking on art.
-const VFX_PATH: String = "res://asset/weapon/projectiles/%s.png"
-
 const STAT_ATTACK_DAMAGE: String = "attack_damage"
 const STAT_ATTACK_SPEED: String = "attack_speed"
 const STAT_CRIT_CHANCE: String = "crit_chance"
@@ -112,14 +107,6 @@ func _fire() -> bool:
 ## reach into RunState from a dozen call sites.
 func _stat(key: String) -> float:
 	return RunState.stat_total(key)
-
-
-## Authored art for this weapon, or null when none is shipped for the id.
-func vfx_texture() -> Texture2D:
-	var path: String = VFX_PATH % weapon_id
-	if weapon_id.is_empty() or not ResourceLoader.exists(path):
-		return null
-	return ResourceLoader.load(path) as Texture2D
 
 
 func player() -> Node2D:

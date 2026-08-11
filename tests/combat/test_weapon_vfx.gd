@@ -8,14 +8,11 @@ extends RefCounted
 
 const MeleeArcScript = preload("res://scripts/weapons/melee_arc.gd")
 
-const VFX_DIR: String = "res://asset/weapon/projectiles/%s.png"
-const WEAPONS_PATH: String = "res://data/weapons.json"
-const SWORD_VFX: String = "res://asset/weapon/projectiles/sword.png"
+const SWORD_VFX: String = "res://asset/weapon/melee/wide_sword_arc.png"
 
 
 func run() -> Array[String]:
 	var failures: Array[String] = []
-	failures.append_array(_test_every_weapon_has_vfx())
 	failures.append_array(_test_melee_arc_uses_authored_texture())
 	failures.append_array(_test_melee_arc_falls_back())
 	failures.append_array(_test_arc_owns_its_collider())
@@ -37,23 +34,6 @@ func _test_arc_owns_its_collider() -> Array[String]:
 	elif collider.get_parent() != arc:
 		failures.append("collider is not owned by the arc, so freeing the arc leaks it")
 	arc.free()
-	return failures
-
-
-## Every id in weapons.json must have gameplay art, because WeaponBase builds the
-## path from the id alone.
-func _test_every_weapon_has_vfx() -> Array[String]:
-	if not FileAccess.file_exists(WEAPONS_PATH):
-		return ["could not read %s" % WEAPONS_PATH]
-	var json := JSON.new()
-	if json.parse(FileAccess.get_file_as_string(WEAPONS_PATH)) != OK:
-		return ["%s is not valid JSON" % WEAPONS_PATH]
-	var weapons: Dictionary = json.data
-	var failures: Array[String] = []
-	for weapon_key: Variant in weapons.keys():
-		var path: String = VFX_DIR % String(weapon_key)
-		if not ResourceLoader.exists(path):
-			failures.append("weapon %s has no gameplay art at %s" % [weapon_key, path])
 	return failures
 
 

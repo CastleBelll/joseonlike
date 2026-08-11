@@ -35,8 +35,8 @@ func _make_ward(caster: Node2D, phase_rad: float, hit: Dictionary) -> Projectile
 	ward.lifetime_sec = LIFETIME_SEC
 	ward.radius_px = RADIUS_PX * area_scale()
 	ward.tint = TINT
-	ward.texture = vfx_texture()
-	ward.impact_effect = EffectPool.weapon_effect(weapon_id)
+	ward.texture = WeaponArt.travel_texture(weapon_id)
+	ward.impact_effect = WeaponArt.impact_for_weapon(weapon_id)
 	ward.homing_turn_rate_rad = HOMING_TURN_RATE_RAD
 	ward.orbit_target = caster
 	ward.orbit_radius_px = ORBIT_RADIUS_PX * area_scale()

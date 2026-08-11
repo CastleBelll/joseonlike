@@ -31,8 +31,8 @@ func _fire() -> bool:
 		arrow.lifetime_sec = LIFETIME_SEC
 		arrow.radius_px = RADIUS_PX * area_scale()
 		arrow.tint = TINT
-		arrow.texture = vfx_texture()
-		arrow.impact_effect = EffectPool.weapon_effect(weapon_id)
+		arrow.texture = WeaponArt.travel_texture(weapon_id)
+		arrow.impact_effect = WeaponArt.impact_for_weapon(weapon_id)
 		arrow.direction = direction
 		arrow.global_position = archer.global_position
 		arrow.configure_for_player()

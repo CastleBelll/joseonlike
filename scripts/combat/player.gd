@@ -123,6 +123,7 @@ func take_damage(amount: float, _is_crit: bool = false) -> void:
 	EventBus.player_damaged.emit(amount, hp)
 	if hp > 0.0:
 		return
+	EffectPool.play_character_death(String(CHARACTER_FOLDERS.get(_character_id(), "")), global_position)
 	EventBus.player_died.emit()
 	EventBus.stat_recorded.emit("player_died", 1)
 
