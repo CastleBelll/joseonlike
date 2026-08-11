@@ -44,7 +44,7 @@
     "xp_drop": 200,
     "gold_drop": 150,
     "behaviour": "boss",
-    "collision_radius": 23.5,
+    "collision_radius": 47.5,
     "sprite": "res://asset/monster/bamboo_spirit_lord.png"
   },
   "gwimyeon_dokkaebi": {
