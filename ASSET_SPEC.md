@@ -176,7 +176,18 @@ the author-supplied batch:
   these into one physics frame.
 
 Peak ceiling **-3 dBFS**, trimmed to actual content, and a one-shot that outlasts the event
-it describes gets cut down rather than played over itself. Retain the delivered file under
+it describes gets cut down rather than played over itself.
+
+**A combat one-shot has a hard length budget, and it is much shorter than the sound.**
+`scripts/combat/combat_audio.gd` runs 8 voices round-robin and admits each distinct sound
+once per physics frame, so a dense wave recycles a voice roughly every **0.13 s**. Anything
+longer than that is cut off mid-play whenever the screen is busy — which is precisely when
+the sound matters. `enemy_death.wav` is cut to **0.150 s** for this reason, not because
+0.150 s is its natural trim: measured on the untouched 3.000 s original, the first 150 ms
+carries 41.17% of total signal energy and 100% of the full-file peak, with the strongest
+transient inside 0–80 ms. The tail is dropped deliberately. Re-cutting it "properly" to its
+natural length restores a sound nobody hears, so raise the duration in
+`verify_assets.py` only alongside a voice-policy change in combat. Retain the delivered file under
 `asset/audio/raw/` — re-levelling from the original beats re-levelling a re-level.
 
 `tools/asset/verify_assets.py` hardcodes an expected duration per audio file; trimming one
