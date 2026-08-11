@@ -3,15 +3,15 @@ extends CanvasLayer
 ## chips. Reads only EventBus signals, RunState, and GameData -- never a
 ## reference to a combat/player node.
 
-@onready var _hp_bar: ProgressBar = $Root/HpBar
-@onready var _hp_label: Label = $Root/HpBar/HpLabel
-@onready var _xp_icon: TextureRect = $Root/XpIcon
-@onready var _xp_bar: ProgressBar = $Root/XpBar
-@onready var _level_label: Label = $Root/LevelLabel
-@onready var _time_label: Label = $Root/StatsRow/TimeLabel
-@onready var _kills_label: Label = $Root/StatsRow/KillsLabel
-@onready var _weapons_row: HBoxContainer = $Root/WeaponsRow
-@onready var _weapons_empty_label: Label = $Root/WeaponsEmptyLabel
+@onready var _hp_bar: ProgressBar = $Root/Margin/MainBox/TopRow/HpBar
+@onready var _hp_label: Label = $Root/Margin/MainBox/TopRow/HpBar/HpLabel
+@onready var _level_label: Label = $Root/Margin/MainBox/TopRow/LevelLabel
+@onready var _xp_icon: TextureRect = $Root/Margin/MainBox/XpRow/XpIcon
+@onready var _xp_bar: ProgressBar = $Root/Margin/MainBox/XpRow/XpBar
+@onready var _time_label: Label = $Root/Margin/MainBox/StatsRow/TimeLabel
+@onready var _kills_label: Label = $Root/Margin/MainBox/StatsRow/KillsLabel
+@onready var _weapons_row: HBoxContainer = $Root/Margin/MainBox/WeaponsRow
+@onready var _weapons_empty_label: Label = $Root/Margin/MainBox/WeaponsEmptyLabel
 
 var _max_hp: float = 0.0
 var _current_hp: float = 0.0

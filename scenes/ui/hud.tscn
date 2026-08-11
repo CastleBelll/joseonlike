@@ -9,7 +9,7 @@ script = ExtResource("1_script")
 layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 148.0
+offset_bottom = 168.0
 grow_horizontal = 2
 mouse_filter = 2
 
@@ -23,18 +23,37 @@ grow_vertical = 2
 color = Color(0.102, 0.0863, 0.0745, 0.72)
 mouse_filter = 2
 
-[node name="HpBar" type="ProgressBar" parent="Root"]
+[node name="Margin" type="MarginContainer" parent="Root"]
 layout_mode = 1
-offset_left = 16.0
-offset_top = 12.0
-offset_right = -100.0
-offset_bottom = 34.0
+anchors_preset = 15
 anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="MainBox" type="VBoxContainer" parent="Root/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="TopRow" type="HBoxContainer" parent="Root/Margin/MainBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="HpBar" type="ProgressBar" parent="Root/Margin/MainBox/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 24)
 show_percentage = false
 value = 100.0
 
-[node name="HpLabel" type="Label" parent="Root/HpBar"]
+[node name="HpLabel" type="Label" parent="Root/Margin/MainBox/TopRow/HpBar"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -45,72 +64,50 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text = "0/0"
 
-[node name="LevelLabel" type="Label" parent="Root"]
-layout_mode = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -92.0
-offset_top = 12.0
-offset_right = -16.0
-offset_bottom = 34.0
-grow_horizontal = 0
+[node name="LevelLabel" type="Label" parent="Root/Margin/MainBox/TopRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(76, 24)
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "Lv 1"
 
-[node name="XpIcon" type="TextureRect" parent="Root"]
-layout_mode = 1
-offset_left = 16.0
-offset_top = 39.0
-offset_right = 30.0
-offset_bottom = 53.0
+[node name="XpRow" type="HBoxContainer" parent="Root/Margin/MainBox"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="XpIcon" type="TextureRect" parent="Root/Margin/MainBox/XpRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(16, 16)
+expand_mode = 1
 stretch_mode = 5
 
-[node name="XpBar" type="ProgressBar" parent="Root"]
-layout_mode = 1
-offset_left = 34.0
-offset_top = 40.0
-offset_right = -16.0
-offset_bottom = 52.0
-anchor_right = 1.0
-grow_horizontal = 2
+[node name="XpBar" type="ProgressBar" parent="Root/Margin/MainBox/XpRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+custom_minimum_size = Vector2(0, 14)
 show_percentage = false
 
-[node name="StatsRow" type="HBoxContainer" parent="Root"]
-layout_mode = 1
-offset_left = 16.0
-offset_top = 58.0
-offset_right = -16.0
-offset_bottom = 82.0
-anchor_right = 1.0
-grow_horizontal = 2
+[node name="StatsRow" type="HBoxContainer" parent="Root/Margin/MainBox"]
+layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 24
 
-[node name="TimeLabel" type="Label" parent="Root/StatsRow"]
+[node name="TimeLabel" type="Label" parent="Root/Margin/MainBox/StatsRow"]
 layout_mode = 2
 text = "Time 00:00"
 
-[node name="KillsLabel" type="Label" parent="Root/StatsRow"]
+[node name="KillsLabel" type="Label" parent="Root/Margin/MainBox/StatsRow"]
 layout_mode = 2
 text = "Kills 0"
 
-[node name="WeaponsRow" type="HBoxContainer" parent="Root"]
-layout_mode = 1
-offset_left = 16.0
-offset_top = 88.0
-offset_right = -16.0
-offset_bottom = 140.0
-anchor_right = 1.0
-grow_horizontal = 2
+[node name="WeaponsRow" type="HBoxContainer" parent="Root/Margin/MainBox"]
+layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 8
 
-[node name="WeaponsEmptyLabel" type="Label" parent="Root"]
-layout_mode = 1
-offset_left = 16.0
-offset_top = 88.0
-offset_right = -16.0
-offset_bottom = 140.0
-anchor_right = 1.0
-grow_horizontal = 2
+[node name="WeaponsEmptyLabel" type="Label" parent="Root/Margin/MainBox"]
+layout_mode = 2
 vertical_alignment = 1
 text = "No weapons"
