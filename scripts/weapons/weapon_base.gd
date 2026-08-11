@@ -20,6 +20,9 @@ const STAT_SKILL_POWER: String = "skill_power"
 signal fired(weapon_id: String)
 var weapon_id: String = ""
 var level: int = CombatMath.MIN_LEVEL
+## Cleared in hub scenes. Auto-attack is correct for a stage and wrong for
+## the camp, and a hub should not have to reach in and disable nodes.
+var firing_enabled: bool = true
 
 var _data: Dictionary = {}
 var _cooldown_left: float = 0.0
@@ -85,7 +88,7 @@ func projectile_speed() -> float:
 
 
 func _process(delta: float) -> void:
-	if _data.is_empty():
+	if _data.is_empty() or not firing_enabled:
 		return
 	_cooldown_left -= delta
 	if _cooldown_left > 0.0:

@@ -34,10 +34,10 @@ const CHARACTER_FOLDERS: Dictionary = {
 	"archer": "Archer",
 }
 
-## Attack presentation. The body never redraws: the VFX carries the attack, the
-## body only flashes briefly and may recoil a single pixel for one tick.
-const ATTACK_FLASH_SEC: float = 0.06
-const ATTACK_FLASH_TINT: Color = Color(1.7, 1.7, 1.7)
+## Attack presentation. The body never redraws: authored swing art and the impact
+## effects carry the attack. There is no colour flash -- with real swing art
+## landing it was feedback on top of feedback and read as flicker. The
+## damage-taken blink stays, because that tells the player something.
 const RECOIL_TICKS: int = 1
 const KEY_BASE_HP: String = "base_hp"
 const KEY_BASE_SPEED: String = "base_speed"
@@ -51,6 +51,12 @@ const KEY_LEVEL: String = "level"
 @export var input_adapter_path: NodePath = ^"PlayerInput"
 ## Editor/debug escape hatch when the scene is run without a RunState.
 @export var character_id_override: String = ""
+## False in hub scenes such as the base camp, where the hunter walks around
+## but must not auto-attack. Stages leave it true and are unaffected.
+@export var combat_enabled: bool = true:
+	set(value):
+		combat_enabled = value
+		_apply_combat_enabled()
 
 var max_hp: float = DEFAULT_BASE_HP
 var hp: float = DEFAULT_BASE_HP
@@ -68,7 +74,6 @@ var _evolution_swaps: Dictionary = {}
 ## begins on its first frame instead of mid-stride.
 var _is_walking: bool = false
 var _motion_time: float = 0.0
-var _attack_flash_left: float = 0.0
 var _recoil_ticks_left: int = 0
 var _recoil_offset: Vector2i = Vector2i.ZERO
 var _direction_name: String = CharacterMotion.DEFAULT_DIRECTION
@@ -147,8 +152,16 @@ func add_weapon(id: String, start_level: int = CombatMath.MIN_LEVEL) -> WeaponBa
 	_weapon_root.add_child(weapon)
 	weapon.setup(id, start_level)
 	weapon.fired.connect(_on_weapon_fired)
+	weapon.firing_enabled = combat_enabled
 	_weapons.append(weapon)
 	return weapon
+
+
+## Propagated to every weapon, including ones granted later in a run.
+func _apply_combat_enabled() -> void:
+	for weapon: WeaponBase in _weapons:
+		if is_instance_valid(weapon):
+			weapon.firing_enabled = combat_enabled
 
 
 func find_weapon(id: String) -> WeaponBase:
@@ -363,13 +376,12 @@ func _advance_motion(direction: Vector2, delta: float) -> void:
 		_recoil_offset = Vector2i.ZERO
 
 	_sprite.position = Vector2(offset)
-	_tick_attack_flash(delta)
+	_tick_sprite_tint()
 
 
-func _tick_attack_flash(delta: float) -> void:
-	if _attack_flash_left > 0.0:
-		_attack_flash_left = maxf(_attack_flash_left - delta, 0.0)
-	_sprite.modulate = ATTACK_FLASH_TINT if _attack_flash_left > 0.0 else Color.WHITE
+## Only the damage-taken blink tints the body now.
+func _tick_sprite_tint() -> void:
+	_sprite.modulate = Color.WHITE
 	_sprite.modulate.a = _invulnerability_alpha()
 
 
@@ -383,7 +395,6 @@ func _invulnerability_alpha() -> float:
 ## A weapon fired: the VFX carries the attack, the body only flashes and may
 ## recoil one pixel for a single tick. It never leaves its authored pose.
 func _on_weapon_fired(_weapon_id: String) -> void:
-	_attack_flash_left = ATTACK_FLASH_SEC
 	_recoil_offset = CharacterMotion.recoil_offset(facing)
 	_recoil_ticks_left = RECOIL_TICKS
 	if _sprite != null:
