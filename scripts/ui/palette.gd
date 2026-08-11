@@ -12,8 +12,12 @@ const VERMILION_HOVER: Color = Color(0.8039, 0.3176, 0.2157) # #cd5137
 const VERMILION_DARK: Color = Color(0.5451, 0.1725, 0.1098) # #8b2c1c
 const GOLD: Color = Color(0.7686, 0.6039, 0.2392)          # #c49a3d
 const LOCKED: Color = Color(0.4196, 0.3922, 0.3490)        # #6b6459
-const SUCCESS: Color = Color(0.2902, 0.4863, 0.2588)       # #4a7c42
-const DANGER: Color = Color(0.6392, 0.1647, 0.1647)        # #a32a2a
+## #4a7c42 measured 3.78:1 against PAPER -- fails WCAG AA (needs 4.5:1),
+## caught by tests/ui/layout_audit.gd's contrast checker. Darkened 20%
+## toward black (contrast 5.30:1) rather than picking an arbitrary new hue,
+## since it is the only place SUCCESS is used (results.gd's victory title).
+const SUCCESS: Color = Color(0.2322, 0.3890, 0.2070)        # #3b6335
+const DANGER: Color = Color(0.6392, 0.1647, 0.1647)        # #a32a2a -- already 5.50:1 against PAPER
 
 # Text always pairs INK-on-PAPER (light bg) or TEXT_ON_DARK-on-VERMILION_DARK/INK (dark bg).
 const TEXT_ON_PAPER: Color = INK

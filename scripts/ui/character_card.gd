@@ -39,7 +39,7 @@ func _ready() -> void:
 func configure(character: Dictionary, is_unlocked: bool, unlock_reason: String) -> void:
 	_character_id = String(character.get("id", ""))
 	_name_label.text = LocaleText.field(character, "name")
-	_name_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+	_name_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 
 	var portrait: Texture2D = _load(PORTRAIT_DIR, _character_id)
 	_icon.texture = portrait
@@ -54,7 +54,7 @@ func configure(character: Dictionary, is_unlocked: bool, unlock_reason: String) 
 	_check_badge.visible = is_unlocked
 	_lock_reason_label.text = unlock_reason
 	_lock_reason_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_lock_reason_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+	_lock_reason_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 
 
 func _style_card() -> void:

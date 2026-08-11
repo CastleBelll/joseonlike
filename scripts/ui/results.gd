@@ -117,7 +117,7 @@ func _build_achievement_row(achievement: Dictionary) -> Control:
 
 	var label := Label.new()
 	label.text = LocaleText.field(achievement, "name")
-	label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+	label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 	label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
 	row.add_child(label)
 

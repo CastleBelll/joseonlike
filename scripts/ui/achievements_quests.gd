@@ -74,7 +74,7 @@ func _build_achievement_row(achievement: Dictionary) -> Control:
 
 	var name_label := Label.new()
 	name_label.text = LocaleText.field(achievement, "name")
-	name_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+	name_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 	name_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
 	box.add_child(name_label)
 
@@ -93,7 +93,7 @@ func _build_achievement_row(achievement: Dictionary) -> Control:
 
 	var progress_label := Label.new()
 	progress_label.text = "%d / %d" % [min(progress, target), target]
-	progress_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+	progress_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 	progress_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 	box.add_child(progress_label)
 

@@ -169,19 +169,6 @@ layout_mode = 2
 vertical_alignment = 1
 text = "No weapons"
 
-[node name="ToastStack" type="VBoxContainer" parent="."]
-layout_mode = 3
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -160.0
-offset_top = 228.0
-offset_right = 160.0
-grow_horizontal = 2
-mouse_filter = 2
-theme_override_constants/separation = 6
-alignment = 0
-
 [node name="PauseOverlay" type="Control" parent="."]
 visible = false
 layout_mode = 3
