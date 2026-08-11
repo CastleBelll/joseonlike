@@ -343,6 +343,55 @@ def check_camp_and_button_redesign():
         fail("button redesign metrics rejected the candidate set")
 
 
+def check_destructible_sets():
+    """Require complete intact/break/debris sets and measured collapse evidence."""
+    destructible_ids = {
+        "onggi_jar", "straw_bundle", "bamboo_basket", "rice_sack",
+        "supply_crate", "handcart", "offering_vessels", "roof_tile_stack",
+    }
+    manifest_path = ROOT / "asset/destructible/destructible_manifest.json"
+    metrics_path = ROOT / "asset/destructible/raw/destructible_metrics.json"
+    contact_path = ROOT / "asset/destructible/raw/destructible_contact_sheet.png"
+    if not manifest_path.is_file() or not metrics_path.is_file() or not contact_path.is_file():
+        fail("destructible manifest, metrics, or contact sheet is missing")
+        return
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+    if set(manifest.get("objects", {})) != destructible_ids:
+        fail("destructible manifest does not cover exactly eight objects")
+    if manifest.get("frame_order") != ["intact", "break/0", "break/1", "break/2", "break/3"]:
+        fail("destructible frame order changed")
+    if manifest.get("breakable_cue") != (
+        "small vermilion paper loot seal or knotted tassel on every intact object"
+    ):
+        fail("destructible breakable-versus-scenery cue is not recorded")
+    records = metrics.get("sets", {})
+    if set(records) != destructible_ids:
+        fail("destructible metrics do not cover exactly eight objects")
+    for object_id in sorted(destructible_ids):
+        root = f"asset/destructible/{object_id}"
+        check_sprite(f"{root}/intact.png", (64, 64))
+        intact_bbox = image(f"{root}/intact.png").getbbox()
+        if intact_bbox and intact_bbox[3] - intact_bbox[1] > 43:
+            fail(f"{root}/intact.png: taller than the under-trash 43px destructible ceiling")
+        for frame in range(4):
+            check_sprite(f"{root}/break/{frame}.png", (64, 64))
+            check_no_edge_grid_line(f"{root}/break/{frame}.png")
+        check_sprite(f"{root}/debris.png", (64, 64))
+        if (ROOT / f"{root}/debris.png").read_bytes() != (ROOT / f"{root}/break/3.png").read_bytes():
+            fail(f"{root}: debris alias differs from resting break frame 3")
+        record = records.get(object_id, {})
+        if not record.get("accepted"):
+            fail(f"{root}: failed irreversible-collapse/scale/cue gate")
+        if record.get("debris_equals_break_3") is not True:
+            fail(f"{root}: debris equivalence is not recorded")
+        transitions = record.get("transitions_changed_pixels", [])
+        if len(transitions) != 4 or any(value < 24 for value in transitions):
+            fail(f"{root}: break sequence lacks four materially distinct transitions")
+    if not metrics.get("accepted"):
+        fail("destructible set metrics rejected the batch")
+
+
 def main():
     passive_ids = ("attack_damage", "attack_speed", "move_speed", "crit_chance", "max_hp", "xp_gain", "luck", "skill_power")
     achievement_ids = ("first_boss", "boss_slayer", "goblin_hunter", "monster_collector", "survivor", "veteran_survivor", "rising_star", "weapon_master")
@@ -462,6 +511,7 @@ def main():
         fail("drop metrics do not cover the twelve authored pickup sets")
     if not drop_metrics.get("accepted"):
         fail("asset/drop: failed pickup readability/progression/grade-shape gate")
+    check_destructible_sets()
     check_tile("asset/stage/bamboo_forest_ground.png")
     check_tile("asset/stage/abandoned_temple_ground.png")
     for name in ("main_menu", "bamboo_forest", "abandoned_temple"):
@@ -618,6 +668,7 @@ def main():
     print("Expansion assets verified: 18 folklore monsters + 144 rotations, 60 effect frames, 12 structures, 3 title assets")
     print("Set-gap additions verified: 100 death frames, 22 procedural walk records, 5 travel sprites, 4 melee swings")
     print("Loot and boss-scale assets verified: 12 pickup sets (48 collect frames) + 120x150 boss with 8 rotations and 4 death frames")
+    print("Destructible stage objects verified: 8 intact sprites + 32 break frames + 8 debris aliases; progression/scale/cue gates passed")
     print("Directional-facing audit verified: 25/25 sets, 200 hash-bound cells manually reviewed")
     minimum_summary = ", ".join(
         f"{name} {distance:.2f} ({first}/{second})"

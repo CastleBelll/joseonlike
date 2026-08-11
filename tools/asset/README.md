@@ -170,6 +170,11 @@ M1 helper scripts are deterministic and safe to rerun:
   distinct collect frames, increasing XP-tier area, hard alpha/chroma removal, and pairwise
   alpha-shape differences between all five grade chests. `build_drop_contact_sheet.py`
   retains the visual-review layout under `asset/drop/raw/`.
+- `process_destructibles.py` slices the two 5x4 Joseon object sheets, cuts every cell through
+  `pixelize.py` on a common 64px fixed canvas, normalises intact objects below trash-monster
+  height, and keeps break frame 3 as an explicit debris alias. `measure_destructibles.py`
+  applies an irreversible-collapse/fragmentation gate, checks the shared vermilion breakable
+  cue, and retains the labelled visual-review sheet under `asset/destructible/raw/`.
 
 Rotation sheets are not the default generation method. A model may ignore the requested
 layout, which makes fixed-grid slicing put grid lines, neighboring figures, or the wrong

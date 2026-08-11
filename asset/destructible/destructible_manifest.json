@@ -1,0 +1,99 @@
+{
+  "canvas": [
+    64,
+    64
+  ],
+  "frame_order": [
+    "intact",
+    "break/0",
+    "break/1",
+    "break/2",
+    "break/3"
+  ],
+  "break_semantics": [
+    "first impact / loosened binding",
+    "major split or tilt",
+    "active irreversible collapse",
+    "resting debris"
+  ],
+  "debris_rest": "debris.png is byte-identical to break/3.png; leave briefly, then fade or pool-return",
+  "breakable_cue": "small vermilion paper loot seal or knotted tassel on every intact object",
+  "objects": {
+    "onggi_jar": {
+      "stages": [
+        "bamboo_forest",
+        "abandoned_temple"
+      ],
+      "primary_drop": "health_gourd",
+      "secondary_drop": "gold_coin",
+      "rare_drop": null,
+      "reason": "an onggi plausibly stores restorative drink, herbs, or a few household coins"
+    },
+    "straw_bundle": {
+      "stages": [
+        "bamboo_forest"
+      ],
+      "primary_drop": "gold_coin",
+      "secondary_drop": "health_gourd",
+      "rare_drop": null,
+      "reason": "farm bundles conceal small coin purses or gathered medicinal herbs, not treasure chests"
+    },
+    "bamboo_basket": {
+      "stages": [
+        "bamboo_forest"
+      ],
+      "primary_drop": "gold_coin",
+      "secondary_drop": "health_gourd",
+      "rare_drop": null,
+      "reason": "a foraging basket plausibly carries provisions and small valuables"
+    },
+    "rice_sack": {
+      "stages": [
+        "bamboo_forest",
+        "abandoned_temple"
+      ],
+      "primary_drop": "health_gourd",
+      "secondary_drop": "gold_coin",
+      "rare_drop": null,
+      "reason": "food stores support recovery; a low coin chance represents payment hidden in the binding"
+    },
+    "supply_crate": {
+      "stages": [
+        "bamboo_forest",
+        "abandoned_temple"
+      ],
+      "primary_drop": "gold_pile",
+      "secondary_drop": "health_gourd",
+      "rare_drop": "chest_common",
+      "reason": "a rope-bound supply crate is the most credible container for supplies and an occasional chest"
+    },
+    "handcart": {
+      "stages": [
+        "bamboo_forest",
+        "abandoned_temple"
+      ],
+      "primary_drop": "gold_pile",
+      "secondary_drop": "magnet",
+      "rare_drop": "chest_common",
+      "reason": "a working cart carries bulk goods; its iron fittings make the magnet pickup visually plausible"
+    },
+    "offering_vessels": {
+      "stages": [
+        "abandoned_temple"
+      ],
+      "primary_drop": "gold_coin",
+      "secondary_drop": "magnet",
+      "rare_drop": null,
+      "reason": "temple offerings plausibly contain coins, while a spiritual attraction pickup fits ritual vessels"
+    },
+    "roof_tile_stack": {
+      "stages": [
+        "abandoned_temple"
+      ],
+      "primary_drop": "gold_coin",
+      "secondary_drop": null,
+      "rare_drop": null,
+      "reason": "only a small hidden coin reward is credible under loose roof tiles; premium loot would feel arbitrary"
+    }
+  }
+}
