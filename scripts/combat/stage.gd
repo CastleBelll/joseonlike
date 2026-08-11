@@ -163,6 +163,16 @@ func _end_run(victory: bool) -> void:
 	get_tree().paused = false
 	_spawner.release_all()
 	_audio.stop_ambience()
+
+	# Anything still on the ground is credited rather than lost. The collect
+	# frames cannot play on the way out: the results screen is deliberately not
+	# delayed, so there is no frame left to show them on, and a player who has
+	# just won should not have to walk around picking up loot first.
+	var swept: Dictionary = _drops.collect_remaining()
+	gold += maxi(int(swept["gold"]), 0)
+	# Experience is dropped on purpose. It has nowhere to go -- the payload
+	# carries no xp, level resets per run -- and crediting it here could fire a
+	# level-up behind the results screen.
 	var result: Dictionary = {
 		KEY_VICTORY: victory,
 		KEY_TIME_SEC: elapsed_sec,
