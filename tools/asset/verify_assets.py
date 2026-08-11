@@ -163,6 +163,49 @@ def check_rotation_facing_audit():
                 fail(f"rotation facing audit: {name} east/west are not opposite mirrored profiles")
 
 
+def check_ui_journey():
+    """Require the audited mobile journey set and its state/contrast evidence."""
+    metrics_path = ROOT / "asset/ui/raw/journey/ui_metrics.json"
+    if not metrics_path.is_file():
+        fail("UI journey metrics are missing; run tools/asset/measure_ui_journey.py")
+        return
+    metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+    expected_counts = {
+        "icons": 47,
+        "illustrations": 11,
+        "furniture": 31,
+        "fixed_controls": 3,
+    }
+    for group, expected in expected_counts.items():
+        records = metrics.get(group, {})
+        if len(records) != expected:
+            fail(f"UI journey: expected {expected} {group}, got {len(records)}")
+        for path, record in records.items():
+            if not record.get("accepted"):
+                fail(f"asset/ui/{path}: failed the recorded UI journey gate")
+    expected_states = {
+        "character_selected_vs_unselected", "area_selected_vs_unselected",
+        "area_locked_vs_unselected", "tier_rare_vs_common",
+        "tier_legendary_vs_common", "claimed_vs_unclaimed",
+        "toggle_on_vs_off", "victory_vs_defeat",
+    }
+    states = metrics.get("state_differences", {})
+    if set(states) != expected_states:
+        fail(f"UI journey: incomplete state-shape evidence {sorted(states)}")
+    for state, record in states.items():
+        if not record.get("accepted"):
+            fail(f"UI journey: {state} has no non-colour state distinction")
+    ratios = metrics.get("contrast_ratios", {})
+    expected_ratios = {
+        "ink_on_paper", "ink_on_paper_dark", "light_text_on_ink",
+        "light_text_on_vermilion_dark",
+    }
+    if set(ratios) != expected_ratios or any(ratio < 4.5 for ratio in ratios.values()):
+        fail(f"UI journey: WCAG-AA contrast failure {ratios}")
+    if not metrics.get("accepted"):
+        fail("UI journey metrics did not accept the complete set")
+
+
 def main():
     passive_ids = ("attack_damage", "attack_speed", "move_speed", "crit_chance", "max_hp", "xp_gain", "luck", "skill_power")
     achievement_ids = ("first_boss", "boss_slayer", "goblin_hunter", "monster_collector", "survivor", "veteran_survivor", "rising_star", "weapon_master")
@@ -183,6 +226,7 @@ def main():
     check_sprite("asset/ui/chrome/panel_9slice.png", (48, 48))
     for state in ("normal", "hover", "pressed"):
         check_sprite(f"asset/ui/chrome/button_{state}_9slice.png", (64, 32))
+    check_ui_journey()
     for name in weapon_ids:
         check_sprite(f"asset/weapon/icons/{name}.png", (32, 32))
         projectile_canvas = (64, 64) if name in weapon_ids[7:] else None
@@ -415,6 +459,7 @@ def main():
     print("Expansion assets verified: 18 folklore monsters + 144 rotations, 60 effect frames, 12 structures, 3 title assets")
     print("Set-gap additions verified: 100 death frames, 22 procedural walk records, 5 travel sprites, 4 melee swings")
     print("Directional-facing audit verified: 25/25 sets, 200 hash-bound cells manually reviewed")
+    print("UI journey verified: 47 icons, 11 illustrations, 31 nine-slices, 3 fixed controls; WCAG-AA/state gates passed")
 
 
 if __name__ == "__main__":
