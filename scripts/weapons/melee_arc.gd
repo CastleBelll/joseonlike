@@ -2,6 +2,10 @@ class_name MeleeArc
 extends Area2D
 ## Short-lived swing hitbox spawned in front of the player. Each enemy inside it
 ## is hit once, then the arc disappears.
+##
+## One arc per swing, and the authored swing art rides on it, so a sweep through
+## four enemies draws one swing rather than four. The art is east-canonical: only
+## the visual rotates to the swing, never the collision circle.
 
 const PLAYER_PROJECTILE_LAYER: int = 1 << 2
 const ENEMY_LAYER: int = 1 << 1
@@ -30,9 +34,6 @@ func _ready() -> void:
 	collision_mask = ENEMY_LAYER
 	_ensure_shape()
 	_ensure_visual()
-	# The arc is the swing, so the slash plays once here rather than per
-	# enemy hit -- one sweep should not stack four overlapping slashes.
-	EffectPool.play(EffectPool.SLASH, global_position + facing.normalized() * radius_px * 0.6, facing.angle())
 	body_entered.connect(_on_body_entered)
 
 

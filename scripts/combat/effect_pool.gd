@@ -13,6 +13,9 @@ extends Node2D
 ## caller's choice, per the same handoff.
 
 const FRAME_PATH: String = "res://asset/effect/%s/%d.png"
+## Death sequences live outside asset/effect but play by the same rules.
+const MONSTER_DEATH_PATH: String = "res://asset/monster/%s/death/%d.png"
+const CHARACTER_DEATH_PATH: String = "res://asset/character/%s/Death/%d.png"
 const FRAME_COUNT: int = 4
 
 ## Effect ids shipped in the second asset batch.
@@ -21,25 +24,17 @@ const SLASH: StringName = &"slash"
 const LEVEL_UP: StringName = &"level_up"
 const EVOLUTION: StringName = &"evolution_flourish"
 
-## Impact art per weapon. The asset report defines the effect ids and frame
-## contract but does not map them onto weapons, so this mapping lives here with
-## the code that uses it. Unmapped weapons fall back to the generic hit.
-const WEAPON_EFFECTS: Dictionary = {
-	"old_talisman": &"talisman_burst",
-	"fire_talisman": &"fire",
-	"phoenix_talisman": &"spirit_flame",
-	"sword": &"slash",
-	"twin_sword": &"slash",
-	"bow": &"impact_hit",
-	"divine_bow": &"lightning",
-}
-
 ## Impacts are brief so they do not smear over a busy background; the two
 ## progression cues linger long enough to be noticed.
 const IMPACT_FRAME_SEC: float = 0.05
 const CUE_FRAME_SEC: float = 0.09
+## A death has to be legible mid-fight, then leave a corpse for a beat.
+const DEATH_FRAME_SEC: float = 0.12
+const DEATH_REST_SEC: float = 0.8
 
-const MAX_CONCURRENT_EFFECTS: int = 48
+## Deaths share these slots with impacts and last far longer, so the ceiling
+## is higher than it was when only impacts used the pool.
+const MAX_CONCURRENT_EFFECTS: int = 96
 const EFFECT_Z_INDEX: int = 50
 
 static var _instance: EffectPool = null
@@ -66,11 +61,6 @@ func _exit_tree() -> void:
 		_instance = null
 
 
-## Effect id for a weapon, or the generic hit when the weapon has no art.
-static func weapon_effect(weapon_id: String) -> StringName:
-	return WEAPON_EFFECTS.get(weapon_id, HIT)
-
-
 static func play(effect_id: StringName, world_position: Vector2, rotation_rad: float = 0.0) -> void:
 	_play(effect_id, world_position, rotation_rad, IMPACT_FRAME_SEC)
 
@@ -83,15 +73,34 @@ static func play_cue(effect_id: StringName, world_position: Vector2) -> void:
 
 static func _play(effect_id: StringName, world_position: Vector2, rotation_rad: float, frame_sec: float) -> void:
 	if _instance != null:
-		_instance._spawn(effect_id, world_position, rotation_rad, frame_sec)
+		_instance._spawn(effect_id, world_position, rotation_rad, frame_sec, 0.0, FRAME_PATH)
+
+
+## Death sequences play once and hold their resting frame; they never loop,
+## because frame 3 is the corpse rather than a cycle position.
+static func play_monster_death(monster_id: String, world_position: Vector2) -> void:
+	if _instance != null:
+		_instance._spawn(StringName(monster_id), world_position, 0.0, DEATH_FRAME_SEC, DEATH_REST_SEC, MONSTER_DEATH_PATH)
+
+
+static func play_character_death(character_folder: String, world_position: Vector2) -> void:
+	if _instance != null:
+		_instance._spawn(StringName(character_folder), world_position, 0.0, DEATH_FRAME_SEC, DEATH_REST_SEC, CHARACTER_DEATH_PATH)
 
 
 func active_count() -> int:
 	return _active.size()
 
 
-func _spawn(effect_id: StringName, world_position: Vector2, rotation_rad: float, frame_sec: float) -> void:
-	var frames: Array[Texture2D] = _load_frames(effect_id)
+func _spawn(
+	effect_id: StringName,
+	world_position: Vector2,
+	rotation_rad: float,
+	frame_sec: float,
+	hold_last_sec: float,
+	path_template: String
+) -> void:
+	var frames: Array[Texture2D] = _load_frames(effect_id, path_template)
 	if frames.is_empty() or _idle.is_empty():
 		return
 	var sprite: Sprite2D = _idle.pop_back()
@@ -99,7 +108,10 @@ func _spawn(effect_id: StringName, world_position: Vector2, rotation_rad: float,
 	sprite.global_position = world_position
 	sprite.rotation = rotation_rad
 	sprite.visible = true
-	_active.append({"sprite": sprite, "frames": frames, "elapsed": 0.0, "frame_sec": frame_sec})
+	_active.append({
+		"sprite": sprite, "frames": frames, "elapsed": 0.0,
+		"frame_sec": frame_sec, "hold_last_sec": hold_last_sec,
+	})
 
 
 func _process(delta: float) -> void:
@@ -111,6 +123,11 @@ func _process(delta: float) -> void:
 		var frame: int = int(elapsed / float(record["frame_sec"]))
 		var sprite: Sprite2D = record["sprite"]
 		if frame >= frames.size():
+			# Hold the resting frame rather than looping back to the start.
+			var hold: float = float(record["hold_last_sec"])
+			if hold > 0.0 and elapsed < float(frames.size()) * float(record["frame_sec"]) + hold:
+				sprite.texture = frames[frames.size() - 1]
+				continue
 			# Played once and stopped, as the handoff specifies.
 			sprite.visible = false
 			_idle.append(sprite)
@@ -121,16 +138,17 @@ func _process(delta: float) -> void:
 
 ## Frames are cached on first use: the same four textures are replayed for every
 ## hit of that kind for the rest of the run.
-func _load_frames(effect_id: StringName) -> Array[Texture2D]:
-	if _frames.has(effect_id):
-		return _frames[effect_id]
+func _load_frames(effect_id: StringName, path_template: String = FRAME_PATH) -> Array[Texture2D]:
+	var cache_key: String = "%s|%s" % [path_template, effect_id]
+	if _frames.has(cache_key):
+		return _frames[cache_key]
 	var frames: Array[Texture2D] = []
 	for index in FRAME_COUNT:
-		var path: String = FRAME_PATH % [effect_id, index]
+		var path: String = path_template % [effect_id, index]
 		if not ResourceLoader.exists(path):
 			push_warning("EffectPool: missing effect frame %s" % path)
 			frames.clear()
 			break
 		frames.append(ResourceLoader.load(path) as Texture2D)
-	_frames[effect_id] = frames
+	_frames[cache_key] = frames
 	return frames

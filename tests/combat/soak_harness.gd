@@ -80,6 +80,7 @@ func _physics_process(delta: float) -> void:
 	_kite()
 	_sample_boss()
 	_observe_effects()
+	_observe_orientation()
 	_trace_motion()
 	_sample_presentation()
 	if _clock >= _next_sample:
@@ -159,6 +160,7 @@ func _sample() -> void:
 		RunState.passives,
 	])
 	_report_effects()
+	_report_orientation()
 	_kills_at_sample = RunState.kills
 	_cleared_hp_at_sample = _cleared_hp
 	_damage_at_sample = _damage_taken
@@ -456,10 +458,53 @@ func _observe_effects() -> void:
 		var sprite: Sprite2D = child as Sprite2D
 		if sprite == null or not sprite.visible or sprite.texture == null:
 			continue
-		_effects_seen[sprite.texture.resource_path.get_base_dir().get_file()] = true
+		var dir: String = sprite.texture.resource_path.get_base_dir()
+		var label: String = dir.get_file()
+		if label == "death" or label == "Death":
+			label = "death:" + dir.get_base_dir().get_file()
+		_effects_seen[label] = true
 
 
 func _report_effects() -> void:
 	print("SOAK effects seen=%s peak_concurrent=%d/%d" % [
 		_effects_seen.keys(), _effect_peak, EffectPool.MAX_CONCURRENT_EFFECTS,
 	])
+
+
+## Direct evidence for the three things that can only be judged in a live run:
+## travel art pointing along its velocity, swing art oriented to the swing, and
+## monsters bobbing on whole pixels.
+var _travel_samples: Array[String] = []
+var _melee_samples: Array[String] = []
+var _bob_offsets: Dictionary = {}
+
+
+func _observe_orientation() -> void:
+	var projectiles: Node = _stage.get_node_or_null(^"Projectiles")
+	if projectiles != null:
+		for child in projectiles.get_children():
+			var sprite: Sprite2D = child.get_node_or_null(^"Sprite2D") as Sprite2D
+			var heading: Variant = child.get(&"direction")
+			if sprite != null and sprite.texture != null and heading is Vector2 and _travel_samples.size() < 6:
+				var art: String = sprite.texture.resource_path.get_file()
+				var delta: float = rad_to_deg(absf(angle_difference(sprite.rotation, (heading as Vector2).angle())))
+				_travel_samples.append("%s heading=%.0fdeg sprite=%.0fdeg err=%.2fdeg" % [
+					art, rad_to_deg((heading as Vector2).angle()), rad_to_deg(sprite.rotation), delta])
+			var visual: Sprite2D = child.get_node_or_null(^"Visual") as Sprite2D
+			var facing: Variant = child.get(&"facing")
+			if visual != null and visual.texture != null and facing is Vector2 and _melee_samples.size() < 4:
+				_melee_samples.append("%s facing=%.0fdeg sprite=%.0fdeg body=%.0fdeg" % [
+					visual.texture.resource_path.get_file(), rad_to_deg((facing as Vector2).angle()),
+					rad_to_deg(visual.rotation), rad_to_deg((child as Node2D).rotation)])
+	for enemy in get_tree().get_nodes_in_group(&"enemy"):
+		var esprite: Sprite2D = enemy.get_node_or_null(^"Sprite2D") as Sprite2D
+		if esprite != null:
+			_bob_offsets[str(esprite.position)] = true
+
+
+func _report_orientation() -> void:
+	for line in _travel_samples:
+		print("SOAK travel %s" % line)
+	for line in _melee_samples:
+		print("SOAK melee  %s" % line)
+	print("SOAK monster_bob offsets=%s" % [_bob_offsets.keys()])

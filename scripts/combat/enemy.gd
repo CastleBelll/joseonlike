@@ -73,6 +73,10 @@ var _is_dashing: bool = false
 var _charge_direction: Vector2 = Vector2.ZERO
 var _weave_phase: float = 0.0
 var _hit_flash_left: float = 0.0
+## Procedural walk substitute recorded in asset/monster/WALK_STATUS.json after
+## generated walk frames were measured and rejected. Same contract as the
+## player: whole pixels, vertical only, reset on any state change.
+var _bob_time: float = 0.0
 var _rng: RandomNumberGenerator = CombatRng.create()
 
 @onready var _sprite: Sprite2D = $Sprite2D
@@ -151,6 +155,22 @@ func _physics_process(delta: float) -> void:
 		_:
 			_act_chase(target)
 	move_and_slide()
+	_advance_bob(delta)
+
+
+## Bobs the sprite while moving. Stopping, being hit-stunned or dying resets the
+## offset to zero, so it can never leak into collision placement or fight the
+## death sequence for the sprite.
+func _advance_bob(delta: float) -> void:
+	if _sprite == null:
+		return
+	var moving: bool = velocity.length_squared() > 0.0 and is_active and _hit_flash_left <= 0.0
+	if not moving:
+		_bob_time = 0.0
+		_sprite.position = Vector2.ZERO
+		return
+	_bob_time += delta
+	_sprite.position = Vector2(CharacterMotion.walk_offset(_bob_time))
 
 
 func _act_chase(target: Node2D) -> void:
@@ -229,6 +249,9 @@ func _shoot(direction: Vector2) -> void:
 func _die() -> void:
 	hp = 0.0
 	CombatAudio.play_enemy_death()
+	# The corpse is played by the pool, so the enemy instance can return to
+	# its own pool immediately instead of lingering as a live node.
+	EffectPool.play_monster_death(monster_id, global_position)
 	EventBus.enemy_killed.emit(monster_id, global_position)
 	EventBus.stat_recorded.emit("enemy_killed", 1)
 	deactivate()
@@ -258,6 +281,9 @@ func _apply_visuals(data: Dictionary) -> void:
 
 func _set_enabled(enabled: bool) -> void:
 	is_active = enabled
+	_bob_time = 0.0
+	if _sprite != null:
+		_sprite.position = Vector2.ZERO
 	visible = enabled
 	set_physics_process(enabled)
 	if _collider != null:

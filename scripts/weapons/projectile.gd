@@ -50,6 +50,7 @@ func _ready() -> void:
 	_ensure_shape()
 	_ensure_sprite()
 	body_entered.connect(_on_body_entered)
+	_aim_sprite()
 
 
 func configure_for_player() -> void:
@@ -71,10 +72,21 @@ func _physics_process(delta: float) -> void:
 		return
 	if _age_sec < orbit_sec and is_instance_valid(orbit_target):
 		_orbit(delta)
+		_aim_sprite()
 		return
 	if homing_turn_rate_rad > 0.0:
 		_steer_toward_target(delta)
 	global_position += direction * speed * delta
+	_aim_sprite()
+
+
+## Travel art is authored pointing east, so local +X is rotated onto the
+## velocity rather than shipping a sprite per direction. Only the sprite turns;
+## the collision circle is rotation-invariant and is left alone.
+func _aim_sprite() -> void:
+	var sprite: Sprite2D = get_node_or_null(^"Sprite2D") as Sprite2D
+	if sprite != null and direction.length_squared() > 0.0:
+		sprite.rotation = direction.angle()
 
 
 func _orbit(delta: float) -> void:

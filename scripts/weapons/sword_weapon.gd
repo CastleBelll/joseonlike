@@ -24,7 +24,7 @@ func _fire() -> bool:
 		arc.radius_px = ARC_RADIUS_PX * area_scale()
 		arc.lifetime_sec = ARC_LIFETIME_SEC
 		arc.facing = direction
-		arc.texture = vfx_texture()
+		arc.texture = WeaponArt.melee_texture(weapon_id)
 		arc.global_position = wielder.global_position
 		root.add_child(arc)
 	return true
