@@ -59,6 +59,7 @@ func _ready() -> void:
 	EventBus.boss_defeated.connect(_on_boss_defeated)
 	EventBus.run_ended.connect(_on_run_ended)
 	_rules = _load_rules()
+	_audio_trace = OS.get_cmdline_user_args().has("audio")
 	RunState.begin(CHARACTER_ID, STAGE_ID)
 	if OS.get_cmdline_user_args().has("forceevo"):
 		# Seed the evolutions.json thresholds for bow + attack_speed directly, so
@@ -70,6 +71,9 @@ func _ready() -> void:
 		print("SOAK seeded %s %s" % [RunState.weapons, RunState.passives])
 	_stage = STAGE_SCENE.instantiate()
 	add_child(_stage)
+	var drops: Node = _stage.get_node_or_null(^"Drops")
+	if drops != null:
+		drops.drop_collected.connect(_on_drop_collected)
 	print("SOAK: start weapons=%s" % [RunState.weapons])
 
 
@@ -82,6 +86,7 @@ func _physics_process(delta: float) -> void:
 	_observe_effects()
 	_observe_orientation()
 	_observe_drops()
+	_observe_audio()
 	_trace_motion()
 	_sample_presentation()
 	if _clock >= _next_sample:
@@ -166,6 +171,7 @@ func _sample() -> void:
 	_report_effects()
 	_report_orientation()
 	_report_drops()
+	_report_audio()
 	_kills_at_sample = RunState.kills
 	_cleared_hp_at_sample = _cleared_hp
 	_damage_at_sample = _damage_taken
@@ -256,6 +262,7 @@ func _on_run_ended(result: Dictionary) -> void:
 	])
 	_report_pool_and_closest()
 	_report_effects()
+	_report_audio()
 	_report_death_state(result)
 	_report_router.call_deferred()
 
@@ -541,3 +548,191 @@ func _observe_drops() -> void:
 func _report_drops() -> void:
 	print("SOAK drops idle=%s collect=%s peak=%d" % [
 		_drop_idle_seen.keys(), _drop_collect_seen.keys(), _drop_peak])
+
+
+## --- pickup voice budget: does energy_sound survive the round-robin? ---------
+##
+## CombatAudio runs VOICE_COUNT voices round-robin and admits each distinct sound
+## at most once per physics frame, so the voice taken by admitted play N is
+## overwritten by admitted play N + VOICE_COUNT. The cut point is therefore pure
+## arithmetic on the admitted-play timeline and needs no audio driver, which
+## matters: --headless mixes through the dummy driver and playback positions
+## there are not evidence about what a player hears.
+##
+## _played_this_frame is read one frame late on purpose. The harness is an
+## ancestor of CombatAudio, so it runs first and sees the set before CombatAudio
+## clears it — that is the previous frame's admissions. 16.7 ms against a 510 ms
+## sound does not move any conclusion.
+##
+##   godot --headless --path . tests/combat/soak_harness.tscn --fixed-fps 60 \
+##       --quit-after 620000 -- audio
+
+const PICKUP_PATH: String = "res://asset/audio/sfx/energy_sound.wav"
+## Measured length of energy_sound.wav, per the coordinator's brief.
+const PICKUP_LENGTH_SEC: float = 0.510
+const BURST_WINDOW_SEC: float = 1.0
+
+var _audio_trace: bool = false
+var _audio_node: Node = null
+var _plays_total: int = 0
+var _plays_by_sound: Dictionary = {}
+var _collects: int = 0
+var _pickup_plays: int = 0
+## Pickup voices assigned but not yet proven finished or recycled.
+var _pending_pickups: Array[Dictionary] = []
+var _pickup_lifetimes: Array[float] = []
+var _pickup_cut: int = 0
+var _live_peak: int = 0
+var _burst_run: int = 0
+var _burst_run_max: int = 0
+var _collect_stamps: Array[float] = []
+var _collects_peak_window: int = 0
+## Timestamps of the most recent VOICE_COUNT admissions, so the tightest window
+## in which the whole pool turned over can be reported. That window is the real
+## recycle interval; ASSET_SPEC's 0.13 s figure is the saturated case, not a
+## measurement of this stage.
+var _play_stamps: Array[float] = []
+var _tightest_pool_turnover: float = INF
+## Most admissions any one pickup voice had to survive. Cutting needs more than
+## VOICE_COUNT; this counts the same headroom forwards from each pickup, so it
+## and _tightest_pool_turnover must agree.
+var _busiest_life: int = 0
+## How many pickups survived exactly n admissions, so "0 cut" can be reported
+## with its margin instead of as a bare pass.
+var _life_histogram: Dictionary = {}
+
+
+func _on_drop_collected(_xp_amount: int, _gold_amount: int) -> void:
+	_collects += 1
+	_collect_stamps.append(_clock)
+
+
+func _observe_audio() -> void:
+	if _audio_node == null:
+		_audio_node = _stage.get_node_or_null(^"CombatAudio")
+		if _audio_node == null:
+			return
+
+	while not _collect_stamps.is_empty() and _clock - _collect_stamps[0] > BURST_WINDOW_SEC:
+		_collect_stamps.remove_at(0)
+	_collects_peak_window = maxi(_collects_peak_window, _collect_stamps.size())
+
+	var plays_before: int = _plays_total
+	var admitted: Dictionary = _audio_node.get(&"_played_this_frame")
+	var pickup_admitted: bool = false
+	for path: Variant in admitted.keys():
+		_plays_total += 1
+		var name: String = String(path).get_file()
+		_plays_by_sound[name] = int(_plays_by_sound.get(name, 0)) + 1
+		if String(path) == PICKUP_PATH:
+			pickup_admitted = true
+		_play_stamps.append(_clock)
+		if _play_stamps.size() > CombatAudio.VOICE_COUNT:
+			_play_stamps.remove_at(0)
+		if _play_stamps.size() == CombatAudio.VOICE_COUNT:
+			_tightest_pool_turnover = minf(_tightest_pool_turnover, _clock - _play_stamps[0])
+
+	if pickup_admitted:
+		_pickup_plays += 1
+		_burst_run += 1
+		_burst_run_max = maxi(_burst_run_max, _burst_run)
+		# Assume the pickup was the FIRST admission of its frame. That is the
+		# earliest slot it can hold, so the recycle lands earliest and the
+		# reported lifetime is the shortest one consistent with the data —
+		# the conservative direction for a question about being cut off.
+		_pending_pickups.append({
+			"expires_at_play": plays_before + 1 + CombatAudio.VOICE_COUNT,
+			"plays_at_start": plays_before,
+			"at": _clock,
+		})
+	else:
+		_burst_run = 0
+
+	_retire_pickups()
+
+
+## A pending voice leaves the list one of two ways: recycled by a later play
+## (cut, if that happened before the sound ended) or outliving the sound (clean).
+func _retire_pickups() -> void:
+	var live: int = 0
+	for index in range(_pending_pickups.size() - 1, -1, -1):
+		var entry: Dictionary = _pending_pickups[index]
+		var age: float = _clock - float(entry["at"])
+		var during: int = _plays_total - int(entry["plays_at_start"])
+		if _plays_total >= int(entry["expires_at_play"]):
+			_pickup_lifetimes.append(age)
+			if age < PICKUP_LENGTH_SEC:
+				_pickup_cut += 1
+			_busiest_life = maxi(_busiest_life, during)
+			_life_histogram[during] = int(_life_histogram.get(during, 0)) + 1
+			_pending_pickups.remove_at(index)
+			continue
+		if age >= PICKUP_LENGTH_SEC:
+			_pickup_lifetimes.append(PICKUP_LENGTH_SEC)
+			# Plays that landed while the sound was still audible. Cutting needs
+			# VOICE_COUNT + 1 of them; this is the same headroom counted forwards.
+			_busiest_life = maxi(_busiest_life, during)
+			_life_histogram[during] = int(_life_histogram.get(during, 0)) + 1
+			_pending_pickups.remove_at(index)
+			continue
+		live += 1
+	_live_peak = maxi(_live_peak, live)
+	if _audio_trace and live > 1:
+		print("SOAK audio t=%.2f live_pickup_voices=%d burst_frames=%d plays=%d" % [
+			_clock, live, _burst_run, _plays_total,
+		])
+
+
+## Live counterpart to test_combat_audio.gd, which cannot reach a real tree: in
+## a running stage, report the bus every CombatAudio player actually ended up on.
+## The ambience player only exists here, so this is the only place it is checked.
+func _report_audio_buses() -> void:
+	if _audio_node == null:
+		return
+	var by_bus: Dictionary = {}
+	for child in _audio_node.get_children():
+		var player: AudioStreamPlayer = child as AudioStreamPlayer
+		if player == null:
+			continue
+		by_bus[player.bus] = int(by_bus.get(player.bus, 0)) + 1
+	print("SOAK audio buses=%s expected all on %s" % [by_bus, CombatAudio.EFFECTS_BUS])
+
+
+func _report_audio() -> void:
+	_report_audio_buses()
+	var suppressed: int = _collects - _pickup_plays
+	var suppressed_pct: float = 100.0 * float(suppressed) / maxf(float(_collects), 1.0)
+	print("SOAK audio collects=%d pickup_plays=%d suppressed_by_dedupe=%d (%.1f%%) plays_all=%d by_sound=%s" % [
+		_collects, _pickup_plays, suppressed, suppressed_pct, _plays_total, _plays_by_sound,
+	])
+
+	var lifetimes: Array[float] = _pickup_lifetimes.duplicate()
+	lifetimes.sort()
+	var count: int = lifetimes.size()
+	if count == 0:
+		print("SOAK audio voice_lifetime n=0 (no pickup ever played)")
+		return
+	var total: float = 0.0
+	var shortest_delivered: float = 1.0
+	for value: float in lifetimes:
+		total += value
+		shortest_delivered = minf(shortest_delivered, value / PICKUP_LENGTH_SEC)
+	print("SOAK audio voice_lifetime n=%d cut=%d (%.1f%%) min=%.3f p50=%.3f mean=%.3f max=%.3f sound=%.3fs" % [
+		count, _pickup_cut, 100.0 * float(_pickup_cut) / float(count),
+		lifetimes[0], lifetimes[count / 2], total / float(count),
+		lifetimes[count - 1], PICKUP_LENGTH_SEC,
+	])
+	print("SOAK audio worst_delivered=%.1f%% live_pickup_voices_peak=%d longest_burst_frames=%d peak_collects_per_%.0fs=%d" % [
+		100.0 * shortest_delivered, _live_peak, _burst_run_max,
+		BURST_WINDOW_SEC, _collects_peak_window,
+	])
+	# Headroom, not a verdict: cutting starts only once the pool turns over
+	# faster than the sound is long.
+	var near_miss: int = 0
+	for plays: Variant in _life_histogram.keys():
+		if int(plays) >= CombatAudio.VOICE_COUNT:
+			near_miss += int(_life_histogram[plays])
+	print("SOAK audio tightest_pool_turnover=%.3fs vs sound=%.3fs busiest_pickup_life=%d plays (cut needs >%d) within_1_play=%d/%d hist=%s" % [
+		_tightest_pool_turnover, PICKUP_LENGTH_SEC, _busiest_life, CombatAudio.VOICE_COUNT,
+		near_miss, count, _life_histogram,
+	])
