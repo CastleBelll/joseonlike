@@ -1,0 +1,74 @@
+{
+  "layer_order": [
+    "sky",
+    "moon_glow",
+    "palace",
+    "bamboo_far",
+    "bamboo_near",
+    "ground"
+  ],
+  "canvas": [
+    540,
+    960
+  ],
+  "old_lower_two_thirds_luminance": 21.252407556712964,
+  "new_lower_two_thirds_luminance": 47.31547986747685,
+  "layers": {
+    "sky": {
+      "size": [
+        540,
+        960
+      ],
+      "opaque_pixels": 518400,
+      "transparent_pixels": 0,
+      "colours": 48
+    },
+    "moon_glow": {
+      "size": [
+        540,
+        960
+      ],
+      "opaque_pixels": 8637,
+      "transparent_pixels": 509763,
+      "colours": 23
+    },
+    "palace": {
+      "size": [
+        540,
+        960
+      ],
+      "opaque_pixels": 31716,
+      "transparent_pixels": 486684,
+      "colours": 48
+    },
+    "bamboo_far": {
+      "size": [
+        540,
+        960
+      ],
+      "opaque_pixels": 151249,
+      "transparent_pixels": 367151,
+      "colours": 48
+    },
+    "bamboo_near": {
+      "size": [
+        540,
+        960
+      ],
+      "opaque_pixels": 246145,
+      "transparent_pixels": 272255,
+      "colours": 48
+    },
+    "ground": {
+      "size": [
+        540,
+        960
+      ],
+      "opaque_pixels": 246723,
+      "transparent_pixels": 271677,
+      "colours": 48
+    }
+  },
+  "fog_horizontal_seam_changed_pixels": 0,
+  "mote_opaque_pixels": 15
+}
