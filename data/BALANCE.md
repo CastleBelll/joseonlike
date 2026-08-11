@@ -753,6 +753,57 @@ and nothing else:**
   was built to move — the late-leveled, high-level-phoenix case that was
   driving the old spread.
 
+## Boss, round 5 — the hitbox catches up to the art, and moves balance again
+
+**Not a balance pass — a collision-accuracy fix with a balance
+consequence, and the consequence is worth stating plainly rather than
+letting it show up unexplained in the next sweep.** `bamboo_spirit_lord`
+regenerated at 120×150 (from 60×76) because the old art read as an elite,
+not a climax, and combat separately removed a 2.2x root scale that had
+been silently sizing the collision circle beyond what `collision_radius`
+declared. Between those two changes, the shipped `collision_radius: 23.5`
+was doing two jobs it was never sized for: representing a sprite half the
+current size, and representing a hitbox that was actually being
+multiplied by a factor nothing in `data/**` controlled. Re-derived from
+the new art the same way as every other monster in this document — median
+row width, not canvas, not max row — the correct value is **47.5**, more
+than double the old field's number.
+
+**Expected effect, and by how much: this narrows the retired window's
+band, it doesn't reopen the decision to chase it.** "Boss, round 4"
+retired the 45-70s window because the real win-TTK band (40.4-76.1s,
+1.88x) was structurally wider than the window (1.56x) and no
+`bamboo_spirit_lord.hp` value could fit both without breaking one end. A
+bigger hitbox doesn't change `hp` or `dps` — it changes how much of a
+build's *declared* dps actually lands, and it does that unevenly across
+the band. The slow end of that band (unevolved runs, the 40.4s-and-nearby
+wins) is dps-limited by a single, less precise, more likely-to-graze
+projectile stream; a hitbox 2.2x the brute's gives those builds more room
+to connect shots that would previously have missed, raising their
+*realized* dps toward their theoretical dps. The fast end (late-chain,
+multi-hit `phoenix_talisman` output) was already landing most of its
+declared dps against the old, smaller hitbox — there's less headroom left
+to gain. **The expected direction is the floor moving up more than the
+ceiling does, which narrows the band from the bottom rather than
+re-centering it.** combat has already measured this in isolation — boss
+TTK at 49.0s from the hitbox change alone, which lands inside the 45-70s
+window this document retired, without any `hp` or weapon-curve change.
+That's consistent with the floor-moves-more-than-ceiling prediction above,
+though one measurement at one build point doesn't establish the new band's
+actual width — that's the next controlled sweep's job, not a conclusion to
+draw from a single number.
+
+**No `bamboo_spirit_lord.hp` or `phoenix_talisman` change made this
+pass, and the window decision is not reopened.** "Boss, round 4"'s
+retirement stands: the 45-70s figure is not this document's target
+anymore, so "the hitbox change happens to land near it" is interesting
+context, not a reason to declare victory or start re-tuning toward it
+again. What changed this pass is collision accuracy (the field now
+matches the art, and nothing upstream silently multiplies it); what it's
+expected to do to the band is recorded here so the next sweep's numbers
+have a stated prediction to confirm or correct against, per how every
+other round in this document has operated.
+
 ## Where the run should feel dangerous (confirmed — minute 7 is the intended spike)
 
 **Settled this pass, not just re-derived.** The `forest_spirit.damage`
@@ -1053,7 +1104,7 @@ measured directly from the files currently in `asset/monster/`
 | forest_goblin | 33×44 | 23 | 30 |
 | forest_spirit | 26×46 | 16 | 24 |
 | bamboo_brute | 61×58 | 43 | 61 |
-| bamboo_spirit_lord | 60×76 | 47 | 60 |
+| bamboo_spirit_lord | 120×150 | 95 | 120 |
 
 Reference: the Taoist player sprite's canvas is 92×92, but its actual
 silhouette (alpha bounding box) is 37×46 — the canvas carries padding for
@@ -1061,12 +1112,26 @@ silhouette (alpha bounding box) is 37×46 — the canvas carries padding for
 canvas is already tightly cropped to the silhouette, confirmed by checking
 each file's alpha bbox against its canvas size).
 
+**`bamboo_spirit_lord` regenerated this pass, 60×76 → 120×150 (exactly
+2x).** combat measured the old art reading as an elite rather than a
+climax and asset-forge regenerated it larger, with matching rotations and
+death frames; combat separately removed a 2.2x root scale that had been
+silently inflating the collision circle beyond what `collision_radius`
+declared, so the field is now the sole source of truth for boss collision
+size with nothing upstream secretly multiplying it. Re-measured rather
+than assuming the old derivation still applied at the new size — median
+width scaled to 95 (not simply 2× the old 47, since silhouette proportions
+aren't guaranteed to scale linearly with canvas size, though in this case
+they landed close: 47×2=94 vs. the measured 95).
+
 *Median/max silhouette width = per-row count of non-transparent pixels,
 median and max taken across all rows. This distinguishes core body from
 protruding elements: `bamboo_brute` holds a club that widens a minority of
 rows to the full 61px canvas, but a typical row (median) is 43px — the club
-is not the body. Same effect, smaller, on `bamboo_spirit_lord`'s two
-outstretched blade-like ornaments (median 47 vs. max 60).
+is not the body. Same effect on `bamboo_spirit_lord`'s two outstretched
+blade-like ornaments (median 95 vs. max 120 — a p25/p75 spread of 74/106
+around that median, confirming it's a representative typical-row value,
+not a fluke).
 
 **`collision_radius` (ARCHITECTURE.md section 4, now required)** is set to
 half the *median* silhouette width, not half the canvas or half the max row
@@ -1078,13 +1143,13 @@ what the body actually occupies:
 | forest_goblin | 11.5 | 23 (median width) / 2 |
 | forest_spirit | 8.0 | 16 / 2 |
 | bamboo_brute | 21.5 | 43 / 2 |
-| bamboo_spirit_lord | 23.5 | 47 / 2 |
+| bamboo_spirit_lord | **47.5** (was 23.5) | 95 / 2 |
 
-All four are comfortably under the validator's half-canvas ceiling (16.5,
-13.0, 30.5, 30.0 respectively) — the point of that ceiling isn't that these
-values are near it, it's that a typo (e.g. transposing brute and boss, or
-entering a canvas dimension instead of a radius) gets caught instead of
-silently shipping as an invisible wall.
+All four are comfortably under the validator's half-sprite-width ceiling
+(16.5, 13.0, 30.5, and now **60.0** for the boss) — the point of that
+ceiling isn't that these values are near it, it's that a typo (e.g.
+transposing brute and boss, or entering a canvas dimension instead of a
+radius) gets caught instead of silently shipping as an invisible wall.
 
 **Feel being aimed for:** `forest_goblin` and `forest_spirit` should read as
 small and threadable — a player weaving through a cluster of 5-10 goblins
@@ -1092,13 +1157,16 @@ small and threadable — a player weaving through a cluster of 5-10 goblins
 11.5-radius circles touching edge-to-edge. `bamboo_brute` at 21.5 is
 deliberately the largest non-boss radius (roughly double the goblin's) —
 it's the charger, and the collision size should make "don't stand where the
-brute is" a real spatial commitment, not a graze. `bamboo_spirit_lord` at
-23.5 is only marginally larger than the brute despite being visually the
-biggest sprite (60×76 vs. 61×58) — a boss fight that's already won on
-attack-pattern reading and kiting room, not on the body itself being an
-unavoidable wall, matches the ~45-70s single-target fight this document
-designs around above; a boss hitbox much larger than the brute's would fight
-that kiting design.
+brute is" a real spatial commitment, not a graze. **`bamboo_spirit_lord` at
+47.5 is now genuinely the largest hitbox in the game — 2.2x the brute's,
+not "marginally larger" as this document argued when the boss was
+60×76.** That old argument (a boss fight won on attack-pattern reading, not
+on the body itself being an unavoidable wall) was written for art roughly
+brute-sized; the regenerated 120×150 boss reads as a climax precisely
+*because* it now occupies more space, and the hitbox should track that —
+this isn't a design regression, it's the collision size catching up to
+what the art now visually communicates. See "Boss, round 5" below for the
+balance consequence.
 
 This section previously argued for adding `collision_radius` to the schema;
 that argument is now resolved — the coordinator approved it and
