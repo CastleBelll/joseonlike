@@ -59,9 +59,6 @@ var _save_manager: Node
 var _level_up_controls: Array[Node] = []
 var _results_controls: Array[Node] = []
 var _setup_frame_done: bool = false
-var _quit_pending: bool = false
-var _exit_code: int = 0
-var _quit_wait_frames: int = 10
 
 
 func _initialize() -> void:
@@ -105,10 +102,24 @@ func _initialize() -> void:
 ## _process() frame after every scene is queued -- guaranteeing every
 ## _ready() in the batch has run -- before doing anything that depends on it.
 func _run_post_ready_setup() -> void:
-	# One emit reaches every currently-connected level_up_choice instance
-	# (both locales queued in _initialize() are already connected by now).
-	if not _level_up_controls.is_empty():
-		_event_bus.emit_signal("level_reached", 9, _stress_level_up_choices())
+	# Driving this through EventBus.level_reached would also run the real
+	# _on_level_reached -> _show_panel(), which calls UiSound.play_level_up()
+	# -- a fire-and-forget AudioStreamPlayer this short-lived script would
+	# then quit before its "finished" signal ever fires, leaking it and its
+	# AudioStreamPlayback every time (confirmed via --verbose: AudioStreamWAV
+	# / AudioStreamPlaybackWAV pointing at level_up.wav; also confirmed that
+	# stop()+free() and even AudioServer.lock()/unlock() around them do not
+	# reliably clear it -- both are still racing the same mix-thread timing,
+	# just at different odds). render_choices() is level_up_choice.gd's own
+	# public, non-"_"-prefixed entry point for exactly this ("tests can drive
+	# rendering directly... without going through the EventBus signal"), so
+	# use it plus a direct visibility flip to reach the same testable,
+	# populated-and-visible layout state without the sound (or the pause)
+	# side effect _show_panel() carries. This removes the leak at its
+	# source instead of racing to clean it up after it already happened.
+	for control: Node in _level_up_controls:
+		control.set("visible", true)
+		control.call("render_choices", _stress_level_up_choices())
 
 	# Boss bar + damage/pickup toasts are dressed HUD states, not just the
 	# idle strip -- drive both locale instances into them so a real overlap
@@ -183,13 +194,6 @@ func _process(_delta: float) -> bool:
 		_run_post_ready_setup()
 		return false
 
-	if _quit_pending:
-		_quit_wait_frames -= 1
-		if _quit_wait_frames > 0:
-			return false
-		quit(_exit_code)
-		return true
-
 	for entry: Dictionary in _pending:
 		var label: String = entry["label"]
 		var control: Node = entry["control"]
@@ -199,39 +203,14 @@ func _process(_delta: float) -> bool:
 
 	if _findings.is_empty():
 		print_rich("[color=green]LAYOUT AUDIT PASS[/color] 0 findings across %d screen/locale instances" % _pending.size())
-		_exit_code = 0
-	else:
-		for finding: String in _findings:
-			print_rich("[color=red]LAYOUT FINDING[/color] %s" % finding)
-		print_rich("[color=red]LAYOUT AUDIT FAIL[/color] %d finding(s)" % _findings.size())
-		_exit_code = 1
+		quit(0)
+		return true
 
-	# The level_reached stress-emit above drives level_up_choice.gd's real
-	# _show_panel(), which fires UiSound.play_level_up() -- a fire-and-forget
-	# AudioStreamPlayer (scripts/ui/ui_sound.gd) added directly under root,
-	# freed only by its own "finished" signal once playback completes. This
-	# script used to quit within the same or next frame, nowhere near a ~1s
-	# WAV's natural finish, so "finished" never fired and both the player
-	# and its AudioStreamPlayback leaked at exit -- confirmed via
-	# --verbose: AudioStreamWAV/AudioStreamPlaybackWAV pointing straight at
-	# level_up.wav. Calling stop() and freeing the node immediately did NOT
-	# fix it either (verified): the Dummy audio driver headless runs on
-	# still needs several real engine ticks to process a stop request on
-	# its mix-thread side before the playback resource actually releases --
-	# there is no synchronous "stop now" here. ui_sound.gd's finished-signal
-	# cleanup is correct for a real play session (the whole process exits
-	# together regardless of any single stream), so the fix belongs here:
-	# this script is what deliberately triggers that real side effect for
-	# stress-testing, so it is what should own tearing it down -- by
-	# stopping playback and then holding quit() for _quit_wait_frames more
-	# frames (empirically the minimum that reliably clears the leak across
-	# repeated runs was under 10; kept a small margin above that).
-	for child in root.get_children():
-		if child is AudioStreamPlayer:
-			child.stop()
-
-	_quit_pending = true
-	return false
+	for finding: String in _findings:
+		print_rich("[color=red]LAYOUT FINDING[/color] %s" % finding)
+	print_rich("[color=red]LAYOUT AUDIT FAIL[/color] %d finding(s)" % _findings.size())
+	quit(1)
+	return true
 
 
 ## A ScrollContainer clips its content to its own rect for both rendering and
