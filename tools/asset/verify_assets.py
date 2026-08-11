@@ -5,11 +5,17 @@ import json
 import math
 import struct
 import wave
+from itertools import combinations
 
 from PIL import Image, ImageChops
 
 ROOT = Path(__file__).resolve().parents[2]
 ERRORS = []
+CHARACTER_ROTATION_DIRECTIONS = (
+    "south", "south-east", "east", "north-east",
+    "north", "north-west", "west", "south-west",
+)
+CHARACTER_NEAR_DUPLICATE_THRESHOLD = 2.5
 
 
 def fail(message):
@@ -60,6 +66,48 @@ def check_no_edge_grid_line(path):
         fail(f"{path}: likely retained sheet grid line on canvas edge")
 
 
+def mean_rgba_distance(first, second):
+    """Mean absolute distance per RGBA channel over the fixed 92px character canvas."""
+    if first.size != second.size:
+        return math.inf
+    total = sum(
+        abs(left_channel - right_channel)
+        for left, right in zip(first.get_flattened_data(), second.get_flattened_data())
+        for left_channel, right_channel in zip(left, right)
+    )
+    return total / (first.width * first.height * 4)
+
+
+def check_character_rotation_near_duplicates():
+    """Reject duplicated direction art for the three same-scale player rotation sets.
+
+    The absolute threshold is deliberately limited to player sprites: all three use a
+    92x92 canvas and 46px content height. Monster content ranges from 44 to 150px and
+    includes documented symmetric spirits, so their whole-canvas means are not comparable.
+    """
+    minima = {}
+    for character in ("Taoist", "Warrior", "Archer"):
+        root = f"asset/character/{character}/Idle/rotations"
+        cells = {
+            direction: image(f"{root}/{direction}.png")
+            for direction in CHARACTER_ROTATION_DIRECTIONS
+        }
+        pairs = [
+            (mean_rgba_distance(cells[first], cells[second]), first, second)
+            for first, second in combinations(CHARACTER_ROTATION_DIRECTIONS, 2)
+        ]
+        distance, first, second = min(pairs)
+        minima[character] = (distance, first, second)
+        for distance, first, second in pairs:
+            if distance < CHARACTER_NEAR_DUPLICATE_THRESHOLD:
+                fail(
+                    f"character rotation near-duplicate: {character}/{first}.png and "
+                    f"{character}/{second}.png mean RGBA distance {distance:.2f} is below "
+                    f"{CHARACTER_NEAR_DUPLICATE_THRESHOLD:.2f}"
+                )
+    return minima
+
+
 def check_tile(path):
     tile = image(path)
     if tile.size != (256, 256):
@@ -106,6 +154,8 @@ def check_rotation_facing_audit():
         fail("rotation facing audit manifest is missing")
         return
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("schema_version") != 2:
+        fail("rotation facing audit: expected schema version 2 with exact diagonal labels")
     directions = (
         "south", "south-east", "east", "north-east",
         "north", "north-west", "west", "south-west",
@@ -122,6 +172,10 @@ def check_rotation_facing_audit():
         fail("rotation facing audit: direction order changed")
     if manifest.get("expected_facing") != expected_facing:
         fail("rotation facing audit: semantic direction labels changed")
+    if manifest.get("diagonal_handedness_limit") != (
+        "manual contact-sheet inspection required; mirror-pair metrics cannot detect swapped labels"
+    ):
+        fail("rotation facing audit: diagonal-handedness limitation is not recorded")
     sets = manifest.get("sets", {})
     if set(sets) != expected_sets:
         fail(
@@ -132,6 +186,8 @@ def check_rotation_facing_audit():
         record = sets[name]
         if record.get("review") != "accepted_manual_contact_sheet":
             fail(f"rotation facing audit: {name} lacks manual approval")
+        if record.get("diagonal_handedness_review") != "accepted_manual_contact_sheet":
+            fail(f"rotation facing audit: {name} lacks manual diagonal-handedness approval")
         contact_sheet = ROOT / record.get("contact_sheet", "")
         if not contact_sheet.is_file():
             fail(f"rotation facing audit: {name} contact sheet is missing")
@@ -144,6 +200,8 @@ def check_rotation_facing_audit():
         rotation_root = ROOT / record.get("root", "")
         for direction in directions:
             cell = cells[direction]
+            if cell.get("expected_direction") != direction:
+                fail(f"rotation facing audit: {name}/{direction} lacks its exact direction label")
             if cell.get("expected_facing") != expected_facing[direction]:
                 fail(f"rotation facing audit: {name}/{direction} has wrong semantic label")
             path = rotation_root / f"{direction}.png"
@@ -232,7 +290,7 @@ def main():
         projectile_canvas = (64, 64) if name in weapon_ids[7:] else None
         check_sprite(f"asset/weapon/projectiles/{name}.png", projectile_canvas)
 
-    directions = ("south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west")
+    directions = CHARACTER_ROTATION_DIRECTIONS
     for character in ("Warrior", "Archer"):
         for direction in directions:
             check_sprite(f"asset/character/{character}/Idle/rotations/{direction}.png", (92, 92), 46)
@@ -243,6 +301,7 @@ def main():
         }
         if metadata.get("frames", {}).get("rotations") != expected_rotations:
             fail(f"asset/character/{character}/metadata.json: incomplete rotation map")
+    character_rotation_minima = check_character_rotation_near_duplicates()
     monster_heights = {
         "forest_goblin": 44,
         "forest_spirit": 46,
@@ -480,6 +539,14 @@ def main():
     print("Set-gap additions verified: 100 death frames, 22 procedural walk records, 5 travel sprites, 4 melee swings")
     print("Loot and boss-scale assets verified: 12 pickup sets (48 collect frames) + 120x150 boss with 8 rotations and 4 death frames")
     print("Directional-facing audit verified: 25/25 sets, 200 hash-bound cells manually reviewed")
+    minimum_summary = ", ".join(
+        f"{name} {distance:.2f} ({first}/{second})"
+        for name, (distance, first, second) in character_rotation_minima.items()
+    )
+    print(
+        "Character near-duplicate gate verified: 84 pairs at mean-RGBA threshold "
+        f"{CHARACTER_NEAR_DUPLICATE_THRESHOLD:.2f}; minima: {minimum_summary}"
+    )
     print("UI journey verified: 47 icons, 11 illustrations, 31 nine-slices, 3 fixed controls; WCAG-AA/state gates passed")
 
 
