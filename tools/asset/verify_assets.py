@@ -86,7 +86,11 @@ def check_audio(path, expected_duration):
 def main():
     passive_ids = ("attack_damage", "attack_speed", "move_speed", "crit_chance", "max_hp", "xp_gain", "luck", "skill_power")
     achievement_ids = ("first_boss", "boss_slayer", "goblin_hunter", "monster_collector", "survivor", "veteran_survivor", "rising_star", "weapon_master")
-    weapon_ids = ("old_talisman", "fire_talisman", "phoenix_talisman", "sword", "twin_sword", "bow", "divine_bow")
+    weapon_ids = (
+        "old_talisman", "fire_talisman", "phoenix_talisman", "sword", "twin_sword", "bow", "divine_bow",
+        "spear", "dragon_spear", "moon_dual_sword", "storm_dual_sword", "axe", "tiger_axe",
+        "throwing_knife", "rain_of_knives", "poison_knife", "hundred_poison_blade",
+    )
 
     for name in passive_ids:
         check_sprite(f"asset/ui/passive/{name}.png", (32, 32))
@@ -101,7 +105,8 @@ def main():
         check_sprite(f"asset/ui/chrome/button_{state}_9slice.png", (64, 32))
     for name in weapon_ids:
         check_sprite(f"asset/weapon/icons/{name}.png", (32, 32))
-        check_sprite(f"asset/weapon/projectiles/{name}.png")
+        projectile_canvas = (64, 64) if name in weapon_ids[7:] else None
+        check_sprite(f"asset/weapon/projectiles/{name}.png", projectile_canvas)
 
     directions = ("south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west")
     for character in ("Warrior", "Archer"):
@@ -133,6 +138,27 @@ def main():
     }
     for monster_id, height in later_monster_heights.items():
         check_sprite(f"asset/monster/{monster_id}.png", (92, 92), height)
+        for direction in directions:
+            check_sprite(f"asset/monster/{monster_id}/rotations/{direction}.png", (92, 92), height)
+
+    death_sequences = {
+        "Taoist": "asset/character/Taoist/Death",
+        "Warrior": "asset/character/Warrior/Death",
+        "Archer": "asset/character/Archer/Death",
+        "forest_goblin": "asset/monster/forest_goblin/death",
+        "forest_spirit": "asset/monster/forest_spirit/death",
+        "bamboo_brute": "asset/monster/bamboo_brute/death",
+        "bamboo_spirit_lord": "asset/monster/bamboo_spirit_lord/death",
+    }
+    for sequence_root in death_sequences.values():
+        for frame in range(4):
+            check_sprite(f"{sequence_root}/{frame}.png", (92, 92))
+    death_metrics = json.loads((ROOT / "asset/character/raw/death_metrics.json").read_text(encoding="utf-8"))
+    if set(death_metrics) != set(death_sequences):
+        fail("death metrics do not cover the seven authored death sheets")
+    for sequence in death_sequences:
+        if not death_metrics.get(sequence, {}).get("accepted"):
+            fail(f"{death_sequences[sequence]}: failed irreversible-collapse gate")
     check_tile("asset/stage/bamboo_forest_ground.png")
     check_tile("asset/stage/abandoned_temple_ground.png")
     for name in ("main_menu", "bamboo_forest", "abandoned_temple"):
@@ -148,16 +174,26 @@ def main():
     effects = (
         "talisman_burst", "spirit_flame", "summon_circle", "fire", "lightning",
         "poison_cloud", "slash", "impact_hit", "level_up", "evolution_flourish",
+        "ward_barrier", "spirit_beam", "seal_field",
     )
     for effect in effects:
         for frame in range(4):
             check_sprite(f"asset/effect/{effect}/{frame}.png", (64, 64))
     effect_metrics = json.loads((ROOT / "asset/effect/raw/effect_metrics.json").read_text(encoding="utf-8"))
     if set(effect_metrics) != set(effects):
-        fail("effect metrics do not cover the ten authored effect sheets")
+        fail("effect metrics do not cover the thirteen authored effect sheets")
     for effect in effects:
         if not effect_metrics.get(effect, {}).get("accepted"):
             fail(f"asset/effect/{effect}: failed mobile-readability/progression gate")
+
+    summons = {
+        "paper_familiar": 46,
+        "haetae_cub": 52,
+        "three_legged_crow": 48,
+        "turtle_serpent_guardian": 58,
+    }
+    for summon, height in summons.items():
+        check_sprite(f"asset/summon/creatures/{summon}.png", (92, 92), height)
 
     structures = (
         "workshop", "archive", "training_ground", "camp_shrine", "jangseung_pair",
@@ -238,13 +274,14 @@ def main():
 
     if ERRORS:
         raise SystemExit("\n".join(ERRORS))
-    print("M1 assets verified: 20 UI icons + 4 chrome assets, 14 weapon assets, 2 characters, 2 seamless tiles, 6 audio files")
+    print("M1 assets verified: 20 UI icons + 4 chrome assets, 34 weapon assets, 2 characters, 2 seamless tiles, 6 audio files")
     print(f"Motion-generation rejection evidence: {changed}/1702 pixels changed between same-pose frames")
     print(f"Single-sheet retry rejected: idle pair {retry_idle}/1702 versus separate baseline {baseline}/1702")
     print(f"Direct-conditioned retry rejected: south walk frames {conditioned_changed[0]}/1702 and {conditioned_changed[1]}/1702")
     print("Directional additions verified: 14 class rotations + 32 monster rotations, 3 backdrops, 12 props")
     print(f"Six multi-reference motion sheets rejected: {accepted_current}/{measured_current} frames passed the regional stability gate")
-    print("Expansion assets verified: 18 folklore monsters, 40 effect frames, 12 structures, 3 title assets")
+    print("Expansion assets verified: 18 folklore monsters + 144 rotations, 52 effect frames, 12 structures, 3 title assets")
+    print("Round-two additions verified: 28 death frames, 4 summoned creatures, 20 weapon icons/projectiles")
 
 
 if __name__ == "__main__":

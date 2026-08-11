@@ -94,6 +94,13 @@ panels such as backdrops; sprites still use a square canvas size and chroma-key 
 
 If a generator adds a uniform grid line despite the prompt, pass `--inset=N` before the
 cell names to trim that many source pixels from every cell edge before chroma-keying.
+Use `--inset-x`, `--inset-top`, and `--inset-bottom` when a backend adds a caption band or
+uneven outer margin; the weapon expansion sheet uses this to discard generator captions
+before the 32px cut rather than trying to key text out afterward.
+
+For irreversible animation such as a collapse or dissipation, pass `--fixed-cell` with a
+square canvas. It retains the sheet's common scale instead of cropping and enlarging each
+frame independently, which would make a fallen body as tall as its standing frame.
 
 M1 helper scripts are deterministic and safe to rerun:
 
@@ -112,8 +119,12 @@ M1 helper scripts are deterministic and safe to rerun:
 - `measure_directional_motion.py` compares every generated motion cell against its own
   direction's 92x92 idle authority and records per-frame lower-body concentration, head
   silhouette stability, pair differences, and a sheet-level acceptance summary.
+- `measure_death_sheets.py` measures the seven four-frame death sequences as irreversible
+  collapse: every transition and the terminal state must differ materially, and the final
+  silhouette must lose height or opaque area. This is deliberately not the identity gate
+  that correctly rejects generated walk and attack frames.
 - `measure_effect_sheets.py` records opaque coverage, bright-core pixels, and consecutive
-  frame deltas for the ten four-frame effect sheets. Its final dissipation frame is exempt
+  frame deltas for the thirteen four-frame effect sheets. Its final dissipation frame is exempt
   from the bright-core gate but still must retain a readable silhouette and distinct motion.
 
 ## Import settings

@@ -1,0 +1,345 @@
+{
+  "Taoist": {
+    "frames": {
+      "0": {
+        "empty": false,
+        "opaque_pixels": 757,
+        "bbox": [
+          31,
+          51
+        ],
+        "centroid_y": 46.04
+      },
+      "1": {
+        "empty": false,
+        "opaque_pixels": 897,
+        "bbox": [
+          42,
+          49
+        ],
+        "centroid_y": 48.31
+      },
+      "2": {
+        "empty": false,
+        "opaque_pixels": 1125,
+        "bbox": [
+          47,
+          61
+        ],
+        "centroid_y": 51.68
+      },
+      "3": {
+        "empty": false,
+        "opaque_pixels": 623,
+        "bbox": [
+          53,
+          23
+        ],
+        "centroid_y": 66.2
+      }
+    },
+    "transitions_changed_pixels": [
+      1090,
+      1520,
+      1419
+    ],
+    "terminal_changed_pixels": 1220,
+    "final_to_first_height_ratio": 0.451,
+    "final_to_first_area_ratio": 0.823,
+    "accepted": true
+  },
+  "Warrior": {
+    "frames": {
+      "0": {
+        "empty": false,
+        "opaque_pixels": 1037,
+        "bbox": [
+          33,
+          56
+        ],
+        "centroid_y": 52.12
+      },
+      "1": {
+        "empty": false,
+        "opaque_pixels": 1023,
+        "bbox": [
+          31,
+          56
+        ],
+        "centroid_y": 51.78
+      },
+      "2": {
+        "empty": false,
+        "opaque_pixels": 906,
+        "bbox": [
+          52,
+          29
+        ],
+        "centroid_y": 64.54
+      },
+      "3": {
+        "empty": false,
+        "opaque_pixels": 817,
+        "bbox": [
+          52,
+          27
+        ],
+        "centroid_y": 67.3
+      }
+    },
+    "transitions_changed_pixels": [
+      930,
+      1430,
+      919
+    ],
+    "terminal_changed_pixels": 1450,
+    "final_to_first_height_ratio": 0.482,
+    "final_to_first_area_ratio": 0.788,
+    "accepted": true
+  },
+  "Archer": {
+    "frames": {
+      "0": {
+        "empty": false,
+        "opaque_pixels": 1400,
+        "bbox": [
+          44,
+          56
+        ],
+        "centroid_y": 44.04
+      },
+      "1": {
+        "empty": false,
+        "opaque_pixels": 1468,
+        "bbox": [
+          46,
+          54
+        ],
+        "centroid_y": 47.38
+      },
+      "2": {
+        "empty": false,
+        "opaque_pixels": 1290,
+        "bbox": [
+          50,
+          48
+        ],
+        "centroid_y": 52.38
+      },
+      "3": {
+        "empty": false,
+        "opaque_pixels": 1041,
+        "bbox": [
+          52,
+          36
+        ],
+        "centroid_y": 63.62
+      }
+    },
+    "transitions_changed_pixels": [
+      1607,
+      1885,
+      1689
+    ],
+    "terminal_changed_pixels": 1887,
+    "final_to_first_height_ratio": 0.643,
+    "final_to_first_area_ratio": 0.744,
+    "accepted": true
+  },
+  "forest_goblin": {
+    "frames": {
+      "0": {
+        "empty": false,
+        "opaque_pixels": 4595,
+        "bbox": [
+          53,
+          92
+        ],
+        "centroid_y": 45.62
+      },
+      "1": {
+        "empty": false,
+        "opaque_pixels": 1615,
+        "bbox": [
+          41,
+          62
+        ],
+        "centroid_y": 44.09
+      },
+      "2": {
+        "empty": false,
+        "opaque_pixels": 1237,
+        "bbox": [
+          53,
+          37
+        ],
+        "centroid_y": 57.47
+      },
+      "3": {
+        "empty": false,
+        "opaque_pixels": 925,
+        "bbox": [
+          53,
+          29
+        ],
+        "centroid_y": 65.17
+      }
+    },
+    "transitions_changed_pixels": [
+      4516,
+      1979,
+      1334
+    ],
+    "terminal_changed_pixels": 4614,
+    "final_to_first_height_ratio": 0.315,
+    "final_to_first_area_ratio": 0.201,
+    "accepted": true
+  },
+  "forest_spirit": {
+    "frames": {
+      "0": {
+        "empty": false,
+        "opaque_pixels": 2847,
+        "bbox": [
+          53,
+          92
+        ],
+        "centroid_y": 46.41
+      },
+      "1": {
+        "empty": false,
+        "opaque_pixels": 2942,
+        "bbox": [
+          52,
+          92
+        ],
+        "centroid_y": 44.98
+      },
+      "2": {
+        "empty": false,
+        "opaque_pixels": 1293,
+        "bbox": [
+          52,
+          72
+        ],
+        "centroid_y": 49.39
+      },
+      "3": {
+        "empty": false,
+        "opaque_pixels": 64,
+        "bbox": [
+          21,
+          21
+        ],
+        "centroid_y": 45.08
+      }
+    },
+    "transitions_changed_pixels": [
+      2505,
+      2840,
+      1294
+    ],
+    "terminal_changed_pixels": 2854,
+    "final_to_first_height_ratio": 0.228,
+    "final_to_first_area_ratio": 0.022,
+    "accepted": true
+  },
+  "bamboo_brute": {
+    "frames": {
+      "0": {
+        "empty": false,
+        "opaque_pixels": 1973,
+        "bbox": [
+          53,
+          62
+        ],
+        "centroid_y": 30.59
+      },
+      "1": {
+        "empty": false,
+        "opaque_pixels": 1693,
+        "bbox": [
+          52,
+          53
+        ],
+        "centroid_y": 37.26
+      },
+      "2": {
+        "empty": false,
+        "opaque_pixels": 1752,
+        "bbox": [
+          53,
+          67
+        ],
+        "centroid_y": 54.5
+      },
+      "3": {
+        "empty": false,
+        "opaque_pixels": 1095,
+        "bbox": [
+          53,
+          35
+        ],
+        "centroid_y": 61.72
+      }
+    },
+    "transitions_changed_pixels": [
+      2282,
+      2660,
+      2116
+    ],
+    "terminal_changed_pixels": 2807,
+    "final_to_first_height_ratio": 0.565,
+    "final_to_first_area_ratio": 0.555,
+    "accepted": true
+  },
+  "bamboo_spirit_lord": {
+    "frames": {
+      "0": {
+        "empty": false,
+        "opaque_pixels": 2792,
+        "bbox": [
+          52,
+          83
+        ],
+        "centroid_y": 46.45
+      },
+      "1": {
+        "empty": false,
+        "opaque_pixels": 2835,
+        "bbox": [
+          53,
+          92
+        ],
+        "centroid_y": 46.59
+      },
+      "2": {
+        "empty": false,
+        "opaque_pixels": 2343,
+        "bbox": [
+          53,
+          92
+        ],
+        "centroid_y": 46.09
+      },
+      "3": {
+        "empty": false,
+        "opaque_pixels": 264,
+        "bbox": [
+          37,
+          92
+        ],
+        "centroid_y": 45.75
+      }
+    },
+    "transitions_changed_pixels": [
+      2947,
+      3020,
+      2326
+    ],
+    "terminal_changed_pixels": 2861,
+    "final_to_first_height_ratio": 1.108,
+    "final_to_first_area_ratio": 0.095,
+    "accepted": true
+  }
+}
