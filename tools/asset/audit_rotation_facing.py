@@ -113,12 +113,14 @@ def build_manifest() -> dict:
         sets[name] = {
             "root": relative_root,
             "review": "accepted_manual_contact_sheet",
+            "diagonal_handedness_review": "accepted_manual_contact_sheet",
             "contact_sheet": f"asset/rotation_audit/contact_sheets/{name}.png",
             "contact_sheet_sha256": sha256(contact_path),
             "regenerated_in_audit": name in REGENERATED_SETS,
             "exact_east_west_mirror_required": name in EXACT_MIRROR_PAIRS,
             "cells": {
                 direction: {
+                    "expected_direction": direction,
                     "expected_facing": EXPECTED_FACING[direction],
                     "sha256": sha256(rotation_root / f"{direction}.png"),
                 }
@@ -129,9 +131,12 @@ def build_manifest() -> dict:
         for sprite in images.values():
             sprite.close()
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "reviewed_at": "2026-08-11",
         "review_method": "manual contact-sheet review, hash-bound per cell",
+        "diagonal_handedness_limit": (
+            "manual contact-sheet inspection required; mirror-pair metrics cannot detect swapped labels"
+        ),
         "direction_order": list(DIRECTIONS),
         "expected_facing": EXPECTED_FACING,
         "sets": sets,

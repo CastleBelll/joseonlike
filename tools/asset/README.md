@@ -144,6 +144,13 @@ M1 helper scripts are deterministic and safe to rerun:
   until its contact sheet is rebuilt, viewed, and the manifest is deliberately renewed. The
   retained pixel diagnostics are evidence, not a classifier: correct asymmetric weapons and
   tails produce false positives under a universal mirror or distance threshold.
+- Player rotations additionally use a 2.50 mean-RGBA near-duplicate gate over every pair in
+  each eight-cell set. This caught Warrior north-east/north-west at 1.92 and Archer
+  north/north-west at 1.76; all player sprites share a 92px canvas and 46px content height, so
+  the absolute cut is comparable. Do not apply that number blindly to monsters: their 44--150px
+  content scale and deliberately symmetric spirits dilute whole-canvas means. Diagonal
+  handedness remains a hash-bound manual contact-sheet decision because swapping two mirror
+  images leaves every honest mirror-pair metric unchanged.
 - `process_ui_journey.py` slices the visually audited Higgsfield UI sheets by their actual
   layouts, sends every selected generated cell through `pixelize.py`, and then calls
   `build_ui_furniture.py` for exact-palette state frames, bars, toggles, and nine-slices.

@@ -22,6 +22,12 @@
     "provider": "Higgsfield",
     "model": "nano_banana_2",
     "south_job_id": "fc66d71d-2bf6-420d-ba7b-cfa5fe2605c1",
-    "rotation_sheet_job_id": "bcceeb59-9827-49ba-9f59-ea4f3e4f3849"
+    "rotation_sheet_job_id": "bcceeb59-9827-49ba-9f59-ea4f3e4f3849",
+    "north_west_fix_job_id": "ed0788a5-2353-47c2-b0e6-091ce3d57e41",
+    "north_west_rejected_job_ids": [
+      "7a03a2f5-f27e-470f-b9a2-fb73ff228689",
+      "74fa846c-5e4f-4331-b27d-3cb6c16edc9a"
+    ],
+    "south_diagonals_relabelled": true
   }
 }
