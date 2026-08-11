@@ -5,11 +5,11 @@ extends RefCounted
 ## tokens instead of hardcoding raw Color values.
 
 const INK: Color = Color(0.1020, 0.0863, 0.0745)          # #1a1613
-const PAPER: Color = Color(0.9294, 0.8784, 0.7686)         # #ede0c4 background -- matches asset/ui/chrome/panel_9slice.png fill exactly
+const PAPER: Color = Color(0.9294, 0.8784, 0.7686)         # #ede0c4 background
 const PAPER_DARK: Color = Color(0.8392, 0.7725, 0.6314)    # #d6c5a1 panel
-const VERMILION: Color = Color(0.7490, 0.2510, 0.1647)     # #bf402a -- matches button_normal_9slice.png fill exactly
-const VERMILION_HOVER: Color = Color(0.8039, 0.3176, 0.2157) # #cd5137 -- button_hover_9slice.png fill
-const VERMILION_DARK: Color = Color(0.5451, 0.1725, 0.1098) # #8b2c1c -- matches button_pressed_9slice.png fill exactly
+const VERMILION: Color = Color(0.7490, 0.2510, 0.1647)     # #bf402a -- general-purpose accent (focus ring, etc), independent of button chrome art
+const VERMILION_HOVER: Color = Color(0.8039, 0.3176, 0.2157) # #cd5137
+const VERMILION_DARK: Color = Color(0.5451, 0.1725, 0.1098) # #8b2c1c
 const GOLD: Color = Color(0.7686, 0.6039, 0.2392)          # #c49a3d
 const LOCKED: Color = Color(0.4196, 0.3922, 0.3490)        # #6b6459
 const SUCCESS: Color = Color(0.2902, 0.4863, 0.2588)       # #4a7c42
@@ -37,14 +37,16 @@ const CHROME_PANEL: Texture2D = preload("res://asset/ui/chrome/panel_9slice.png"
 const CHROME_BUTTON_NORMAL: Texture2D = preload("res://asset/ui/chrome/button_normal_9slice.png")
 const CHROME_BUTTON_HOVER: Texture2D = preload("res://asset/ui/chrome/button_hover_9slice.png")
 const CHROME_BUTTON_PRESSED: Texture2D = preload("res://asset/ui/chrome/button_pressed_9slice.png")
+const CHROME_BUTTON_DISABLED: Texture2D = preload("res://asset/ui/chrome/button_disabled_9slice.png")
 
 const PANEL_MARGIN: int = 6
 const BUTTON_MARGIN_H: int = 6
 const BUTTON_MARGIN_V: int = 8
 
-## No disabled-state chrome ships in the M1 set (normal/hover/pressed only),
-## so the locked look desaturates the normal texture instead of forking a
-## new asset.
+## Button chrome now ships a real disabled state (CHROME_BUTTON_DISABLED)
+## instead of tinting the normal texture -- but character card frames and
+## small icons still have no dedicated disabled art, so this tint remains
+## for those.
 const DISABLED_TINT: Color = Color(0.55, 0.55, 0.55)
 
 ## State icons (asset/ui/state/*.png) -- paired with the text labels already
@@ -84,9 +86,7 @@ static func apply_button_style(button: Button) -> void:
 	button.add_theme_stylebox_override("hover", _nine_slice(CHROME_BUTTON_HOVER, BUTTON_MARGIN_H, BUTTON_MARGIN_V))
 	button.add_theme_stylebox_override("pressed", _nine_slice(CHROME_BUTTON_PRESSED, BUTTON_MARGIN_H, BUTTON_MARGIN_V))
 
-	var disabled := _nine_slice(CHROME_BUTTON_NORMAL, BUTTON_MARGIN_H, BUTTON_MARGIN_V)
-	disabled.modulate_color = DISABLED_TINT
-	button.add_theme_stylebox_override("disabled", disabled)
+	button.add_theme_stylebox_override("disabled", _nine_slice(CHROME_BUTTON_DISABLED, BUTTON_MARGIN_H, BUTTON_MARGIN_V))
 	button.add_theme_stylebox_override("focus", panel_style(Color.TRANSPARENT, VERMILION, 3, 6))
 
 	button.add_theme_color_override("font_color", TEXT_ON_DARK)

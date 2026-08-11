@@ -33,7 +33,7 @@ const UI_STRINGS: Dictionary = {
 	"area_locked_reason": {"ko": "준비 중인 지역입니다.", "en": "This area is not open yet."},
 
 	"camp_title": {"ko": "본거지", "en": "Base Camp"},
-	"camp_walk_hint": {"ko": "가까이 다가가 확인 버튼을 눌러 들어가세요", "en": "Walk close and press interact to enter"},
+	"camp_interact_button": {"ko": "상호작용", "en": "Interact"},
 	"building_workshop": {"ko": "공방", "en": "Workshop"},
 	"building_archive": {"ko": "서고", "en": "Archive"},
 	"building_training_ground": {"ko": "훈련장", "en": "Training Ground"},
