@@ -160,13 +160,13 @@ func _build_choice_card(model: Dictionary) -> Button:
 	if not kind_label_text.is_empty():
 		var kind_label := Label.new()
 		kind_label.text = kind_label_text
-		kind_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+		kind_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 		kind_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 		box.add_child(kind_label)
 
 	var name_label := Label.new()
 	name_label.text = String(model.get("name", ""))
-	name_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+	name_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 	name_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
 	box.add_child(name_label)
 
@@ -175,7 +175,7 @@ func _build_choice_card(model: Dictionary) -> Button:
 		var description_label := Label.new()
 		description_label.text = description
 		description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		description_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+		description_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 		description_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 		box.add_child(description_label)
 
@@ -204,9 +204,9 @@ static func _style_tier_card(button: Button, tier: String) -> void:
 	button.add_theme_stylebox_override("hover", focused)
 	button.add_theme_stylebox_override("pressed", focused)
 	button.add_theme_stylebox_override("focus", UiPalette.panel_style(Color.TRANSPARENT, UiPalette.VERMILION, 3, 6))
-	button.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
-	button.add_theme_color_override("font_hover_color", UiPalette.TEXT_ON_DARK)
-	button.add_theme_color_override("font_pressed_color", UiPalette.TEXT_ON_DARK)
+	button.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
+	button.add_theme_color_override("font_hover_color", UiPalette.TEXT_ON_PAPER)
+	button.add_theme_color_override("font_pressed_color", UiPalette.TEXT_ON_PAPER)
 	button.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
 	button.custom_minimum_size.y = max(button.custom_minimum_size.y, UiPalette.TOUCH_TARGET_MIN)
 

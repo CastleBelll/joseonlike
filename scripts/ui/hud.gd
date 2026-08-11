@@ -1,11 +1,16 @@
 extends CanvasLayer
 ## Run HUD: HP bar, XP bar + level, boss bar (only while a boss is alive),
-## timer, kill count, active weapon chips, a pause affordance, and transient
-## damage/pickup toasts. Reads only EventBus signals, RunState, and GameData
-## -- never a reference to a combat/player node.
+## timer, kill count, active weapon chips, and a pause affordance. Reads
+## only EventBus signals, RunState, and GameData -- never a reference to a
+## combat/player node.
 ##
 ## The pause menu is owned here as an overlay (not a routed SceneRouter
 ## screen) since it only needs Resume/Settings/Quit over the paused run.
+##
+## Damage/pickup toasts were removed on player feedback -- players do not
+## want every hit taken or XP pickup announced. asset/ui/feedback/
+## (damage_toast_9slice.png, pickup_toast_9slice.png) is unused as a result;
+## reported rather than kept wired to a feature that no longer exists.
 
 const ICON_DIR := "res://asset/ui/hud/icons"
 const BAR_BACKGROUND: Texture2D = preload("res://asset/ui/hud/bar_background_9slice.png")
@@ -13,12 +18,8 @@ const HP_FILL: Texture2D = preload("res://asset/ui/hud/hp_fill_9slice.png")
 const XP_FILL: Texture2D = preload("res://asset/ui/hud/xp_fill_9slice.png")
 const BOSS_FILL: Texture2D = preload("res://asset/ui/hud/boss_fill_9slice.png")
 const TIMER_FRAME: Texture2D = preload("res://asset/ui/hud/timer_frame_9slice.png")
-const DAMAGE_TOAST: Texture2D = preload("res://asset/ui/feedback/damage_toast_9slice.png")
-const PICKUP_TOAST: Texture2D = preload("res://asset/ui/feedback/pickup_toast_9slice.png")
 
 const BAR_MARGIN := 6
-const TOAST_MARGIN := 8
-const TOAST_LIFETIME_SEC := 1.2
 
 @onready var _hp_icon: TextureRect = $Root/Margin/MainBox/TopRow/HpIcon
 @onready var _hp_bar: ProgressBar = $Root/Margin/MainBox/TopRow/HpBar
@@ -38,8 +39,6 @@ const TOAST_LIFETIME_SEC := 1.2
 @onready var _kills_label: Label = $Root/Margin/MainBox/StatsRow/KillsLabel
 @onready var _weapons_row: HBoxContainer = $Root/Margin/MainBox/WeaponsRow
 @onready var _weapons_empty_label: Label = $Root/Margin/MainBox/WeaponsEmptyLabel
-
-@onready var _toast_stack: VBoxContainer = $ToastStack
 
 @onready var _pause_overlay: Control = $PauseOverlay
 @onready var _pause_title: Label = $PauseOverlay/Panel/PanelMargin/PanelBox/PauseTitle
@@ -101,16 +100,23 @@ func _icon(id: String) -> Texture2D:
 	return load(path) if ResourceLoader.exists(path) else null
 
 
+## PRESET_CENTER + a hand-computed -custom_minimum_size*0.5 offset does NOT
+## centre a manually-added, non-container-managed child: custom_minimum_size
+## never becomes the node's actual `size` outside a Container's layout pass,
+## so the offset was computed against a size the icon never actually had --
+## the icon rendered at its texture's real (larger) footprint, centred on
+## the wrong point, reading as pushed toward the bottom-right of the button.
+## Anchoring FULL_RECT and letting STRETCH_KEEP_ASPECT_CENTERED centre the
+## texture within whatever rect the button actually resolves to needs no
+## manual size/offset math at all, so it cannot drift out of sync with it.
 func _pause_icon_setup() -> void:
 	UiPalette.apply_button_style(_pause_button)
 	_pause_button.text = ""
 	var icon := TextureRect.new()
 	icon.texture = _icon("pause")
-	icon.custom_minimum_size = Vector2(24, 24)
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon.set_anchors_preset(Control.PRESET_CENTER)
-	icon.position = -icon.custom_minimum_size * 0.5
+	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_pause_button.add_child(icon)
 	_pause_button.pressed.connect(_on_pause_pressed)
 
@@ -124,10 +130,9 @@ func _refresh_max_hp() -> void:
 	_max_hp = base_hp * (1.0 + RunState.stat_total("max_hp"))
 
 
-func _on_player_damaged(amount: float, hp_left: float) -> void:
+func _on_player_damaged(_amount: float, hp_left: float) -> void:
 	_current_hp = hp_left
 	_update_hp_display()
-	_show_toast(DAMAGE_TOAST, _icon("damage"), "-%d" % int(round(amount)))
 
 
 func _on_player_died() -> void:
@@ -142,13 +147,8 @@ func _update_hp_display() -> void:
 	_hp_label.text = "%d/%d" % [int(round(_current_hp)), int(round(_max_hp))]
 
 
-## No dedicated "item picked up" signal exists yet (EventBus only tracks XP
-## as a value gain) -- xp_gained is the closest real pickup event, so it
-## doubles as the pickup-toast trigger. Report to combat if a distinct
-## pickup signal (gold, health orb, etc.) is ever needed.
-func _on_xp_gained(amount: int) -> void:
+func _on_xp_gained(_amount: int) -> void:
 	_update_xp_display()
-	_show_toast(PICKUP_TOAST, _icon("pickup"), "+%d XP" % amount)
 
 
 func _on_level_reached(level: int, _choices: Array[Dictionary]) -> void:
@@ -217,6 +217,9 @@ func _refresh_weapons() -> void:
 		_weapons_row.add_child(_build_weapon_chip(weapon_entry))
 
 
+## Icon + level only -- the chip is a fixed 44x44 slot and the weapon's full
+## name does not fit at a readable size in it. GameData.weapon(weapon_id)
+## still backs the icon lookup; the name itself is simply not shown here.
 func _build_weapon_chip(weapon_entry: Dictionary) -> Control:
 	var weapon_id: String = String(weapon_entry.get("id", ""))
 	var level: int = int(weapon_entry.get("level", 1))
@@ -240,8 +243,7 @@ func _build_weapon_chip(weapon_entry: Dictionary) -> Control:
 	box.add_child(icon)
 
 	var label := Label.new()
-	var display_name: String = LocaleText.field(weapon_data, "name") if not weapon_data.is_empty() else weapon_id
-	label.text = "%s Lv%d" % [display_name, level]
+	label.text = "Lv%d" % level
 	label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 	label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -268,43 +270,6 @@ func _nine_slice(texture: Texture2D, margin: int = BAR_MARGIN) -> StyleBoxTextur
 	style.texture_margin_top = margin
 	style.texture_margin_bottom = margin
 	return style
-
-
-## Stacks a transient icon+text popup under the HUD strip and frees it after
-## TOAST_LIFETIME_SEC. process_always keeps the timer running even while the
-## pause overlay has the tree paused.
-func _show_toast(frame: Texture2D, icon: Texture2D, text: String) -> void:
-	var toast := PanelContainer.new()
-	var style := StyleBoxTexture.new()
-	style.texture = frame
-	style.texture_margin_left = TOAST_MARGIN
-	style.texture_margin_right = TOAST_MARGIN
-	style.texture_margin_top = TOAST_MARGIN
-	style.texture_margin_bottom = TOAST_MARGIN
-	toast.add_theme_stylebox_override("panel", style)
-
-	var box := HBoxContainer.new()
-	box.add_theme_constant_override("separation", 6)
-	toast.add_child(box)
-
-	if icon != null:
-		var icon_rect := TextureRect.new()
-		icon_rect.texture = icon
-		icon_rect.custom_minimum_size = Vector2(20, 20)
-		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		box.add_child(icon_rect)
-
-	var label := Label.new()
-	label.text = text
-	label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
-	label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
-	box.add_child(label)
-
-	_toast_stack.add_child(toast)
-	get_tree().create_timer(TOAST_LIFETIME_SEC, true).timeout.connect(func() -> void:
-		if is_instance_valid(toast):
-			toast.queue_free()
-	)
 
 
 func _setup_pause_overlay() -> void:

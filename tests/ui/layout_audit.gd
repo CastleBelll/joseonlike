@@ -29,13 +29,34 @@ extends SceneTree
 ## buttons, a button under another button) is exactly what remains flagged.
 ##
 ## Also flags: any visible Control whose rect is not fully within the
-## 540x960 viewport (pushed off-screen / clipped), and any visible
-## BaseButton smaller than the 44x44 minimum touch target this project
-## requires.
-
+## 540x960 viewport (pushed off-screen / clipped), any visible BaseButton
+## smaller than the 44x44 minimum touch target this project requires, and
+## any visible Label/Button text under WCAG AA contrast against its actual
+## background.
+##
+## CONTRAST CHECK: "sample the pixels actually rendered" is the goal, but a
+## literal SubViewport.get_texture().get_image() capture is not available
+## here -- verified empirically that `--headless` always forces Godot's
+## dummy rendering backend regardless of `--rendering-driver`, so a live
+## viewport capture returns null (texture_2d_get on a null RID) no matter
+## what flags are passed. A real display driver *does* rasterize correctly,
+## but every other check in this project's verification loop (run_tests.gd,
+## --quit, this audit) runs `--headless`, and making contrast checking the
+## one thing that silently requires a GPU/display would make it invisible
+## in exactly the environment it is meant to run in.
+## Texture2D.get_image() on a *loaded asset* (as opposed to a viewport's
+## render target) is a plain image decode, not a rendering-server query, so
+## it works headlessly -- _effective_background() walks a Label/Button's
+## own ancestor chain for the nearest StyleBoxFlat.bg_color / ColorRect.color
+## / StyleBoxTexture (sampled from its real texture asset, center pixel,
+## modulate_color applied), i.e. the exact same pixel data Godot draws from
+## at runtime, just read via the asset file instead of a frame buffer.
 const VIEWPORT_SIZE := Vector2i(540, 960)
 const VIEWPORT_RECT := Rect2(Vector2.ZERO, Vector2(540.0, 960.0))
 const MIN_TOUCH_TARGET := 44.0
+const WCAG_AA_MIN_CONTRAST := 4.5
+const TITLE_BASELINE_TOP := 20.0
+const TITLE_BASELINE_BOTTOM := 68.0
 const LOCALES := ["en", "ko"]
 
 var _pending: Array[Dictionary] = []
@@ -200,6 +221,8 @@ func _process(_delta: float) -> bool:
 		_findings.append_array(_find_overlaps(label, control))
 		_findings.append_array(_find_offscreen(label, control))
 		_findings.append_array(_find_small_touch_targets(label, control))
+		_findings.append_array(_find_contrast_violations(label, control))
+		_findings.append_array(_find_title_baseline_drift(label, control))
 
 	if _findings.is_empty():
 		print_rich("[color=green]LAYOUT AUDIT PASS[/color] 0 findings across %d screen/locale instances" % _pending.size())
@@ -299,6 +322,141 @@ func _find_small_touch_targets(label: String, screen_root: Node) -> Array[String
 				label, str(control.get_path()), size, MIN_TOUCH_TARGET, MIN_TOUCH_TARGET,
 			])
 	return findings
+
+
+## Every full screen's title label is a direct child of the screen root
+## named "...Title" and sits at the same offset_top/offset_bottom -- an
+## established convention (character_select/area_select/settings/
+## achievements_quests all share offset_top=20, offset_bottom=68), but
+## nothing enforced it: camp.tscn's CampTitle drifted to 48/100 unnoticed.
+## Deliberately only looks at DIRECT children of the screen root: a title
+## living inside a VBoxContainer (results.tscn's ContentRoot/TitleLabel) is
+## nested two levels deep, container-managed rather than hardcoded, and is
+## exactly the pattern this project should keep using instead -- correctly
+## out of scope here, not a gap in the check. (Control.layout_mode is a
+## .tscn-editor-only property with no runtime getter, so this is the actual
+## available signal, not a substitute for one.)
+func _find_title_baseline_drift(label: String, screen_root: Node) -> Array[String]:
+	if not (screen_root is Control):
+		return []
+
+	var findings: Array[String] = []
+	for child in (screen_root as Node).get_children():
+		if not (child is Label):
+			continue
+		if not String(child.name).ends_with("Title"):
+			continue
+		var title: Label = child
+		if is_equal_approx(title.offset_top, TITLE_BASELINE_TOP) and is_equal_approx(title.offset_bottom, TITLE_BASELINE_BOTTOM):
+			continue
+		findings.append("%s: TITLE_BASELINE_DRIFT %s offset_top=%.1f offset_bottom=%.1f (every other screen title uses %.1f/%.1f)" % [
+			label, str(title.get_path()), title.offset_top, title.offset_bottom, TITLE_BASELINE_TOP, TITLE_BASELINE_BOTTOM,
+		])
+	return findings
+
+
+## Checks every visible Label's text and every visible BaseButton's own
+## .text against WCAG AA (4.5:1) using the real background pixel data each
+## one actually draws over -- see the header comment for why this reads
+## texture assets directly instead of capturing a rendered frame.
+func _find_contrast_violations(label: String, screen_root: Node) -> Array[String]:
+	var controls: Array[Control] = []
+	_collect_visible(screen_root, controls)
+
+	var findings: Array[String] = []
+	for control: Control in controls:
+		var text: String = ""
+		if control is Label:
+			text = (control as Label).text
+		elif control is Button:
+			text = (control as Button).text
+		if text.is_empty():
+			continue
+
+		var background: Variant = _effective_background(control, screen_root)
+		if background == null:
+			continue
+
+		var foreground: Color = control.get_theme_color("font_color")
+		var ratio: float = _contrast_ratio(foreground, background)
+		if ratio < WCAG_AA_MIN_CONTRAST:
+			findings.append("%s: LOW_CONTRAST %s text=\"%s\" font_color=%s bg=%s ratio=%.2f:1 (need >= %.1f:1)" % [
+				label, str(control.get_path()), text, foreground, background, ratio, WCAG_AA_MIN_CONTRAST,
+			])
+	return findings
+
+
+## Walks up from `control` (checking `control` itself first, so a Button's
+## own "normal"/"panel" stylebox counts as its own background) for the
+## nearest resolvable fill: a ColorRect's .color, a StyleBoxFlat's
+## .bg_color, or a StyleBoxTexture's real texture asset sampled at its
+## center pixel with modulate_color applied. Only checks the rest-state
+## stylebox ("panel"/"normal"); hover/pressed/disabled variants are a known
+## gap, not silently assumed safe.
+##
+## Falls back to scanning the whole screen for an enclosing ColorRect if the
+## ancestor walk finds nothing: every screen's own full-viewport "Background"
+## is a SIBLING of a title/stat label's ancestor chain, not an ancestor of
+## it (Title and Background both hang directly off the screen root) -- the
+## exact backdrop-behind-foreground relationship _find_overlaps() already
+## recognizes via its own encloses() exemption, just needed here too.
+func _effective_background(control: Control, screen_root: Node) -> Variant:
+	var current: Node = control
+	while current != null:
+		if current is ColorRect and (current as ColorRect).visible:
+			return (current as ColorRect).color
+		if current is Control:
+			var style: StyleBox = null
+			if (current as Control).has_theme_stylebox_override("panel"):
+				style = (current as Control).get_theme_stylebox("panel")
+			elif (current as Control).has_theme_stylebox_override("normal"):
+				style = (current as Control).get_theme_stylebox("normal")
+			if style != null:
+				var fill: Variant = _stylebox_fill_color(style)
+				if fill != null:
+					return fill
+		current = current.get_parent()
+
+	var control_rect: Rect2 = control.get_global_rect()
+	var candidates: Array[Control] = []
+	_collect_visible(screen_root, candidates)
+	for candidate: Control in candidates:
+		if candidate is ColorRect and candidate.get_global_rect().encloses(control_rect):
+			return (candidate as ColorRect).color
+	return null
+
+
+func _stylebox_fill_color(style: StyleBox) -> Variant:
+	if style is StyleBoxFlat:
+		return (style as StyleBoxFlat).bg_color
+	if style is StyleBoxTexture:
+		var texture: Texture2D = (style as StyleBoxTexture).texture
+		if texture == null:
+			return null
+		var img: Image = texture.get_image()
+		if img == null:
+			return null
+		var sample: Color = img.get_pixel(img.get_width() / 2, img.get_height() / 2)
+		return sample * (style as StyleBoxTexture).modulate_color
+	return null
+
+
+func _contrast_ratio(a: Color, b: Color) -> float:
+	var l1: float = _relative_luminance(a)
+	var l2: float = _relative_luminance(b)
+	var lighter: float = max(l1, l2)
+	var darker: float = min(l1, l2)
+	return (lighter + 0.05) / (darker + 0.05)
+
+
+func _relative_luminance(c: Color) -> float:
+	return 0.2126 * _linearize(c.r) + 0.7152 * _linearize(c.g) + 0.0722 * _linearize(c.b)
+
+
+func _linearize(channel: float) -> float:
+	if channel <= 0.03928:
+		return channel / 12.92
+	return pow((channel + 0.055) / 1.055, 2.4)
 
 
 func _collect_visible(node: Node, out: Array[Control]) -> void:
