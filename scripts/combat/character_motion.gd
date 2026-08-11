@@ -18,12 +18,21 @@ const DIRECTION_NAMES: PackedStringArray = [
 ]
 const DEFAULT_DIRECTION: String = "south"
 
-const IDLE_HZ: float = 4.0
+const IDLE_HZ: float = 2.0
 const WALK_HZ: float = 8.0
 
 ## Idle breathes on y only; x never moves, so the silhouette stays put.
+##
+## Retuned after a player reported that standing still read as drifting. The old
+## cycle ran at 4 Hz and sat lifted for two of its four frames, so the body was
+## off its resting line half the time and changed every 250 ms -- a hover, not a
+## breath. This holds the rest position for three frames of four and lifts once,
+## and at 2 Hz the cycle is 2 s: 1.5 s at rest, a single 0.5 s lift. Amplitude
+## stays at one pixel, which was already the minimum; what changed is rate and
+## how much of the cycle is spent at rest. Walk is untouched -- that was the
+## cycle that needed to be visible.
 const IDLE_OFFSETS: Array[Vector2i] = [
-	Vector2i(0, 0), Vector2i(0, -1), Vector2i(0, -1), Vector2i(0, 0),
+	Vector2i(0, 0), Vector2i(0, 0), Vector2i(0, -1), Vector2i(0, 0),
 ]
 
 ## Walk is a vertical hop: 0, -1, -2, -1 pixels, every frame moving.

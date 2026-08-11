@@ -9,7 +9,10 @@ extends Area2D
 
 const PLAYER_PROJECTILE_LAYER: int = 1 << 2
 const ENEMY_LAYER: int = 1 << 1
-const DEFAULT_RADIUS_PX: float = 34.0
+const DEFAULT_RADIUS_PX: float = 20.0
+## How far along the facing the arc sits. Separate from the radius, because
+## they answer different questions: where the swing is, and how big it is.
+const DEFAULT_OFFSET_PX: float = 26.0
 const DEFAULT_LIFETIME_SEC: float = 0.18
 const ARC_POINTS: int = 9
 const ARC_SPAN_RAD: float = PI * 0.75
@@ -18,6 +21,7 @@ const PLACEHOLDER_TINT: Color = Color(1.0, 0.93, 0.72, 0.55)
 var damage: float = 0.0
 var is_crit: bool = false
 var radius_px: float = DEFAULT_RADIUS_PX
+var offset_px: float = DEFAULT_OFFSET_PX
 var lifetime_sec: float = DEFAULT_LIFETIME_SEC
 var facing: Vector2 = Vector2.RIGHT
 ## Authored swing art (sword.png / twin_sword.png). Only this rotates to the
@@ -57,8 +61,14 @@ func _on_body_entered(body: Node2D) -> void:
 	body.take_damage(damage, is_crit)
 
 
-## A circle offset along the facing axis approximates a swing arc closely enough
-## for the vertical slice, and costs one shape instead of a polygon per swing.
+## A circle offset along the facing axis approximates a swing arc closely enough,
+## and costs one shape instead of a polygon per swing.
+##
+## Radius and offset are matched to the authored art, which is what a player
+## reads the range from. Previously the circle was radius 34 at offset 20.4, so
+## it covered 13.6 px BEHIND the attacker where nothing is drawn and reached
+## 14.5 px further forward than the art -- hits with no swing to explain them,
+## in both directions.
 func _ensure_shape() -> void:
 	if get_node_or_null(^"CollisionShape2D") != null:
 		return
@@ -67,7 +77,7 @@ func _ensure_shape() -> void:
 	var collider := CollisionShape2D.new()
 	collider.name = "CollisionShape2D"
 	collider.shape = shape
-	collider.position = facing.normalized() * radius_px * 0.6
+	collider.position = facing.normalized() * offset_px
 	# Deferring only matters inside the tree, where the physics server rejects a
 	# new shape while it is flushing queries. Outside it, a deferred call has no
 	# frame to land on: the callable is dropped once this node is freed and the
@@ -86,7 +96,7 @@ func _ensure_visual() -> void:
 		sprite.name = "Visual"
 		sprite.texture = texture
 		sprite.rotation = facing.angle()
-		sprite.position = facing.normalized() * radius_px * 0.6
+		sprite.position = facing.normalized() * offset_px
 		add_child(sprite)
 		return
 	_add_placeholder_wedge()

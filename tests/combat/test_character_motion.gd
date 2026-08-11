@@ -43,20 +43,44 @@ func _test_direction_buckets() -> Array[String]:
 	return failures
 
 
+## Pins idle exactly. It was retuned after a player reported that standing still
+## read as drifting, so the property that matters is not just the amplitude but
+## how much of the cycle sits at rest: a hover is a cycle that is rarely home.
 func _test_idle_cycle() -> Array[String]:
 	var failures: Array[String] = []
-	# 4 Hz: one frame every 0.25s, cycling [0, -1, -1, 0] on y.
-	var expected: Array[int] = [0, -1, -1, 0]
+	# 2 Hz: one frame every 0.5s, cycling [0, 0, -1, 0] on y.
+	var expected: Array[int] = [0, 0, -1, 0]
+	if not is_equal_approx(MotionScript.IDLE_HZ, 2.0):
+		failures.append("idle should run at 2 Hz, got %f" % MotionScript.IDLE_HZ)
 	for index in expected.size():
-		var at: float = float(index) * 0.25 + 0.01
+		var at: float = float(index) * 0.5 + 0.01
 		var offset: Vector2i = MotionScript.idle_offset(at)
 		if offset.y != expected[index]:
 			failures.append("idle frame %d: expected y=%d, got y=%d" % [index, expected[index], offset.y])
 		if offset.x != 0:
 			failures.append("idle must never move x, got x=%d" % offset.x)
+
+	# At rest for most of the cycle. Half or more lifted is what read as hovering.
+	var resting: int = 0
+	for offset: Vector2i in MotionScript.IDLE_OFFSETS:
+		if offset == Vector2i.ZERO:
+			resting += 1
+	if resting < 3:
+		failures.append("idle should sit at rest for at least 3 of 4 frames, got %d" % resting)
+
+	# Idle must stay gentler than the walk hop, which is the visible one.
+	var idle_peak: int = 0
+	var walk_peak: int = 0
+	for offset: Vector2i in MotionScript.IDLE_OFFSETS:
+		idle_peak = maxi(idle_peak, absi(offset.y))
+	for offset: Vector2i in MotionScript.WALK_OFFSETS:
+		walk_peak = maxi(walk_peak, absi(offset.y))
+	if idle_peak >= walk_peak:
+		failures.append("idle peak %d should stay under the walk peak %d" % [idle_peak, walk_peak])
+
 	# The cycle repeats rather than running off the end of the array.
-	if MotionScript.idle_offset(1.01) != MotionScript.idle_offset(0.01):
-		failures.append("idle cycle should wrap after 1s at 4 Hz")
+	if MotionScript.idle_offset(2.01) != MotionScript.idle_offset(0.01):
+		failures.append("idle cycle should wrap after 2s at 2 Hz")
 	return failures
 
 
