@@ -1,0 +1,73 @@
+{
+  "generator": "Higgsfield Nano Banana Pro, two 1K jobs conditioned on the existing stage ground and Joseon gate",
+  "canonical_orientation": "north for all transition overlays; rotate in 90-degree increments",
+  "ground": {
+    "asset/camp/ground/courtyard.png": {
+      "canvas": [
+        256,
+        256
+      ],
+      "colours": 32,
+      "alpha_values": [
+        255
+      ],
+      "left_right_identical": true,
+      "top_bottom_identical": true
+    },
+    "asset/camp/ground/flagstone.png": {
+      "canvas": [
+        256,
+        256
+      ],
+      "colours": 31,
+      "alpha_values": [
+        255
+      ],
+      "left_right_identical": true,
+      "top_bottom_identical": true
+    },
+    "asset/camp/transition/path_overlay_north.png": {
+      "canvas": [
+        256,
+        256
+      ],
+      "colours": 23,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "left_right_identical": true,
+      "top_bottom_identical": false
+    },
+    "asset/camp/transition/gate_approach_north.png": {
+      "canvas": [
+        256,
+        256
+      ],
+      "colours": 22,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "left_right_identical": true,
+      "top_bottom_identical": false
+    },
+    "asset/camp/transition/boundary_north.png": {
+      "canvas": [
+        256,
+        256
+      ],
+      "colours": 5,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "left_right_identical": false,
+      "top_bottom_identical": false
+    }
+  },
+  "mean_rgb_brightness": {
+    "bamboo_forest_stage": 28.99,
+    "camp_courtyard": 155.49
+  }
+}

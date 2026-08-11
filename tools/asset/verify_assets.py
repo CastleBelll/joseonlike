@@ -264,6 +264,85 @@ def check_ui_journey():
         fail("UI journey metrics did not accept the complete set")
 
 
+def check_camp_and_button_redesign():
+    """Require the warm camp identity set and the measured button redesign."""
+    camp_metrics_path = ROOT / "asset/camp/camp_ground_metrics.json"
+    if not camp_metrics_path.is_file():
+        fail("camp ground metrics are missing; run tools/asset/build_camp_ground.py")
+        return
+    camp_metrics = json.loads(camp_metrics_path.read_text(encoding="utf-8"))
+    expected_ground = {
+        "asset/camp/ground/courtyard.png",
+        "asset/camp/ground/flagstone.png",
+        "asset/camp/transition/path_overlay_north.png",
+        "asset/camp/transition/gate_approach_north.png",
+        "asset/camp/transition/boundary_north.png",
+    }
+    if set(camp_metrics.get("ground", {})) != expected_ground:
+        fail("camp ground metrics do not cover the two tiles and three transition overlays")
+    for path in ("asset/camp/ground/courtyard.png", "asset/camp/ground/flagstone.png"):
+        check_tile(path)
+    for path in (
+        "asset/camp/transition/path_overlay_north.png",
+        "asset/camp/transition/gate_approach_north.png",
+        "asset/camp/transition/boundary_north.png",
+    ):
+        check_sprite(path, (256, 256))
+        colours = {pixel[:3] for pixel in image(path).get_flattened_data() if pixel[3]}
+        if len(colours) > 32:
+            fail(f"{path}: expected <=32 colours, got {len(colours)}")
+    brightness = camp_metrics.get("mean_rgb_brightness", {})
+    camp_brightness = brightness.get("camp_courtyard", 0)
+    stage_brightness = brightness.get("bamboo_forest_stage", math.inf)
+    if camp_brightness < stage_brightness + 60:
+        fail(
+            "camp courtyard is not visibly warmer/brighter than the combat ground: "
+            f"camp={camp_brightness}, stage={stage_brightness}"
+        )
+    if camp_metrics.get("canonical_orientation") != (
+        "north for all transition overlays; rotate in 90-degree increments"
+    ):
+        fail("camp transition canonical orientation is not recorded")
+
+    manifest_path = ROOT / "asset/ui/chrome/button_redesign.json"
+    metrics_path = ROOT / "asset/ui/chrome/button_redesign_metrics.json"
+    if not manifest_path.is_file() or not metrics_path.is_file():
+        fail("button redesign manifest/metrics are missing")
+        return
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+    directions = {"royal_seal", "ink_tablet", "knotted_talisman"}
+    states = {"normal", "hover", "pressed", "disabled"}
+    if set(manifest.get("directions", [])) != directions or set(manifest.get("states", [])) != states:
+        fail("button redesign does not contain exactly three directions and four states")
+    if manifest.get("selected") != "royal_seal" or metrics.get("selected") != "royal_seal":
+        fail("button redesign selected direction changed unexpectedly")
+    if metrics.get("nine_slice_margins") != {"left": 6, "top": 8, "right": 6, "bottom": 8}:
+        fail("button redesign nine-slice margins changed")
+    records = metrics.get("directions", {})
+    if set(records) != directions:
+        fail("button redesign metrics do not cover all three directions")
+    for direction in directions:
+        record = records.get(direction, {})
+        if not record.get("accepted") or not record.get("pressed_shape_pass"):
+            fail(f"button direction {direction} failed contrast/pressed-shape gate")
+        state_records = record.get("states", {})
+        if set(state_records) != states:
+            fail(f"button direction {direction} lacks a complete state set")
+        for state in states:
+            candidate = f"asset/ui/chrome/candidates/{direction}/button_{state}_9slice.png"
+            check_sprite(candidate, (64, 32))
+            if state in {"normal", "hover", "pressed"} and state_records.get(state, {}).get("text_contrast", 0) < 4.5:
+                fail(f"{candidate}: enabled text contrast is below WCAG AA")
+    for state in states:
+        canonical = ROOT / f"asset/ui/chrome/button_{state}_9slice.png"
+        selected = ROOT / f"asset/ui/chrome/candidates/royal_seal/button_{state}_9slice.png"
+        if canonical.read_bytes() != selected.read_bytes():
+            fail(f"canonical button_{state} is not the selected royal_seal candidate")
+    if not metrics.get("accepted"):
+        fail("button redesign metrics rejected the candidate set")
+
+
 def main():
     passive_ids = ("attack_damage", "attack_speed", "move_speed", "crit_chance", "max_hp", "xp_gain", "luck", "skill_power")
     achievement_ids = ("first_boss", "boss_slayer", "goblin_hunter", "monster_collector", "survivor", "veteran_survivor", "rising_star", "weapon_master")
@@ -282,9 +361,10 @@ def main():
     for name in ("lock", "check"):
         check_sprite(f"asset/ui/state/{name}.png", (32, 32))
     check_sprite("asset/ui/chrome/panel_9slice.png", (48, 48))
-    for state in ("normal", "hover", "pressed"):
+    for state in ("normal", "hover", "pressed", "disabled"):
         check_sprite(f"asset/ui/chrome/button_{state}_9slice.png", (64, 32))
     check_ui_journey()
+    check_camp_and_button_redesign()
     for name in weapon_ids:
         check_sprite(f"asset/weapon/icons/{name}.png", (32, 32))
         projectile_canvas = (64, 64) if name in weapon_ids[7:] else None
@@ -529,7 +609,7 @@ def main():
 
     if ERRORS:
         raise SystemExit("\n".join(ERRORS))
-    print("M1 assets verified: 20 UI icons + 4 chrome assets, 34 weapon assets, 2 characters, 2 seamless tiles, 6 audio files")
+    print("M1 assets verified: 20 UI icons + 5 chrome assets, 34 weapon assets, 2 characters, 4 seamless tiles, 6 audio files")
     print(f"Motion-generation rejection evidence: {changed}/1702 pixels changed between same-pose frames")
     print(f"Single-sheet retry rejected: idle pair {retry_idle}/1702 versus separate baseline {baseline}/1702")
     print(f"Direct-conditioned retry rejected: south walk frames {conditioned_changed[0]}/1702 and {conditioned_changed[1]}/1702")
@@ -548,6 +628,8 @@ def main():
         f"{CHARACTER_NEAR_DUPLICATE_THRESHOLD:.2f}; minima: {minimum_summary}"
     )
     print("UI journey verified: 47 icons, 11 illustrations, 31 nine-slices, 3 fixed controls; WCAG-AA/state gates passed")
+    print("Camp identity verified: 2 warm seamless tiles + 3 rotatable north-facing transition overlays")
+    print("Button redesign verified: 3 directions x 4 states; selected royal_seal, 6x8 margins, WCAG-AA/pressed-shape gates passed")
 
 
 if __name__ == "__main__":

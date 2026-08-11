@@ -1,0 +1,188 @@
+{
+  "text_colour": "#f5eede",
+  "minimum_enabled_contrast": 4.5,
+  "nine_slice_margins": {
+    "left": 6,
+    "top": 8,
+    "right": 6,
+    "bottom": 8
+  },
+  "directions": {
+    "royal_seal": {
+      "states": {
+        "normal": {
+          "canvas": [
+            64,
+            32
+          ],
+          "center_fill": "#8b2c1c",
+          "text_contrast": 7.34,
+          "hard_alpha": true
+        },
+        "hover": {
+          "canvas": [
+            64,
+            32
+          ],
+          "center_fill": "#1a1613",
+          "text_contrast": 15.55,
+          "hard_alpha": true,
+          "difference_from_normal": {
+            "changed_pixels": 1100,
+            "alpha_changed_pixels": 0,
+            "shape_distinct": false
+          }
+        },
+        "pressed": {
+          "canvas": [
+            64,
+            32
+          ],
+          "center_fill": "#8b2c1c",
+          "text_contrast": 7.34,
+          "hard_alpha": true,
+          "difference_from_normal": {
+            "changed_pixels": 316,
+            "alpha_changed_pixels": 140,
+            "shape_distinct": true
+          }
+        },
+        "disabled": {
+          "canvas": [
+            64,
+            32
+          ],
+          "center_fill": "#6b6459",
+          "text_contrast": 5.06,
+          "hard_alpha": true,
+          "difference_from_normal": {
+            "changed_pixels": 1124,
+            "alpha_changed_pixels": 60,
+            "shape_distinct": true
+          }
+        }
+      },
+      "enabled_contrast_pass": true,
+      "pressed_shape_pass": true,
+      "accepted": true
+    },
+    "ink_tablet": {
+      "states": {
+        "normal": {
+          "canvas": [
+            64,
+            32
+          ],
+          "center_fill": "#1a1613",
+          "text_contrast": 15.55,
+          "hard_alpha": true
+        },
+        "hover": {
+          "canvas": [
+            64,
+            32
+          ],
+          "center_fill": "#1a1613",
+          "text_contrast": 15.55,
+          "hard_alpha": true,
+          "difference_from_normal": {
+            "changed_pixels": 180,
+            "alpha_changed_pixels": 0,
+            "shape_distinct": false
+          }
+        },
+        "pressed": {
+          "canvas": [
+            64,
+            32
+          ],
+          "center_fill": "#1a1613",
+          "text_contrast": 15.55,
+          "hard_alpha": true,
+          "difference_from_normal": {
+            "changed_pixels": 710,
+            "alpha_changed_pixels": 200,
+            "shape_distinct": true
+          }
+        },
+        "disabled": {
+          "canvas": [
+            64,
+            32
+          ],
+          "center_fill": "#1a1613",
+          "text_contrast": 15.55,
+          "hard_alpha": true,
+          "difference_from_normal": {
+            "changed_pixels": 424,
+            "alpha_changed_pixels": 32,
+            "shape_distinct": true
+          }
+        }
+      },
+      "enabled_contrast_pass": true,
+      "pressed_shape_pass": true,
+      "accepted": true
+    },
+    "knotted_talisman": {
+      "states": {
+        "normal": {
+          "canvas": [
+            64,
+            32
+          ],
+          "center_fill": "#1a1613",
+          "text_contrast": 15.55,
+          "hard_alpha": true
+        },
+        "hover": {
+          "canvas": [
+            64,
+            32
+          ],
+          "center_fill": "#1a1613",
+          "text_contrast": 15.55,
+          "hard_alpha": true,
+          "difference_from_normal": {
+            "changed_pixels": 166,
+            "alpha_changed_pixels": 0,
+            "shape_distinct": false
+          }
+        },
+        "pressed": {
+          "canvas": [
+            64,
+            32
+          ],
+          "center_fill": "#1a1613",
+          "text_contrast": 15.55,
+          "hard_alpha": true,
+          "difference_from_normal": {
+            "changed_pixels": 452,
+            "alpha_changed_pixels": 132,
+            "shape_distinct": true
+          }
+        },
+        "disabled": {
+          "canvas": [
+            64,
+            32
+          ],
+          "center_fill": "#6b6459",
+          "text_contrast": 5.06,
+          "hard_alpha": true,
+          "difference_from_normal": {
+            "changed_pixels": 436,
+            "alpha_changed_pixels": 0,
+            "shape_distinct": false
+          }
+        }
+      },
+      "enabled_contrast_pass": true,
+      "pressed_shape_pass": true,
+      "accepted": true
+    }
+  },
+  "selected": "royal_seal",
+  "accepted": true
+}
