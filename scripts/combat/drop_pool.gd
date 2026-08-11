@@ -109,6 +109,28 @@ static func chest_id_for(behaviour: String) -> StringName:
 	return &""
 
 
+## Sweeps every drop still on the field and returns what it was worth, as
+## {"xp": int, "gold": int}. Called when a run ends: a pickup left behind was
+## previously just lost, which measured at about 9% of a run's gold.
+##
+## Deliberately silent rather than routed through drop_collected, because the
+## run is already over: crediting experience at that point could fire a
+## level-up behind the results screen. The caller decides what each total means.
+##
+## The authored collect frames are NOT played here. The results screen is not
+## delayed for this, so there is no frame on which they could be seen -- see the
+## note in Stage._end_run.
+func collect_remaining() -> Dictionary:
+	var totals: Dictionary = {"xp": 0, "gold": 0}
+	for index in range(_active.size() - 1, -1, -1):
+		var drop: Dictionary = _active[index]
+		if not bool(drop["collecting"]):
+			totals["xp"] = int(totals["xp"]) + int(drop["xp"])
+			totals["gold"] = int(totals["gold"]) + int(drop["gold"])
+		_release(index)
+	return totals
+
+
 func active_count() -> int:
 	return _active.size()
 
