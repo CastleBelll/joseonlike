@@ -23,7 +23,7 @@ paths, send it to the coordinator via `ask`.
 | `infra-ci` | `.github/**`, `export_presets.cfg`, `tools/ci/**`, `scripts/services/**` | everything |
 | `asset-forge` | `asset/**`, `tools/asset/**` | everything |
 
-**Coordinator-owned, never edited by workers:** `project.godot`, `ARCHITECTURE.md`,
+**Coordinator-owned, never edited by workers:** `project.godot`, `ARCHITECTURE.md`, `ASSET_SPEC.md`,
 `JOSEONLIKE_GDD.md`, `README.md`, `icon.svg`, `.gitignore`.
 Autoload registration, input map entries, and physics layer names live in
 `project.godot` — request them, do not add them.
@@ -55,7 +55,15 @@ asset/            art and audio, singular. Owned by asset-forge; others referenc
   monster/raw/<id>_raw.png                             pre-cutout generator output
 ```
 
-## Asset sets, not asset images
+## Assets
+
+[ASSET_SPEC.md](ASSET_SPEC.md) is the authoritative art and audio specification — style
+authority and measured sizes, direction naming and facing rules, set composition, generation
+rules including what has been measured not to work, cutting, and the two verification layers.
+Read it before commissioning, generating or reviewing any asset. The summary below is the part
+that binds every worktree, not just `asset-forge`.
+
+### Asset sets, not asset images
 
 Art is commissioned, generated and reviewed as a **complete set per entity**, never as loose
 images. A set that is missing members is unfinished, not partially delivered — earlier rounds
