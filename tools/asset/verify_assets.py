@@ -45,6 +45,21 @@ def check_sprite(path, canvas=None, content_height=None):
         fail(f"{path}: opaque chroma-magenta range survived cutout")
 
 
+def check_no_edge_grid_line(path):
+    """Reject a retained sheet border without confusing long in-frame weapons for one."""
+    sprite = image(path)
+    alpha = sprite.getchannel("A")
+    edge_counts = (
+        sum(alpha.getpixel((x, 0)) > 0 for x in range(sprite.width)),
+        sum(alpha.getpixel((x, sprite.height - 1)) > 0 for x in range(sprite.width)),
+        sum(alpha.getpixel((0, y)) > 0 for y in range(sprite.height)),
+        sum(alpha.getpixel((sprite.width - 1, y)) > 0 for y in range(sprite.height)),
+    )
+    limits = (sprite.width * 0.8, sprite.width * 0.8, sprite.height * 0.8, sprite.height * 0.8)
+    if any(count >= limit for count, limit in zip(edge_counts, limits)):
+        fail(f"{path}: likely retained sheet grid line on canvas edge")
+
+
 def check_tile(path):
     tile = image(path)
     if tile.size != (256, 256):
@@ -215,13 +230,32 @@ def main():
         "forest_spirit": "asset/monster/forest_spirit/death",
         "bamboo_brute": "asset/monster/bamboo_brute/death",
         "bamboo_spirit_lord": "asset/monster/bamboo_spirit_lord/death",
+        "gwimyeon_dokkaebi": "asset/monster/gwimyeon_dokkaebi/death",
+        "blue_dokkaebi": "asset/monster/blue_dokkaebi/death",
+        "gumiho_scout": "asset/monster/gumiho_scout/death",
+        "seonbi_wraith": "asset/monster/seonbi_wraith/death",
+        "haetae_guardian": "asset/monster/haetae_guardian/death",
+        "dokkaebi_king": "asset/monster/dokkaebi_king/death",
+        "cheonyeo_gwisin": "asset/monster/cheonyeo_gwisin/death",
+        "dalgyal_gwisin": "asset/monster/dalgyal_gwisin/death",
+        "jeoseung_saja": "asset/monster/jeoseung_saja/death",
+        "tomb_jangseung": "asset/monster/tomb_jangseung/death",
+        "imugi_whelp": "asset/monster/imugi_whelp/death",
+        "ancient_imugi": "asset/monster/ancient_imugi/death",
+        "wonhon": "asset/monster/wonhon/death",
+        "dokkaebi_fire": "asset/monster/dokkaebi_fire/death",
+        "shadow_dokkaebi": "asset/monster/shadow_dokkaebi/death",
+        "fox_spirit": "asset/monster/fox_spirit/death",
+        "bulgasari": "asset/monster/bulgasari/death",
+        "gumiho": "asset/monster/gumiho/death",
     }
     for sequence_root in death_sequences.values():
         for frame in range(4):
             check_sprite(f"{sequence_root}/{frame}.png", (92, 92))
+            check_no_edge_grid_line(f"{sequence_root}/{frame}.png")
     death_metrics = json.loads((ROOT / "asset/character/raw/death_metrics.json").read_text(encoding="utf-8"))
     if set(death_metrics) != set(death_sequences):
-        fail("death metrics do not cover the seven authored death sheets")
+        fail("death metrics do not cover the twenty-five authored death sheets")
     for sequence in death_sequences:
         if not death_metrics.get(sequence, {}).get("accepted"):
             fail(f"{death_sequences[sequence]}: failed irreversible-collapse gate")
@@ -240,17 +274,49 @@ def main():
     effects = (
         "talisman_burst", "spirit_flame", "summon_circle", "fire", "lightning",
         "poison_cloud", "slash", "impact_hit", "level_up", "evolution_flourish",
-        "ward_barrier", "spirit_beam", "seal_field",
+        "ward_barrier", "spirit_beam", "seal_field", "fireball_impact",
+        "spirit_bolt_impact",
     )
     for effect in effects:
         for frame in range(4):
             check_sprite(f"asset/effect/{effect}/{frame}.png", (64, 64))
+            check_no_edge_grid_line(f"asset/effect/{effect}/{frame}.png")
     effect_metrics = json.loads((ROOT / "asset/effect/raw/effect_metrics.json").read_text(encoding="utf-8"))
     if set(effect_metrics) != set(effects):
-        fail("effect metrics do not cover the thirteen authored effect sheets")
+        fail("effect metrics do not cover the fifteen authored effect sheets")
     for effect in effects:
         if not effect_metrics.get(effect, {}).get("accepted"):
             fail(f"asset/effect/{effect}: failed mobile-readability/progression gate")
+
+    travel = ("spinning_talisman", "arrow", "fireball", "throwing_knife", "spirit_bolt")
+    melee = ("wide_sword_arc", "dual_blade_cross", "heavy_overhead", "spear_thrust")
+    for name in travel:
+        check_sprite(f"asset/weapon/travel/{name}.png", (32, 32))
+        check_no_edge_grid_line(f"asset/weapon/travel/{name}.png")
+    for name in melee:
+        check_sprite(f"asset/weapon/melee/{name}.png", (64, 64))
+        check_no_edge_grid_line(f"asset/weapon/melee/{name}.png")
+    combat_metrics = json.loads((ROOT / "asset/weapon/raw/combat_art_metrics.json").read_text(encoding="utf-8"))
+    if combat_metrics.get("canonical_orientation") != "east":
+        fail("canonical travel/melee art is not recorded as east-facing")
+    if set(combat_metrics.get("travel", {})) != set(travel) or set(combat_metrics.get("melee", {})) != set(melee):
+        fail("combat art metrics do not exactly cover the authored travel and melee sets")
+    if not combat_metrics.get("accepted"):
+        fail("canonical travel/melee art failed mobile-readability gate")
+
+    walk_status = json.loads((ROOT / "asset/monster/WALK_STATUS.json").read_text(encoding="utf-8"))
+    expected_monsters = set(monster_heights) | set(later_monster_heights)
+    if set(walk_status.get("sets", {})) != expected_monsters:
+        fail("monster walk status does not cover all twenty-two monster sets")
+    if walk_status.get("resolution") != "satisfied_otherwise_procedural" or walk_status.get("generated_frames_shipped"):
+        fail("monster walk member is not recorded as a procedural negative result")
+    walk_metrics = json.loads((ROOT / "asset/monster/raw/walk_trial_metrics.json").read_text(encoding="utf-8"))
+    if walk_metrics.get("summary") != {
+        "accepted_trials": 0,
+        "total_trials": 4,
+        "generated_walk_accepted": False,
+    }:
+        fail("monster walk rejection metrics changed unexpectedly")
 
     summons = {
         "paper_familiar": 46,
@@ -346,8 +412,8 @@ def main():
     print(f"Direct-conditioned retry rejected: south walk frames {conditioned_changed[0]}/1702 and {conditioned_changed[1]}/1702")
     print("Directional additions verified: 14 class rotations + 32 monster rotations, 3 backdrops, 12 props")
     print(f"Six multi-reference motion sheets rejected: {accepted_current}/{measured_current} frames passed the regional stability gate")
-    print("Expansion assets verified: 18 folklore monsters + 144 rotations, 52 effect frames, 12 structures, 3 title assets")
-    print("Round-two additions verified: 28 death frames, 4 summoned creatures, 20 weapon icons/projectiles")
+    print("Expansion assets verified: 18 folklore monsters + 144 rotations, 60 effect frames, 12 structures, 3 title assets")
+    print("Set-gap additions verified: 100 death frames, 22 procedural walk records, 5 travel sprites, 4 melee swings")
     print("Directional-facing audit verified: 25/25 sets, 200 hash-bound cells manually reviewed")
 
 

@@ -1,0 +1,127 @@
+{
+  "method": "exact RGBA comparison against each entity's reviewed south idle",
+  "acceptance": {
+    "lower_change_share_percent_min": 60,
+    "head_alpha_changed_pixels_max": 2,
+    "frame_pair_changed_pixels_min": 8
+  },
+  "trials": {
+    "blue_dokkaebi": {
+      "body_plan": "humanoid",
+      "frames": [
+        {
+          "changed_pixels": 1083,
+          "alpha_changed_pixels": 111,
+          "lower_changed_pixels": 390,
+          "lower_alpha_changed_pixels": 78,
+          "lower_share_percent": 36.01,
+          "head_changed_pixels": 505,
+          "head_alpha_changed_pixels": 26,
+          "accepted": false
+        },
+        {
+          "changed_pixels": 1040,
+          "alpha_changed_pixels": 74,
+          "lower_changed_pixels": 389,
+          "lower_alpha_changed_pixels": 70,
+          "lower_share_percent": 37.4,
+          "head_changed_pixels": 474,
+          "head_alpha_changed_pixels": 4,
+          "accepted": false
+        }
+      ],
+      "frame_pair_changed_pixels": 901,
+      "frame_pair_alpha_changed_pixels": 129,
+      "accepted": false
+    },
+    "gumiho_scout": {
+      "body_plan": "quadruped",
+      "frames": [
+        {
+          "changed_pixels": 1584,
+          "alpha_changed_pixels": 389,
+          "lower_changed_pixels": 538,
+          "lower_alpha_changed_pixels": 204,
+          "lower_share_percent": 33.96,
+          "head_changed_pixels": 679,
+          "head_alpha_changed_pixels": 135,
+          "accepted": false
+        },
+        {
+          "changed_pixels": 1588,
+          "alpha_changed_pixels": 396,
+          "lower_changed_pixels": 541,
+          "lower_alpha_changed_pixels": 214,
+          "lower_share_percent": 34.07,
+          "head_changed_pixels": 680,
+          "head_alpha_changed_pixels": 132,
+          "accepted": false
+        }
+      ],
+      "frame_pair_changed_pixels": 1142,
+      "frame_pair_alpha_changed_pixels": 135,
+      "accepted": false
+    },
+    "wonhon": {
+      "body_plan": "floating_spirit",
+      "frames": [
+        {
+          "changed_pixels": 1493,
+          "alpha_changed_pixels": 803,
+          "lower_changed_pixels": 516,
+          "lower_alpha_changed_pixels": 266,
+          "lower_share_percent": 34.56,
+          "head_changed_pixels": 646,
+          "head_alpha_changed_pixels": 363,
+          "accepted": false
+        },
+        {
+          "changed_pixels": 1518,
+          "alpha_changed_pixels": 783,
+          "lower_changed_pixels": 553,
+          "lower_alpha_changed_pixels": 295,
+          "lower_share_percent": 36.43,
+          "head_changed_pixels": 634,
+          "head_alpha_changed_pixels": 333,
+          "accepted": false
+        }
+      ],
+      "frame_pair_changed_pixels": 1144,
+      "frame_pair_alpha_changed_pixels": 160,
+      "accepted": false
+    },
+    "ancient_imugi": {
+      "body_plan": "serpentine_boss",
+      "frames": [
+        {
+          "changed_pixels": 3192,
+          "alpha_changed_pixels": 210,
+          "lower_changed_pixels": 1609,
+          "lower_alpha_changed_pixels": 50,
+          "lower_share_percent": 50.41,
+          "head_changed_pixels": 1093,
+          "head_alpha_changed_pixels": 117,
+          "accepted": false
+        },
+        {
+          "changed_pixels": 3196,
+          "alpha_changed_pixels": 218,
+          "lower_changed_pixels": 1608,
+          "lower_alpha_changed_pixels": 50,
+          "lower_share_percent": 50.31,
+          "head_changed_pixels": 1096,
+          "head_alpha_changed_pixels": 124,
+          "accepted": false
+        }
+      ],
+      "frame_pair_changed_pixels": 1940,
+      "frame_pair_alpha_changed_pixels": 8,
+      "accepted": false
+    }
+  },
+  "summary": {
+    "accepted_trials": 0,
+    "total_trials": 4,
+    "generated_walk_accepted": false
+  }
+}
