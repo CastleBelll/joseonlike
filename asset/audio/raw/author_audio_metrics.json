@@ -1,0 +1,111 @@
+{
+  "music": {
+    "joseonlike.mp3": {
+      "source": "asset/audio/raw/Joseonlike.mp3",
+      "destination": "asset/audio/bgm/joseonlike.mp3",
+      "sha256": "9bf84ac2e53071e38341c55b9e4db1bed5046d8c81eb13d94d051038f93a0f5f",
+      "reencoded": false
+    },
+    "moonlit_sanctuary.mp3": {
+      "source": "asset/audio/raw/Moonlit Sanctuary.mp3",
+      "destination": "asset/audio/bgm/moonlit_sanctuary.mp3",
+      "sha256": "fda31046b0514d06b9a7044f94ae883b254c0f975b0754cf100a9132ed49150a",
+      "reencoded": false
+    },
+    "bamboo_forest_spirits.mp3": {
+      "source": "asset/audio/raw/Bamboo Forest Spirits.mp3",
+      "destination": "asset/audio/bgm/bamboo_forest_spirits.mp3",
+      "sha256": "9bc5d1855fb332e1af997fea89b329afafefc9c2ccfd4c11d1f24dcb3dc8e788",
+      "reencoded": false
+    }
+  },
+  "effects": {
+    "ui_click.wav": {
+      "source": "asset/audio/raw/button_click.wav",
+      "destination": "asset/audio/sfx/ui_click.wav",
+      "source_sha256": "3e954f331325d5d5c2d310a88be2ded6e07e96c262bf5ac424fcf9f46a17c1de",
+      "natural_trim_end_seconds": 0.17,
+      "runtime_cap_seconds": null,
+      "trim_end_seconds": 0.17,
+      "source_energy_retained": 0.9990692910455231,
+      "gate": {
+        "window_seconds": 0.02,
+        "noise_floor_rms": 5.4111809024166653e-05,
+        "activity_threshold_rms": 0.00032467085414499995,
+        "last_sustained_window": 6
+      },
+      "before": {
+        "channels": 2,
+        "sample_rate": 48000,
+        "duration_seconds": 1.0,
+        "peak": 0.0435791015625,
+        "peak_dbfs": -27.21443455039125
+      },
+      "after": {
+        "channels": 1,
+        "sample_rate": 22050,
+        "duration_seconds": 0.17002267573696145,
+        "peak": 0.7071443830683309,
+        "peak_dbfs": -3.0098380785750294
+      }
+    },
+    "enemy_death.wav": {
+      "source": "asset/audio/raw/Monster_Die.wav",
+      "destination": "asset/audio/sfx/enemy_death.wav",
+      "source_sha256": "17d8870d5821ee27f6639ecc830255312f673cdbf371849168ea8d2832b1c3dc",
+      "natural_trim_end_seconds": 1.73,
+      "runtime_cap_seconds": 0.15,
+      "trim_end_seconds": 0.15,
+      "source_energy_retained": 0.4117448367830786,
+      "gate": {
+        "window_seconds": 0.02,
+        "noise_floor_rms": 6.113243298417854e-05,
+        "activity_threshold_rms": 0.010319188291212976,
+        "last_sustained_window": 84
+      },
+      "before": {
+        "channels": 2,
+        "sample_rate": 48000,
+        "duration_seconds": 3.0,
+        "peak": 1.0,
+        "peak_dbfs": 0.0
+      },
+      "after": {
+        "channels": 1,
+        "sample_rate": 22050,
+        "duration_seconds": 0.15002267573696146,
+        "peak": 0.7071443830683309,
+        "peak_dbfs": -3.0098380785750294
+      }
+    },
+    "player_death.wav": {
+      "source": "asset/audio/raw/Chracter_Die.wav",
+      "destination": "asset/audio/sfx/player_death.wav",
+      "source_sha256": "d796e0e62154b855487155ec7265945b0b743c54a6e77ca82c3e77d9c8a2784e",
+      "natural_trim_end_seconds": 0.63,
+      "runtime_cap_seconds": null,
+      "trim_end_seconds": 0.63,
+      "source_energy_retained": 0.9997456098046358,
+      "gate": {
+        "window_seconds": 0.02,
+        "noise_floor_rms": 0.00023885255100352553,
+        "activity_threshold_rms": 0.0031395533372506534,
+        "last_sustained_window": 29
+      },
+      "before": {
+        "channels": 2,
+        "sample_rate": 48000,
+        "duration_seconds": 1.0,
+        "peak": 0.51922607421875,
+        "peak_dbfs": -5.692870129816695
+      },
+      "after": {
+        "channels": 1,
+        "sample_rate": 22050,
+        "duration_seconds": 0.6300226757369615,
+        "peak": 0.7071443830683309,
+        "peak_dbfs": -3.0098380785750294
+      }
+    }
+  }
+}

@@ -147,6 +147,65 @@ def check_audio(path, expected_duration):
             fail(f"{path}: peak {dbfs:.2f} dBFS exceeds -3 dBFS")
 
 
+def check_title_layers():
+    """Verify the full-canvas registered title stack and scrolling members."""
+    layer_names = ("sky", "moon_glow", "palace", "bamboo_far", "bamboo_near", "ground")
+    for name in layer_names:
+        path = f"asset/title/layers/{name}.png"
+        layer = image(path)
+        if layer.size != (540, 960):
+            fail(f"{path}: expected full registered 540x960 canvas, got {layer.size}")
+            continue
+        alphas = {pixel[3] for pixel in layer.get_flattened_data()}
+        if name == "sky":
+            if alphas != {255}:
+                fail(f"{path}: rear sky must be fully opaque")
+        elif not ({0, 255} <= alphas):
+            fail(f"{path}: overlay must contain both transparent and hard-opaque pixels")
+        colours = {pixel[:3] for pixel in layer.get_flattened_data() if pixel[3]}
+        if len(colours) > 48:
+            fail(f"{path}: expected <=48 opaque colours, got {len(colours)}")
+        if any(
+            pixel[3]
+            and pixel[0] > 70
+            and pixel[2] > 70
+            and pixel[1] < min(pixel[0], pixel[2]) * 0.75
+            and abs(pixel[0] - pixel[2]) < 100
+            for pixel in layer.get_flattened_data()
+        ):
+            fail(f"{path}: opaque chroma-magenta fringe survived cutout")
+
+    fog = image("asset/title/fog_strip.png")
+    if fog.size != (1080, 320):
+        fail(f"asset/title/fog_strip.png: expected 1080x320, got {fog.size}")
+    elif list(fog.crop((0, 0, 1, 320)).get_flattened_data()) != list(
+        fog.crop((1079, 0, 1080, 320)).get_flattened_data()
+    ):
+        fail("asset/title/fog_strip.png: horizontal scrolling seam differs")
+    if not {0, 255} <= {pixel[3] for pixel in fog.get_flattened_data()}:
+        fail("asset/title/fog_strip.png: expected transparent and opaque fog pixels")
+
+    mote = image("asset/title/mote.png")
+    if mote.size != (8, 8):
+        fail(f"asset/title/mote.png: expected 8x8, got {mote.size}")
+    mote_opaque = sum(pixel[3] == 255 for pixel in mote.get_flattened_data())
+    if not 4 <= mote_opaque <= 32:
+        fail(f"asset/title/mote.png: expected compact 4-32px silhouette, got {mote_opaque}")
+
+    composite = image("asset/title/raw/title_layers_composite.png")
+    if composite.size != (540, 960) or any(pixel[3] != 255 for pixel in composite.get_flattened_data()):
+        fail("asset/title/raw/title_layers_composite.png: expected opaque 540x960 visual-review composite")
+    metrics = json.loads((ROOT / "asset/title/raw/title_layers_metrics.json").read_text(encoding="utf-8"))
+    if metrics.get("layer_order") != list(layer_names):
+        fail("title layer metrics: registered stack order changed")
+    old_luma = metrics.get("old_lower_two_thirds_luminance", 0)
+    new_luma = metrics.get("new_lower_two_thirds_luminance", 0)
+    if not new_luma >= old_luma * 1.5:
+        fail(f"title composite: lower value range was not lifted enough ({old_luma:.2f} -> {new_luma:.2f})")
+    if metrics.get("fog_horizontal_seam_changed_pixels") != 0:
+        fail("title metrics: fog seam has changed pixels")
+
+
 def check_rotation_facing_audit():
     """Require semantic review of the exact bytes in every rotation cell."""
     manifest_path = ROOT / "asset/rotation_audit/facing_audit.json"
@@ -516,6 +575,7 @@ def main():
     check_tile("asset/stage/abandoned_temple_ground.png")
     for name in ("main_menu", "bamboo_forest", "abandoned_temple"):
         check_backdrop(f"asset/stage/backdrops/{name}.png")
+    check_title_layers()
     prop_names = (
         "wooden_crate", "small_box", "broken_crate", "storage_chest",
         "bamboo_cluster", "fallen_log", "mossy_rock", "stone_lantern",
@@ -593,10 +653,11 @@ def main():
     audio = {
         "asset/audio/ambience/bamboo_forest_loop.wav": 12.0,
         "asset/audio/sfx/combat_hit.wav": 0.12,
-        "asset/audio/sfx/enemy_death.wav": 0.34,
+        "asset/audio/sfx/enemy_death.wav": 0.15,
+        "asset/audio/sfx/player_death.wav": 0.63,
         "asset/audio/sfx/level_up.wav": 0.72,
         "asset/audio/sfx/boss_spawn.wav": 1.50,
-        "asset/audio/sfx/ui_click.wav": 0.07,
+        "asset/audio/sfx/ui_click.wav": 0.17,
     }
     for path, duration in audio.items():
         check_audio(path, duration)
@@ -659,7 +720,7 @@ def main():
 
     if ERRORS:
         raise SystemExit("\n".join(ERRORS))
-    print("M1 assets verified: 20 UI icons + 5 chrome assets, 34 weapon assets, 2 characters, 4 seamless tiles, 6 audio files")
+    print("M1 assets verified: 20 UI icons + 5 chrome assets, 34 weapon assets, 2 characters, 4 seamless tiles, 7 audio files")
     print(f"Motion-generation rejection evidence: {changed}/1702 pixels changed between same-pose frames")
     print(f"Single-sheet retry rejected: idle pair {retry_idle}/1702 versus separate baseline {baseline}/1702")
     print(f"Direct-conditioned retry rejected: south walk frames {conditioned_changed[0]}/1702 and {conditioned_changed[1]}/1702")
@@ -681,6 +742,7 @@ def main():
     print("UI journey verified: 47 icons, 11 illustrations, 31 nine-slices, 3 fixed controls; WCAG-AA/state gates passed")
     print("Camp identity verified: 2 warm seamless tiles + 3 rotatable north-facing transition overlays")
     print("Button redesign verified: 3 directions x 4 states; selected royal_seal, 6x8 margins, WCAG-AA/pressed-shape gates passed")
+    print("Layered title verified: 6 registered 540x960 layers + seamless 1080x320 fog + 8x8 mote; lower-scene value range lifted")
 
 
 if __name__ == "__main__":
