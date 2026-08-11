@@ -1,4 +1,3 @@
-class_name MusicDirector
 extends Node
 ## Background music service (ARCHITECTURE.md §3.6). Cross-fades between two
 ## AudioStreamPlayer voices assigned to the "Music" bus (§3.7).

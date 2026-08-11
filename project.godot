@@ -23,6 +23,7 @@ GameData="*res://scripts/core/game_data.gd"
 SaveManager="*res://scripts/core/save_manager.gd"
 RunState="*res://scripts/core/run_state.gd"
 SceneRouter="*res://scripts/core/scene_router.gd"
+MusicDirector="*res://scripts/services/music_director.gd"
 AchievementTracker="*res://scripts/meta/achievements.gd"
 QuestTracker="*res://scripts/meta/quests.gd"
 
