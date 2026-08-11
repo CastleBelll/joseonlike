@@ -16,6 +16,22 @@ const KIND_LABEL_KEYS := {
 	"passive": "kind_passive",
 }
 
+## asset/UI_ART_REPORT.md item 7: card_{tier}_9slice.png (96x64) and
+## tier_{tier}.png (32x32) so a rare pick reads as rare without relying on
+## colour alone (common = one corner notch, rare = two, legendary =
+## crown/three-notched top). data/weapons.json's "grade" field ("common",
+## "rare", "epic") is the closest existing tier signal -- reused rather than
+## adding a new core field, with "epic" read as the top "legendary" art tier.
+## Passives carry no grade in data/passives.json, so they render at the
+## common tier (they are small incremental stat bumps, never a headline pick).
+const TIER_DIR := "res://asset/ui/level_up"
+const GRADE_TO_TIER := {
+	"common": "common",
+	"rare": "rare",
+	"epic": "legendary",
+}
+const CARD_MARGIN := 12
+
 @onready var _dim: ColorRect = $Dim
 @onready var _panel: Panel = $Panel
 @onready var _title_label: Label = $Panel/Margin/Box/TitleLabel
@@ -68,8 +84,20 @@ static func build_choice_view_models(choices: Array[Dictionary]) -> Array[Dictio
 			# Passive choice ids are the passive_id itself (RunState._passive_choices),
 			# so the icon lookup can key off it directly.
 			"icon": UiPalette.passive_icon(choice_id) if kind == "passive" else null,
+			"tier": _tier_for(kind, choice_id),
 		})
 	return models
+
+
+## weapon_new/weapon_upgrade choice ids are the weapon_id itself
+## (RunState._weapon_upgrade_choices/_new_weapon_choices), so the tier reads
+## straight off data/weapons.json's "grade" field for those two kinds.
+static func _tier_for(kind: String, choice_id: String) -> String:
+	if kind == "weapon_new" or kind == "weapon_upgrade":
+		var weapon: Dictionary = GameData.weapon(choice_id)
+		var grade: String = String(weapon.get("grade", "common"))
+		return String(GRADE_TO_TIER.get(grade, "common"))
+	return "common"
 
 
 ## Rebuilds the choice cards from `choices`. Exposed (not `_`-prefixed) so
@@ -99,10 +127,12 @@ func render_choices(choices: Array[Dictionary]) -> void:
 
 
 func _build_choice_card(model: Dictionary) -> Button:
+	var tier: String = String(model.get("tier", "common"))
+
 	var button := Button.new()
 	button.custom_minimum_size = Vector2(0, 96)
 	button.focus_mode = Control.FOCUS_ALL
-	UiPalette.apply_button_style(button)
+	_style_tier_card(button, tier)
 	button.pressed.connect(_on_choice_selected.bind(String(model.get("id", ""))))
 
 	var row := HBoxContainer.new()
@@ -149,7 +179,56 @@ func _build_choice_card(model: Dictionary) -> Button:
 		description_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 		box.add_child(description_label)
 
+	var tier_icon_texture: Texture2D = _tier_icon(tier)
+	if tier_icon_texture != null:
+		var tier_icon := TextureRect.new()
+		tier_icon.texture = tier_icon_texture
+		tier_icon.custom_minimum_size = Vector2(20, 20)
+		tier_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tier_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tier_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(tier_icon)
+
 	return button
+
+
+static func _style_tier_card(button: Button, tier: String) -> void:
+	var texture: Texture2D = _card_texture(tier)
+	if texture == null:
+		UiPalette.apply_button_style(button)
+		return
+
+	var normal := _card_nine_slice(texture)
+	var focused := _card_nine_slice(texture)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", focused)
+	button.add_theme_stylebox_override("pressed", focused)
+	button.add_theme_stylebox_override("focus", UiPalette.panel_style(Color.TRANSPARENT, UiPalette.VERMILION, 3, 6))
+	button.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+	button.add_theme_color_override("font_hover_color", UiPalette.TEXT_ON_DARK)
+	button.add_theme_color_override("font_pressed_color", UiPalette.TEXT_ON_DARK)
+	button.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
+	button.custom_minimum_size.y = max(button.custom_minimum_size.y, UiPalette.TOUCH_TARGET_MIN)
+
+
+static func _card_nine_slice(texture: Texture2D) -> StyleBoxTexture:
+	var style := StyleBoxTexture.new()
+	style.texture = texture
+	style.texture_margin_left = CARD_MARGIN
+	style.texture_margin_right = CARD_MARGIN
+	style.texture_margin_top = CARD_MARGIN
+	style.texture_margin_bottom = CARD_MARGIN
+	return style
+
+
+static func _card_texture(tier: String) -> Texture2D:
+	var path: String = "%s/card_%s_9slice.png" % [TIER_DIR, tier]
+	return load(path) if ResourceLoader.exists(path) else null
+
+
+static func _tier_icon(tier: String) -> Texture2D:
+	var path: String = "%s/tier_%s.png" % [TIER_DIR, tier]
+	return load(path) if ResourceLoader.exists(path) else null
 
 
 func _on_choice_selected(choice_id: String) -> void:

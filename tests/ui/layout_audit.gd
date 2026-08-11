@@ -77,6 +77,11 @@ func _initialize() -> void:
 		_queue("camp", "res://scenes/basecamp/camp.tscn", locale)
 		_queue("character_select", "res://scenes/ui/character_select.tscn", locale)
 
+		_run_state.set("character_id", "taoist")
+		_queue("area_select", "res://scenes/ui/area_select.tscn", locale)
+		_queue("settings", "res://scenes/ui/settings.tscn", locale)
+		_queue("achievements_quests", "res://scenes/ui/achievements_quests.tscn", locale)
+
 		_setup_hud_state()
 		_queue("hud", "res://scenes/ui/hud.tscn", locale)
 
@@ -101,6 +106,14 @@ func _run_post_ready_setup() -> void:
 	# (both locales queued in _initialize() are already connected by now).
 	if not _level_up_controls.is_empty():
 		_event_bus.emit_signal("level_reached", 9, _stress_level_up_choices())
+
+	# Boss bar + damage/pickup toasts are dressed HUD states, not just the
+	# idle strip -- drive both locale instances into them so a real overlap
+	# (toast under boss bar, boss bar under weapon chips) would actually
+	# get caught here instead of only showing up in a live run.
+	_event_bus.emit_signal("boss_spawned", "temple_guardian")
+	_event_bus.emit_signal("player_damaged", 12.0, 40.0)
+	_event_bus.emit_signal("xp_gained", 5)
 
 	_achievement_tracker.call("snapshot_before_run")
 	_save_manager.call("set_value", ACHV_UNLOCKED_PREFIX + "first_boss", true)
@@ -186,20 +199,53 @@ func _process(_delta: float) -> bool:
 	return true
 
 
-func _find_overlaps(label: String, screen_root: Node) -> Array[String]:
+## A ScrollContainer clips its content to its own rect for both rendering and
+## hit-testing -- content scrolled past that boundary is genuinely invisible,
+## not a layout bug. Both checks below compare this clipped "effective" rect
+## instead of the raw global rect so a long, legitimately-scrollable list
+## (achievements_quests' achievement rows, e.g.) does not read as pushed
+## off-screen or as colliding with a full-screen backdrop it is actually
+## sitting safely behind. Touch-target sizing (_find_small_touch_targets)
+## intentionally keeps using the raw rect -- that check is about a control's
+## own defined size, not whether scrolling currently hides it.
+func _visible_rects(screen_root: Node) -> Array[Dictionary]:
 	var controls: Array[Control] = []
 	_collect_visible(screen_root, controls)
 
+	var entries: Array[Dictionary] = []
+	for control: Control in controls:
+		var rect: Rect2 = control.get_global_rect()
+		var scroll: Control = _nearest_scroll_container(control)
+		if scroll != null:
+			rect = rect.intersection(scroll.get_global_rect())
+			if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+				continue  # scrolled fully out of view -- nothing visible to check
+		entries.append({"control": control, "rect": rect})
+	return entries
+
+
+func _nearest_scroll_container(control: Control) -> Control:
+	var current: Node = control.get_parent()
+	while current != null:
+		if current is ScrollContainer:
+			return current
+		current = current.get_parent()
+	return null
+
+
+func _find_overlaps(label: String, screen_root: Node) -> Array[String]:
+	var entries: Array[Dictionary] = _visible_rects(screen_root)
+
 	var findings: Array[String] = []
-	for i in range(controls.size()):
-		for j in range(i + 1, controls.size()):
-			var a: Control = controls[i]
-			var b: Control = controls[j]
+	for i in range(entries.size()):
+		for j in range(i + 1, entries.size()):
+			var a: Control = entries[i]["control"]
+			var b: Control = entries[j]["control"]
 			if _is_ancestor(a, b) or _is_ancestor(b, a):
 				continue
 
-			var rect_a: Rect2 = a.get_global_rect()
-			var rect_b: Rect2 = b.get_global_rect()
+			var rect_a: Rect2 = entries[i]["rect"]
+			var rect_b: Rect2 = entries[j]["rect"]
 			if not rect_a.intersects(rect_b):
 				continue
 			if rect_a.encloses(rect_b) or rect_b.encloses(rect_a):
@@ -212,12 +258,12 @@ func _find_overlaps(label: String, screen_root: Node) -> Array[String]:
 
 
 func _find_offscreen(label: String, screen_root: Node) -> Array[String]:
-	var controls: Array[Control] = []
-	_collect_visible(screen_root, controls)
+	var entries: Array[Dictionary] = _visible_rects(screen_root)
 
 	var findings: Array[String] = []
-	for control: Control in controls:
-		var rect: Rect2 = control.get_global_rect()
+	for entry: Dictionary in entries:
+		var control: Control = entry["control"]
+		var rect: Rect2 = entry["rect"]
 		if not VIEWPORT_RECT.encloses(rect):
 			findings.append("%s: OFFSCREEN %s %s extends outside the %s viewport" % [
 				label, str(control.get_path()), rect, VIEWPORT_RECT,

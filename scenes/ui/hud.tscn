@@ -9,7 +9,7 @@ script = ExtResource("1_script")
 layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 168.0
+offset_bottom = 216.0
 grow_horizontal = 2
 mouse_filter = 2
 
@@ -46,6 +46,12 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 
+[node name="HpIcon" type="TextureRect" parent="Root/Margin/MainBox/TopRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(20, 20)
+size_flags_vertical = 4
+stretch_mode = 5
+
 [node name="HpBar" type="ProgressBar" parent="Root/Margin/MainBox/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -64,12 +70,24 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text = "0/0"
 
+[node name="LevelIcon" type="TextureRect" parent="Root/Margin/MainBox/TopRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(20, 20)
+size_flags_vertical = 4
+stretch_mode = 5
+
 [node name="LevelLabel" type="Label" parent="Root/Margin/MainBox/TopRow"]
 layout_mode = 2
-custom_minimum_size = Vector2(76, 24)
+custom_minimum_size = Vector2(56, 24)
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "Lv 1"
+
+[node name="PauseButton" type="Button" parent="Root/Margin/MainBox/TopRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(44, 44)
+focus_mode = 2
+text = ""
 
 [node name="XpRow" type="HBoxContainer" parent="Root/Margin/MainBox"]
 layout_mode = 2
@@ -89,17 +107,56 @@ size_flags_vertical = 4
 custom_minimum_size = Vector2(0, 14)
 show_percentage = false
 
+[node name="BossRow" type="HBoxContainer" parent="Root/Margin/MainBox"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="BossIcon" type="TextureRect" parent="Root/Margin/MainBox/BossRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(16, 16)
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BossBar" type="ProgressBar" parent="Root/Margin/MainBox/BossRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+custom_minimum_size = Vector2(0, 14)
+show_percentage = false
+
 [node name="StatsRow" type="HBoxContainer" parent="Root/Margin/MainBox"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 24
 
-[node name="TimeLabel" type="Label" parent="Root/Margin/MainBox/StatsRow"]
+[node name="TimerPanel" type="PanelContainer" parent="Root/Margin/MainBox/StatsRow"]
 layout_mode = 2
-text = "Time 00:00"
+
+[node name="TimerBox" type="HBoxContainer" parent="Root/Margin/MainBox/StatsRow/TimerPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TimerIcon" type="TextureRect" parent="Root/Margin/MainBox/StatsRow/TimerPanel/TimerBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(16, 16)
+stretch_mode = 5
+
+[node name="TimeLabel" type="Label" parent="Root/Margin/MainBox/StatsRow/TimerPanel/TimerBox"]
+layout_mode = 2
+vertical_alignment = 1
+text = "00:00"
+
+[node name="KillsIcon" type="TextureRect" parent="Root/Margin/MainBox/StatsRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(16, 16)
+size_flags_vertical = 4
+stretch_mode = 5
 
 [node name="KillsLabel" type="Label" parent="Root/Margin/MainBox/StatsRow"]
 layout_mode = 2
+vertical_alignment = 1
 text = "Kills 0"
 
 [node name="WeaponsRow" type="HBoxContainer" parent="Root/Margin/MainBox"]
@@ -111,3 +168,80 @@ theme_override_constants/separation = 8
 layout_mode = 2
 vertical_alignment = 1
 text = "No weapons"
+
+[node name="ToastStack" type="VBoxContainer" parent="."]
+layout_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -160.0
+offset_top = 228.0
+offset_right = 160.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 0
+
+[node name="PauseOverlay" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="PauseOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.102, 0.0863, 0.0745, 0.7)
+
+[node name="Panel" type="Panel" parent="PauseOverlay"]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -160.0
+offset_right = 180.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelMargin" type="MarginContainer" parent="PauseOverlay/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="PanelBox" type="VBoxContainer" parent="PauseOverlay/Panel/PanelMargin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="PauseTitle" type="Label" parent="PauseOverlay/Panel/PanelMargin/PanelBox"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "Paused"
+
+[node name="ResumeButton" type="Button" parent="PauseOverlay/Panel/PanelMargin/PanelBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 48)
+focus_mode = 2
+text = "Resume"
+
+[node name="QuitButton" type="Button" parent="PauseOverlay/Panel/PanelMargin/PanelBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 48)
+focus_mode = 2
+text = "Quit to Title"
