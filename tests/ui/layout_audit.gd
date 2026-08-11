@@ -251,6 +251,8 @@ func _visible_rects(screen_root: Node) -> Array[Dictionary]:
 
 	var entries: Array[Dictionary] = []
 	for control: Control in controls:
+		if _has_ancestor_named(control, "BackdropLayers"):
+			continue  # decorative motion art -- see the comment on _has_ancestor_named()
 		var rect: Rect2 = control.get_global_rect()
 		var scroll: Control = _nearest_scroll_container(control)
 		if scroll != null:
@@ -259,6 +261,31 @@ func _visible_rects(screen_root: Node) -> Array[Dictionary]:
 				continue  # scrolled fully out of view -- nothing visible to check
 		entries.append({"control": control, "rect": rect})
 	return entries
+
+
+## title.gd's BackdropLayers holds only decorative, mouse_filter=IGNORE
+## background art (scripts/ui/title.gd: parallax, a scrolling fog strip,
+## rotating bamboo sway) drawn behind everything else in tree order -- it
+## can never block or visually compete with interactive content the way the
+## overlap/offscreen checks exist to catch. Two of its own motions are
+## legitimately incompatible with those checks' assumptions: the fog strip
+## is deliberately wider than the viewport and scrolls to a full negative
+## width offset so it can wrap seamlessly (an intentional, designed
+## off-screen excursion, not a misplaced control), and a swaying layer's
+## rotated axis-aligned bounding box shifts by construction the moment its
+## rotation leaves exactly zero, however small the angle -- there is no
+## "pixel-snap" that fixes a rotated rect's AABB the way rounding a parallax
+## offset fixes shimmer. Both are worth excluding from these two checks
+## specifically -- not from touch-target or contrast checks, which stay
+## meaningful for anything actually interactive or textual, and neither of
+## which BackdropLayers ever contains.
+func _has_ancestor_named(control: Node, ancestor_name: String) -> bool:
+	var current: Node = control.get_parent()
+	while current != null:
+		if current.name == ancestor_name:
+			return true
+		current = current.get_parent()
+	return false
 
 
 func _nearest_scroll_container(control: Control) -> Control:
