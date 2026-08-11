@@ -88,7 +88,9 @@ theme_override_constants/separation=4
 [node name="Icon" type="TextureRect" parent="BuildingGrid/WorkshopButton/Box"]
 layout_mode=2
 size_flags_vertical=3
+custom_minimum_size=Vector2(0, 84)
 mouse_filter=2
+expand_mode=1
 stretch_mode=5
 
 [node name="Label" type="Label" parent="BuildingGrid/WorkshopButton/Box"]
@@ -116,7 +118,9 @@ theme_override_constants/separation=4
 [node name="Icon" type="TextureRect" parent="BuildingGrid/ArchiveButton/Box"]
 layout_mode=2
 size_flags_vertical=3
+custom_minimum_size=Vector2(0, 84)
 mouse_filter=2
+expand_mode=1
 stretch_mode=5
 
 [node name="Label" type="Label" parent="BuildingGrid/ArchiveButton/Box"]
@@ -144,7 +148,9 @@ theme_override_constants/separation=4
 [node name="Icon" type="TextureRect" parent="BuildingGrid/TrainingGroundButton/Box"]
 layout_mode=2
 size_flags_vertical=3
+custom_minimum_size=Vector2(0, 84)
 mouse_filter=2
+expand_mode=1
 stretch_mode=5
 
 [node name="Label" type="Label" parent="BuildingGrid/TrainingGroundButton/Box"]
@@ -172,7 +178,9 @@ theme_override_constants/separation=4
 [node name="Icon" type="TextureRect" parent="BuildingGrid/ShrineButton/Box"]
 layout_mode=2
 size_flags_vertical=3
+custom_minimum_size=Vector2(0, 84)
 mouse_filter=2
+expand_mode=1
 stretch_mode=5
 
 [node name="Label" type="Label" parent="BuildingGrid/ShrineButton/Box"]
