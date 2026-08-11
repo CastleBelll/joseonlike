@@ -154,6 +154,15 @@ M1 helper scripts are deterministic and safe to rerun:
   illustrations, and furniture. `measure_ui_journey.py` writes the reproducible inventory,
   state-shape, hard-alpha, chroma, exact-palette, and WCAG-AA evidence used by
   `verify_assets.py`.
+- `process_drops_and_boss.py` slices the three loot sheets, builds fixed-scale idle/collect
+  presentations, and cuts the enlarged bamboo spirit lord rotations/death sheet at a common
+  150px content scale. The model's first boss pass changed the bamboo spirit into a human;
+  those rejected raws remain alongside the accepted grey-mask retry, whose stray skin hues
+  are deterministically remapped to dark spirit bark after pixelization.
+- `measure_drop_sets.py` checks all twelve pickup sets for 8--16px idle readability, four
+  distinct collect frames, increasing XP-tier area, hard alpha/chroma removal, and pairwise
+  alpha-shape differences between all five grade chests. `build_drop_contact_sheet.py`
+  retains the visual-review layout under `asset/drop/raw/`.
 
 Rotation sheets are not the default generation method. A model may ignore the requested
 layout, which makes fixed-grid slicing put grid lines, neighboring figures, or the wrong

@@ -1,0 +1,1148 @@
+{
+  "sets": {
+    "xp_small": {
+      "idle": {
+        "canvas": [
+          24,
+          24
+        ],
+        "bbox": [
+          8,
+          8
+        ],
+        "opaque_pixels": 40,
+        "bright_pixels": 19,
+        "hard_alpha": true,
+        "opaque_chroma_pixels": 0,
+        "accepted": true
+      },
+      "collect": {
+        "0": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            20,
+            20
+          ],
+          "opaque_pixels": 231,
+          "bright_pixels": 146,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "1": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            22,
+            22
+          ],
+          "opaque_pixels": 250,
+          "bright_pixels": 155,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "2": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            13,
+            15
+          ],
+          "opaque_pixels": 103,
+          "bright_pixels": 36,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "3": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            11,
+            11
+          ],
+          "opaque_pixels": 25,
+          "bright_pixels": 25,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        }
+      },
+      "collect_frame_order": [
+        "anticipation",
+        "expansion",
+        "peak",
+        "dissipation"
+      ],
+      "transitions_changed_pixels": [
+        273,
+        250,
+        119
+      ],
+      "accepted": true
+    },
+    "xp_medium": {
+      "idle": {
+        "canvas": [
+          24,
+          24
+        ],
+        "bbox": [
+          14,
+          12
+        ],
+        "opaque_pixels": 111,
+        "bright_pixels": 66,
+        "hard_alpha": true,
+        "opaque_chroma_pixels": 0,
+        "accepted": true
+      },
+      "collect": {
+        "0": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            24,
+            22
+          ],
+          "opaque_pixels": 311,
+          "bright_pixels": 175,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "1": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            22,
+            18
+          ],
+          "opaque_pixels": 259,
+          "bright_pixels": 146,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "2": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            20,
+            18
+          ],
+          "opaque_pixels": 221,
+          "bright_pixels": 129,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "3": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            21,
+            20
+          ],
+          "opaque_pixels": 47,
+          "bright_pixels": 47,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        }
+      },
+      "collect_frame_order": [
+        "anticipation",
+        "expansion",
+        "peak",
+        "dissipation"
+      ],
+      "transitions_changed_pixels": [
+        298,
+        240,
+        237
+      ],
+      "accepted": true
+    },
+    "xp_large": {
+      "idle": {
+        "canvas": [
+          24,
+          24
+        ],
+        "bbox": [
+          20,
+          16
+        ],
+        "opaque_pixels": 210,
+        "bright_pixels": 144,
+        "hard_alpha": true,
+        "opaque_chroma_pixels": 0,
+        "accepted": true
+      },
+      "collect": {
+        "0": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            31,
+            28
+          ],
+          "opaque_pixels": 542,
+          "bright_pixels": 393,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "1": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            30,
+            24
+          ],
+          "opaque_pixels": 472,
+          "bright_pixels": 326,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "2": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            27,
+            24
+          ],
+          "opaque_pixels": 415,
+          "bright_pixels": 291,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "3": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            25,
+            26
+          ],
+          "opaque_pixels": 70,
+          "bright_pixels": 68,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        }
+      },
+      "collect_frame_order": [
+        "anticipation",
+        "expansion",
+        "peak",
+        "dissipation"
+      ],
+      "transitions_changed_pixels": [
+        522,
+        426,
+        428
+      ],
+      "accepted": true
+    },
+    "gold_coin": {
+      "idle": {
+        "canvas": [
+          24,
+          24
+        ],
+        "bbox": [
+          9,
+          10
+        ],
+        "opaque_pixels": 64,
+        "bright_pixels": 36,
+        "hard_alpha": true,
+        "opaque_chroma_pixels": 0,
+        "accepted": true
+      },
+      "collect": {
+        "0": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            24,
+            24
+          ],
+          "opaque_pixels": 429,
+          "bright_pixels": 279,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "1": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            22,
+            24
+          ],
+          "opaque_pixels": 425,
+          "bright_pixels": 305,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "2": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            16,
+            16
+          ],
+          "opaque_pixels": 219,
+          "bright_pixels": 94,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "3": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            20,
+            20
+          ],
+          "opaque_pixels": 41,
+          "bright_pixels": 41,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        }
+      },
+      "collect_frame_order": [
+        "anticipation",
+        "expansion",
+        "peak",
+        "dissipation"
+      ],
+      "transitions_changed_pixels": [
+        405,
+        416,
+        243
+      ],
+      "accepted": true
+    },
+    "gold_pile": {
+      "idle": {
+        "canvas": [
+          24,
+          24
+        ],
+        "bbox": [
+          23,
+          16
+        ],
+        "opaque_pixels": 249,
+        "bright_pixels": 112,
+        "hard_alpha": true,
+        "opaque_chroma_pixels": 0,
+        "accepted": true
+      },
+      "collect": {
+        "0": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            31,
+            25
+          ],
+          "opaque_pixels": 575,
+          "bright_pixels": 380,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "1": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            30,
+            23
+          ],
+          "opaque_pixels": 541,
+          "bright_pixels": 342,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "2": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            27,
+            21
+          ],
+          "opaque_pixels": 375,
+          "bright_pixels": 166,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "3": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            21,
+            24
+          ],
+          "opaque_pixels": 280,
+          "bright_pixels": 122,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        }
+      },
+      "collect_frame_order": [
+        "anticipation",
+        "expansion",
+        "peak",
+        "dissipation"
+      ],
+      "transitions_changed_pixels": [
+        548,
+        502,
+        379
+      ],
+      "accepted": true
+    },
+    "health_gourd": {
+      "idle": {
+        "canvas": [
+          24,
+          24
+        ],
+        "bbox": [
+          14,
+          16
+        ],
+        "opaque_pixels": 134,
+        "bright_pixels": 39,
+        "hard_alpha": true,
+        "opaque_chroma_pixels": 0,
+        "accepted": true
+      },
+      "collect": {
+        "0": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            14,
+            16
+          ],
+          "opaque_pixels": 147,
+          "bright_pixels": 38,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "1": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            16,
+            18
+          ],
+          "opaque_pixels": 184,
+          "bright_pixels": 74,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "2": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            19,
+            21
+          ],
+          "opaque_pixels": 246,
+          "bright_pixels": 147,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "3": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            7,
+            13
+          ],
+          "opaque_pixels": 7,
+          "bright_pixels": 7,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        }
+      },
+      "collect_frame_order": [
+        "anticipation",
+        "expansion",
+        "peak",
+        "dissipation"
+      ],
+      "transitions_changed_pixels": [
+        158,
+        243,
+        246
+      ],
+      "accepted": true
+    },
+    "magnet": {
+      "idle": {
+        "canvas": [
+          24,
+          24
+        ],
+        "bbox": [
+          18,
+          16
+        ],
+        "opaque_pixels": 241,
+        "bright_pixels": 11,
+        "hard_alpha": true,
+        "opaque_chroma_pixels": 0,
+        "accepted": true
+      },
+      "collect": {
+        "0": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            14,
+            12
+          ],
+          "opaque_pixels": 129,
+          "bright_pixels": 20,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "1": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            14,
+            13
+          ],
+          "opaque_pixels": 149,
+          "bright_pixels": 32,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "2": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            20,
+            22
+          ],
+          "opaque_pixels": 191,
+          "bright_pixels": 112,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "3": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            17,
+            12
+          ],
+          "opaque_pixels": 82,
+          "bright_pixels": 2,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        }
+      },
+      "collect_frame_order": [
+        "anticipation",
+        "expansion",
+        "peak",
+        "dissipation"
+      ],
+      "transitions_changed_pixels": [
+        134,
+        185,
+        186
+      ],
+      "accepted": true
+    },
+    "chest_common": {
+      "idle": {
+        "canvas": [
+          24,
+          24
+        ],
+        "bbox": [
+          14,
+          16
+        ],
+        "opaque_pixels": 224,
+        "bright_pixels": 44,
+        "hard_alpha": true,
+        "opaque_chroma_pixels": 0,
+        "accepted": true
+      },
+      "collect": {
+        "0": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            22,
+            23
+          ],
+          "opaque_pixels": 442,
+          "bright_pixels": 134,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "1": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            22,
+            23
+          ],
+          "opaque_pixels": 437,
+          "bright_pixels": 65,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "2": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            18,
+            23
+          ],
+          "opaque_pixels": 365,
+          "bright_pixels": 109,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "3": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            22,
+            20
+          ],
+          "opaque_pixels": 27,
+          "bright_pixels": 0,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        }
+      },
+      "collect_frame_order": [
+        "anticipation",
+        "expansion",
+        "peak",
+        "dissipation"
+      ],
+      "transitions_changed_pixels": [
+        423,
+        418,
+        378
+      ],
+      "accepted": true
+    },
+    "chest_rare": {
+      "idle": {
+        "canvas": [
+          24,
+          24
+        ],
+        "bbox": [
+          17,
+          16
+        ],
+        "opaque_pixels": 182,
+        "bright_pixels": 16,
+        "hard_alpha": true,
+        "opaque_chroma_pixels": 0,
+        "accepted": true
+      },
+      "collect": {
+        "0": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            26,
+            26
+          ],
+          "opaque_pixels": 503,
+          "bright_pixels": 135,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "1": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            26,
+            26
+          ],
+          "opaque_pixels": 529,
+          "bright_pixels": 124,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "2": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            26,
+            25
+          ],
+          "opaque_pixels": 513,
+          "bright_pixels": 146,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "3": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            23,
+            20
+          ],
+          "opaque_pixels": 78,
+          "bright_pixels": 9,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        }
+      },
+      "collect_frame_order": [
+        "anticipation",
+        "expansion",
+        "peak",
+        "dissipation"
+      ],
+      "transitions_changed_pixels": [
+        499,
+        540,
+        529
+      ],
+      "accepted": true
+    },
+    "chest_epic": {
+      "idle": {
+        "canvas": [
+          24,
+          24
+        ],
+        "bbox": [
+          17,
+          16
+        ],
+        "opaque_pixels": 180,
+        "bright_pixels": 20,
+        "hard_alpha": true,
+        "opaque_chroma_pixels": 0,
+        "accepted": true
+      },
+      "collect": {
+        "0": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            28,
+            25
+          ],
+          "opaque_pixels": 490,
+          "bright_pixels": 162,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "1": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            28,
+            26
+          ],
+          "opaque_pixels": 512,
+          "bright_pixels": 144,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "2": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            22,
+            27
+          ],
+          "opaque_pixels": 459,
+          "bright_pixels": 97,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "3": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            28,
+            29
+          ],
+          "opaque_pixels": 385,
+          "bright_pixels": 76,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        }
+      },
+      "collect_frame_order": [
+        "anticipation",
+        "expansion",
+        "peak",
+        "dissipation"
+      ],
+      "transitions_changed_pixels": [
+        499,
+        512,
+        489
+      ],
+      "accepted": true
+    },
+    "chest_legendary": {
+      "idle": {
+        "canvas": [
+          24,
+          24
+        ],
+        "bbox": [
+          14,
+          16
+        ],
+        "opaque_pixels": 182,
+        "bright_pixels": 72,
+        "hard_alpha": true,
+        "opaque_chroma_pixels": 0,
+        "accepted": true
+      },
+      "collect": {
+        "0": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            26,
+            28
+          ],
+          "opaque_pixels": 542,
+          "bright_pixels": 310,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "1": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            26,
+            29
+          ],
+          "opaque_pixels": 561,
+          "bright_pixels": 316,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "2": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            24,
+            30
+          ],
+          "opaque_pixels": 563,
+          "bright_pixels": 283,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "3": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            30,
+            27
+          ],
+          "opaque_pixels": 462,
+          "bright_pixels": 208,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        }
+      },
+      "collect_frame_order": [
+        "anticipation",
+        "expansion",
+        "peak",
+        "dissipation"
+      ],
+      "transitions_changed_pixels": [
+        503,
+        548,
+        573
+      ],
+      "accepted": true
+    },
+    "chest_mythic": {
+      "idle": {
+        "canvas": [
+          24,
+          24
+        ],
+        "bbox": [
+          16,
+          16
+        ],
+        "opaque_pixels": 188,
+        "bright_pixels": 110,
+        "hard_alpha": true,
+        "opaque_chroma_pixels": 0,
+        "accepted": true
+      },
+      "collect": {
+        "0": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            28,
+            29
+          ],
+          "opaque_pixels": 593,
+          "bright_pixels": 423,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "1": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            28,
+            29
+          ],
+          "opaque_pixels": 574,
+          "bright_pixels": 416,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "2": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            28,
+            29
+          ],
+          "opaque_pixels": 586,
+          "bright_pixels": 419,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        },
+        "3": {
+          "canvas": [
+            32,
+            32
+          ],
+          "bbox": [
+            32,
+            29
+          ],
+          "opaque_pixels": 488,
+          "bright_pixels": 337,
+          "hard_alpha": true,
+          "opaque_chroma_pixels": 0,
+          "accepted": true
+        }
+      },
+      "collect_frame_order": [
+        "anticipation",
+        "expansion",
+        "peak",
+        "dissipation"
+      ],
+      "transitions_changed_pixels": [
+        517,
+        466,
+        529
+      ],
+      "accepted": true
+    }
+  },
+  "xp_tiers": {
+    "opaque_areas": [
+      40,
+      111,
+      210
+    ],
+    "strictly_increasing": true,
+    "accepted": true
+  },
+  "grade_shape_pairs": {
+    "chest_common->chest_rare": {
+      "alpha_changed_pixels": 66,
+      "accepted": true
+    },
+    "chest_common->chest_epic": {
+      "alpha_changed_pixels": 60,
+      "accepted": true
+    },
+    "chest_common->chest_legendary": {
+      "alpha_changed_pixels": 42,
+      "accepted": true
+    },
+    "chest_common->chest_mythic": {
+      "alpha_changed_pixels": 56,
+      "accepted": true
+    },
+    "chest_rare->chest_epic": {
+      "alpha_changed_pixels": 34,
+      "accepted": true
+    },
+    "chest_rare->chest_legendary": {
+      "alpha_changed_pixels": 38,
+      "accepted": true
+    },
+    "chest_rare->chest_mythic": {
+      "alpha_changed_pixels": 66,
+      "accepted": true
+    },
+    "chest_epic->chest_legendary": {
+      "alpha_changed_pixels": 34,
+      "accepted": true
+    },
+    "chest_epic->chest_mythic": {
+      "alpha_changed_pixels": 56,
+      "accepted": true
+    },
+    "chest_legendary->chest_mythic": {
+      "alpha_changed_pixels": 58,
+      "accepted": true
+    }
+  },
+  "accepted": true
+}

@@ -277,50 +277,50 @@
       "root": "asset/monster/bamboo_spirit_lord/rotations",
       "review": "accepted_manual_contact_sheet",
       "contact_sheet": "asset/rotation_audit/contact_sheets/bamboo_spirit_lord.png",
-      "contact_sheet_sha256": "67cf81534cb5d4b1a3dba75796f71c44c241854769b38e70ccdf157be72da7fb",
+      "contact_sheet_sha256": "ef36dadfe55a339ba9c6dd340609710a6081f60dcf81d877f28f7e65d4ced093",
       "regenerated_in_audit": true,
       "exact_east_west_mirror_required": false,
       "cells": {
         "south": {
           "expected_facing": "front",
-          "sha256": "26c65623d28ab31c98dd8df43f76832b7fa5e1274bff1201e0bf5e20e5e1da00"
+          "sha256": "9bde66590e84f08ed337f42e4634cc435b8431ed7e6416333eda46598f630161"
         },
         "south-east": {
           "expected_facing": "front",
-          "sha256": "f12b7a1e4ffa83982a954a0b441b0cf98b2db0f24aed6f4640731fbba5853ae7"
+          "sha256": "66b2227ff693b7b372172e8710f25f9746ad7d38dce52d48965394612d41a4c3"
         },
         "east": {
           "expected_facing": "profile-east",
-          "sha256": "debe2ede83b2f98b8736c0d787fe8c4fa94a5fb5b619fd71140e57a9ea6c6704"
+          "sha256": "d65bbcebcaa2d09749726abc56eb925ff9ad0c4e01c90b089942385043b2aade"
         },
         "north-east": {
           "expected_facing": "back",
-          "sha256": "38cd18ed25010b5c580ff4d2aa66dbc6580122f3d468cd8edd3d64a0f9d6c870"
+          "sha256": "d7b7b581525eccfccee483e6c6ea1ce5526206c190294eab44527f70d17215b8"
         },
         "north": {
           "expected_facing": "back",
-          "sha256": "a972abc3d6a53aae0208c17f340f013f8d84a535bed87bfa49c44ffec141df72"
+          "sha256": "06c900a761066acb5573390ce6a3378c7459dbd7b820fb07ab126cf559213176"
         },
         "north-west": {
           "expected_facing": "back",
-          "sha256": "79f88da4de5a6dada66b6e7767de03370d9762c9b548cb8ab020211e1646aee7"
+          "sha256": "1c5745d8eb17cf6f01abf484ae1a9bcc30005eca0253b9ca628ef34d2b07c300"
         },
         "west": {
           "expected_facing": "profile-west",
-          "sha256": "2e4daf8599e8214afa42198c408f869d509ae4bf582c71fa04058816b417e80f"
+          "sha256": "83432ccce25e0eab7f9775b4b92770b2ab2dc231e3f78b28fab6176046f9e994"
         },
         "south-west": {
           "expected_facing": "front",
-          "sha256": "4f1d9926f05d5b41daaba6cc5748e0a3d1bf6d04c40bd8727c242d5f9a46ea68"
+          "sha256": "8c991ed1815b294e34bcbed20bd09136ce6a4a8ae561b4740766c1aa545732bd"
         }
       },
       "diagnostics": {
-        "front_internal_mean": 2847.67,
-        "back_internal_mean": 2657.33,
-        "front_back_mean": 2848.78,
-        "east_west_direct_changed": 2303,
-        "east_mirrored_to_west_changed": 1691,
-        "east_west_mirror_ratio": 0.7343
+        "front_internal_mean": 11299.33,
+        "back_internal_mean": 8902.33,
+        "front_back_mean": 11038.22,
+        "east_west_direct_changed": 8071,
+        "east_mirrored_to_west_changed": 6782,
+        "east_west_mirror_ratio": 0.8403
       }
     },
     "blue_dokkaebi": {

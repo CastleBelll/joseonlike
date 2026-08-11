@@ -19,6 +19,7 @@ DIRECTIONS = (
     "north", "north-west", "west", "south-west",
 )
 CELL = 92
+CELL_OVERRIDES = {"bamboo_spirit_lord": 192}
 LABEL_HEIGHT = 18
 ROW_LABEL_WIDTH = 152
 PAGE_ROWS = 8
@@ -45,16 +46,19 @@ def checker(size: tuple[int, int]) -> Image.Image:
 
 
 def contact_sheet(name: str, directory: Path) -> Image.Image:
-    sheet = checker((CELL * len(DIRECTIONS), CELL + LABEL_HEIGHT))
+    cell_size = CELL_OVERRIDES.get(name, CELL)
+    sheet = checker((cell_size * len(DIRECTIONS), cell_size + LABEL_HEIGHT))
     draw = ImageDraw.Draw(sheet)
     for index, direction in enumerate(DIRECTIONS):
         path = directory / f"{direction}.png"
         if not path.exists():
             raise SystemExit(f"missing {path.relative_to(ROOT)}")
         sprite = Image.open(path).convert("RGBA")
-        if sprite.size != (CELL, CELL):
-            raise SystemExit(f"{path.relative_to(ROOT)}: expected 92x92, got {sprite.size}")
-        x = index * CELL
+        if sprite.size != (cell_size, cell_size):
+            raise SystemExit(
+                f"{path.relative_to(ROOT)}: expected {cell_size}x{cell_size}, got {sprite.size}"
+            )
+        x = index * cell_size
         sheet.alpha_composite(sprite, (x, LABEL_HEIGHT))
         draw.text((x + 3, 3), direction, fill=(255, 255, 255, 255), stroke_width=1, stroke_fill=(0, 0, 0, 255))
         draw.line((x, 0, x, sheet.height), fill=(35, 37, 43, 255))
@@ -81,7 +85,13 @@ def main() -> None:
         for row_index, (name, sheet) in enumerate(page_rows):
             y = row_index * row_height
             draw.text((6, y + 46), name, fill=(255, 244, 219, 255), stroke_width=1, stroke_fill=(0, 0, 0, 255))
-            page.alpha_composite(sheet, (ROW_LABEL_WIDTH, y))
+            overview_sheet = sheet
+            if sheet.width != CELL * len(DIRECTIONS):
+                overview_sheet = sheet.resize(
+                    (CELL * len(DIRECTIONS), CELL + LABEL_HEIGHT),
+                    Image.Resampling.NEAREST,
+                )
+            page.alpha_composite(overview_sheet, (ROW_LABEL_WIDTH, y))
         page_path = OUTPUT / f"overview_{page_index // PAGE_ROWS}.png"
         page.save(page_path)
         print(f"wrote {page_path.relative_to(ROOT)} ({len(page_rows)} sets)")
