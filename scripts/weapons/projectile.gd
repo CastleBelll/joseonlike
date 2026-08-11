@@ -114,7 +114,12 @@ func _nearest_target() -> Node2D:
 	for candidate in candidates:
 		var node2d: Node2D = candidate as Node2D
 		positions.append(node2d.global_position if node2d != null else Vector2.INF)
-	var index: int = CombatMath.nearest_index(global_position, positions)
+	# Same bound as the firing weapon: a ward must not steer toward something
+	# the player cannot see any more than a bow should aim at it.
+	var index: int = CombatMath.nearest_index_in_bounds(
+		global_position, positions,
+		CombatMath.visible_world_rect(get_viewport(), WeaponBase.ACQUISITION_MARGIN_PX)
+	)
 	if index < 0:
 		return null
 	return candidates[index] as Node2D

@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/combat/stage.gd" id="1_stage"]
 [ext_resource type="Script" path="res://scripts/combat/spawner.gd" id="2_spawner"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/combat/stage_ground.gd" id="6_ground"]
 [ext_resource type="Script" path="res://scripts/combat/combat_audio.gd" id="7_audio"]
 [ext_resource type="Script" path="res://scripts/combat/effect_pool.gd" id="8_effects"]
+[ext_resource type="Script" path="res://scripts/combat/drop_pool.gd" id="9_drops"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="4_hud"]
 [ext_resource type="PackedScene" path="res://scenes/ui/level_up_choice.tscn" id="5_levelup"]
 
@@ -20,6 +21,9 @@ script = ExtResource("7_audio")
 
 [node name="Effects" type="Node2D" parent="."]
 script = ExtResource("8_effects")
+
+[node name="Drops" type="Node2D" parent="."]
+script = ExtResource("9_drops")
 
 [node name="Actors" type="Node2D" parent="."]
 

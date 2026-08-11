@@ -81,6 +81,7 @@ func _physics_process(delta: float) -> void:
 	_sample_boss()
 	_observe_effects()
 	_observe_orientation()
+	_observe_drops()
 	_trace_motion()
 	_sample_presentation()
 	if _clock >= _next_sample:
@@ -116,11 +117,14 @@ func _kite() -> void:
 
 func _orbs() -> Array[Node]:
 	var found: Array[Node] = []
-	var pickups: Node = _stage.get_node_or_null(^"Pickups")
+	# Drops moved from the Pickups node to the pooled Drops node.
+	var pickups: Node = _stage.get_node_or_null(^"Drops")
 	if pickups == null:
 		return found
 	for child in pickups.get_children():
-		found.append(child)
+		var sprite: Sprite2D = child as Sprite2D
+		if sprite != null and sprite.visible:
+			found.append(child)
 	return found
 
 
@@ -161,6 +165,7 @@ func _sample() -> void:
 	])
 	_report_effects()
 	_report_orientation()
+	_report_drops()
 	_kills_at_sample = RunState.kills
 	_cleared_hp_at_sample = _cleared_hp
 	_damage_at_sample = _damage_taken
@@ -508,3 +513,31 @@ func _report_orientation() -> void:
 	for line in _melee_samples:
 		print("SOAK melee  %s" % line)
 	print("SOAK monster_bob offsets=%s" % [_bob_offsets.keys()])
+
+
+## Which drop sets actually reached the ground, and which played their collect
+## sequence rather than vanishing.
+var _drop_idle_seen: Dictionary = {}
+var _drop_collect_seen: Dictionary = {}
+var _drop_peak: int = 0
+
+
+func _observe_drops() -> void:
+	var pool: Node = _stage.get_node_or_null(^"Drops")
+	if pool == null:
+		return
+	_drop_peak = maxi(_drop_peak, int(pool.call(&"active_count")))
+	for child in pool.get_children():
+		var sprite: Sprite2D = child as Sprite2D
+		if sprite == null or not sprite.visible or sprite.texture == null:
+			continue
+		var dir: String = sprite.texture.resource_path.get_base_dir()
+		if dir.get_file() == "collect":
+			_drop_collect_seen[dir.get_base_dir().get_file()] = true
+		else:
+			_drop_idle_seen[dir.get_file()] = true
+
+
+func _report_drops() -> void:
+	print("SOAK drops idle=%s collect=%s peak=%d" % [
+		_drop_idle_seen.keys(), _drop_collect_seen.keys(), _drop_peak])

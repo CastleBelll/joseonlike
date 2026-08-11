@@ -12,6 +12,10 @@ const ENEMY_GROUP: StringName = &"enemy"
 ## do not inherit the player's transform.
 const PROJECTILE_ROOT_GROUP: StringName = &"projectile_root"
 
+## Small slack past the screen edge so a target does not blink in and out of
+## acquisition while it walks in.
+const ACQUISITION_MARGIN_PX: float = 32.0
+
 const STAT_ATTACK_DAMAGE: String = "attack_damage"
 const STAT_ATTACK_SPEED: String = "attack_speed"
 const STAT_CRIT_CHANCE: String = "crit_chance"
@@ -133,7 +137,9 @@ func nearest_enemy() -> Node2D:
 	for candidate in candidates:
 		var node2d: Node2D = candidate as Node2D
 		positions.append(node2d.global_position if node2d != null else Vector2.INF)
-	var index: int = CombatMath.nearest_index(global_position, positions)
+	var index: int = CombatMath.nearest_index_in_bounds(
+		global_position, positions, CombatMath.visible_world_rect(get_viewport(), ACQUISITION_MARGIN_PX)
+	)
 	if index < 0:
 		return null
 	return candidates[index] as Node2D

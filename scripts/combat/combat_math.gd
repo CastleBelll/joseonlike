@@ -121,6 +121,39 @@ static func projectile_speed_at_level(weapon_data: Dictionary, level: int) -> fl
 	return maxf(1.0, stat_at_level(weapon_data, level, KEY_SPEED, DEFAULT_SPEED))
 
 
+## Visible world rectangle, grown by a margin, for target acquisition.
+##
+## A rectangle rather than a radius, because the viewport is portrait: at
+## 540x960 the visible half-extents are 270 x 480, but a radius large enough to
+## reach the corners is 551. That radius would acquire a target 551 px to the
+## side, twice as far as the player can actually see horizontally, which is the
+## off-screen homing that was reported. The rectangle is exact on both axes.
+##
+## A null viewport yields an unbounded rect, so headless callers and tests are
+## not silently constrained.
+static func visible_world_rect(viewport: Viewport, margin_px: float) -> Rect2:
+	if viewport == null:
+		return Rect2(-INF / 4.0, -INF / 4.0, INF / 2.0, INF / 2.0)
+	var size: Vector2 = viewport.get_visible_rect().size
+	var top_left: Vector2 = viewport.get_canvas_transform().affine_inverse() * Vector2.ZERO
+	return Rect2(top_left, size).grow(margin_px)
+
+
+## Closest position inside `bounds`, or -1 when nothing qualifies. Targets the
+## player cannot see are not acquired at all, rather than acquired and missed.
+static func nearest_index_in_bounds(origin: Vector2, positions: PackedVector2Array, bounds: Rect2) -> int:
+	var best_index: int = -1
+	var best_distance_sq: float = INF
+	for index in positions.size():
+		if not bounds.has_point(positions[index]):
+			continue
+		var distance_sq: float = origin.distance_squared_to(positions[index])
+		if distance_sq < best_distance_sq:
+			best_distance_sq = distance_sq
+			best_index = index
+	return best_index
+
+
 ## Index of the closest position, or -1 when there is nothing to shoot at.
 static func nearest_index(origin: Vector2, positions: PackedVector2Array) -> int:
 	var best_index: int = -1
