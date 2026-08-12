@@ -62,6 +62,8 @@ var _player: CharacterBody2D = null
 
 
 func _ready() -> void:
+	MusicDirector.play("camp")
+
 	_interaction_points = []
 	_interaction_points.append_array(BUILDINGS)
 	_interaction_points.append(GATE)

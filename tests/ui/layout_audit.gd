@@ -80,6 +80,8 @@ var _save_manager: Node
 var _level_up_controls: Array[Node] = []
 var _results_controls: Array[Node] = []
 var _setup_frame_done: bool = false
+var _measured: bool = false
+var _quit_wait_frames: int = 30
 
 
 func _initialize() -> void:
@@ -215,14 +217,40 @@ func _process(_delta: float) -> bool:
 		_run_post_ready_setup()
 		return false
 
-	for entry: Dictionary in _pending:
-		var label: String = entry["label"]
-		var control: Node = entry["control"]
-		_findings.append_array(_find_overlaps(label, control))
-		_findings.append_array(_find_offscreen(label, control))
-		_findings.append_array(_find_small_touch_targets(label, control))
-		_findings.append_array(_find_contrast_violations(label, control))
-		_findings.append_array(_find_title_baseline_drift(label, control))
+	if not _measured:
+		_measured = true
+		for entry: Dictionary in _pending:
+			var label: String = entry["label"]
+			var control: Node = entry["control"]
+			_findings.append_array(_find_overlaps(label, control))
+			_findings.append_array(_find_offscreen(label, control))
+			_findings.append_array(_find_small_touch_targets(label, control))
+			_findings.append_array(_find_contrast_violations(label, control))
+			_findings.append_array(_find_title_baseline_drift(label, control))
+		_stop_music_director()
+		return false
+
+	# title.gd now calls MusicDirector.play("title") in _ready() (correct,
+	# required behaviour -- MusicDirector had exactly one caller in the whole
+	# project before this, scripts/combat/stage.gd, so title/camp were
+	# silent). That starts a real AudioStreamMP3 playback, and this script
+	# quits within 1-2 frames of it starting -- confirmed via --verbose that
+	# quitting that fast leaks AudioStreamMP3/AudioStreamPlaybackMP3 every
+	# time (3/3 repeated runs). _stop_music_director() above calls .stop()
+	# directly on MusicDirector's own player_a/player_b, bypassing its own
+	# stop()'s 1.5s fade-tween wrapper entirely (that fade would not even
+	# reach the underlying AudioStreamPlayer.stop() call within a window
+	# this short). Confirmed empirically (20/20 clean repeated runs, after
+	# an earlier 9/10-leaked run with the stop() call alone and no wait)
+	# that stop() plus a real ~30-frame margin before quitting is what
+	# actually lets the mix thread release the resource -- the same
+	# "needs real engine ticks, not a same-frame lock()/free()" conclusion
+	# as the level_up.wav leak this file no longer causes, just needing a
+	# wait margin here because the play() call is required rather than
+	# avoidable.
+	_quit_wait_frames -= 1
+	if _quit_wait_frames > 0:
+		return false
 
 	if _findings.is_empty():
 		print_rich("[color=green]LAYOUT AUDIT PASS[/color] 0 findings across %d screen/locale instances" % _pending.size())
@@ -234,6 +262,16 @@ func _process(_delta: float) -> bool:
 	print_rich("[color=red]LAYOUT AUDIT FAIL[/color] %d finding(s)" % _findings.size())
 	quit(1)
 	return true
+
+
+func _stop_music_director() -> void:
+	var music_director: Node = root.get_node_or_null("MusicDirector")
+	if music_director == null:
+		return
+	for player_var in ["_player_a", "_player_b"]:
+		var player: AudioStreamPlayer = music_director.get(player_var)
+		if player != null:
+			player.stop()
 
 
 ## A ScrollContainer clips its content to its own rect for both rendering and
