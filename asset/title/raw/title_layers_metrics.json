@@ -12,12 +12,12 @@
     960
   ],
   "old_lower_two_thirds_luminance": 21.252407556712964,
-  "new_lower_two_thirds_luminance": 55.624810741898145,
+  "new_lower_two_thirds_luminance": 42.76746124652777,
   "action_band": {
-    "mean_luminance": 50.60901531402034,
-    "local_8px_stddev": 0.543201472734426,
-    "min_luminance": 46.9306,
-    "max_luminance": 60.608999999999995
+    "mean_luminance": 45.90233698474127,
+    "local_8px_stddev": 3.612486487746961,
+    "min_luminance": 10.0882,
+    "max_luminance": 92.4948
   },
   "layers": {
     "sky": {
@@ -70,9 +70,9 @@
         540,
         960
       ],
-      "opaque_pixels": 394634,
-      "transparent_pixels": 123766,
-      "colours": 48
+      "opaque_pixels": 246723,
+      "transparent_pixels": 271677,
+      "colours": 44
     }
   },
   "fog_horizontal_seam_changed_pixels": 0,

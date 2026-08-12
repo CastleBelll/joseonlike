@@ -16,6 +16,8 @@ CHARACTER_ROTATION_DIRECTIONS = (
     "north", "north-west", "west", "south-west",
 )
 CHARACTER_NEAR_DUPLICATE_THRESHOLD = 2.5
+GROUND_8429_UPPER_SHA256 = "f60254c9be51dd0710e4716ff699002495b0cf3b9620898f05b3654e0bd59503"
+GROUND_8429_ALPHA_SHA256 = "6b6979ba2c40ed389ffc766bf19a4b637444de033bd3c0eb39ab26047b10dfba"
 
 
 def fail(message):
@@ -191,6 +193,20 @@ def measure_title_action_band(composite):
     }
 
 
+def validate_title_action_band(band):
+    band_mean = band.get("mean_luminance", math.inf)
+    band_stddev = band.get("local_8px_stddev", math.inf)
+    band_max = band.get("max_luminance", math.inf)
+    if not 40.0 <= band_mean <= 55.0:
+        fail(f"title action band: mean luminance {band_mean:.2f} is outside 40..55")
+    if band_stddev < 3.0:
+        fail(f"title action band: 8px local stddev {band_stddev:.2f} is below 3.0 (ground detail erased)")
+    if band_stddev > 7.0:
+        fail(f"title action band: 8px local stddev {band_stddev:.2f} exceeds 7.0 (too busy for controls)")
+    if band_max > 110.0:
+        fail(f"title action band: max luminance {band_max:.2f} exceeds 110")
+
+
 def check_title_layers():
     """Verify the full-canvas registered title stack and scrolling members."""
     layer_names = ("sky", "moon_glow", "palace", "bamboo_far", "bamboo_near", "ground")
@@ -218,6 +234,12 @@ def check_title_layers():
             for pixel in layer.get_flattened_data()
         ):
             fail(f"{path}: opaque chroma-magenta fringe survived cutout")
+
+    ground = image("asset/title/layers/ground.png")
+    if hashlib.sha256(ground.crop((0, 0, 540, 556)).tobytes()).hexdigest() != GROUND_8429_UPPER_SHA256:
+        fail("asset/title/layers/ground.png: pixels above y556 differ from 8429e00")
+    if hashlib.sha256(ground.getchannel("A").tobytes()).hexdigest() != GROUND_8429_ALPHA_SHA256:
+        fail("asset/title/layers/ground.png: alpha silhouette differs from 8429e00")
 
     fog = image("asset/title/fog_strip.png")
     if fog.size != (1080, 320):
@@ -252,15 +274,7 @@ def check_title_layers():
     recorded_band = metrics.get("action_band", {})
     if any(abs(recorded_band.get(key, math.inf) - value) > 1e-6 for key, value in band.items()):
         fail("title action band: recorded metrics do not match the review composite")
-    band_mean = band.get("mean_luminance", math.inf)
-    band_stddev = band.get("local_8px_stddev", math.inf)
-    band_max = band.get("max_luminance", math.inf)
-    if not 40.0 <= band_mean <= 55.0:
-        fail(f"title action band: mean luminance {band_mean:.2f} is outside 40..55")
-    if band_stddev > 7.0:
-        fail(f"title action band: 8px local stddev {band_stddev:.2f} exceeds 7.0")
-    if band_max > 110.0:
-        fail(f"title action band: max luminance {band_max:.2f} exceeds 110")
+    validate_title_action_band(band)
     return band
 
 

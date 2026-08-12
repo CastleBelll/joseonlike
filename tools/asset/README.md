@@ -111,7 +111,10 @@ M1 helper scripts are deterministic and safe to rerun:
   files the three MP3s losslessly, and trims/resamples/levels the four replacement one-shots.
 - `process_title_layers.py` cuts the eight individually generated title members at their
   registered canvases, extracts the valid halo/mote from two over-generated raws, builds the
-  review composite, and mirror-wraps the horizontal fog seam.
+  review composite, mirror-wraps the horizontal fog seam, and locally compresses the
+  8429e00 ground's control band without moving or erasing its authored detail. The action
+  band must retain 3.0--7.0 local 8px luminance deviation; a lower number is a failed wash,
+  not an improvement.
 - `verify_assets.py` checks fixed canvases, hard alpha, chroma removal, tile seams, palettes,
   audio formats/peaks, rejects unregistered runtime audio, and checks the retained
   motion-consistency evidence.

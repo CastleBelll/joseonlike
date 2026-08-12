@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -14,6 +15,9 @@ TITLE = ROOT / "asset/title"
 RAW = TITLE / "raw"
 LAYERS = TITLE / "layers"
 CANVAS = (540, 960)
+GROUND_8429_RGBA_SHA256 = "62a5f0e401e68717250dbda7d9a3c0feb5797c0170d502ee591ba1cc8ab2266a"
+GROUND_8429_UPPER_SHA256 = "f60254c9be51dd0710e4716ff699002495b0cf3b9620898f05b3654e0bd59503"
+GROUND_8429_ALPHA_SHA256 = "6b6979ba2c40ed389ffc766bf19a4b637444de033bd3c0eb39ab26047b10dfba"
 
 
 def flattened(image: Image.Image):
@@ -72,54 +76,73 @@ def transparent_layer(name: str) -> Image.Image:
 
 
 def ground_layer() -> Image.Image:
-    """Move path interest above the controls and quiet the action band.
+    """Compress local contrast in the controls band without erasing detail.
 
-    The targeted image edit supplies a cleaner inhabited-earth source but still
-    placed its main path around y530. Shift that authored interest upward, then
-    use its low ground texture at deliberately compressed contrast below the
-    middle band so five button labels never compete with stones or black holes.
+    The 8429e00 ground is reproduced by transparent_layer("ground"). Preserve
+    it byte-for-byte above y556, then pull each opaque pixel toward the mean of
+    the opaque pixels in its fixed 8x8 neighbourhood. Alpha never changes, so
+    stones, grass, path edges, and the full-height bamboo framing keep their
+    exact positions while their local value contrast is reduced linearly.
     """
-    edited_path = RAW / "ground_action_band_edit_openai.png"
-    if not edited_path.is_file():
-        raise FileNotFoundError(f"missing targeted ground edit: {edited_path}")
-    fitted = ImageOps.fit(
-        Image.open(edited_path).convert("RGB"),
-        CANVAS,
-        method=Image.Resampling.BOX,
-    )
-    keyed = key_magenta(fitted)
+    ground = transparent_layer("ground")
+    if hashlib.sha256(ground.tobytes()).hexdigest() != GROUND_8429_RGBA_SHA256:
+        raise RuntimeError("ground raw no longer reproduces the 8429e00 reference")
+    pixels = ground.load()
+    palette = sorted({pixel[:3] for pixel in flattened(ground) if pixel[3]})
+    factor = 0.40
+    tone_gain = 0.55
+    tone_offset = 16
+    band_top = 556
+    block_size = 8
+    for top in range(band_top, CANVAS[1], block_size):
+        for left in range(0, CANVAS[0], block_size):
+            coordinates = [
+                (x, y)
+                for y in range(top, min(top + block_size, CANVAS[1]))
+                for x in range(left, min(left + block_size, CANVAS[0]))
+                if pixels[x, y][3] == 255
+            ]
+            if not coordinates:
+                continue
+            means = tuple(
+                sum(pixels[x, y][channel] for x, y in coordinates) / len(coordinates)
+                for channel in range(3)
+            )
+            for x, y in coordinates:
+                r, g, b, alpha = pixels[x, y]
+                pixels[x, y] = (
+                    round(means[0] + factor * (r - means[0])),
+                    round(means[1] + factor * (g - means[1])),
+                    round(means[2] + factor * (b - means[2])),
+                    alpha,
+                )
 
-    moved = Image.new("RGBA", CANVAS, (0, 0, 0, 0))
-    moved.alpha_composite(keyed, (0, -300))
-
-    base = (38, 42, 48)
-    fitted_pixels = fitted.load()
-    keyed_alpha = keyed.getchannel("A").load()
-    moved_pixels = moved.load()
-    quiet_start = 320
-    quiet_end = 520
-    for y in range(quiet_start, CANVAS[1]):
-        quiet_strength = min(1.0, (y - quiet_start) / (quiet_end - quiet_start))
+    # The local operation preserves block means, so separately fit the action
+    # band's overall value range to the UI contrast target. Snap back to the
+    # original 48-colour ground palette; this keeps the area pixel-authored and
+    # leaves every byte above band_top untouched.
+    nearest_cache = {}
+    for y in range(band_top, CANVAS[1]):
         for x in range(CANVAS[0]):
-            texture_y = min(CANVAS[1] - 1, y + 220)
-            if keyed_alpha[x, texture_y]:
-                sr, sg, sb = fitted_pixels[x, texture_y]
-            else:
-                sr, sg, sb = base
-            # Keep subtle earth texture while compressing the controls' value
-            # range. Cross-fade into it to avoid a horizontal processing seam.
-            qr = base[0] * 0.70 + sr * 0.30
-            qg = base[1] * 0.70 + sg * 0.30
-            qb = base[2] * 0.70 + sb * 0.30
-            mr, mg, mb, ma = moved_pixels[x, y]
-            if ma == 0:
-                mr, mg, mb = qr, qg, qb
-            r = round(mr * (1.0 - quiet_strength) + qr * quiet_strength)
-            g = round(mg * (1.0 - quiet_strength) + qg * quiet_strength)
-            b = round(mb * (1.0 - quiet_strength) + qb * quiet_strength)
-            moved_pixels[x, y] = (r, g, b, 255)
-
-    return quantise(moved)
+            r, g, b, alpha = pixels[x, y]
+            if alpha == 0:
+                continue
+            mapped = (
+                round(r * tone_gain + tone_offset),
+                round(g * tone_gain + tone_offset),
+                round(b * tone_gain + tone_offset),
+            )
+            if mapped not in nearest_cache:
+                nearest_cache[mapped] = min(
+                    palette,
+                    key=lambda colour: sum((colour[channel] - mapped[channel]) ** 2 for channel in range(3)),
+                )
+            pixels[x, y] = (*nearest_cache[mapped], alpha)
+    if hashlib.sha256(ground.crop((0, 0, 540, band_top)).tobytes()).hexdigest() != GROUND_8429_UPPER_SHA256:
+        raise RuntimeError("ground processing changed pixels above the action band")
+    if hashlib.sha256(ground.getchannel("A").tobytes()).hexdigest() != GROUND_8429_ALPHA_SHA256:
+        raise RuntimeError("ground processing changed the 8429e00 alpha silhouette")
+    return ground
 
 
 def moon_glow() -> Image.Image:

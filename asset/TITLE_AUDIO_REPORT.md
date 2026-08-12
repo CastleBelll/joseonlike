@@ -90,15 +90,16 @@ No offset or coordinate manifest exists or is needed. Retained review artifacts:
 I inspected the complete composite beside `asset/stage/backdrops/main_menu.png`,
 not just the individual files. There are no holes: the opaque sky remains behind
 every transparent omission. The original lower two-thirds measured **21.25**
-mean luminance; the corrected stack measures **55.62**. More importantly, the
-actual action band at x32..508, y556..936 measures **50.61** mean luminance,
-**0.54** mean local 8x8 standard deviation, and **60.61** maximum luminance,
-inside the 40..55 / <=7 / <=110 targets. The palace roof and windows,
+mean luminance; the corrected stack measures **42.77**. More importantly, the
+actual action band at x32..508, y556..936 measures **45.90** mean luminance,
+**3.61** mean local 8x8 standard deviation, and **92.49** maximum luminance,
+inside the 40..55 / 3..7 / <=110 targets. The palace roof and windows,
 cool far bamboo, dark near framing and warm foreground form visible value steps.
 Near trunks partially occlude the moon/halo as foreground should, while the central
-corridor remains open for the logo and controls. Path stones, rubble, and warm
-highlights now occupy y300..490; below y600 the ground settles into a continuous,
-subtle-texture plane so button labels do not compete with local highlights or holes.
+corridor remains open for the logo and controls. The bamboo corridor, leaf detail,
+stones, grass clumps, banks, and dark path hollows all remain visible at full height:
+the action band reads as subdued ground, not as the empty wash produced by the
+previous one-sided contrast target and not as the original flat backdrop's dark mush.
 
 ### Generation, raw retention and honest corrections
 
@@ -136,12 +137,16 @@ The fog was mirror-wrapped after chroma removal: generated content is retained,
 but the outer seam is mechanically exact rather than trusting a model's
 "seamless" claim. Every raw remains under `asset/title/raw/` for recutting.
 
-The action-band correction used one targeted OpenAI image edit, conditioned on
-the existing ground layer and title composite, to author a quieter inhabited-earth
-source with the detail moved upward. The retained raw is
-`asset/title/raw/ground_action_band_edit_openai.png`; deterministic processing
-shifts its path upward, cross-fades into a compressed-contrast lower texture, and
-recomputes the exact action-band metric.
+The first action-band correction used a targeted OpenAI edit, retained at
+`asset/title/raw/ground_action_band_edit_openai.png`, but its lower half became a
+wash and it no longer feeds the runtime layer. The accepted correction instead
+reproduces `8429e00:asset/title/layers/ground.png` from the original Higgsfield raw,
+leaves every pixel above y556 unchanged, and preserves the complete alpha silhouette.
+Within the band, every opaque pixel is pulled 40% toward its opaque 8x8 block mean,
+then the block means are fitted with `0.55 * channel + 16` and snapped back to the
+original ground palette. This preserves every edge position while keeping both
+texture and UI-safe contrast. Measured against 8429e00, the upper region and full
+alpha mask each differ by **0 pixels**.
 
 ### Credits
 
@@ -149,6 +154,7 @@ recomputes the exact action-band metric.
 - Preflight: **2 credits each**, eight individual jobs, **16 credits estimated**
 - Balance after: **808.55**
 - Actual spend: **16.00 credits**
+- Deterministic action-band redo: **0 credits**
 
 ## Integration notes
 
@@ -197,8 +203,9 @@ Character near-duplicate gate verified: 84 pairs at mean-RGBA threshold 2.50; mi
 UI journey verified: 47 icons, 11 illustrations, 31 nine-slices, 3 fixed controls; WCAG-AA/state gates passed
 Camp identity verified: 2 warm seamless tiles + 3 rotatable north-facing transition overlays
 Button redesign verified: 3 directions x 4 states; selected royal_seal, 6x8 margins, WCAG-AA/pressed-shape gates passed
-Layered title verified: 6 registered 540x960 layers + seamless 1080x320 fog + 8x8 mote; action band mean=50.61, local8=0.54, max=60.61
+Layered title verified: 6 registered 540x960 layers + seamless 1080x320 fog + 8x8 mote; action band mean=45.90, local8=3.61, max=92.49
 PASS audio inventory negative-path: omitted energy_sound.wav was rejected
+PASS title contrast negative paths: wash 0.54 and busy 13.65 both rejected
 ```
 
 Focused checks also passed: `python -m py_compile` for both new processors and
