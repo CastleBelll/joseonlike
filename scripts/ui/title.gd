@@ -107,6 +107,8 @@ var _motes: GPUParticles2D = null
 
 
 func _ready() -> void:
+	MusicDirector.play("title")
+
 	_setup_backdrop()
 	set_process(_layered_backdrop)
 
