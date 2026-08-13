@@ -30,8 +30,8 @@ for a worked example.
 
 ## Running data validation locally
 
-`content-data` owns `tools/validate_data.gd`. Until it lands, this step doesn't exist
-yet — CI treats a missing file as a skipped step with a warning, not a failure:
+`tools/validate_data.gd` checks that every cross-file id reference in `data/**`
+resolves. CI treats a missing file as a skipped step with a warning, not a failure:
 
 ```sh
 godot --headless --path . --script tools/validate_data.gd

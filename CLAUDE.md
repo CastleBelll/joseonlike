@@ -1,0 +1,118 @@
+# JOSEONLIKE — Working Rules
+
+Godot 4.7, GDScript (statically typed), mobile-first 540x960 portrait.
+Repository is the memory of this project. A previous chat session is **not** project state.
+
+---
+
+## 1. The loop (mandatory)
+
+```
+Fresh Session
+  → read git status / log + ROADMAP.md + TASKS.md
+  → pick exactly ONE feature
+  → write its Acceptance Criteria
+  → implement
+  → static + automated verification
+  → Godot runtime verification
+  → review (independent context when the change is non-trivial)
+  → fix until PASS
+  → final verification
+  → update docs (TASKS.md, ROADMAP.md, ASSET_REQUIREMENTS.md)
+  → commit
+  → push
+  → END SESSION
+```
+
+**One feature = one session = one commit.** Never start the next feature in the
+same session. Never commit unverified work.
+
+A "feature" is a single verifiable behaviour: `enemy death drop`, `gold spend in
+workshop`, `pause menu resume`. `combat system` is not a feature — decompose it.
+
+## 2. Acceptance Criteria first
+
+No code before the criteria are written down in the session. Each criterion must be
+checkable by a test or by a described runtime action. Include a regression criterion
+naming what must keep working.
+
+## 3. Verification commands
+
+```sh
+godot --headless --path . --import                          # class cache; required first
+godot --headless --path . --script tests/run_tests.gd       # unit suite, must print PASS
+godot --headless --path . --script tools/validate_data.gd   # data cross-reference check
+godot --path .                                              # runtime check, actually play it
+```
+
+Runtime check covers: no crash, no new `ERROR`/`push_error` output, scene loads,
+input works, the feature does what the criteria say, and the previous feature still works.
+
+Details and known runner gaps: [docs/CI.md](docs/CI.md).
+
+## 4. Implementation rules
+
+- Change only what the current feature needs.
+- Simplest implementation that satisfies the criteria. No speculative abstraction,
+  no framework building, no pre-implementing future systems.
+- Prove first, generalize later. Only clearly game-independent systems
+  (save, settings, audio, input, localization, logging) get separated up front.
+- Existing code is kept. Refactors are their own registered feature in TASKS.md,
+  never smuggled into a feature commit.
+- Style contract: [ARCHITECTURE.md](ARCHITECTURE.md) §6 (typed vars, no `print()`,
+  balance numbers in `data/`, English "why" comments).
+
+## 5. Assets — currently frozen
+
+**Do not generate, cut, or commission art or audio.** The owner supplies assets later.
+
+- New entities use `PlaceholderArt` (`scripts/combat/placeholder_art.gd`) or an
+  existing sprite; a missing texture must never block a gameplay feature.
+- Every asset a feature would want goes into
+  [ASSET_REQUIREMENTS.md](ASSET_REQUIREMENTS.md) instead of being produced.
+- Third-party asset licences go in [ASSET_LICENSES.md](ASSET_LICENSES.md).
+- Art polish is not a gameplay feature and does not share its commit.
+
+## 6. Review
+
+Non-trivial change → review it from an independent context before committing.
+The reviewer checks only: acceptance criteria met, bugs, regressions, Godot
+structure, needless complexity, obvious performance problems, wrong dependencies,
+save compatibility, architecture violations. The reviewer does not redesign the game.
+
+Trivial change (one small function, covered by a test that fails without it) →
+tests + runtime check are enough.
+
+FAIL → fix → re-verify → re-review. Do not commit on FAIL.
+
+## 7. Commit & push
+
+Conventional Commits, English, one feature per commit:
+
+```
+feat(combat): add enemy contact damage cooldown
+fix(ui): stop level-up choice logging unknown weapon ids
+```
+
+Push must succeed. A feature is not done until `git push` succeeds.
+
+## 8. Session start checklist
+
+1. `git status` / `git log --oneline -10`
+2. Read `ROADMAP.md` and `TASKS.md`
+3. Read only the code the chosen feature touches — do not scan the whole repo
+4. Pick one unblocked, smallest-value-adding feature
+5. Write acceptance criteria, then start
+
+## 9. Model / agent usage
+
+Use the cheap path by default. Reserve the strong model for architecture decisions,
+hard bugs, and difficult reviews. Do not keep several agents alive analysing the
+whole repository — Orca orchestration is for running this loop, not for parallel
+long-lived worktree teams.
+
+## 10. Source of truth
+
+`CLAUDE.md` · `ARCHITECTURE.md` · `JOSEONLIKE_GDD.md` · `ROADMAP.md` · `TASKS.md` ·
+`ASSET_SPEC.md` · `ASSET_REQUIREMENTS.md` · `ASSET_LICENSES.md` · `data/BALANCE.md` ·
+`docs/CI.md` · the code · the git history. Nothing else.

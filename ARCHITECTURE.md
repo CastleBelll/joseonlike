@@ -3,30 +3,31 @@
 Engine: **Godot 4.7** (GL Compatibility renderer, mobile-first 540x960 portrait).
 Language: **GDScript**, statically typed.
 
-This document is the coordination contract between five parallel worktrees.
-Read section 1 (ownership) and section 3 (interfaces) before writing any code.
+This document is the code contract: the shared interfaces and the data schemas.
+Read section 3 (interfaces) before writing any code. How work is scheduled and
+verified is [CLAUDE.md](CLAUDE.md).
 
 ---
 
-## 1. Worktree Ownership Map
+## 1. Areas
 
-A worker may **create and edit only files under its owned paths**. Touching another
-worktree's path is a merge conflict, not a shortcut. If you need a change outside your
-paths, send it to the coordinator via `ask`.
+Development runs one feature at a time in a single session on `main`
+(see [CLAUDE.md](CLAUDE.md)); the parallel-worktree ownership contract that used to
+live here was retired on 2026-08-13 along with the worktrees. The areas below remain
+the map of where code goes.
 
-| Worktree | Owns (write) | Reads (never writes) |
-|---|---|---|
-| `core-engine` | `scripts/core/**`, `scenes/boot/**`, `tests/run_tests.gd`, `tests/core/**` | `data/**` |
-| `combat` | `scripts/combat/**`, `scripts/weapons/**`, `scenes/combat/**`, `scenes/actors/**`, `tests/combat/**` | `scripts/core/**`, `data/**` |
-| `content-data` | `data/**`, `tools/validate_data.gd`, `tests/data/**` | `scripts/core/**` |
-| `meta-ui` | `scripts/ui/**`, `scripts/meta/**`, `scenes/ui/**`, `scenes/basecamp/**`, `tests/ui/**` | `scripts/core/**`, `data/**` |
-| `infra-ci` | `.github/**`, `export_presets.cfg`, `tools/ci/**`, `scripts/services/**` | everything |
-| `asset-forge` | `asset/**`, `tools/asset/**` | everything |
+| Area | Paths |
+|---|---|
+| core | `scripts/core/**`, `scenes/boot/**`, `tests/run_tests.gd`, `tests/core/**` |
+| combat | `scripts/combat/**`, `scripts/weapons/**`, `scenes/combat/**`, `scenes/actors/**`, `tests/combat/**` |
+| content data | `data/**`, `tools/validate_data.gd`, `tests/data/**` |
+| meta / UI | `scripts/ui/**`, `scripts/meta/**`, `scenes/ui/**`, `scenes/basecamp/**`, `tests/ui/**` |
+| infra | `.github/**`, `export_presets.cfg`, `tools/ci/**`, `scripts/services/**` |
+| assets | `asset/**`, `tools/asset/**` — frozen, see [ASSET_REQUIREMENTS.md](ASSET_REQUIREMENTS.md) |
 
-**Coordinator-owned, never edited by workers:** `project.godot`, `ARCHITECTURE.md`, `ASSET_SPEC.md`,
-`JOSEONLIKE_GDD.md`, `README.md`, `icon.svg`, `.gitignore`.
-Autoload registration, input map entries, and physics layer names live in
-`project.godot` — request them, do not add them.
+Autoload registration, input map entries, physics layer names and audio bus routing
+live in `project.godot` and `default_bus_layout.tres`. Changing either is an
+architecture change: it gets its own feature session, not a side edit.
 
 ---
 
@@ -60,8 +61,9 @@ asset/            art and audio, singular. Owned by asset-forge; others referenc
 [ASSET_SPEC.md](ASSET_SPEC.md) is the authoritative art and audio specification — style
 authority and measured sizes, direction naming and facing rules, set composition, generation
 rules including what has been measured not to work, cutting, and the two verification layers.
-Read it before commissioning, generating or reviewing any asset. The summary below is the part
-that binds every worktree, not just `asset-forge`.
+Read it before reviewing any asset. Asset production itself is currently frozen —
+[ASSET_REQUIREMENTS.md](ASSET_REQUIREMENTS.md) and [CLAUDE.md](CLAUDE.md) §5 govern that.
+The summary below binds any code that references art, not only asset work.
 
 ### Asset sets, not asset images
 
@@ -363,13 +365,12 @@ silently changes hitboxes.
 ## 5. Testing
 
 Headless runner: `godot --headless --path . --script tests/run_tests.gd`.
-`core-engine` owns the runner; every worktree adds its own `tests/<area>/test_*.gd`.
-A test file exposes `func run() -> Array[String]` returning failure messages
-(empty array = pass).
+Each area adds its own `tests/<area>/test_*.gd`. A test file exposes
+`func run() -> Array[String]` returning failure messages (empty array = pass).
 
-Minimum bar per worktree: every non-trivial system has at least one test that fails
-if the logic breaks. `content-data` must ship `tools/validate_data.gd` verifying that
-every cross-file id reference resolves.
+Minimum bar: every non-trivial system has at least one test that fails if the logic
+breaks. `tools/validate_data.gd` verifies that every cross-file id reference in
+`data/**` resolves, and runs alongside the suite.
 
 ---
 
