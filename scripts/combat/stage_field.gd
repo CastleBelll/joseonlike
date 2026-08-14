@@ -28,6 +28,9 @@ const PLACEHOLDER_COLORS: Dictionary = {
 	"grass": UiPalette.DECOR_GRASS,
 	"fern": UiPalette.DECOR_FERN,
 	"pebble": UiPalette.DECOR_PEBBLE,
+	"lantern": UiPalette.PROP_LANTERN,
+	"shrine": UiPalette.PROP_SHRINE,
+	"fog": UiPalette.DECOR_FOG,
 }
 
 

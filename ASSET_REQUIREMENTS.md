@@ -98,18 +98,6 @@ Used by:   N3-7 combat HUD (scripts/ui/combat_hud.gd)
 Fallback:  code-drawn palette-token glyphs (PauseGlyph/InfoGlyph/SkullIcon/CoinIcon)
 ```
 
-```
-[MISSING] bamboo forest props (AC-4): bamboo_clump, rock, log, puddle solids +
-          grass_tuft, fern, pebble decor
-Size:      logical sizes in data/props.json "size" (e.g. bamboo_clump 48x96);
-          bottom-center anchored; any uniform export scale (code rescales to
-          the logical size, NEAREST)
-Members:   res://asset/stages/bamboo_forest/props/<prop_id>.png
-Used by:   N3-9 stage field (scripts/combat/stage_field.gd); art drops in with
-          zero code change once the PNGs exist at these paths
-Fallback:  palette-token placeholder shapes of the same logical size
-```
-
 ## Anticipated (not yet needed — do not pre-produce)
 
 These become `[MISSING]` entries only when the feature that needs them is actually

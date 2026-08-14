@@ -1,12 +1,8 @@
 class_name Stage
 extends Node2D
-## Combat stage root (N3-1). The ground is a code-drawn dark-forest placeholder
-## in the DESIGN.md §5 palette until the AC-4 tiles land.
-
-const PATCH_COUNT := 60
-const PATCH_RADIUS_MIN := 40.0
-const PATCH_RADIUS_MAX := 140.0
-const PATCH_SEED := 20260814  # fixed so the placeholder ground is deterministic
+## Combat stage root (N3-1). Ground and props render the AC-4 night-bamboo-
+## forest art (N3-10) via Ground/StageField, falling back to palette-token
+## placeholders when a texture is missing.
 
 const WEAPONS_PATH := "res://data/weapons.json"
 const PASSIVES_PATH := "res://data/passives.json"
@@ -17,6 +13,7 @@ const CHOICES_PER_LEVEL := 3
 @onready var _spawner: Spawner = $World/Spawner
 @onready var _hud: CombatHud = $Hud/CombatHud
 @onready var _field: StageField = $World/StageField
+@onready var _ground: GroundLayer = $Ground
 @onready var _decor_layer: Node2D = $DecorLayer
 
 var _run_state: RunState
@@ -59,8 +56,11 @@ func _ready() -> void:
 	_player.bounds = Rect2(-_ground_size / 2.0, _ground_size)
 	# randi() is auto-seeded per process start, so every run scatters a fresh
 	# field layout; tests drive StageField.generate with fixed seeds instead.
+	# Ground and props share one seed so a run's tiles and prop scatter match.
+	var field_seed: int = randi()
+	_ground.build(field_config, field_seed)
 	_field.build(
-		props_config.get("props", {}) as Dictionary, field_config, _decor_layer, randi()
+		props_config.get("props", {}) as Dictionary, field_config, _decor_layer, field_seed
 	)
 	_player.died.connect(_on_player_died)
 	_player.hit_taken.connect(_on_player_hit)
@@ -284,19 +284,3 @@ func _create_puff() -> DeathPuff:
 		func(done: DeathPuff) -> void: _puff_pool.release(done)
 	)
 	return puff
-
-
-func _draw() -> void:
-	if _ground_size == Vector2.ZERO:
-		return
-	var ground := Rect2(-_ground_size / 2.0, _ground_size)
-	draw_rect(ground, UiPalette.FOREST_GROUND)
-	var rng := RandomNumberGenerator.new()
-	rng.seed = PATCH_SEED
-	for i: int in range(PATCH_COUNT):
-		var patch_center := Vector2(
-			rng.randf_range(ground.position.x, ground.end.x),
-			rng.randf_range(ground.position.y, ground.end.y)
-		)
-		var patch_radius: float = rng.randf_range(PATCH_RADIUS_MIN, PATCH_RADIUS_MAX)
-		draw_circle(patch_center, patch_radius, UiPalette.FOREST_SHADOW)

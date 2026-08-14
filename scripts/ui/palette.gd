@@ -52,6 +52,9 @@ const PROP_WATER := Color("#28424e")
 const DECOR_GRASS := Color("#2e4026")
 const DECOR_FERN := Color("#375030")
 const DECOR_PEBBLE := Color("#464a40")
+const PROP_LANTERN := Color("#50737f")
+const PROP_SHRINE := Color("#415250")
+const DECOR_FOG := Color("#293c47")
 
 # Spacing scale (4/8pt grid).
 const SPACE_XS := 4

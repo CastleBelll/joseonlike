@@ -10,65 +10,109 @@
     "max_attempts_per_prop": 24
   },
   "props": {
-    "bamboo_clump": {
-      "size": [48.0, 96.0],
-      "collision": [-18.0, -26.0, 36.0, 26.0],
+    "bamboo_clump_small": {
+      "size": [24.0, 40.0],
+      "collision": [-8.0, -14.0, 16.0, 14.0],
       "solid": true,
-      "weight": 6.0,
+      "weight": 5.0,
       "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/props/bamboo_clump.png",
+      "texture": "res://asset/stages/bamboo_forest/props/bamboo_clump_small.png",
       "placeholder": "bamboo"
     },
-    "rock": {
-      "size": [40.0, 30.0],
-      "collision": [-17.0, -22.0, 34.0, 22.0],
+    "bamboo_clump_large": {
+      "size": [40.0, 56.0],
+      "collision": [-13.0, -18.0, 26.0, 18.0],
+      "solid": true,
+      "weight": 2.0,
+      "shape": "rect",
+      "texture": "res://asset/stages/bamboo_forest/props/bamboo_clump_large.png",
+      "placeholder": "bamboo"
+    },
+    "rock_small": {
+      "size": [20.0, 16.0],
+      "collision": [-8.0, -12.0, 16.0, 12.0],
       "solid": true,
       "weight": 3.0,
       "shape": "round",
-      "texture": "res://asset/stages/bamboo_forest/props/rock.png",
+      "texture": "res://asset/stages/bamboo_forest/props/rock_small.png",
       "placeholder": "rock"
     },
-    "log": {
-      "size": [56.0, 26.0],
-      "collision": [-25.0, -18.0, 50.0, 18.0],
+    "rock_large": {
+      "size": [32.0, 26.0],
+      "collision": [-12.0, -18.0, 24.0, 18.0],
       "solid": true,
-      "weight": 2.0,
-      "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/props/log.png",
-      "placeholder": "log"
-    },
-    "puddle": {
-      "size": [64.0, 36.0],
-      "collision": [-26.0, -26.0, 52.0, 26.0],
-      "solid": true,
-      "weight": 2.0,
+      "weight": 1.5,
       "shape": "round",
-      "texture": "res://asset/stages/bamboo_forest/props/puddle.png",
+      "texture": "res://asset/stages/bamboo_forest/props/rock_large.png",
+      "placeholder": "rock"
+    },
+    "water_puddle": {
+      "size": [40.0, 28.0],
+      "collision": [-15.0, -16.0, 30.0, 16.0],
+      "solid": true,
+      "weight": 1.5,
+      "shape": "round",
+      "texture": "res://asset/stages/bamboo_forest/props/water_puddle.png",
       "placeholder": "water"
     },
+    "fallen_log": {
+      "size": [48.0, 20.0],
+      "collision": [-20.0, -12.0, 40.0, 12.0],
+      "solid": true,
+      "weight": 1.5,
+      "shape": "rect",
+      "texture": "res://asset/stages/bamboo_forest/props/fallen_log.png",
+      "placeholder": "log"
+    },
+    "stone_lantern": {
+      "size": [20.0, 36.0],
+      "collision": [-6.0, -14.0, 12.0, 14.0],
+      "solid": true,
+      "weight": 0.5,
+      "shape": "rect",
+      "texture": "res://asset/stages/bamboo_forest/props/stone_lantern.png",
+      "placeholder": "lantern"
+    },
+    "shrine_post": {
+      "size": [16.0, 40.0],
+      "collision": [-5.0, -12.0, 10.0, 12.0],
+      "solid": true,
+      "weight": 0.5,
+      "shape": "rect",
+      "texture": "res://asset/stages/bamboo_forest/props/shrine_post.png",
+      "placeholder": "shrine"
+    },
     "grass_tuft": {
-      "size": [16.0, 12.0],
+      "size": [12.0, 10.0],
       "solid": false,
       "weight": 6.0,
       "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/props/grass_tuft.png",
+      "texture": "res://asset/stages/bamboo_forest/decor/grass_tuft.png",
       "placeholder": "grass"
     },
     "fern": {
-      "size": [20.0, 16.0],
+      "size": [16.0, 14.0],
       "solid": false,
       "weight": 3.0,
       "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/props/fern.png",
+      "texture": "res://asset/stages/bamboo_forest/decor/fern.png",
       "placeholder": "fern"
     },
-    "pebble": {
-      "size": [10.0, 8.0],
+    "pebbles": {
+      "size": [14.0, 8.0],
       "solid": false,
-      "weight": 2.0,
+      "weight": 3.0,
       "shape": "round",
-      "texture": "res://asset/stages/bamboo_forest/props/pebble.png",
+      "texture": "res://asset/stages/bamboo_forest/decor/pebbles.png",
       "placeholder": "pebble"
+    },
+    "fog_wisp": {
+      "size": [48.0, 24.0],
+      "solid": false,
+      "weight": 1.0,
+      "shape": "rect",
+      "texture": "res://asset/stages/bamboo_forest/decor/fog_wisp.png",
+      "placeholder": "fog"
     }
   }
 }
