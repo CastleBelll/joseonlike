@@ -12,6 +12,8 @@ const WEAPON_MODS_PATH := "res://data/weapon_mods.json"
 const CHOICES_PER_LEVEL := 3
 const POWER_UP_HEADER := "파워 업!"
 const LOOT_SCATTER_PX := 14.0
+## N4-4b actives: 벽사진 flash time (visual only, damage is instant).
+const ACTIVE_BURST_FLASH_SEC := 0.4
 
 @onready var _player: Player = $World/Player
 @onready var _joystick: TouchJoystick = $Hud/VirtualJoystick
@@ -62,6 +64,10 @@ var _boss: Enemy
 var _boss_hp_max: float = 0.0
 var _outcome: String = RunFlow.OUTCOME_NONE
 var _result: ResultScreen
+
+# N4-4b actives: data entries from characters.json plus per-id cooldown left.
+var _actives: Array[Dictionary] = []
+var _active_cooldowns: Dictionary = {}
 
 
 func _ready() -> void:
@@ -121,6 +127,11 @@ func _ready() -> void:
 	_popup.dismissed.connect(_on_popup_dismissed)
 	add_child(_popup)
 	_hud.set_gold(0)  # run gold; banked into the profile at run end (N5-2)
+	_actives = Player.load_actives()
+	for active: Dictionary in _actives:
+		_active_cooldowns[String(active.get("id", ""))] = 0.0
+	_hud.build_actives(_actives)
+	_hud.active_pressed.connect(_on_active_pressed)
 	_refresh_progress_hud()
 
 
@@ -131,6 +142,13 @@ func _physics_process(delta: float) -> void:
 		_end_run(RunFlow.resolve_outcome(false, false, true))
 	if _boss != null and not CombatMath.is_dead(_boss.hp):
 		_hud.set_boss_hp(_boss.hp, _boss_hp_max)
+	for active: Dictionary in _actives:
+		var active_id: String = String(active.get("id", ""))
+		var left: float = maxf(float(_active_cooldowns[active_id]) - delta, 0.0)
+		_active_cooldowns[active_id] = left
+		_hud.set_active_cooldown(active_id, ActiveSkill.cooldown_fraction(
+			left, float(active.get("cooldown_sec", 0.0))
+		))
 
 
 func _on_player_died() -> void:
@@ -183,6 +201,78 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 	var summary: Dictionary = RunFlow.build_summary(_run_elapsed, _kills, _gold)
 	summary["total_gold"] = SaveService.instance.bank_run(_run_elapsed, _kills, _gold, boss_killed)
 	_result.open(outcome, summary)
+
+
+## N4-4b active trigger: the HUD button is display-only — this is the
+## authoritative cooldown gate (CombatMath window rule, boundary inclusive).
+func _on_active_pressed(active_id: String) -> void:
+	if float(_active_cooldowns.get(active_id, 0.0)) > 0.0:
+		return
+	for active: Dictionary in _actives:
+		if String(active.get("id", "")) != active_id:
+			continue
+		_execute_active(active)
+		_active_cooldowns[active_id] = float(active.get("cooldown_sec", 0.0))
+		return
+
+
+## Effects live here so demo tools can fire them without touching cooldowns.
+func _execute_active(active: Dictionary) -> void:
+	match String(active.get("type", "")):
+		"blink":
+			_execute_blink(active)
+		"burst":
+			_execute_burst(active)
+		_:
+			push_error("stage: unknown active type in " + str(active))
+
+
+## 축지: blink along the movement direction, stopped at the first solid prop
+## and clamped to the field, plus a short invulnerability window.
+func _execute_blink(active: Dictionary) -> void:
+	var from: Vector2 = _player.global_position
+	var direction: Vector2 = _player.last_move_direction
+	var distance: float = float(active.get("distance_px", 0.0))
+	var blocked_at: float = INF
+	var query := PhysicsRayQueryParameters2D.create(from, from + direction * distance)
+	query.collision_mask = StageField.LAYER_OBSTACLE
+	var hit: Dictionary = get_world_2d().direct_space_state.intersect_ray(query)
+	if not hit.is_empty():
+		# Stop a body-width short of the prop face. ponytail: a center ray can
+		# graze past a narrow corner; the body's own collision catches it next
+		# frame — full shape cast if that ever reads wrong in play.
+		blocked_at = from.distance_to(hit["position"]) - Player.CONTACT_RADIUS
+	_player.global_position = ActiveSkill.blink_destination(
+		from, direction, distance, blocked_at, _player.bounds
+	)
+	_player.grant_invulnerability(float(active.get("invulnerable_sec", 0.0)))
+	var puff: DeathPuff = _puff_pool.acquire()
+	puff.puff(from, Player.CONTACT_RADIUS * 2.0, ACTIVE_BURST_FLASH_SEC, UiPalette.ACCENT_TAOIST)
+
+
+## 벽사진: the emergency button — heavy damage to everything in a large ring
+## around the player, through the normal damage-number pipeline.
+func _execute_burst(active: Dictionary) -> void:
+	var origin: Vector2 = _player.global_position
+	var radius: float = float(active.get("radius_px", 0.0))
+	var damage: float = float(active.get("damage", 0.0))
+	var puff: DeathPuff = _puff_pool.acquire()
+	puff.puff(origin, radius, ACTIVE_BURST_FLASH_SEC, UiPalette.GOLD)
+	var enemies: Array[Enemy] = _spawner.active_enemies()
+	var positions: Array[Vector2] = []
+	for enemy: Enemy in enemies:
+		positions.append(enemy.global_position)
+	# Collect refs first: striking mutates the spawner's active list.
+	var caught: Array[Enemy] = []
+	for i: int in WeaponMath.targets_in_radius(origin, positions, radius):
+		caught.append(enemies[i])
+	for enemy: Enemy in caught:
+		if CombatMath.is_dead(enemy.hp):
+			continue
+		var hit_at: Vector2 = enemy.global_position
+		var boss_hit: bool = enemy.is_boss
+		enemy.take_damage(damage, CombatMath.chase_direction(origin, hit_at))
+		_on_hit_landed(damage, hit_at, boss_hit)
 
 
 func _on_orb_collected(orb: XpOrb) -> void:

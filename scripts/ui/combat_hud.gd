@@ -30,6 +30,15 @@ const BOSS_BAR_HEIGHT := 6.0
 const VIGNETTE_THICKNESS := 28.0
 const VIGNETTE_MAX_ALPHA := 0.45
 
+## N4-4b: a bottom-right active button was tapped; the stage gates the
+## cooldown and executes the effect.
+signal active_pressed(active_id: String)
+
+# N4-4b active cluster: bottom-right, mirroring the joystick's bottom-left
+# footprint so neither covers the play centre.
+const ACTIVE_BUTTON_SIZE := 64.0
+const ACTIVE_CLUSTER_MARGIN := 32.0
+
 var _elapsed: float = 0.0
 var _timer_label: Label
 var _xp_bar: ProgressBar
@@ -40,6 +49,7 @@ var _pause_overlay: Control
 var _resume_button: Button
 var _boss_bar: ProgressBar
 var _vignette: DamageVignette
+var _active_buttons: Dictionary = {}  # active id -> ActiveButton
 
 
 func _ready() -> void:
@@ -106,6 +116,41 @@ func hide_boss_bar() -> void:
 ## N3-8 player-hit feedback; duration comes from data/effects.json (stage).
 func pulse_damage(duration: float) -> void:
 	_vignette.pulse(duration)
+
+
+## N4-4b: one round button per character active, newest to the left so the
+## primary (first) skill sits in the thumb corner. Called once at run start.
+func build_actives(actives: Array[Dictionary]) -> void:
+	if actives.is_empty():
+		return
+	var row := HBoxContainer.new()
+	row.name = "ActiveCluster"
+	row.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	row.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	row.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	row.offset_right = -ACTIVE_CLUSTER_MARGIN
+	row.offset_bottom = -ACTIVE_CLUSTER_MARGIN
+	row.alignment = BoxContainer.ALIGNMENT_END
+	row.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	for active: Dictionary in actives:
+		var button := ActiveButton.new()
+		var active_id: String = String(active.get("id", ""))
+		button.name = "Active_" + active_id
+		button.skill_name = String(active.get("name_ko", active_id))
+		button.custom_minimum_size = Vector2(ACTIVE_BUTTON_SIZE, ACTIVE_BUTTON_SIZE)
+		button.pressed.connect(
+			func() -> void: active_pressed.emit(active_id)
+		)
+		row.add_child(button)
+		_active_buttons[active_id] = button
+	add_child(row)
+
+
+## Remaining-cooldown fraction for one button (1 = just used, 0 = ready).
+func set_active_cooldown(active_id: String, fraction: float) -> void:
+	var button: ActiveButton = _active_buttons.get(active_id)
+	if button != null:
+		button.set_cooldown(fraction)
 
 
 func _build_corner_buttons() -> void:
@@ -356,6 +401,59 @@ class DamageVignette:
 		draw_rect(
 			Rect2(size.x - thickness, thickness, thickness, size.y - thickness * 2.0),
 			color
+		)
+
+
+## N4-4b round active-skill button: wood disc with the skill name, dimmed
+## while cooling with a sweep arc showing the remaining fraction. Custom-drawn
+## with palette tokens until the AC-3 icon set lands (ASSET_REQUIREMENTS.md).
+class ActiveButton:
+	extends Button
+
+	const RING_WIDTH := 3.0
+	const RING_POINTS := 32
+	const COOLING_ALPHA := 0.55
+	const FONT_SIZE := 16
+
+	var skill_name: String = ""
+	var _fraction: float = 0.0  # remaining cooldown, 1 → 0
+
+	func _init() -> void:
+		flat = true
+		focus_mode = Control.FOCUS_NONE
+
+	func set_cooldown(fraction: float) -> void:
+		var ready_flip: bool = (_fraction > 0.0) != (fraction > 0.0)
+		var moved: bool = absf(fraction - _fraction) > 0.01
+		_fraction = fraction
+		disabled = fraction > 0.0
+		if ready_flip or moved:
+			queue_redraw()
+
+	func _draw() -> void:
+		var center: Vector2 = size / 2.0
+		var radius: float = minf(size.x, size.y) / 2.0 - RING_WIDTH
+		var cooling: bool = _fraction > 0.0
+		var fill: Color = UiPalette.WOOD_PRESSED if cooling else UiPalette.WOOD
+		if cooling:
+			fill = Color(fill, COOLING_ALPHA)
+		draw_circle(center, radius, fill)
+		draw_arc(center, radius, 0.0, TAU, RING_POINTS, UiPalette.WOOD_BORDER, RING_WIDTH)
+		if cooling:
+			# Sweep from 12 o'clock: the lit arc is the remaining wait.
+			draw_arc(
+				center, radius - RING_WIDTH * 2.0, -PI / 2.0,
+				-PI / 2.0 + TAU * _fraction, RING_POINTS,
+				UiPalette.TEXT_ON_DARK, RING_WIDTH
+			)
+		var font: Font = get_theme_default_font()
+		var text_size: Vector2 = font.get_string_size(
+			skill_name, HORIZONTAL_ALIGNMENT_CENTER, -1.0, FONT_SIZE
+		)
+		draw_string(
+			font, center + Vector2(-text_size.x / 2.0, text_size.y * 0.35),
+			skill_name, HORIZONTAL_ALIGNMENT_CENTER, -1.0, FONT_SIZE,
+			UiPalette.WOOD_TEXT
 		)
 
 

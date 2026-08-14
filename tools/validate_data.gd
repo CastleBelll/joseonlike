@@ -47,8 +47,14 @@ const ELITE_MULT_FIELDS: Array[String] = [
 const SOFT_ENRAGE_FIELDS: Array[String] = [
 	"start_sec", "ramp_sec", "hp_mult_max", "damage_mult_max", "speed_mult_max"
 ]
-# N4-4a weapon mechanic contract (weapons.json "mechanic" + its blocks).
-const STATUS_IDS: Array[String] = ["burn", "shock"]
+# N4-4a/N4-4b weapon mechanic contract (weapons.json "mechanic" + its blocks).
+const STATUS_IDS: Array[String] = ["burn", "shock", "curse"]
+# N4-4b character actives contract (characters.json "actives").
+const ACTIVE_TYPES: Array[String] = ["blink", "burst"]
+const ACTIVE_TYPE_FIELDS: Dictionary = {
+	"blink": ["distance_px", "invulnerable_sec"],
+	"burst": ["radius_px", "damage"],
+}
 
 var _errors: int = 0
 
@@ -127,6 +133,7 @@ func _check_combat_cross_references() -> void:
 				character_id, starting_weapon
 			])
 		_check_character_card(characters[character_id], achievements, character_id)
+		_check_character_actives(characters[character_id], character_id)
 	# N3-6 power-up pool: every passive needs a display name and a usable
 	# stack contract, and every offerable stat id must still exist in the file.
 	var passives: Dictionary = _load(DATA_DIR + "/passives.json")
@@ -178,6 +185,38 @@ func _check_character_card(
 		for field: String in UNLOCK_TEXT_FIELDS:
 			if String(character.get(field, "")).is_empty():
 				_fail("%s.%s missing or empty" % [label, field])
+
+
+## N4-4b actives: optional per character, but every declared entry must be a
+## complete skill the stage runtime can execute — unique id, display name, a
+## positive cooldown, a known type, and that type's numeric fields.
+func _check_character_actives(character: Dictionary, character_id: String) -> void:
+	var seen_ids: Array[String] = []
+	for entry: Variant in character.get("actives", []):
+		if entry is not Dictionary:
+			_fail("characters.%s.actives entry is not an object" % character_id)
+			continue
+		var active: Dictionary = entry
+		var active_id: String = String(active.get("id", ""))
+		var label: String = "characters.%s.actives.%s" % [character_id, active_id]
+		if active_id.is_empty():
+			_fail("characters.%s.actives entry missing id" % character_id)
+			continue
+		if seen_ids.has(active_id):
+			_fail(label + " duplicated id")
+		seen_ids.append(active_id)
+		if String(active.get("name_ko", "")).is_empty():
+			_fail(label + ".name_ko missing or empty")
+		_require_positive_numbers(active, ["cooldown_sec"], label)
+		var type: String = String(active.get("type", ""))
+		if type not in ACTIVE_TYPES:
+			_fail(label + ".type must be one of " + str(ACTIVE_TYPES))
+			continue
+		var fields: Array = ACTIVE_TYPE_FIELDS[type]
+		var typed_fields: Array[String] = []
+		for field: Variant in fields:
+			typed_fields.append(String(field))
+		_require_positive_numbers(active, typed_fields, label)
 
 
 ## N4-2 elite variants: multipliers over a real, non-elite base monster.
@@ -271,6 +310,33 @@ func _check_weapon_mechanics(weapons: Dictionary) -> void:
 				)
 				if int(weapon.get("projectile_count", 0)) < 1:
 					_fail(label + ".projectile_count must be at least 1 for orbit")
+			"ward":
+				var ward: Dictionary = weapon.get("ward", {})
+				_require_positive_numbers(
+					ward, ["radius_px", "duration_sec", "tick_sec"], label + ".ward"
+				)
+				var ward_slow: float = float(ward.get("slow_scale", 0.0))
+				if ward_slow <= 0.0 or ward_slow >= 1.0:
+					_fail(label + ".ward.slow_scale must be in (0, 1)")
+			"summon":
+				_require_positive_numbers(
+					weapon.get("summon", {}),
+					["lifetime_sec", "speed", "leash_px", "attack_cooldown_sec"],
+					label + ".summon"
+				)
+			"shockwave":
+				_require_positive_numbers(
+					weapon.get("shockwave", {}),
+					["radius_px", "stun_sec", "knockback_scale"],
+					label + ".shockwave"
+				)
+			"curse":
+				# The curse mechanic IS its status — without it the weapon
+				# degenerates to a plain straight throw.
+				if String(
+					(weapon.get("on_hit_status", {}) as Dictionary).get("id", "")
+				) != "curse":
+					_fail(label + " curse mechanic needs on_hit_status.id 'curse'")
 		_check_weapon_status(weapon, label)
 		if weapon.has("on_hit_seal"):
 			var seal: Dictionary = weapon.get("on_hit_seal", {})
@@ -302,6 +368,12 @@ func _check_weapon_status(weapon: Dictionary, label: String) -> void:
 		var slow: float = float(status.get("slow_scale", 0.0))
 		if slow <= 0.0 or slow >= 1.0:
 			_fail(label + ".on_hit_status.slow_scale must be in (0, 1)")
+	if status_id == "curse":
+		_require_positive_numbers(
+			status, ["dps", "spread_radius_px"], label + ".on_hit_status"
+		)
+		if int(status.get("spread_count", 0)) < 1:
+			_fail(label + ".on_hit_status.spread_count must be at least 1")
 
 
 ## N3-15 targeting contract: a shared positive view margin and a positive

@@ -30,10 +30,14 @@ var facing: int = PlayerMotion.FACING_RIGHT
 var bounds := Rect2()  # zero-size = unclamped; the stage sets the ground rect
 var hp: float = 0.0
 var hp_max: float = 0.0  # raised with hp by the max_hp passive (stage)
+## Last non-zero travel direction — the 축지 blink heading (N4-4b); defaults
+## to facing-right so a blink from standstill still goes somewhere.
+var last_move_direction := Vector2.RIGHT
 
 var _speed: float = 0.0
 var _invuln_window: float = 0.0
 var _time_since_hit: float = 0.0
+var _bonus_invuln_left: float = 0.0  # granted by actives, on top of hit i-frames
 var _visual: Node2D
 var _sprite: AnimatedSprite2D
 
@@ -72,6 +76,22 @@ static func load_starting_weapon() -> String:
 	return String((data[character_id] as Dictionary).get("starting_weapon", ""))
 
 
+## N4-4b: the selected character's active skills (empty for characters that
+## have none yet — the HUD then shows no active buttons).
+static func load_actives() -> Array[Dictionary]:
+	var character_id: String = _character_id()
+	var text: String = FileAccess.get_file_as_string(CHARACTERS_PATH)
+	var data: Variant = JSON.parse_string(text)
+	var actives: Array[Dictionary] = []
+	if data is not Dictionary or not (data as Dictionary).has(character_id):
+		push_error("player: cannot read '%s' from %s" % [character_id, CHARACTERS_PATH])
+		return actives
+	for entry: Variant in (data[character_id] as Dictionary).get("actives", []):
+		if entry is Dictionary:
+			actives.append(entry)
+	return actives
+
+
 static func _load_character_number(field: String) -> float:
 	var character_id: String = _character_id()
 	var text: String = FileAccess.get_file_as_string(CHARACTERS_PATH)
@@ -97,14 +117,20 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_time_since_hit += delta
+	_bonus_invuln_left = maxf(_bonus_invuln_left - delta, 0.0)
 	var move_input: Vector2 = joystick_input
 	if move_input == Vector2.ZERO:
 		move_input = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = PlayerMotion.velocity_for(move_input, _speed)
+	if velocity != Vector2.ZERO:
+		last_move_direction = velocity.normalized()
 	facing = PlayerMotion.facing_sign(velocity.x, facing)
 	_visual.scale.x = float(facing)
 	_update_animation()
-	var invulnerable: bool = not CombatMath.can_hit(_time_since_hit, _invuln_window)
+	var invulnerable: bool = (
+		_bonus_invuln_left > 0.0
+		or not CombatMath.can_hit(_time_since_hit, _invuln_window)
+	)
 	_visual.modulate.a = INVULN_FLASH_ALPHA if invulnerable else 1.0
 	move_and_slide()
 	if bounds.has_area():
@@ -116,9 +142,17 @@ func set_speed_scale(scale: float) -> void:
 	_speed = load_move_speed() * scale
 
 
+## 축지 (N4-4b): a timed shield on top of the post-hit i-frames; repeats
+## refresh, never shorten. The same alpha flash telegraphs it.
+func grant_invulnerability(duration: float) -> void:
+	_bonus_invuln_left = maxf(_bonus_invuln_left, duration)
+
+
 ## Returns true when the hit landed; false while the invulnerability window
 ## from the previous hit is still open.
 func take_hit(damage: float) -> bool:
+	if _bonus_invuln_left > 0.0:
+		return false
 	if not CombatMath.can_hit(_time_since_hit, _invuln_window):
 		return false
 	_time_since_hit = 0.0

@@ -7,8 +7,9 @@ extends CharacterBody2D
 ## ranged/charger AI is a later feature.
 
 signal died(enemy: Enemy)
-## N4-4a: one burn tick landed — relayed by the spawner so the stage can float
-## a damage number without every enemy holding a stage reference.
+## N4-4a: one DoT tick landed (burn, or curse since N4-4b) — relayed by the
+## spawner so the stage can float a damage number without every enemy holding
+## a stage reference.
 signal burn_ticked(amount: float, at: Vector2)
 
 const VISUAL_HEIGHT_RATIO := 2.4  # slightly taller than wide, like the player
@@ -97,6 +98,16 @@ var _burn_tick: float = 0.0
 var _shock_scale: float = 1.0
 var _shock_left: float = 0.0
 var _seal_stacks: int = 0
+# N4-4b statuses: stun (진언 shockwave) roots the chase and mutes the contact
+# bite; curse (살) ticks like burn and spreads to fresh carriers on death —
+# the spawner reads the public fields to propagate.
+var curse_dps: float = 0.0
+var curse_duration: float = 0.0
+var curse_spread_px: float = 0.0
+var curse_spread_count: int = 0
+var _curse_left: float = 0.0
+var _curse_tick: float = 0.0
+var _stun_left: float = 0.0
 
 
 func _ready() -> void:
@@ -156,6 +167,13 @@ func setup(
 	_shock_scale = 1.0
 	_shock_left = 0.0
 	_seal_stacks = 0
+	curse_dps = 0.0
+	curse_duration = 0.0
+	curse_spread_px = 0.0
+	curse_spread_count = 0
+	_curse_left = 0.0
+	_curse_tick = 0.0
+	_stun_left = 0.0
 	_contact_cooldown = contact_cooldown
 	_time_since_contact = contact_cooldown  # first touch may hit immediately
 	separation_push = Vector2.ZERO
@@ -211,15 +229,20 @@ func _physics_process(delta: float) -> void:
 	_time_since_contact += delta
 	_update_flash(delta)
 	_update_burn(delta)
+	_update_curse(delta)
 	if CombatMath.is_dead(hp):
-		return  # the burn tick killed this enemy; it is already released
+		return  # a DoT tick killed this enemy; it is already released
 	_shock_left = maxf(_shock_left - delta, 0.0)
+	_stun_left = maxf(_stun_left - delta, 0.0)
 	_knockback = _knockback.move_toward(Vector2.ZERO, _knockback_decay * delta)
 	var desired: Vector2 = CombatMath.chase_direction(
 		global_position, _target.global_position
 	)
 	var steer: Vector2 = CombatMath.avoid_direction(desired, _block_normal, _avoid_sign)
 	var speed: float = _speed * (_shock_scale if _shock_left > 0.0 else 1.0)
+	# Stunned (진언, N4-4b): the chase stops dead; only knockback still moves it.
+	if _stun_left > 0.0:
+		speed = 0.0
 	velocity = Separation.blended_direction(steer, separation_push) * speed + _knockback
 	move_and_slide()
 	_block_normal = (
@@ -227,7 +250,8 @@ func _physics_process(delta: float) -> void:
 		else Vector2.ZERO
 	)
 	_update_visual_motion()
-	_try_contact_damage()
+	if _stun_left <= 0.0:
+		_try_contact_damage()
 
 
 ## `knockback_scale` lets heavy hits (석장 arc swing, N4-4a) shove harder than
@@ -268,6 +292,27 @@ func apply_shock(slow_scale: float, duration: float) -> void:
 	_shock_left = maxf(_shock_left, duration)
 
 
+## 진언 (N4-4b): a stun roots the chase and mutes the contact bite; repeats
+## refresh, never shorten.
+func apply_stun(duration: float) -> void:
+	_stun_left = maxf(_stun_left, duration)
+
+
+## 살 (N4-4b): strongest curse wins, reapply refreshes the clock — same rule
+## as burn. Spread parameters carry so a propagated curse keeps chaining.
+func apply_curse(dps: float, duration: float, spread_px: float, spread_count: int) -> void:
+	if dps >= curse_dps:
+		curse_dps = dps
+		curse_duration = duration
+	curse_spread_px = maxf(curse_spread_px, spread_px)
+	curse_spread_count = maxi(curse_spread_count, spread_count)
+	_curse_left = maxf(_curse_left, duration)
+
+
+func is_cursed() -> bool:
+	return _curse_left > 0.0
+
+
 ## One seal stack (법검+주사, N4-4a). Returns true when this stack reaches the
 ## burst threshold; the caller deals the burst damage so the damage number
 ## flows through the normal hit pipeline.
@@ -291,6 +336,24 @@ func _update_burn(delta: float) -> void:
 	var at: Vector2 = global_position
 	# A killing tick releases this enemy synchronously via died; emitting the
 	# tick after keeps the number at the corpse position.
+	take_damage(amount)
+	burn_ticked.emit(amount, at)
+
+
+## Same half-second cadence as burn; ticks flow through the shared
+## burn_ticked relay so curse numbers float like any other DoT.
+func _update_curse(delta: float) -> void:
+	# The burn tick this same frame may have already killed and released this
+	# enemy — ticking again would emit died twice.
+	if _curse_left <= 0.0 or CombatMath.is_dead(hp):
+		return
+	_curse_left -= delta
+	_curse_tick += delta
+	if _curse_tick < BURN_TICK_SEC:
+		return
+	_curse_tick -= BURN_TICK_SEC
+	var amount: float = curse_dps * BURN_TICK_SEC
+	var at: Vector2 = global_position
 	take_damage(amount)
 	burn_ticked.emit(amount, at)
 

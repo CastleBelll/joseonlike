@@ -38,6 +38,36 @@ Used by:   <feature or data id that references it>
 Fallback:  <what ships until it arrives>
 ```
 
+[MISSING] weapon_gyeolgye_ward
+Size:      ~170x170 px (radius-scaled)
+Members:   ward circle ground decal + placement flash, fire variant (화염 결계)
+Used by:   weapons.json gyeolgye / hwayeom_gyeolgye (N4-4b)
+Fallback:  palette-token translucent disc + ring (scripts/combat/ward.gd)
+
+[MISSING] summon_sinjang
+Size:      40x40 logical frames (16x export blocks, like the taoist)
+Members:   idle + 4-frame walk, right-facing (left is mirrored), thunder tint variant
+Used by:   weapons.json sinjang / noe_sinjang (N4-4b)
+Fallback:  palette-token robed silhouette (scripts/combat/summon.gd)
+
+[MISSING] fx_jineon_shockwave
+Size:      ~270x270 px expanding ring
+Members:   3-4 frame pulse ring, sealing-gold variant (봉인 진언)
+Used by:   weapons.json jineon / bongin_jineon (N4-4b)
+Fallback:  reused DeathPuff disc flash
+
+[MISSING] fx_sal_curse_mark
+Size:      ~16x16 px overhead mark
+Members:   cursed-enemy marker + projectile talisman variant
+Used by:   weapons.json sal / gwisal (N4-4b)
+Fallback:  curse-tinted projectile paper; no on-enemy marker yet
+
+[MISSING] ui_active_buttons
+Size:      64x64 px each
+Members:   축지/벽사진 icon discs, ready + cooling states (AC-3 scope)
+Used by:   CombatHud active cluster (N4-4b)
+Fallback:  wood-token drawn discs with the skill name
+
 ---
 
 ## Missing

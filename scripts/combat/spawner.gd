@@ -224,6 +224,8 @@ func _despawn_far_enemies() -> void:
 func _on_enemy_died(enemy: Enemy) -> void:
 	if enemy.is_burning() and enemy.burn_spread_px > 0.0:
 		_spread_burn(enemy)
+	if enemy.is_cursed():
+		_spread_curse(enemy)
 	enemy_killed.emit(enemy)
 	_release(enemy)
 
@@ -242,6 +244,26 @@ func _spread_burn(source: Enemy) -> void:
 		if source.global_position.distance_squared_to(enemy.global_position) > radius * radius:
 			continue
 		enemy.apply_burn(source.burn_dps, source.burn_duration, radius)
+
+
+## 살 (N4-4b): a cursed death infects up to spread_count nearest UNCURSED
+## neighbours — never a current carrier, so the chain sweeps a crowd once
+## instead of ping-ponging (WeaponMath.curse_spread_targets is the tested
+## reference). Death-time only, so the small per-death arrays are fine.
+func _spread_curse(source: Enemy) -> void:
+	var positions: Array[Vector2] = []
+	var cursed: Array[bool] = []
+	for enemy: Enemy in _active:
+		positions.append(enemy.global_position)
+		cursed.append(enemy == source or enemy.is_cursed())
+	for i: int in WeaponMath.curse_spread_targets(
+		source.global_position, positions, cursed,
+		source.curse_spread_px, source.curse_spread_count
+	):
+		_active[i].apply_curse(
+			source.curse_dps, source.curse_duration,
+			source.curse_spread_px, source.curse_spread_count
+		)
 
 
 func _release(enemy: Enemy) -> void:

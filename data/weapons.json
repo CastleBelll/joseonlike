@@ -364,6 +364,228 @@
       "duration_sec": 3.0
     }
   },
+  "gyeolgye": {
+    "name_ko": "결계",
+    "name_en": "Ward Circle",
+    "category": "spiritual",
+    "grade": "common",
+    "mechanic": "ward",
+    "damage": 4.0,
+    "cooldown_sec": 4.0,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 0.0,
+    "range_px": 260.0,
+    "ward": {
+      "radius_px": 70.0,
+      "duration_sec": 3.5,
+      "tick_sec": 0.5,
+      "slow_scale": 0.6
+    },
+    "max_level": 8,
+    "per_level": {
+      "damage": 1.0,
+      "cooldown_sec": -0.15
+    },
+    "evolution_only": false
+  },
+  "hwayeom_gyeolgye": {
+    "name_ko": "화염 결계",
+    "name_en": "Flame Ward",
+    "category": "spiritual",
+    "grade": "epic",
+    "mechanic": "ward",
+    "damage": 5.0,
+    "cooldown_sec": 3.6,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 0.0,
+    "range_px": 260.0,
+    "ward": {
+      "radius_px": 85.0,
+      "duration_sec": 4.0,
+      "tick_sec": 0.5,
+      "slow_scale": 0.55
+    },
+    "max_level": 8,
+    "per_level": {
+      "damage": 1.2,
+      "cooldown_sec": -0.12
+    },
+    "evolution_only": true,
+    "on_hit_status": {
+      "id": "burn",
+      "dps": 5.0,
+      "duration_sec": 2.0
+    }
+  },
+  "sinjang": {
+    "name_ko": "신장 소환",
+    "name_en": "Spirit General",
+    "category": "spiritual",
+    "grade": "common",
+    "mechanic": "summon",
+    "damage": 10.0,
+    "cooldown_sec": 6.0,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 0.0,
+    "range_px": 460.0,
+    "summon": {
+      "lifetime_sec": 8.0,
+      "speed": 130.0,
+      "leash_px": 320.0,
+      "attack_cooldown_sec": 0.8
+    },
+    "max_level": 8,
+    "per_level": {
+      "damage": 2.0,
+      "cooldown_sec": -0.3
+    },
+    "evolution_only": false
+  },
+  "noe_sinjang": {
+    "name_ko": "뇌정 신장",
+    "name_en": "Thunder General",
+    "category": "spiritual",
+    "grade": "epic",
+    "mechanic": "summon",
+    "damage": 13.0,
+    "cooldown_sec": 5.0,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 0.0,
+    "range_px": 460.0,
+    "summon": {
+      "lifetime_sec": 9.0,
+      "speed": 145.0,
+      "leash_px": 340.0,
+      "attack_cooldown_sec": 0.65
+    },
+    "max_level": 8,
+    "per_level": {
+      "damage": 2.5,
+      "cooldown_sec": -0.25
+    },
+    "evolution_only": true,
+    "on_hit_status": {
+      "id": "shock",
+      "slow_scale": 0.5,
+      "duration_sec": 1.5
+    }
+  },
+  "jineon": {
+    "name_ko": "진언",
+    "name_en": "True Word",
+    "category": "spiritual",
+    "grade": "common",
+    "mechanic": "shockwave",
+    "damage": 6.0,
+    "cooldown_sec": 3.0,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 0.0,
+    "range_px": 120.0,
+    "shockwave": {
+      "radius_px": 120.0,
+      "stun_sec": 0.8,
+      "knockback_scale": 2.0
+    },
+    "max_level": 8,
+    "per_level": {
+      "damage": 1.5,
+      "cooldown_sec": -0.12
+    },
+    "evolution_only": false
+  },
+  "bongin_jineon": {
+    "name_ko": "봉인 진언",
+    "name_en": "Sealing Word",
+    "category": "spiritual",
+    "grade": "epic",
+    "mechanic": "shockwave",
+    "damage": 8.0,
+    "cooldown_sec": 2.7,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 0.0,
+    "range_px": 135.0,
+    "shockwave": {
+      "radius_px": 135.0,
+      "stun_sec": 1.0,
+      "knockback_scale": 2.2
+    },
+    "max_level": 8,
+    "per_level": {
+      "damage": 2.0,
+      "cooldown_sec": -0.1
+    },
+    "evolution_only": true,
+    "on_hit_seal": {
+      "burst_at": 4,
+      "burst_damage_scale": 3.0
+    }
+  },
+  "sal": {
+    "name_ko": "살",
+    "name_en": "Hex Bolt",
+    "category": "spiritual",
+    "grade": "common",
+    "mechanic": "curse",
+    "damage": 8.0,
+    "cooldown_sec": 1.6,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 300.0,
+    "range_px": 440.0,
+    "max_level": 8,
+    "per_level": {
+      "damage": 2.0,
+      "cooldown_sec": -0.06
+    },
+    "evolution_only": false,
+    "on_hit_status": {
+      "id": "curse",
+      "dps": 5.0,
+      "duration_sec": 4.0,
+      "spread_radius_px": 110.0,
+      "spread_count": 3
+    }
+  },
+  "gwisal": {
+    "name_ko": "귀살",
+    "name_en": "Ghost Hex",
+    "category": "spiritual",
+    "grade": "epic",
+    "mechanic": "curse",
+    "damage": 10.0,
+    "cooldown_sec": 1.4,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 320.0,
+    "range_px": 450.0,
+    "max_level": 8,
+    "per_level": {
+      "damage": 2.5,
+      "cooldown_sec": -0.05
+    },
+    "evolution_only": true,
+    "on_hit_status": {
+      "id": "curse",
+      "dps": 8.0,
+      "duration_sec": 4.5,
+      "spread_radius_px": 130.0,
+      "spread_count": 4
+    }
+  },
   "sword": {
     "name_ko": "환도",
     "name_en": "Sword",

@@ -33,10 +33,13 @@ const OFFERABLE_PASSIVES: Array[String] = [
 ## Mechanics the AutoWeapon runtime implements (N4-4a); a data entry with an
 ## unknown mechanic must never become a card.
 const SUPPORTED_MECHANICS: Array[String] = [
-	"straight", "pierce", "explosion", "chain", "melee_arc", "orbit"
+	"straight", "pierce", "explosion", "chain", "melee_arc", "orbit",
+	"ward", "summon", "shockwave", "curse"
 ]
 ## Mechanics that fly a Projectile and therefore need a positive speed.
-const PROJECTILE_MECHANICS: Array[String] = ["straight", "pierce", "explosion", "chain"]
+const PROJECTILE_MECHANICS: Array[String] = [
+	"straight", "pierce", "explosion", "chain", "curse"
+]
 ## At or past this pierce count the card reads "everything on the line".
 const PIERCE_ALL := 99
 
@@ -199,6 +202,26 @@ static func mechanic_text(stats: Dictionary) -> String:
 		"pierce":
 			var pierce: int = int(stats.get("pierce", 0))
 			parts.append("직선 전원 관통" if pierce >= PIERCE_ALL else "관통 %d" % pierce)
+		"ward":
+			var ward: Dictionary = stats.get("ward", {})
+			parts.append("장판 반경 %spx · %s초 지속 · 이동 %d%%" % [
+				_fmt(float(ward.get("radius_px", 0.0))),
+				_fmt(float(ward.get("duration_sec", 0.0))),
+				int(round(float(ward.get("slow_scale", 1.0)) * 100.0)),
+			])
+		"summon":
+			var summon: Dictionary = stats.get("summon", {})
+			parts.append("소환수 %s초 · %s초마다 공격" % [
+				_fmt(float(summon.get("lifetime_sec", 0.0))),
+				_fmt(float(summon.get("attack_cooldown_sec", 0.0))),
+			])
+		"shockwave":
+			var shockwave: Dictionary = stats.get("shockwave", {})
+			parts.append("파동 반경 %spx · 기절 %s초 · 넉백 %s배" % [
+				_fmt(float(shockwave.get("radius_px", 0.0))),
+				_fmt(float(shockwave.get("stun_sec", 0.0))),
+				_fmt(float(shockwave.get("knockback_scale", 1.0))),
+			])
 	var status: Dictionary = stats.get("on_hit_status", {})
 	match String(status.get("id", "")):
 		"burn":
@@ -213,6 +236,12 @@ static func mechanic_text(stats: Dictionary) -> String:
 			parts.append("감전 이동 %d%% (%s초)" % [
 				int(round(float(status.get("slow_scale", 1.0)) * 100.0)),
 				_fmt(float(status.get("duration_sec", 0.0))),
+			])
+		"curse":
+			parts.append("저주 초당 %s (%s초) · 사망 시 %d마리 전염" % [
+				_fmt(float(status.get("dps", 0.0))),
+				_fmt(float(status.get("duration_sec", 0.0))),
+				int(status.get("spread_count", 0)),
 			])
 	var seal: Dictionary = stats.get("on_hit_seal", {})
 	if not seal.is_empty():

@@ -158,7 +158,7 @@ func test_runtime_gate_rejects_unfireable_entries() -> bool:
 	# The 환도 family: no mechanic declared, speed 0 — stays out of the pool.
 	var legacy_melee := {"speed": 0.0}
 	# A future mechanic the runtime does not implement yet.
-	var unknown := {"mechanic": "summon", "speed": 0.0}
+	var unknown := {"mechanic": "beam", "speed": 0.0}
 	# A projectile mechanic that forgot its speed.
 	var stuck := {"mechanic": "chain", "speed": 0.0}
 	return (
@@ -199,4 +199,108 @@ func test_seal_and_lifesteal_read_on_mod_cards() -> bool:
 	return (
 		seal_text.contains("봉인") and seal_text.contains("4")
 		and steal_text.contains("흡혈") and steal_text.contains("12%")
+	)
+
+
+# --- N4-4b extended kit helpers ---
+
+
+## 결계 ward tick: same inclusive-radius rule as the explosion splash — the
+## ward reuses targets_in_radius, pinned here with ward-sized numbers.
+func test_ward_tick_targets_only_inside_radius() -> bool:
+	var positions: Array[Vector2] = [
+		Vector2(30.0, 0.0), Vector2(0.0, 70.0), Vector2(0.0, 71.0), Vector2(200.0, 0.0)
+	]
+	var hits: Array[int] = WeaponMath.targets_in_radius(Vector2.ZERO, positions, 70.0)
+	return hits == [0, 1]
+
+
+func test_summon_targets_nearest_to_summon_within_player_leash() -> bool:
+	var player := Vector2.ZERO
+	var summon := Vector2(100.0, 0.0)
+	var positions: Array[Vector2] = [
+		Vector2(140.0, 0.0),  # nearest to the summon, inside the leash
+		Vector2(50.0, 0.0),   # inside the leash, farther from the summon
+		Vector2(170.0, 5.0),  # nearest of all to the summon, but outside the leash
+	]
+	var index: int = WeaponMath.summon_target_index(summon, player, positions, 150.0)
+	if index != 0:
+		return false
+	# Tighten the leash so only the enemy near the player qualifies.
+	return WeaponMath.summon_target_index(summon, player, positions, 90.0) == 1
+
+
+func test_summon_heels_when_leash_is_empty() -> bool:
+	var positions: Array[Vector2] = [Vector2(500.0, 0.0)]
+	return WeaponMath.summon_target_index(Vector2.ZERO, Vector2.ZERO, positions, 100.0) == -1
+
+
+## 진언 shockwave: hit set is the inclusive radius, and every knockback vector
+## points radially away from the pulse origin (the chase_direction the runtime
+## feeds into take_damage).
+func test_shockwave_knockback_points_away_from_origin() -> bool:
+	var origin := Vector2(10.0, 10.0)
+	var positions: Array[Vector2] = [Vector2(60.0, 10.0), Vector2(10.0, -40.0)]
+	for i: int in WeaponMath.targets_in_radius(origin, positions, 120.0):
+		var push: Vector2 = CombatMath.chase_direction(origin, positions[i])
+		if not push.is_equal_approx((positions[i] - origin).normalized()):
+			return false
+	return WeaponMath.targets_in_radius(origin, positions, 120.0).size() == 2
+
+
+func test_curse_spread_skips_cursed_carriers_and_caps_count() -> bool:
+	var corpse := Vector2.ZERO
+	var positions: Array[Vector2] = [
+		Vector2(10.0, 0.0),   # cursed already — must never be revisited
+		Vector2(20.0, 0.0),
+		Vector2(30.0, 0.0),
+		Vector2(40.0, 0.0),
+		Vector2(50.0, 0.0),
+	]
+	var cursed: Array[bool] = [true, false, false, false, false]
+	var targets: Array[int] = WeaponMath.curse_spread_targets(
+		corpse, positions, cursed, 100.0, 3
+	)
+	return targets == [1, 2, 3]
+
+
+func test_curse_spread_respects_radius() -> bool:
+	var positions: Array[Vector2] = [Vector2(110.0, 0.0), Vector2(50.0, 0.0)]
+	var cursed: Array[bool] = [false, false]
+	var targets: Array[int] = WeaponMath.curse_spread_targets(
+		Vector2.ZERO, positions, cursed, 100.0, 5
+	)
+	return targets == [1]
+
+
+func test_extended_kit_descriptions_carry_numbers() -> bool:
+	var ward := {
+		"mechanic": "ward",
+		"ward": {"radius_px": 70.0, "duration_sec": 3.5, "tick_sec": 0.5, "slow_scale": 0.6},
+	}
+	var summon := {
+		"mechanic": "summon",
+		"summon": {
+			"lifetime_sec": 8.0, "speed": 130.0, "leash_px": 320.0,
+			"attack_cooldown_sec": 0.8,
+		},
+	}
+	var shockwave := {
+		"mechanic": "shockwave",
+		"shockwave": {"radius_px": 120.0, "stun_sec": 0.8, "knockback_scale": 2.0},
+	}
+	var curse := {
+		"mechanic": "curse",
+		"on_hit_status": {
+			"id": "curse", "dps": 5.0, "duration_sec": 4.0,
+			"spread_radius_px": 110.0, "spread_count": 3,
+		},
+	}
+	return (
+		LevelUp.mechanic_text(ward).contains("70")
+		and LevelUp.mechanic_text(ward).contains("60%")
+		and LevelUp.mechanic_text(summon).contains("8")
+		and LevelUp.mechanic_text(shockwave).contains("기절")
+		and LevelUp.mechanic_text(curse).contains("전염")
+		and LevelUp.mechanic_text(curse).contains("3")
 	)

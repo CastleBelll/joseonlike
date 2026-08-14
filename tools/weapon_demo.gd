@@ -4,6 +4,9 @@ extends Node
 ## granted weapon stays the whole show), and captures timed screenshots for
 ## eyeball verification of each mechanic.
 ## Run: godot --path . res://tools/weapon_demo.tscn -- --weapon=hwabu
+## N4-4b: --active=<id from the character's actives> additionally fires that
+## active on a fixed demo clock (cooldown bypassed) and screenshots each cast.
+## Run: godot --path . res://tools/weapon_demo.tscn -- --weapon=old_talisman --active=chukji
 
 const STAGE_SCENE := "res://scenes/stage.tscn"
 const SHOT_TIMES: Array[float] = [6.0, 8.0, 10.0, 12.0, 14.0, 16.0]
@@ -14,8 +17,12 @@ const HUGE_HP := 99999.0
 const HIT_SHOT_MAX := 3
 const HIT_SHOT_GAP_SEC := 2.0
 
+const ACTIVE_FIRE_TIMES: Array[float] = [5.0, 9.0, 13.0]
+
 var _stage: Stage
 var _weapon_id: String = ""
+var _active_id: String = ""
+var _active_fires: int = 0
 var _shots_done: int = 0
 var _hit_shots: int = 0
 var _last_hit_shot: float = -HIT_SHOT_GAP_SEC
@@ -26,6 +33,8 @@ func _ready() -> void:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with("--weapon="):
 			_weapon_id = arg.get_slice("=", 1)
+		if arg.begins_with("--active="):
+			_active_id = arg.get_slice("=", 1)
 	_stage = (load(STAGE_SCENE) as PackedScene).instantiate()
 	add_child(_stage)
 	var player: Player = _stage.get_node("World/Player")
@@ -70,8 +79,23 @@ func _process(_delta: float) -> void:
 	if _shots_done < SHOT_TIMES.size() and elapsed >= SHOT_TIMES[_shots_done]:
 		_shots_done += 1
 		_capture("user://demo_%s_%d.png" % [_weapon_id, _shots_done])
+	if not _active_id.is_empty() and _active_fires < ACTIVE_FIRE_TIMES.size() \
+			and elapsed >= ACTIVE_FIRE_TIMES[_active_fires]:
+		_active_fires += 1
+		_fire_active()
 	if elapsed >= QUIT_AT_SEC:
 		get_tree().quit(0)
+
+
+## Demo bypass: call the effect directly so a 45s-cooldown emergency button
+## still shows several casts inside the 18s demo window.
+func _fire_active() -> void:
+	for active: Dictionary in _stage._actives:
+		if String(active.get("id", "")) == _active_id:
+			_stage._execute_active(active)
+			_capture("user://demo_active_%s_%d.png" % [_active_id, _active_fires])
+			return
+	push_error("weapon_demo: unknown active id " + _active_id)
 
 
 func _capture(path: String) -> void:

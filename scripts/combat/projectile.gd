@@ -145,6 +145,13 @@ func _strike(enemy: Enemy, damage: float) -> void:
 				float(_status.get("slow_scale", 1.0)),
 				float(_status.get("duration_sec", 0.0))
 			)
+		"curse":
+			enemy.apply_curse(
+				float(_status.get("dps", 0.0)),
+				float(_status.get("duration_sec", 0.0)),
+				float(_status.get("spread_radius_px", 0.0)),
+				int(_status.get("spread_count", 0))
+			)
 	var burst: float = 0.0
 	if not _seal.is_empty() and enemy.apply_seal(int(_seal.get("burst_at", 0))):
 		burst = damage * float(_seal.get("burst_damage_scale", 0.0))

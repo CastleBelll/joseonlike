@@ -25,6 +25,12 @@ const MECHANIC_EXPLOSION := "explosion"
 const MECHANIC_CHAIN := "chain"
 const MECHANIC_MELEE_ARC := "melee_arc"
 const MECHANIC_ORBIT := "orbit"
+# N4-4b extended kit (GDD §11.1): ground ward, autonomous summon, periodic
+# control shockwave, and the spreading-curse projectile.
+const MECHANIC_WARD := "ward"
+const MECHANIC_SUMMON := "summon"
+const MECHANIC_SHOCKWAVE := "shockwave"
+const MECHANIC_CURSE := "curse"
 ## N4-1/N4-4a: per-weapon placeholder tint so every archetype reads distinct
 ## on the field; anything unlisted keeps the plain talisman paper.
 const TINTS: Dictionary = {
@@ -40,6 +46,13 @@ const TINTS: Dictionary = {
 	"ghost_staff": UiPalette.WEAPON_GHOST,
 	"honbul": UiPalette.WEAPON_SOUL,
 	"flame_honbul": UiPalette.WEAPON_FIRE,
+	"gyeolgye": UiPalette.WEAPON_SEAL,
+	"hwayeom_gyeolgye": UiPalette.WEAPON_FIRE,
+	"sinjang": UiPalette.ACCENT_TAOIST,
+	"noe_sinjang": UiPalette.WEAPON_LIGHTNING,
+	"bongin_jineon": UiPalette.WEAPON_SEAL,
+	"sal": UiPalette.WEAPON_CURSE,
+	"gwisal": UiPalette.WEAPON_CURSE,
 }
 
 var weapon_id: String = ""
@@ -74,6 +87,14 @@ var _orb_recent: Dictionary = {}
 var _arc_flash: ArcFlash
 var _flash_pool: NodePool
 var _caught: Array[Enemy] = []  # per-frame scratch, reused without alloc
+# N4-4b mechanic state: pooled wards, one live summon, shockwave numbers.
+var _ward: Dictionary = {}
+var _ward_pool: NodePool
+var _summon_config: Dictionary = {}
+var _summon_pool: NodePool
+var _live_summon: Summon
+var _shockwave: Dictionary = {}
+var _positions: Array[Vector2] = []  # per-pulse scratch, reused without alloc
 
 
 func setup(id: String, player: Player, spawner: Spawner) -> void:
@@ -105,6 +126,15 @@ func setup(id: String, player: Player, spawner: Spawner) -> void:
 			_orbit = _stats.get("orbit", {})
 			_build_orbs(int(_stats.get("projectile_count", 1)))
 		MECHANIC_EXPLOSION:
+			_flash_pool = NodePool.new(self, _create_explosion_flash)
+		MECHANIC_WARD:
+			_ward = _stats.get("ward", {})
+			_ward_pool = NodePool.new(self, _create_ward)
+		MECHANIC_SUMMON:
+			_summon_config = _stats.get("summon", {})
+			_summon_pool = NodePool.new(self, _create_summon)
+		MECHANIC_SHOCKWAVE:
+			_shockwave = _stats.get("shockwave", {})
 			_flash_pool = NodePool.new(self, _create_explosion_flash)
 	_recompute()
 
@@ -149,7 +179,7 @@ func _build_shot_config() -> Dictionary:
 	if _stats.has("on_hit_seal"):
 		config["seal"] = _stats.get("on_hit_seal", {})
 	match _mechanic:
-		MECHANIC_STRAIGHT:
+		MECHANIC_STRAIGHT, MECHANIC_CURSE:
 			config["pierce"] = int(_stats.get("pierce", 0))
 		MECHANIC_PIERCE:
 			config["pierce"] = int(_stats.get("pierce", 0))
@@ -169,11 +199,26 @@ func _physics_process(delta: float) -> void:
 	if _mechanic == MECHANIC_ORBIT:
 		_process_orbit(delta)
 		return
+	# A live summon suspends the cooldown; the resummon clock starts only
+	# after the general expires.
+	if _mechanic == MECHANIC_SUMMON and _live_summon != null:
+		return
 	_cooldown_left -= delta
 	if _cooldown_left > 0.0:
 		return
-	if _try_fire():
-		_cooldown_left = _cooldown  # no target keeps the shot ready, VS-style
+	match _mechanic:
+		MECHANIC_WARD:
+			if _try_place_ward():
+				_cooldown_left = _cooldown
+		MECHANIC_SUMMON:
+			_spawn_summon()
+			_cooldown_left = _cooldown
+		MECHANIC_SHOCKWAVE:
+			_pulse_shockwave()
+			_cooldown_left = _cooldown
+		_:
+			if _try_fire():
+				_cooldown_left = _cooldown  # no target keeps the shot ready, VS-style
 
 
 func _try_fire() -> bool:
@@ -267,6 +312,79 @@ func _process_orbit(delta: float) -> void:
 		hit_landed.emit(_damage, hit_at, boss_hit)
 
 
+## 결계 (N4-4b): drop a pooled ward on the nearest visible enemy — same
+## on-screen targeting contract as every projectile weapon. No target holds
+## the placement ready.
+func _try_place_ward() -> bool:
+	var index: int = _nearest_visible()
+	if index < 0:
+		return false
+	var ward: Ward = _ward_pool.acquire()
+	ward.arm(
+		_spawner.active_enemies()[index].global_position, _spawner, _ward,
+		_damage, _stats.get("on_hit_status", {}), _tint()
+	)
+	return true
+
+
+## 신장 (N4-4b): one general at a time, raised at the master's side.
+func _spawn_summon() -> void:
+	_live_summon = _summon_pool.acquire()
+	_live_summon.arm(
+		_player.global_position, _player, _spawner, _summon_config,
+		_damage, _stats.get("on_hit_status", {}), _tint()
+	)
+
+
+## 진언 (N4-4b): a pulse around the player — damage is secondary, the point
+## is the knockback + stun space. Pulses on the clock even with an empty
+## field so the heartbeat stays readable.
+func _pulse_shockwave() -> void:
+	var origin: Vector2 = _player.global_position
+	var radius: float = float(_shockwave.get("radius_px", 0.0))
+	var stun_sec: float = float(_shockwave.get("stun_sec", 0.0))
+	var knockback: float = float(_shockwave.get("knockback_scale", 1.0))
+	var seal: Dictionary = _stats.get("on_hit_seal", {})
+	var flash: DeathPuff = _flash_pool.acquire()
+	flash.puff(origin, radius, EXPLOSION_FLASH_SEC, _tint())
+	var enemies: Array[Enemy] = _spawner.active_enemies()
+	_positions.clear()
+	for enemy: Enemy in enemies:
+		_positions.append(enemy.global_position)
+	# Collect refs first: striking mutates the spawner's active list.
+	_caught.clear()
+	for i: int in WeaponMath.targets_in_radius(origin, _positions, radius):
+		_caught.append(enemies[i])
+	for enemy: Enemy in _caught:
+		if CombatMath.is_dead(enemy.hp):
+			continue
+		enemy.apply_stun(stun_sec)
+		var burst: float = 0.0
+		if not seal.is_empty() and enemy.apply_seal(int(seal.get("burst_at", 0))):
+			burst = _damage * float(seal.get("burst_damage_scale", 0.0))
+		var hit_at: Vector2 = enemy.global_position
+		var boss_hit: bool = enemy.is_boss
+		enemy.take_damage(
+			_damage + burst, CombatMath.chase_direction(origin, hit_at), knockback
+		)
+		_after_hit(_damage)
+		hit_landed.emit(_damage, hit_at, boss_hit)
+		if burst > 0.0:
+			hit_landed.emit(burst, hit_at, boss_hit)
+
+
+## Shared on-screen targeting (N3-15) for non-projectile placements.
+func _nearest_visible() -> int:
+	var enemies: Array[Enemy] = _spawner.active_enemies()
+	_positions.clear()
+	for enemy: Enemy in enemies:
+		_positions.append(enemy.global_position)
+	return CombatMath.nearest_visible_index(
+		_player.global_position, _player.global_position, get_viewport_rect().size,
+		_view_margin, _positions, _range
+	)
+
+
 ## 석장+귀철 (N4-4a): every landed point heals its lifesteal share, capped at
 ## the run's max HP.
 func _after_hit(amount: float) -> void:
@@ -308,6 +426,34 @@ func _on_projectile_exploded(at: Vector2, radius: float) -> void:
 		return
 	var flash: DeathPuff = _flash_pool.acquire()
 	flash.puff(at, radius, EXPLOSION_FLASH_SEC, UiPalette.WEAPON_FIRE)
+
+
+func _create_ward() -> Ward:
+	var ward := Ward.new()
+	ward.ticked.connect(
+		func(amount: float, at: Vector2, boss_hit: bool) -> void:
+			_after_hit(amount)
+			hit_landed.emit(amount, at, boss_hit)
+	)
+	ward.finished.connect(
+		func(done: Ward) -> void: _ward_pool.release(done)
+	)
+	return ward
+
+
+func _create_summon() -> Summon:
+	var summon := Summon.new()
+	summon.struck.connect(
+		func(amount: float, at: Vector2, boss_hit: bool) -> void:
+			_after_hit(amount)
+			hit_landed.emit(amount, at, boss_hit)
+	)
+	summon.expired.connect(
+		func(done: Summon) -> void:
+			_live_summon = null
+			_summon_pool.release(done)
+	)
+	return summon
 
 
 func _create_explosion_flash() -> DeathPuff:

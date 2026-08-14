@@ -64,6 +64,20 @@ func _ready() -> void:
 	add_child(_stage)
 	_player = _stage.get_node("World/Player")
 	_spawner = _stage.get_node("World/Spawner")
+	# N4-4b: --grant=a,b,c hands the run extra weapons at start, so a surge
+	# can be load-tested with specific mechanics (wards/summons/shockwaves)
+	# the picker bot might never draw on its own.
+	for arg: String in OS.get_cmdline_user_args():
+		if not arg.begins_with("--grant="):
+			continue
+		for weapon_id: String in arg.get_slice("=", 1).split(","):
+			if _stage._owned_levels.has(weapon_id):
+				continue
+			_stage._owned_levels[weapon_id] = 1
+			_stage._owned_grades[weapon_id] = LevelUp.current_grade(
+				weapon_id, _stage._weapons_data, {}
+			)
+			_stage._add_weapon_node(weapon_id)
 
 
 func _process(delta: float) -> void:

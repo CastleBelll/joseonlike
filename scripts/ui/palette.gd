@@ -87,6 +87,9 @@ const WEAPON_SEAL := GOLD
 # violet ghost-iron staff arc, separated from lightning blue and boss violet.
 const WEAPON_SOUL := Color("#cfd6ff")
 const WEAPON_GHOST := Color("#b07ee0")
+## N4-4b 살 curse: sickly magenta-violet, separated from ghost-iron violet
+## and the boss silhouette so a cursed field reads at a glance.
+const WEAPON_CURSE := Color("#d967c9")
 
 # Spacing scale (4/8pt grid).
 const SPACE_XS := 4

@@ -48,5 +48,25 @@
     "weapon_id": "honbul",
     "loot_id": "fire_spirit_stone",
     "result_weapon": "flame_honbul"
+  },
+  "hwayeom_gyeolgye_mod": {
+    "weapon_id": "gyeolgye",
+    "loot_id": "fire_spirit_stone",
+    "result_weapon": "hwayeom_gyeolgye"
+  },
+  "noe_sinjang_mod": {
+    "weapon_id": "sinjang",
+    "loot_id": "thunder_stone",
+    "result_weapon": "noe_sinjang"
+  },
+  "bongin_jineon_mod": {
+    "weapon_id": "jineon",
+    "loot_id": "cinnabar",
+    "result_weapon": "bongin_jineon"
+  },
+  "gwisal_mod": {
+    "weapon_id": "sal",
+    "loot_id": "dokkaebi_flame",
+    "result_weapon": "gwisal"
   }
 }

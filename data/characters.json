@@ -14,14 +14,26 @@
     "hit_invuln_sec": 0.8,
     "starting_weapon": "old_talisman",
     "unlock": { "type": "default" },
-    "active": {
-      "id": "chukji",
-      "name_ko": "축지",
-      "name_en": "Chukji",
-      "cooldown_sec": 8.0,
-      "distance_px": 120.0,
-      "invulnerable_sec": 1.0
-    }
+    "actives": [
+      {
+        "id": "chukji",
+        "name_ko": "축지",
+        "name_en": "Chukji",
+        "type": "blink",
+        "cooldown_sec": 8.0,
+        "distance_px": 140.0,
+        "invulnerable_sec": 1.0
+      },
+      {
+        "id": "byeoksajin",
+        "name_ko": "벽사진",
+        "name_en": "Byeoksajin",
+        "type": "burst",
+        "cooldown_sec": 45.0,
+        "radius_px": 220.0,
+        "damage": 250.0
+      }
+    ]
   },
   "warrior": {
     "name_ko": "무사",
