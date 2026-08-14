@@ -20,6 +20,7 @@ const PASSIVE_STAT_KEYS: Array[String] = [
 	"attack_damage", "attack_speed", "move_speed", "crit_chance",
 	"max_hp", "xp_gain", "luck", "skill_power",
 	"projectile_count", "projectile_speed", "area_scale", "defense", "magnet_radius",
+	"burn_power", "chain_amount", "seal_haste",
 ]
 const ACHIEVEMENT_COUNTER_KEYS: Array[String] = [
 	"boss_defeated", "enemy_killed", "run_completed", "level_reached", "weapon_evolved",

@@ -81,6 +81,15 @@ const RULE_RESULT_WEAPON := "result_weapon"
 ## starving them, since a gating weapon upgrade is damage in its own right. A run
 ## with no reachable rule has no weighted candidates at all and draws uniformly,
 ## exactly as it did before any of this.
+## Synergy passives only make sense while a weapon can trigger them: a bow
+## build gains nothing from burn power. stat key -> weapons.json field that
+## must exist on at least one owned weapon before the passive is offered.
+const STAT_REQUIRES_WEAPON_FIELD := {
+	"burn_power": "on_hit_status",
+	"chain_amount": "on_hit_chain",
+	"seal_haste": "on_hit_seal",
+}
+
 const GATING_WEAPON_WEIGHT := 4.0
 const GATING_PASSIVE_WEIGHT := 2.0
 const BASE_CHOICE_WEIGHT := 1.0
@@ -566,6 +575,10 @@ func _passive_choices() -> Array[Dictionary]:
 		if current >= max_stacks:
 			continue
 
+		var required_field: String = String(STAT_REQUIRES_WEAPON_FIELD.get(String(data.get(FIELD_STAT, "")), ""))
+		if not required_field.is_empty() and not _owns_weapon_with_field(required_field):
+			continue
+
 		# "+8% (2/5)" — the name already carries the stat, the description
 		# carries the size of the step.
 		var description: String = ChoiceText.passive_description(
@@ -580,6 +593,14 @@ func _passive_choices() -> Array[Dictionary]:
 			CHOICE_DESCRIPTION_EN: description,
 		})
 	return choices
+
+
+func _owns_weapon_with_field(field: String) -> bool:
+	for owned: Dictionary in weapons:
+		var data: Dictionary = _content().weapon(String(owned.get(WEAPON_ID, "")))
+		if data.has(field):
+			return true
+	return false
 
 
 func _content() -> Node:

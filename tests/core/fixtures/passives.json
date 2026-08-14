@@ -54,5 +54,12 @@
     "stat": "luck",
     "per_stack": 0.04,
     "max_stacks": 5
+  },
+  "burn_power": {
+    "name_ko": "불씨 정통",
+    "name_en": "Ember Mastery",
+    "stat": "burn_power",
+    "per_stack": 0.2,
+    "max_stacks": 3
   }
 }

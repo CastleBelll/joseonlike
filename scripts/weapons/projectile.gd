@@ -109,19 +109,26 @@ func _apply_on_hit_status(body: Node2D) -> void:
 	if on_hit_status.is_empty():
 		return
 	if String(on_hit_status.get("id", "")) == "burn" and body.has_method(&"apply_burn"):
+		# burn_power synergy passive scales the data dps fractionally.
 		body.apply_burn(
-			float(on_hit_status.get("dps", 0.0)),
+			float(on_hit_status.get("dps", 0.0)) * (1.0 + RunState.stat_total("burn_power")),
 			float(on_hit_status.get("duration_sec", 0.0))
 		)
+
+
+const SEAL_BURST_AT_FLOOR: int = 2
 
 
 func _apply_on_hit_seal(body: Node2D) -> void:
 	if on_hit_seal.is_empty() or not body.has_method(&"apply_seal"):
 		return
-	body.apply_seal(
-		int(on_hit_seal.get("burst_at", 0)),
-		damage * float(on_hit_seal.get("burst_damage_scale", 0.0))
+	# seal_haste synergy passive lowers the burst threshold, floored so the
+	# seal always needs at least two marks to stay a combo, not a proc.
+	var burst_at: int = maxi(
+		int(on_hit_seal.get("burst_at", 0)) - int(RunState.stat_total("seal_haste")),
+		SEAL_BURST_AT_FLOOR
 	)
+	body.apply_seal(burst_at, damage * float(on_hit_seal.get("burst_damage_scale", 0.0)))
 
 
 ## Instant local arcs from the impact point — no extra projectiles, so the
@@ -146,7 +153,7 @@ func _apply_on_hit_chain(hit_body: Node2D) -> void:
 		hit_body.global_position,
 		positions,
 		exclude_index,
-		int(on_hit_chain.get("targets", 0)),
+		int(on_hit_chain.get("targets", 0)) + int(RunState.stat_total("chain_amount")),
 		float(on_hit_chain.get("range_px", 0.0))
 	)
 	for index in picked:

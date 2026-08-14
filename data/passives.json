@@ -89,5 +89,26 @@
     "stat": "magnet_radius",
     "per_stack": 0.15,
     "max_stacks": 5
+  },
+  "burn_power": {
+    "name_ko": "불씨 정통",
+    "name_en": "Ember Mastery",
+    "stat": "burn_power",
+    "per_stack": 0.2,
+    "max_stacks": 3
+  },
+  "chain_amount": {
+    "name_ko": "연쇄 확장",
+    "name_en": "Chain Reach",
+    "stat": "chain_amount",
+    "per_stack": 1.0,
+    "max_stacks": 2
+  },
+  "seal_haste": {
+    "name_ko": "봉인 가속",
+    "name_en": "Seal Haste",
+    "stat": "seal_haste",
+    "per_stack": 1.0,
+    "max_stacks": 2
   }
 }

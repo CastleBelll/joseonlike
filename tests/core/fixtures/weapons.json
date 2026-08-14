@@ -11,7 +11,10 @@
     "area_scale": 1.0,
     "speed": 260.0,
     "max_level": 3,
-    "per_level": { "damage": 3.0, "cooldown_sec": -0.05 },
+    "per_level": {
+      "damage": 3.0,
+      "cooldown_sec": -0.05
+    },
     "evolves_to": "fire_talisman"
   },
   "fire_talisman": {
@@ -26,7 +29,14 @@
     "area_scale": 1.2,
     "speed": 280.0,
     "max_level": 3,
-    "per_level": { "damage": 5.0 }
+    "per_level": {
+      "damage": 5.0
+    },
+    "on_hit_status": {
+      "id": "burn",
+      "dps": 4.0,
+      "duration_sec": 3.0
+    }
   },
   "short_bow": {
     "name_ko": "단궁",
@@ -40,7 +50,9 @@
     "area_scale": 1.0,
     "speed": 320.0,
     "max_level": 2,
-    "per_level": { "damage": 2.0 }
+    "per_level": {
+      "damage": 2.0
+    }
   },
   "poison_knife": {
     "name_ko": "독칼",
@@ -54,7 +66,9 @@
     "area_scale": 1.0,
     "speed": 0.0,
     "max_level": 2,
-    "per_level": { "damage": 2.0 }
+    "per_level": {
+      "damage": 2.0
+    }
   },
   "spirit_bell": {
     "name_ko": "요령",
@@ -68,7 +82,9 @@
     "area_scale": 1.5,
     "speed": 0.0,
     "max_level": 2,
-    "per_level": { "damage": 2.0 }
+    "per_level": {
+      "damage": 2.0
+    }
   },
   "sharp_knife": {
     "name_ko": "예리한 독칼",
@@ -82,7 +98,9 @@
     "area_scale": 1.0,
     "speed": 0.0,
     "max_level": 2,
-    "per_level": { "damage": 3.0 },
+    "per_level": {
+      "damage": 3.0
+    },
     "evolution_only": true
   },
   "phoenix_talisman": {
@@ -97,7 +115,9 @@
     "area_scale": 1.6,
     "speed": 300.0,
     "max_level": 5,
-    "per_level": { "damage": 8.0 },
+    "per_level": {
+      "damage": 8.0
+    },
     "evolution_only": true
   }
 }
