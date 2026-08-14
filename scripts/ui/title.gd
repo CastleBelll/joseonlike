@@ -32,7 +32,6 @@ const VERSION_PLAQUE: Texture2D = preload("res://asset/ui/main/version_plaque_9s
 const ICON_START: Texture2D = preload("res://asset/ui/main/start.png")
 const ICON_SETTINGS: Texture2D = preload("res://asset/ui/main/settings.png")
 const ICON_CREDITS: Texture2D = preload("res://asset/ui/main/credits.png")
-const ICON_QUIT: Texture2D = preload("res://asset/ui/main/quit.png")
 
 ## No version-numbering scheme exists yet (project.godot has no app version
 ## field); this is a placeholder for the plaque, not a real release number.
@@ -88,22 +87,13 @@ const LOGO_ENTRANCE_SECONDS := 0.6
 const LOGO_ENTRANCE_RISE_PX := 18.0
 
 const PRIMARY_ICON_PX := 32.0
-const SECONDARY_ICON_PX := 20.0
-
-## The in-game hunter standing on the path fills the dead band between the
-## palace and the menu (owner feedback: the middle of the screen was empty).
-## Reuses the side-view idle at the same integer downscale family as combat.
-const HERO_SPRITE := "res://asset/character/Taoist/side/idle.png"
-const HERO_SIZE := Vector2(64.0, 64.0)
-const HERO_POSITION := Vector2(238.0, 580.0)
 
 @onready var _backdrop: TextureRect = $Backdrop
 @onready var _backdrop_layers: Control = $BackdropLayers
 @onready var _logo: TextureRect = $Logo
 @onready var _start_button: Button = $Actions/StartButton
-@onready var _settings_button: Button = $Actions/SecondaryRow/SettingsButton
-@onready var _credits_button: Button = $Actions/SecondaryRow/CreditsButton
-@onready var _quit_button: Button = $Actions/SecondaryRow/QuitButton
+@onready var _settings_button: Button = $CornerUtils/SettingsButton
+@onready var _credits_button: Button = $CornerUtils/CreditsButton
 @onready var _version_plaque: NinePatchRect = $VersionPlaque
 @onready var _version_label: Label = $VersionPlaque/VersionLabel
 @onready var _credits_panel: Panel = $CreditsPanel
@@ -141,18 +131,14 @@ func _ready() -> void:
 	_configure_action(_start_button, ICON_START, "menu_start")
 	_start_button.pressed.connect(_on_start_pressed)
 
-	# The secondary row is deliberately lighter than Start: smaller icons and
-	# label-size text, so the one primary action owns the block.
-	_configure_action(_settings_button, ICON_SETTINGS, "menu_settings", SECONDARY_ICON_PX, UiPalette.FONT_SIZE_LABEL)
+	# Utilities live as small corner icon buttons (DESIGN.md title grammar);
+	# the action stack holds exactly one thing: Start. Quit is gone — mobile
+	# apps are closed by the OS, not a menu item (owner decision 2026-08-14).
+	_configure_corner_icon(_settings_button, ICON_SETTINGS, "menu_settings")
 	_settings_button.pressed.connect(_on_settings_pressed)
 
-	_configure_action(_credits_button, ICON_CREDITS, "menu_credits", SECONDARY_ICON_PX, UiPalette.FONT_SIZE_LABEL)
+	_configure_corner_icon(_credits_button, ICON_CREDITS, "menu_credits")
 	_credits_button.pressed.connect(_on_credits_pressed)
-
-	_configure_action(_quit_button, ICON_QUIT, "menu_quit", SECONDARY_ICON_PX, UiPalette.FONT_SIZE_LABEL)
-	_quit_button.pressed.connect(_on_quit_pressed)
-
-	_setup_hero()
 
 	_version_plaque.texture = VERSION_PLAQUE
 	_version_plaque.patch_margin_left = 8
@@ -175,8 +161,7 @@ func _ready() -> void:
 
 
 ## DESIGN.md button grammar: wood panel, text only — no icons inside
-## buttons. The icon/size parameters survive so call sites need no churn
-## and the icon assets stay available for corner utilities later.
+## buttons.
 func _configure_action(
 	button: Button,
 	_icon_texture: Texture2D,
@@ -189,27 +174,14 @@ func _configure_action(
 	button.add_theme_font_size_override("font_size", font_size)
 
 
-## A still hunter on the path. Static on purpose — the backdrop already
-## breathes (fog, sway, motes); a second animated focal point would compete
-## with the menu.
-func _setup_hero() -> void:
-	if not ResourceLoader.exists(HERO_SPRITE):
-		return
-	var hero := TextureRect.new()
-	# expand_mode BEFORE texture and size: with the default EXPAND_KEEP_SIZE
-	# the moment the 512px texture lands the minimum size clamps the rect to
-	# texture size and a later size assignment cannot shrink it back.
-	hero.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	hero.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	hero.texture = load(HERO_SPRITE)
-	hero.custom_minimum_size = HERO_SIZE
-	hero.size = HERO_SIZE
-	hero.position = HERO_POSITION
-	hero.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Behind the menu/logo Controls added later in the tree order, but in
-	# front of the backdrop layers.
-	add_child(hero)
-	move_child(hero, _backdrop_layers.get_index() + 1)
+## Corner utility: icon-only 48px square, tooltip carrying the label for
+## accessibility since there is no visible text.
+func _configure_corner_icon(button: Button, icon_texture: Texture2D, label_key: String) -> void:
+	UiPalette.apply_button_style(button)
+	button.tooltip_text = LocaleText.ui(label_key)
+	button.icon = icon_texture
+	button.expand_icon = true
+	button.add_theme_constant_override("icon_max_width", 28)
 
 
 func _animate_logo_entrance() -> void:
@@ -436,11 +408,6 @@ func _set_background_motion_active(active: bool) -> void:
 	if _motes != null:
 		_motes.emitting = active
 	set_process(active)
-
-
-func _on_quit_pressed() -> void:
-	UiSound.play_click(self)
-	get_tree().quit()
 
 
 func _unhandled_input(event: InputEvent) -> void:
