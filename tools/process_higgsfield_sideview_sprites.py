@@ -1,8 +1,9 @@
 """Post-process generated character sheets into runtime side-view sprites.
 
-This script never draws character pixels. It extracts the five generated figures,
+This script never invents character pixels. It extracts the five generated figures,
 removes the chroma background, normalizes them onto a 32x32 logical canvas, and
-exports nearest-neighbour 16x runtime PNGs.
+repositions approved logical-pixel clusters for the walk cycle before exporting
+nearest-neighbour 16x runtime PNGs.
 """
 
 from __future__ import annotations
@@ -22,6 +23,27 @@ EXPORT_SCALE = 16
 GROUND_Y = 29
 TARGET_HEIGHT = 27
 STABLE_UPPER_ROWS = 23
+
+WALK_POSE_CONFIG: dict[str, dict[str, int | tuple[int, int, int, int]]] = {
+    "Taoist": {
+        "center_x": 15,
+        "leg_left": 7,
+        "leg_right": 21,
+        "arm_box": (9, 18, 14, 23),
+    },
+    "Warrior": {
+        "center_x": 15,
+        "leg_left": 8,
+        "leg_right": 23,
+        "arm_box": (10, 16, 14, 24),
+    },
+    "Archer": {
+        "center_x": 15,
+        "leg_left": 7,
+        "leg_right": 22,
+        "arm_box": (9, 15, 13, 23),
+    },
+}
 
 CHARACTER_PALETTES: dict[str, tuple[tuple[int, int, int], ...]] = {
     "Taoist": (
@@ -213,6 +235,102 @@ def stabilize_walk_upper_body(frames: list[Image.Image]) -> list[Image.Image]:
     return stabilized
 
 
+def _move_arm(frame: Image.Image, box: tuple[int, int, int, int], dy: int) -> Image.Image:
+    """Move the free-arm cluster one logical pixel without changing its pixels."""
+    moved = np.asarray(frame).copy()
+    x0, y0, x1, y1 = box
+    cluster = moved[y0:y1, x0:x1, :].copy()
+    moved[y0:y1, x0:x1, :] = 0
+    destination_y = y0 + dy
+    moved[destination_y : destination_y + cluster.shape[0], x0:x1, :] = cluster
+    return Image.fromarray(moved, "RGBA")
+
+
+def _leg_pixels(
+    base: np.ndarray,
+    center_x: int,
+    contact: bool,
+    mirror: bool,
+) -> list[tuple[int, int, np.ndarray]]:
+    """Shear existing leg pixels into contact or passing poses around one hip."""
+    pixels: list[tuple[int, int, np.ndarray]] = []
+    for y in range(25, LOGICAL_SIZE):
+        for x in range(LOGICAL_SIZE):
+            color = base[y, x]
+            if color[3] == 0:
+                continue
+            side = -1 if x <= center_x else 1
+            if contact:
+                offset = min(2, max(0, y - 25))
+                destination_x = x + side * offset
+                # The rear foot rolls onto its toe during contact; after the
+                # mirrored phase, the opposite foot receives the same lift.
+                destination_y = y - 1 if side == -1 and y >= 28 else y
+            else:
+                offset = 1 if y >= 26 else 0
+                destination_x = x - side * offset
+                # Passing frames bob the body upward. One foot remains planted
+                # on row 29 while the opposite foot lifts with the body.
+                planted_side = 1
+                destination_y = y if side == planted_side and y == GROUND_Y else y - 1
+                if side == planted_side and y == GROUND_Y:
+                    pixels.append((destination_x, y - 1, color.copy()))
+            if mirror:
+                destination_x = center_x * 2 + 1 - destination_x
+            if 0 <= destination_x < LOGICAL_SIZE and 0 <= destination_y < LOGICAL_SIZE:
+                pixels.append((destination_x, destination_y, color.copy()))
+    return pixels
+
+
+def strengthen_walk_cycle(frames: list[Image.Image], character: str) -> list[Image.Image]:
+    """Build a readable contact/passing cycle from one approved walk-frame base."""
+    if len(frames) != 5:
+        raise ValueError("expected idle plus four walk frames")
+    config = WALK_POSE_CONFIG[character]
+    center_x = int(config["center_x"])
+    leg_left = int(config["leg_left"])
+    leg_right = int(config["leg_right"])
+    arm_box = config["arm_box"]
+    assert isinstance(arm_box, tuple)
+
+    base_image = frames[1]
+    base = np.asarray(base_image).copy()
+    strengthened: list[Image.Image] = [frames[0]]
+
+    # Contact A and B keep the head/face fixed and use mirrored, widely
+    # scissored legs. The free arm counters the leading leg by one pixel.
+    for mirror, arm_dy in ((False, 1), (True, -1)):
+        pose = base.copy()
+        pose[25:, leg_left:leg_right, :] = 0
+        for x, y, color in _leg_pixels(base, center_x, True, mirror):
+            if leg_left <= x < leg_right:
+                pose[y, x] = color
+        strengthened.append(
+            _move_arm(Image.fromarray(pose, "RGBA"), arm_box, arm_dy)
+        )
+
+    # Passing A and B shift the body up exactly one logical pixel, gather the
+    # legs beneath the hip, and alternate which foot remains planted.
+    passing_poses: list[Image.Image] = []
+    for mirror in (False, True):
+        pose = np.zeros_like(base)
+        pose[:-1, :, :] = base[1:, :, :]
+        pose[24:, leg_left:leg_right, :] = 0
+        for x, y, color in _leg_pixels(base, center_x, False, mirror):
+            if leg_left <= x < leg_right:
+                pose[y, x] = color
+        passing_poses.append(Image.fromarray(pose, "RGBA"))
+
+    # Runtime order is Contact A, Passing A, Contact B, Passing B.
+    return [
+        strengthened[0],
+        strengthened[1],
+        passing_poses[0],
+        strengthened[2],
+        passing_poses[1],
+    ]
+
+
 def export_character(character_root: Path) -> dict[str, object]:
     source_path = next(
         (
@@ -231,6 +349,7 @@ def export_character(character_root: Path) -> dict[str, object]:
     source = Image.open(source_path).convert("RGBA")
     frames = resize_and_align(extract_figures(source))
     frames = apply_shared_palette(stabilize_walk_upper_body(frames), character_root.name)
+    frames = strengthen_walk_cycle(frames, character_root.name)
     exported = [
         frame.resize(
             (LOGICAL_SIZE * EXPORT_SCALE, LOGICAL_SIZE * EXPORT_SCALE),
@@ -293,6 +412,64 @@ def verify_exports(asset_root: Path) -> None:
             ).resize(image.size, Image.Resampling.NEAREST)
             if image.tobytes() != logical.tobytes():
                 raise ValueError(f"off-grid pixels in {character}")
+
+        logical_walk = walk.resize(
+            (LOGICAL_SIZE * 4, LOGICAL_SIZE), Image.Resampling.NEAREST
+        )
+        walk_frames = [
+            np.asarray(
+                logical_walk.crop(
+                    (index * LOGICAL_SIZE, 0, (index + 1) * LOGICAL_SIZE, LOGICAL_SIZE)
+                )
+            )
+            for index in range(4)
+        ]
+        if len({frame.tobytes() for frame in walk_frames}) != 4:
+            raise ValueError(f"duplicate walk phases for {character}")
+
+        tops = []
+        for frame in walk_frames:
+            rows, _ = np.nonzero(frame[:, :, 3])
+            tops.append(int(rows.min()))
+            if int(rows.max()) != GROUND_Y:
+                raise ValueError(f"walk frame missed ground row for {character}")
+        if tops[1] != tops[0] - 1 or tops[3] != tops[2] - 1:
+            raise ValueError(f"passing-frame bob is not exactly one pixel for {character}")
+
+        # Contact head/face art is identical; passing frames contain the exact
+        # same pixels translated upward by the one-pixel body bob.
+        head_box = (slice(2, 15), slice(8, 21))
+        if not np.array_equal(walk_frames[0][head_box], walk_frames[2][head_box]):
+            raise ValueError(f"contact head drift for {character}")
+        if not np.array_equal(
+            walk_frames[0][3:15, 8:21], walk_frames[1][2:14, 8:21]
+        ) or not np.array_equal(
+            walk_frames[2][3:15, 8:21], walk_frames[3][2:14, 8:21]
+        ):
+            raise ValueError(f"passing head drift for {character}")
+
+        config = WALK_POSE_CONFIG[character]
+        center_x = int(config["center_x"])
+        ground_centers = []
+        for frame in walk_frames:
+            ground_columns = np.nonzero(frame[GROUND_Y, :, 3])[0]
+            ground_centers.append(float(ground_columns.mean()))
+        if not (
+            ground_centers[0] > center_x
+            and ground_centers[1] > center_x
+            and ground_centers[2] < center_x
+            and ground_centers[3] < center_x
+        ):
+            raise ValueError(f"feet do not alternate sides for {character}")
+
+        leg_left = int(config["leg_left"])
+        leg_right = int(config["leg_right"])
+        strides = []
+        for frame in walk_frames:
+            columns = np.nonzero(frame[27, leg_left:leg_right, 3])[0]
+            strides.append(int(columns.max() - columns.min()))
+        if not (strides[0] > strides[1] and strides[2] > strides[3]):
+            raise ValueError(f"contact silhouette is not wider than passing for {character}")
 
 
 def main() -> None:

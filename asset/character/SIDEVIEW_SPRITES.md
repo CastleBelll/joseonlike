@@ -99,7 +99,12 @@ Slice `walk.png` as **4 columns × 1 row**, using 512 × 512 regions:
 3. Contact B
 4. Passing B
 
-Loop frames `0 → 1 → 2 → 3` at approximately 8–10 fps. The walk frames share one pixel-identical upper-body layer through logical row 22; only the generated lower garment and legs retain the alternating poses.
+Loop frames `0 → 1 → 2 → 3` at approximately 8–10 fps. Contact A and
+Contact B keep the head and face fixed while the legs form mirrored, two-pixel
+scissors: the leading heel reaches logical ground row 29 and the rear foot rolls
+up onto its toe. Passing A and Passing B gather the legs beneath the hip, keep
+the planted foot on row 29, and raise the body by exactly one logical pixel. The
+free arm counter-swings by one logical pixel between the two contact poses.
 
 ## Higgsfield generation
 
@@ -169,9 +174,10 @@ The processor performs generated-image transformations only; it does not draw ch
 2. Finds the five largest connected foreground components and orders them left-to-right.
 3. Reduces all figures with one per-character scale onto a 32 × 32 logical grid.
 4. Aligns each frame from its hat/head anchor and fixes the feet to logical ground row 29.
-5. Reuses the first generated walk frame's upper layer through row 22 for the remaining walk frames, removing face, costume, and held-item flicker.
-6. Quantizes all five frames together to a per-character authored palette of up to **16 opaque colors** with no dithering.
-7. Exports at 16× using nearest-neighbour sampling.
+5. Reuses the first generated walk frame's upper layer through row 22, removing face and costume flicker.
+6. Repositions only approved logical-pixel clusters from that shared base to create mirrored contact legs, gathered passing legs, the one-pixel passing bob, and the one-pixel free-arm counter-swing.
+7. Quantizes all five frames together to a per-character authored palette of up to **16 opaque colors** with no dithering.
+8. Exports at 16× using nearest-neighbour sampling.
 
 ## Verification
 
@@ -183,9 +189,20 @@ All raw sheets, idle sprites, and four-frame strips were visually inspected agai
 - equal 512-pixel walk cells and one common canvas height;
 - at most 17 RGBA entries per character including transparency (up to 16 opaque authored palette entries);
 - logical alpha bounds ending on ground row 29;
-- **0.0 logical-pixel upper-body center spread** across every walk loop;
-- pixel-identical walk upper bodies and distinct lower-body frames;
+- stable, pixel-identical head and face art across the walk loop (the passing
+  frames translate that shared art upward by exactly one logical pixel);
+- mirrored contact silhouettes with alternating grounded heels and raised rear
+  toes, plus gathered passing silhouettes with alternating lifted feet;
+- a one-logical-pixel body bob on both passing frames and a one-logical-pixel
+  opposing free-arm swing on the contact frames;
 - no chroma remnants, dividers, labels, or watermark;
 - the required hat, costume, held weapon, and palette identity remain readable at the actual 32 × 32 logical resolution.
+
+The final three loops were assembled into a nearest-neighbour preview GIF at
+**8 fps** (125 ms per frame) on a dark background and watched through repeated
+cycles. Taoist, Warrior, and Archer each read as walking rather than gliding:
+the contact stride alternates sides, the passing pose compresses beneath the
+torso, the body rises on both passing frames, and the planted foot returns to
+the same ground row without sliding.
 
 Keep texture filtering and mipmaps disabled in Godot so the logical pixels remain crisp.
