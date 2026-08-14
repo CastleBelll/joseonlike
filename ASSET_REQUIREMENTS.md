@@ -27,6 +27,16 @@ Fallback:  <what ships until it arrives>
 ## Missing
 
 ```
+[MISSING] old_talisman travel art + xp orb sprite (AC-4)
+Size:      talisman ~8x14 px rotated to flight direction; orb ~10x10 px
+Members:   res://asset/weapon/travel/old_talisman.png,
+           res://asset/drop/xp_orb.png (idle, optional 2-frame shimmer)
+Used by:   N3-3 auto-attack projectile, N3-5 XP drop (scripts/combat/projectile.gd,
+           scripts/combat/xp_orb.gd)
+Fallback:  code-drawn paper ColorRect + vermilion seal / cyan-green draw_circle orb
+```
+
+```
 [MISSING] loot drop icons (9): bamboo, tough_fiber, beast_fang, talisman_paper,
           wonhon_shard, dokkaebi_flame, whetstone, ghost_iron, fire_spirit_stone
 Size:      24x24 px idle (+ optional 32x32 collect frames x4, like existing drops)

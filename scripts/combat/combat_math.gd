@@ -1,7 +1,7 @@
 class_name CombatMath
 extends RefCounted
-## Pure damage/aggro/spawn math for N3-4. Node-free so the headless unit
-## suite can drive it directly (tests/unit/test_combat.gd).
+## Pure damage/aggro/spawn/targeting math for N3-3..N3-5. Node-free so the
+## headless unit suite can drive it directly (tests/unit/test_combat.gd).
 
 
 static func apply_damage(hp: float, damage: float) -> float:
@@ -37,3 +37,30 @@ static func should_despawn(
 ) -> bool:
 	var limit: float = view_size.length() / 2.0 + despawn_margin
 	return enemy_position.distance_to(camera_center) > limit
+
+
+## Index of the candidate nearest to `from` within `max_range`, -1 when none
+## qualifies. A candidate exactly at the range boundary is targetable.
+static func nearest_index(from: Vector2, candidates: Array[Vector2], max_range: float) -> int:
+	var best: int = -1
+	var best_distance_squared: float = max_range * max_range
+	for i: int in range(candidates.size()):
+		var distance_squared: float = from.distance_squared_to(candidates[i])
+		if distance_squared <= best_distance_squared:
+			best = i
+			best_distance_squared = distance_squared
+	return best
+
+
+static func projectile_position(
+	start: Vector2, direction: Vector2, speed: float, elapsed: float
+) -> Vector2:
+	return start + direction * speed * elapsed
+
+
+## Magnet pull ramp for XP orbs: speed grows every frame inside the pickup
+## radius but never past `max_speed`.
+static func accelerated_speed(
+	current: float, acceleration: float, delta: float, max_speed: float
+) -> float:
+	return minf(current + acceleration * delta, max_speed)

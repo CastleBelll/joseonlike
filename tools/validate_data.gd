@@ -8,7 +8,11 @@ const SPAWNING_FIELDS: Array[String] = [
 	"live_cap", "spawn_margin_px", "despawn_margin_px", "contact_cooldown_sec"
 ]
 const CHARACTER_FIELDS: Array[String] = ["base_hp", "base_speed", "hit_invuln_sec"]
-const MONSTER_FIELDS: Array[String] = ["hp", "damage", "speed", "collision_radius"]
+const MONSTER_FIELDS: Array[String] = ["hp", "damage", "speed", "collision_radius", "xp_drop"]
+const XP_CURVE_FIELDS: Array[String] = ["base_xp", "growth"]
+const ORB_FIELDS: Array[String] = [
+	"magnet_radius_px", "collect_radius_px", "magnet_accel_px_s2", "max_speed_px_s"
+]
 
 var _errors: int = 0
 
@@ -54,10 +58,26 @@ func _check_combat_cross_references() -> void:
 				_fail("stages.%s wave monster_id '%s' not in monsters.json" % [
 					stage_id, wave.get("monster_id", "")
 				])
+	var weapons: Dictionary = _load(DATA_DIR + "/weapons.json")
 	for character_id: String in characters:
 		_require_positive_numbers(
 			characters[character_id], CHARACTER_FIELDS, "characters." + character_id
 		)
+		var starting_weapon: String = String(
+			(characters[character_id] as Dictionary).get("starting_weapon", "")
+		)
+		if not weapons.has(starting_weapon):
+			_fail("characters.%s.starting_weapon '%s' not in weapons.json" % [
+				character_id, starting_weapon
+			])
+	var progression: Dictionary = _load(DATA_DIR + "/progression.json")
+	_require_positive_numbers(
+		progression.get("xp_curve", {}), XP_CURVE_FIELDS, "progression.xp_curve"
+	)
+	_require_positive_numbers(progression.get("orb", {}), ORB_FIELDS, "progression.orb")
+	# growth 1.0 or below would make the level-up loop free or non-terminating.
+	if float((progression.get("xp_curve", {}) as Dictionary).get("growth", 0.0)) <= 1.0:
+		_fail("progression.xp_curve.growth must be greater than 1.0")
 
 
 func _require_positive_numbers(entry: Dictionary, fields: Array[String], label: String) -> void:

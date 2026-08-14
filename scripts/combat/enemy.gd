@@ -24,6 +24,7 @@ const PLACEHOLDER_COLORS: Dictionary = {
 var monster_id := ""
 var hp: float = 0.0
 var contact_radius: float = 0.0
+var xp_drop: int = 0
 
 var _damage: float = 0.0
 var _speed: float = 0.0
@@ -56,6 +57,7 @@ func setup(id: String, stats: Dictionary, target: Player, contact_cooldown: floa
 	_damage = float(stats.get("damage", 0.0))
 	_speed = float(stats.get("speed", 0.0))
 	contact_radius = float(stats.get("collision_radius", 10.0))
+	xp_drop = int(stats.get("xp_drop", 0))
 	_contact_cooldown = contact_cooldown
 	_time_since_contact = contact_cooldown  # first touch may hit immediately
 	_target = target

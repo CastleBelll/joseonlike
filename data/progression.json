@@ -1,0 +1,12 @@
+{
+  "xp_curve": {
+    "base_xp": 5,
+    "growth": 1.25
+  },
+  "orb": {
+    "magnet_radius_px": 90.0,
+    "collect_radius_px": 14.0,
+    "magnet_accel_px_s2": 1500.0,
+    "max_speed_px_s": 520.0
+  }
+}

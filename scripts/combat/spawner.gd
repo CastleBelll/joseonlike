@@ -4,6 +4,9 @@ extends Node2D
 ## data/stages.json (waves + spawning) and data/monsters.json. Enemies are
 ## reused through EnemyPool; a run never instances per spawn after warm-up.
 
+## Kills only (not off-screen despawns), so drops never spawn unseen.
+signal enemy_killed(at: Vector2, xp: int)
+
 const STAGES_PATH := "res://data/stages.json"
 const MONSTERS_PATH := "res://data/monsters.json"
 const STAGE_ID := "bamboo_forest"
@@ -111,6 +114,7 @@ func _despawn_far_enemies() -> void:
 
 
 func _on_enemy_died(enemy: Enemy) -> void:
+	enemy_killed.emit(enemy.global_position, enemy.xp_drop)
 	_release(enemy)
 
 

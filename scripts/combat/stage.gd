@@ -13,11 +13,27 @@ const PATCH_SEED := 20260814  # fixed so the placeholder ground is deterministic
 @onready var _joystick: TouchJoystick = $Hud/VirtualJoystick
 @onready var _spawner: Spawner = $Spawner
 
+var _run_state: RunState
+var _weapon: AutoWeapon
+var _orb_pool: NodePool
+var _number_pool: NodePool
+var _orb_config: Dictionary = {}
+
 
 func _ready() -> void:
 	_player.bounds = Rect2(-GROUND_SIZE / 2.0, GROUND_SIZE)
 	_player.died.connect(_on_player_died)
 	_spawner.setup(_player)
+	_spawner.enemy_killed.connect(_on_enemy_killed)
+	_run_state = RunState.new()
+	_run_state.level_reached.connect(_on_level_reached)
+	_orb_config = RunState.load_orb_config()
+	_orb_pool = NodePool.new(self, _create_orb)
+	_number_pool = NodePool.new(self, _create_damage_number)
+	_weapon = AutoWeapon.new()
+	add_child(_weapon)
+	_weapon.setup(Player.load_starting_weapon(), _player, _spawner)
+	_weapon.hit_landed.connect(_on_hit_landed)
 
 
 func _physics_process(_delta: float) -> void:
@@ -29,23 +45,40 @@ func _on_player_died() -> void:
 	get_tree().paused = true
 
 
-## Debug kill path until the first weapon (N3-3) lands: K kills the enemy
-## nearest to the player. Debug builds only. TODO(N3-3): remove with auto-attack.
-func _unhandled_key_input(event: InputEvent) -> void:
-	if not OS.is_debug_build():
-		return
-	var key := event as InputEventKey
-	if key == null or not key.pressed or key.keycode != KEY_K:
-		return
-	var nearest: Enemy = null
-	var nearest_distance: float = INF
-	for enemy: Enemy in _spawner.active_enemies():
-		var distance: float = enemy.global_position.distance_to(_player.global_position)
-		if distance < nearest_distance:
-			nearest_distance = distance
-			nearest = enemy
-	if nearest != null:
-		nearest.take_damage(nearest.hp)
+func _on_enemy_killed(at: Vector2, xp: int) -> void:
+	var orb: XpOrb = _orb_pool.acquire()
+	orb.launch(at, xp, _player, _orb_config)
+
+
+func _on_orb_collected(orb: XpOrb) -> void:
+	_run_state.add_xp(orb.xp_value)
+	_orb_pool.release(orb)
+
+
+func _on_hit_landed(amount: float, at: Vector2) -> void:
+	var number: DamageNumber = _number_pool.acquire()
+	number.show_amount(amount, at)
+
+
+func _on_number_finished(number: DamageNumber) -> void:
+	_number_pool.release(number)
+
+
+## Leveling grants nothing yet — the N3-6 power-up choice popup hooks in here.
+func _on_level_reached(_new_level: int) -> void:
+	pass
+
+
+func _create_orb() -> XpOrb:
+	var orb := XpOrb.new()
+	orb.collected.connect(_on_orb_collected)
+	return orb
+
+
+func _create_damage_number() -> DamageNumber:
+	var number := DamageNumber.new()
+	number.finished.connect(_on_number_finished)
+	return number
 
 
 func _draw() -> void:

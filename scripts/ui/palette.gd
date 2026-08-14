@@ -26,6 +26,10 @@ const ACCENT_TAOIST := Color("#4a7fd6")
 const ENEMY_GOBLIN := Color("#6faa4e")
 const ENEMY_SPIRIT := Color("#d8dfd2")
 const ENEMY_BRUTE := Color("#a4763b")
+# XP orb glow per DESIGN.md §5.1 (cyan-green) and white damage numbers.
+const XP_ORB := Color("#49e0b5")
+const XP_ORB_CORE := Color("#d8fff2")
+const DAMAGE_TEXT := Color("#ffffff")
 
 # Spacing scale (4/8pt grid).
 const SPACE_XS := 4

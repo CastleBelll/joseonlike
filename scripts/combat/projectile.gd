@@ -1,0 +1,65 @@
+class_name Projectile
+extends Node2D
+## Straight-line talisman projectile (N3-3). Pooled by AutoWeapon; finishes
+## on first enemy hit or on leaving the view ring around the player.
+## ponytail: no pierce yet — old_talisman has pierce 0; add when a pierced
+## weapon becomes obtainable in a run.
+
+signal hit_landed(amount: float, at: Vector2)
+signal finished(projectile: Projectile)
+
+const PAPER_SIZE := Vector2(6.0, 12.0)
+const HIT_RADIUS := 4.0
+
+var _velocity := Vector2.ZERO
+var _damage: float = 0.0
+var _spawner: Spawner
+var _player: Player
+
+
+func _ready() -> void:
+	var paper := ColorRect.new()
+	paper.name = "Paper"
+	paper.color = UiPalette.PAPER
+	paper.size = PAPER_SIZE
+	paper.position = -PAPER_SIZE / 2.0
+	add_child(paper)
+	var seal := ColorRect.new()
+	seal.name = "Seal"
+	seal.color = UiPalette.VERMILION
+	seal.size = PAPER_SIZE / 3.0
+	seal.position = -PAPER_SIZE / 6.0
+	paper.add_child(seal)
+
+
+func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
+		spawner: Spawner, player: Player) -> void:
+	global_position = from
+	_velocity = direction * speed
+	# The talisman's long side leads the flight direction.
+	rotation = direction.angle() + PI / 2.0
+	_damage = damage
+	_spawner = spawner
+	_player = player
+
+
+func _physics_process(delta: float) -> void:
+	global_position += _velocity * delta
+	for enemy: Enemy in _spawner.active_enemies():
+		var reach: float = enemy.contact_radius + HIT_RADIUS
+		if global_position.distance_squared_to(enemy.global_position) > reach * reach:
+			continue
+		# Capture before take_damage: a killing hit releases the enemy to its
+		# pool synchronously, and the number must rise where the hit landed.
+		var hit_at: Vector2 = enemy.global_position
+		enemy.take_damage(_damage)
+		hit_landed.emit(_damage, hit_at)
+		finished.emit(self)
+		return
+	# Player position approximates the smoothed camera center, same tradeoff
+	# as the spawner (N3-4).
+	var gone: bool = CombatMath.should_despawn(
+		global_position, _player.global_position, get_viewport_rect().size, 0.0
+	)
+	if gone:
+		finished.emit(self)
