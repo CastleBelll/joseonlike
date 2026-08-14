@@ -38,6 +38,10 @@ const SIDE_WALK_FRAMES: int = 4
 ## (asset/character/SIDEVIEW_SPRITES.md). Loading shrinks them back to logical
 ## pixels so the node keeps scale 1.0 and whole-pixel offsets stay honest.
 const SIDE_EXPORT_SCALE: int = 16
+## Integer screen scale for side-view art: the 48x64 logical canvas reads too
+## small on the 540x960 portrait viewport, and a whole-number factor keeps
+## every logical pixel square (owner request 2026-08-14).
+const SIDE_SPRITE_SCALE: float = 2.0
 
 ## Legacy 8-direction fallback (asset/M1_ASSET_REPORT.md) for entities without
 ## side-view art yet.
@@ -295,7 +299,9 @@ func _apply_sprite(_character_data_unused: Dictionary) -> void:
 	if _has_side_art():
 		_sprite.texture = _side_idle
 		_sprite.hframes = 1
+		_sprite.scale = Vector2.ONE * SIDE_SPRITE_SCALE
 		return
+	_sprite.scale = Vector2.ONE
 	_apply_direction(CharacterMotion.DEFAULT_DIRECTION)
 
 
