@@ -3,6 +3,22 @@
 **Asset production is frozen.** The owner supplies art and audio. Do not generate, cut,
 commission or "temporarily improve" assets during a feature session.
 
+## Owner drop box (2026-08-14)
+
+The owner sources art himself and drops it into `new_asset/`. Features ship with rough
+placeholders and the art is wired in afterwards as its own commit.
+
+- Drop raw files anywhere under `new_asset/` — any resolution, green screen or
+  transparent, sheet or single frame. Naming hint only: `<subject>.png`,
+  `<subject>_walk.png`.
+- Processing to game-ready assets (chroma key, area downscale, palette quantization,
+  frame strip assembly) happens in a separate asset commit; the source file stays in
+  `new_asset/` untouched.
+- Game-ready output lives at `asset/characters/<id>/{idle,walk,portrait}.png`,
+  `asset/weapon/...`, `asset/drop/...`. Reference pipeline:
+  `asset/characters/taoist/build_assets.py`.
+- Nothing in `new_asset/` is ever loaded by the game directly.
+
 When a feature needs art that does not exist:
 
 1. Ship the feature with `PlaceholderArt` (`scripts/combat/placeholder_art.gd`) or an
