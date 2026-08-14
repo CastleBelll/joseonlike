@@ -190,6 +190,8 @@
       "cooldown_sec": -0.03
     },
     "evolution_only": true,
+    "lifesteal": 0.15,
+    "self_drain_hp_per_sec": 2.0,
     "sprite": "res://asset/weapon/icons/ghost_sword.png"
   },
   "flame_sword": {

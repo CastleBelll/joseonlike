@@ -31,6 +31,9 @@ var texture: Texture2D = null
 ## Paired arrival art for the weapon that swung. One burst per enemy hit,
 ## which is separate from the one-swing-per-sweep rule above.
 var impact_effect: StringName = EffectPool.HIT
+## Fraction of dealt damage returned to the player as healing (ghost sword's
+## lifesteal, GDD v2 section 12). 0 = none.
+var lifesteal_fraction: float = 0.0
 
 var _age_sec: float = 0.0
 var _hit_ids: Array[int] = []
@@ -59,6 +62,10 @@ func _on_body_entered(body: Node2D) -> void:
 	_hit_ids.append(body_id)
 	EffectPool.play(impact_effect, body.global_position)
 	body.take_damage(damage, is_crit)
+	if lifesteal_fraction > 0.0:
+		var wielder: Node = get_tree().get_first_node_in_group(&"player")
+		if wielder != null and wielder.has_method(&"heal"):
+			wielder.heal(damage * lifesteal_fraction)
 
 
 ## A circle offset along the facing axis approximates a swing arc closely enough,

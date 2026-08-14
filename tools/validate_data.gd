@@ -285,6 +285,13 @@ static func _validate_weapons(weapons: Dictionary, evolutions: Dictionary, weapo
 				if _num(chain, "range_px") <= 0.0:
 					errors.append("%s: '%s'.on_hit_chain.range_px must be > 0" % [file, id])
 
+		if w.has("lifesteal"):
+			var lifesteal := _num(w, "lifesteal")
+			if not (lifesteal > 0.0 and lifesteal <= 1.0):
+				errors.append("%s: '%s'.lifesteal must be in (0, 1]" % [file, id])
+		if w.has("self_drain_hp_per_sec") and _num(w, "self_drain_hp_per_sec") <= 0.0:
+			errors.append("%s: '%s'.self_drain_hp_per_sec must be > 0" % [file, id])
+
 		if w.has("on_hit_seal"):
 			var seal: Variant = w.get("on_hit_seal")
 			if not (seal is Dictionary):

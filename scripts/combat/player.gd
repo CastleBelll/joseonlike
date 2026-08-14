@@ -102,6 +102,9 @@ var _side_walk: Texture2D = null
 ## Active skill (GDD v2 section 30), data-driven from characters.json.
 var _active_data: Dictionary = {}
 var _active_cooldown_left: float = 0.0
+## Summed self_drain_hp_per_sec across owned weapons (the ghost sword's cost,
+## GDD v2 section 12). Cached on every weapon sync instead of read per frame.
+var _self_drain_per_sec: float = 0.0
 
 @onready var _sprite: Sprite2D = $Sprite2D
 @onready var _hurt_box: Area2D = $HurtBox
@@ -135,6 +138,11 @@ func _physics_process(delta: float) -> void:
 	_active_cooldown_left = maxf(_active_cooldown_left - delta, 0.0)
 	if combat_enabled and Input.is_action_just_pressed(&"ui_accept"):
 		try_active_skill()
+	# The cursed weapon's cost: a steady drain that can hollow the player out
+	# but never deliver the killing blow itself (floor at 1 hp). Direct hp
+	# math on purpose — routing through take_damage would eat the i-frames.
+	if combat_enabled and _self_drain_per_sec > 0.0 and is_alive():
+		hp = maxf(hp - _self_drain_per_sec * delta, 1.0)
 	var direction: Vector2 = _read_input()
 	if direction.length_squared() > 0.0:
 		facing = direction.normalized()
@@ -404,6 +412,9 @@ func _check_evolutions() -> void:
 ## Idempotent, so it is safe to call after every upgrade.
 func _sync_weapons() -> void:
 	var wanted: Dictionary = _wanted_loadout()
+	_self_drain_per_sec = 0.0
+	for wanted_id: String in wanted.keys():
+		_self_drain_per_sec += maxf(float(GameData.weapon(wanted_id).get("self_drain_hp_per_sec", 0.0)), 0.0)
 	for weapon: WeaponBase in _weapons.duplicate():
 		if wanted.has(weapon.weapon_id):
 			weapon.set_level(int(wanted[weapon.weapon_id]))

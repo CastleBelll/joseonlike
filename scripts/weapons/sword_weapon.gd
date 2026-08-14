@@ -32,6 +32,7 @@ func _fire() -> bool:
 		arc.facing = direction
 		arc.texture = WeaponArt.melee_texture(weapon_id)
 		arc.impact_effect = WeaponArt.impact_for_weapon(weapon_id)
+		arc.lifesteal_fraction = float(data().get("lifesteal", 0.0))
 		arc.global_position = wielder.global_position
 		root.add_child(arc)
 	return true
