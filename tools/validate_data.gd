@@ -44,7 +44,7 @@ const STAGE_REQUIRED: Array[String] = ["name_ko", "name_en", "duration_sec", "bo
 const WAVE_REQUIRED: Array[String] = ["at_sec", "monster_id", "count", "interval_sec"]
 const ACHIEVEMENT_REQUIRED: Array[String] = ["name_ko", "name_en", "counter_key", "target", "reward"]
 const LOOT_TIERS: Array[String] = ["common", "uncommon", "rare", "epic", "legendary", "mythic"]
-const LOOT_REQUIRED: Array[String] = ["name_ko", "name_en", "tier", "tags", "special"]
+const LOOT_REQUIRED: Array[String] = ["name_ko", "name_en", "tier", "tags", "special", "salvage_gold"]
 const DROP_REQUIRED: Array[String] = ["loot_id", "chance"]
 const WEAPON_MOD_REQUIRED: Array[String] = ["weapon_id", "loot_id", "result_weapon"]
 
@@ -478,6 +478,9 @@ static func _validate_loot(loot: Dictionary, errors: Array[String]) -> void:
 
 		if not (l.get("special") is bool):
 			errors.append("%s: '%s'.special must be a boolean" % [file, id])
+
+		if _num(l, "salvage_gold") <= 0.0:
+			errors.append("%s: '%s'.salvage_gold must be > 0" % [file, id])
 
 
 # ---- data/drop_tables.json ----

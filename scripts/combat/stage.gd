@@ -71,6 +71,7 @@ func _ready() -> void:
 	EventBus.weapon_evolved.connect(_on_weapon_evolved)
 	_drops.drop_collected.connect(_on_drop_collected)
 	_drops.loot_collected.connect(_on_loot_collected)
+	EventBus.loot_salvaged.connect(_on_loot_salvaged)
 
 
 func _process(delta: float) -> void:
@@ -140,6 +141,11 @@ func _roll_loot(monster_id: String) -> Array[Dictionary]:
 func _on_loot_collected(loot_id: String) -> void:
 	RunState.add_loot(loot_id)
 	EventBus.loot_collected.emit(loot_id)
+
+
+## Salvage pays run gold for now; the permanent yeopjeon currency is R5.
+func _on_loot_salvaged(_loot_id: String, gold_amount: int) -> void:
+	gold += maxi(gold_amount, 0)
 
 
 ## A drop pays out as its collect sequence begins.

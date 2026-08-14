@@ -13,5 +13,15 @@
     "weapon_id": "sword",
     "loot_id": "fire_spirit_stone",
     "result_weapon": "flame_sword"
+  },
+  "fire_talisman_mod": {
+    "weapon_id": "old_talisman",
+    "loot_id": "fire_spirit_stone",
+    "result_weapon": "fire_talisman"
+  },
+  "fire_talisman_flame_mod": {
+    "weapon_id": "old_talisman",
+    "loot_id": "dokkaebi_flame",
+    "result_weapon": "fire_talisman"
   }
 }

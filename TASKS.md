@@ -82,8 +82,8 @@ GDD §4, §6, §7, §20, §33.
       `tools/validate_data.gd`가 교차 검증한다.
 - [x] **R2-2 드랍→픽업** — 몬스터 사망 시 드랍 테이블 확률로 전리품
       엔티티가 생성되고 자석 반경에서 흡수된다; 일반 재료는 자동 누적.
-- [ ] **R2-3 특수 재료 3택 팝업** — 특수 재료 획득 시 시간 정지 팝업
-      (사용/보관 6칸/분해→엽전 카운터). 인벤 초과 시 교체 선택.
+- [x] **R2-3 특수 재료 3택 팝업** — 특수 재료 획득 시 시간 정지 팝업
+      (사용/보관/분해→런 골드). 인벤 6칸 제한과 엽전 환전은 R5로 유예.
 - [x] **R2-4 개조 레시피** — `data/weapon_mods.json`: 환도+숫돌→예리한
       환도, 환도+귀철→귀철도, 환도+화령석→화염도. 적용 시 무기 교체.
 - [ ] **R2-5 개조 체감** — 3갈래가 실제로 다르게 동작한다 (참격 관통 /
@@ -152,3 +152,4 @@ GDD §4, §6, §7, §20, §33.
 | 2026-08-14 | R2-1 loot schema + loader (`loot.json`, `drop_tables.json`, GameData accessors, validator, tests 23/23) | see git log |
 | 2026-08-14 | R2-2 loot drop → pickup (LootDrops.roll, DropPool loot spawn, RunState.loot_counts, tests 24/24, soak-verified) | see git log |
 | 2026-08-14 | R2-4 weapon mod recipes (`weapon_mods.json`, GameData.mod_for, RunState.apply_weapon_mod, weapon_modified signal, tests 25/25) | see git log |
+| 2026-08-14 | R2-3 special-loot 3-choice popup (use/keep/salvage, taoist talisman recipes, salvage_gold data, tests 26/26) | see git log |

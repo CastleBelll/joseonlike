@@ -65,6 +65,14 @@ const UI_STRINGS: Dictionary = {
 	"kind_passive": {"ko": "패시브", "en": "Passive"},
 	"no_choices": {"ko": "선택지가 없습니다.", "en": "No choices available."},
 
+	"loot_choice_title_template": {"ko": "%s 획득!", "en": "%s acquired!"},
+	"kind_loot_use": {"ko": "개조", "en": "Modify"},
+	"loot_use_template": {"ko": "%s → %s", "en": "%s → %s"},
+	"loot_keep": {"ko": "보관", "en": "Keep"},
+	"loot_keep_desc": {"ko": "재료를 가지고 있는다.", "en": "Hold on to the material."},
+	"loot_salvage": {"ko": "분해", "en": "Salvage"},
+	"loot_salvage_template": {"ko": "골드 +%d", "en": "Gold +%d"},
+
 	"victory_title": {"ko": "승리!", "en": "Victory!"},
 	"defeat_title": {"ko": "패배", "en": "Defeat"},
 	"gold_label": {"ko": "획득 골드", "en": "Gold Earned"},

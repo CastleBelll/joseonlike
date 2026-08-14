@@ -186,6 +186,23 @@ func apply_weapon_mod(weapon_id: String, loot_id: String) -> bool:
 	return true
 
 
+## Spends one unit of `loot_id` and returns its data-declared salvage gold,
+## or 0 when nothing is in stock. The caller routes the gold — RunState only
+## owns the loot ledger.
+func salvage_loot(loot_id: String) -> int:
+	if loot_count(loot_id) <= 0:
+		push_warning("RunState.salvage_loot: no \"%s\" in stock" % loot_id)
+		return 0
+
+	var gold: int = int(_content().loot(loot_id).get("salvage_gold", 0))
+	var remaining: int = int(loot_counts[loot_id]) - 1
+	if remaining <= 0:
+		loot_counts.erase(loot_id)
+	else:
+		loot_counts[loot_id] = remaining
+	return gold
+
+
 func add_xp(amount: int) -> void:
 	if amount <= 0:
 		return
