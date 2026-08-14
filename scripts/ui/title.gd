@@ -38,6 +38,12 @@ const ICON_QUIT: Texture2D = preload("res://asset/ui/main/quit.png")
 ## field); this is a placeholder for the plaque, not a real release number.
 const VERSION_TEXT := "M1"
 
+## First boot skips every selection screen and drops straight into combat
+## (GDD v2 section 28: the first 60 seconds). Fixed defaults on purpose —
+## a brand-new player has nothing unlocked to choose from anyway.
+const FIRST_RUN_CHARACTER := "taoist"
+const FIRST_RUN_STAGE := "bamboo_forest"
+
 const LAYER_SKY := "res://asset/title/layers/sky.png"
 const LAYER_MOON_GLOW := "res://asset/title/layers/moon_glow.png"
 const LAYER_PALACE := "res://asset/title/layers/palace.png"
@@ -105,6 +111,12 @@ const HERO_POSITION := Vector2(238.0, 580.0)
 @onready var _credits_close: Button = $CreditsPanel/PanelMargin/PanelBox/CreditsClose
 
 var _return_focus_target: Control = null
+
+## Sampled once when the title opens: no profile file = a player who has
+## never played. Sampled at _ready and not at press time, because the
+## autosave timer can write the file while they sit on this screen and a
+## genuinely new player must still get the first-run flow.
+@onready var _first_boot: bool = not FileAccess.file_exists(SaveManager.SAVE_PATH)
 
 var _layered_backdrop: bool = false
 var _parallax_layers: Array[Dictionary] = []   ## [{node, ratio, base_position}]
@@ -399,6 +411,10 @@ func _sample_tilt() -> Vector2:
 
 func _on_start_pressed() -> void:
 	UiSound.play_click(self)
+	if _first_boot:
+		RunState.begin(FIRST_RUN_CHARACTER, FIRST_RUN_STAGE)
+		SceneRouter.goto_stage(FIRST_RUN_STAGE)
+		return
 	SceneRouter.goto_camp()
 
 
