@@ -154,3 +154,4 @@ GDD §4, §6, §7, §20, §33.
 | 2026-08-14 | R2-4 weapon mod recipes (`weapon_mods.json`, GameData.mod_for, RunState.apply_weapon_mod, weapon_modified signal, tests 25/25) | see git log |
 | 2026-08-14 | R2-3 special-loot 3-choice popup (use/keep/salvage, taoist talisman recipes, salvage_gold data, tests 26/26) | see git log |
 | 2026-08-14 | Talisman rework on owner feedback: orbit+homing removed, straight throw at nearest visible enemy; projectile homing/orbit code deleted | see git log |
+| 2026-08-14 | Burn status (R2-5 taoist line): BurnStatus DoT, on_hit_status data on fire/phoenix talisman, projectile carrier, tests 27/27 | `a2a9c12` |
