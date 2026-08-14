@@ -1,0 +1,29 @@
+{
+  "forest_goblin": {
+    "drops": [
+      { "loot_id": "beast_fang", "chance": 0.06 },
+      { "loot_id": "bamboo", "chance": 0.05 },
+      { "loot_id": "whetstone", "chance": 0.01 }
+    ]
+  },
+  "forest_spirit": {
+    "drops": [
+      { "loot_id": "wonhon_shard", "chance": 0.08 },
+      { "loot_id": "talisman_paper", "chance": 0.06 },
+      { "loot_id": "dokkaebi_flame", "chance": 0.02 }
+    ]
+  },
+  "bamboo_brute": {
+    "drops": [
+      { "loot_id": "tough_fiber", "chance": 0.12 },
+      { "loot_id": "whetstone", "chance": 0.05 },
+      { "loot_id": "ghost_iron", "chance": 0.02 }
+    ]
+  },
+  "bamboo_spirit_lord": {
+    "drops": [
+      { "loot_id": "fire_spirit_stone", "chance": 1.0 },
+      { "loot_id": "ghost_iron", "chance": 0.5 }
+    ]
+  }
+}

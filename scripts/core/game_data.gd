@@ -19,6 +19,8 @@ const REQUIRED_COLLECTIONS: Array[String] = [
 	"passives",
 	"evolutions",
 	"achievements",
+	"loot",
+	"drop_tables",
 ]
 
 const COLLECTION_CHARACTERS := "characters"
@@ -28,6 +30,8 @@ const COLLECTION_STAGES := "stages"
 const COLLECTION_PASSIVES := "passives"
 const COLLECTION_EVOLUTIONS := "evolutions"
 const COLLECTION_ACHIEVEMENTS := "achievements"
+const COLLECTION_LOOT := "loot"
+const COLLECTION_DROP_TABLES := "drop_tables"
 
 ## JSON objects are keyed by id, so entries carry no id field of their own.
 ## The list accessors inject it because UI code iterates without the key.
@@ -90,6 +94,30 @@ func stage(id: String) -> Dictionary:
 
 func passive(id: String) -> Dictionary:
 	return _lookup(COLLECTION_PASSIVES, id)
+
+
+func loot(id: String) -> Dictionary:
+	return _lookup(COLLECTION_LOOT, id)
+
+
+## Drop table for a monster, or {} for monsters that drop nothing. Unlike the
+## other keyed accessors this does not push_error on a missing id: most
+## monsters legitimately have no table, and death handling asks for every kill.
+func drop_table(monster_id: String) -> Dictionary:
+	if not _loaded:
+		push_error("GameData.drop_table(\"%s\") called before load_all()" % monster_id)
+		return {}
+
+	var tables: Dictionary = _collections.get(COLLECTION_DROP_TABLES, {})
+	if not tables.has(monster_id):
+		return {}
+
+	var entry: Variant = tables[monster_id]
+	if typeof(entry) != TYPE_DICTIONARY:
+		push_error("GameData: drop_tables entry \"%s\" is not a JSON object" % monster_id)
+		return {}
+
+	return (entry as Dictionary).duplicate(true)
 
 
 ## Returns the evolved weapon id for a weapon+passive pair, or "" when no rule

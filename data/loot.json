@@ -1,0 +1,65 @@
+{
+  "bamboo": {
+    "name_ko": "대나무",
+    "name_en": "Bamboo",
+    "tier": "common",
+    "tags": ["ranged", "craft"],
+    "special": false
+  },
+  "tough_fiber": {
+    "name_ko": "질긴 섬유",
+    "name_en": "Tough Fiber",
+    "tier": "common",
+    "tags": ["ranged", "craft"],
+    "special": false
+  },
+  "beast_fang": {
+    "name_ko": "짐승의 이빨",
+    "name_en": "Beast Fang",
+    "tier": "common",
+    "tags": ["melee", "bleed"],
+    "special": false
+  },
+  "talisman_paper": {
+    "name_ko": "부적지",
+    "name_en": "Talisman Paper",
+    "tier": "common",
+    "tags": ["spiritual"],
+    "special": false
+  },
+  "wonhon_shard": {
+    "name_ko": "원혼 조각",
+    "name_en": "Wonhon Shard",
+    "tier": "uncommon",
+    "tags": ["soul", "curse"],
+    "special": false
+  },
+  "dokkaebi_flame": {
+    "name_ko": "도깨비불",
+    "name_en": "Dokkaebi Flame",
+    "tier": "uncommon",
+    "tags": ["fire", "soul"],
+    "special": false
+  },
+  "whetstone": {
+    "name_ko": "숫돌",
+    "name_en": "Whetstone",
+    "tier": "rare",
+    "tags": ["melee"],
+    "special": true
+  },
+  "ghost_iron": {
+    "name_ko": "귀철",
+    "name_en": "Ghost Iron",
+    "tier": "epic",
+    "tags": ["melee", "curse"],
+    "special": true
+  },
+  "fire_spirit_stone": {
+    "name_ko": "화령석",
+    "name_en": "Fire Spirit Stone",
+    "tier": "epic",
+    "tags": ["fire"],
+    "special": true
+  }
+}

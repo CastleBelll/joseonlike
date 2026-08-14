@@ -43,6 +43,9 @@ const MONSTER_REQUIRED: Array[String] = [
 const STAGE_REQUIRED: Array[String] = ["name_ko", "name_en", "duration_sec", "boss_id", "waves"]
 const WAVE_REQUIRED: Array[String] = ["at_sec", "monster_id", "count", "interval_sec"]
 const ACHIEVEMENT_REQUIRED: Array[String] = ["name_ko", "name_en", "counter_key", "target", "reward"]
+const LOOT_TIERS: Array[String] = ["common", "uncommon", "rare", "epic", "legendary", "mythic"]
+const LOOT_REQUIRED: Array[String] = ["name_ko", "name_en", "tier", "tags", "special"]
+const DROP_REQUIRED: Array[String] = ["loot_id", "chance"]
 
 
 func _init() -> void:
@@ -68,6 +71,8 @@ static func validate_all() -> Array[String]:
 	var monsters := _load_json("monsters.json", errors)
 	var stages := _load_json("stages.json", errors)
 	var achievements := _load_json("achievements.json", errors)
+	var loot := _load_json("loot.json", errors)
+	var drop_tables := _load_json("drop_tables.json", errors)
 
 	_validate_characters(characters, weapons, achievements, errors)
 	_validate_weapons(weapons, evolutions, errors)
@@ -76,6 +81,8 @@ static func validate_all() -> Array[String]:
 	_validate_monsters(monsters, errors)
 	_validate_stages(stages, monsters, errors)
 	_validate_achievements(achievements, errors)
+	_validate_loot(loot, errors)
+	_validate_drop_tables(drop_tables, monsters, loot, errors)
 
 	return errors
 
@@ -429,3 +436,79 @@ static func _validate_achievements(achievements: Dictionary, errors: Array[Strin
 			errors.append("%s: '%s'.reward.type must be a non-empty string" % [file, id])
 		if _num(reward, "amount") <= 0.0:
 			errors.append("%s: '%s'.reward.amount must be > 0" % [file, id])
+
+
+# ---- data/loot.json ----
+
+static func _validate_loot(loot: Dictionary, errors: Array[String]) -> void:
+	var file := "loot.json"
+	_check_ids(file, loot, errors)
+
+	for id in loot.keys():
+		var entry: Variant = loot[id]
+		if not (entry is Dictionary):
+			errors.append("%s: '%s' must be an object" % [file, id])
+			continue
+
+		var l: Dictionary = entry
+		var missing := _missing_fields(l, LOOT_REQUIRED)
+		for field in missing:
+			errors.append("%s: '%s' missing required field '%s'" % [file, id, field])
+		if not missing.is_empty():
+			continue
+
+		var tier: String = l.get("tier", "")
+		if not LOOT_TIERS.has(tier):
+			errors.append("%s: '%s'.tier '%s' is not one of %s" % [file, id, tier, LOOT_TIERS])
+
+		var tags: Variant = l.get("tags")
+		if not (tags is Array) or (tags as Array).is_empty():
+			errors.append("%s: '%s'.tags must be a non-empty array" % [file, id])
+		else:
+			for tag in (tags as Array):
+				if not (tag is String) or (tag as String).is_empty():
+					errors.append("%s: '%s'.tags entries must be non-empty strings" % [file, id])
+					break
+
+		if not (l.get("special") is bool):
+			errors.append("%s: '%s'.special must be a boolean" % [file, id])
+
+
+# ---- data/drop_tables.json ----
+
+static func _validate_drop_tables(drop_tables: Dictionary, monsters: Dictionary, loot: Dictionary, errors: Array[String]) -> void:
+	var file := "drop_tables.json"
+
+	for monster_id in drop_tables.keys():
+		if not monsters.has(monster_id):
+			errors.append("%s: table key '%s' does not exist in monsters.json" % [file, monster_id])
+
+		var entry: Variant = drop_tables[monster_id]
+		if not (entry is Dictionary):
+			errors.append("%s: '%s' must be an object" % [file, monster_id])
+			continue
+
+		var drops: Variant = (entry as Dictionary).get("drops")
+		if not (drops is Array) or (drops as Array).is_empty():
+			errors.append("%s: '%s'.drops must be a non-empty array" % [file, monster_id])
+			continue
+
+		for i in range((drops as Array).size()):
+			var drop: Variant = (drops as Array)[i]
+			if not (drop is Dictionary):
+				errors.append("%s: '%s'.drops[%d] must be an object" % [file, monster_id, i])
+				continue
+
+			var drop_missing := _missing_fields(drop, DROP_REQUIRED)
+			for field in drop_missing:
+				errors.append("%s: '%s'.drops[%d] missing required field '%s'" % [file, monster_id, i, field])
+			if not drop_missing.is_empty():
+				continue
+
+			var loot_id: String = drop.get("loot_id", "")
+			if not loot.has(loot_id):
+				errors.append("%s: '%s'.drops[%d].loot_id '%s' does not exist in loot.json" % [file, monster_id, i, loot_id])
+
+			var chance := _num(drop, "chance")
+			if not (chance > 0.0 and chance <= 1.0):
+				errors.append("%s: '%s'.drops[%d].chance must be in (0, 1]" % [file, monster_id, i])

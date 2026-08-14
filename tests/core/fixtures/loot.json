@@ -1,0 +1,16 @@
+{
+  "beast_fang": {
+    "name_ko": "짐승의 이빨",
+    "name_en": "Beast Fang",
+    "tier": "common",
+    "tags": ["melee", "bleed"],
+    "special": false
+  },
+  "whetstone": {
+    "name_ko": "숫돌",
+    "name_en": "Whetstone",
+    "tier": "rare",
+    "tags": ["melee"],
+    "special": true
+  }
+}
