@@ -82,6 +82,16 @@ const MOTE_SPAWN_POSITION := Vector2(270.0, 900.0)
 const LOGO_ENTRANCE_SECONDS := 0.6
 const LOGO_ENTRANCE_RISE_PX := 18.0
 
+const PRIMARY_ICON_PX := 32.0
+const SECONDARY_ICON_PX := 20.0
+
+## The in-game hunter standing on the path fills the dead band between the
+## palace and the menu (owner feedback: the middle of the screen was empty).
+## Reuses the side-view idle at the same integer downscale family as combat.
+const HERO_SPRITE := "res://asset/character/Taoist/side/idle.png"
+const HERO_SIZE := Vector2(64.0, 64.0)
+const HERO_POSITION := Vector2(238.0, 580.0)
+
 @onready var _backdrop: TextureRect = $Backdrop
 @onready var _backdrop_layers: Control = $BackdropLayers
 @onready var _logo: TextureRect = $Logo
@@ -89,7 +99,7 @@ const LOGO_ENTRANCE_RISE_PX := 18.0
 @onready var _continue_button: Button = $Actions/ContinueButton
 @onready var _settings_button: Button = $Actions/SecondaryRow/SettingsButton
 @onready var _credits_button: Button = $Actions/SecondaryRow/CreditsButton
-@onready var _quit_button: Button = $Actions/QuitButton
+@onready var _quit_button: Button = $Actions/SecondaryRow/QuitButton
 @onready var _version_plaque: NinePatchRect = $VersionPlaque
 @onready var _version_label: Label = $VersionPlaque/VersionLabel
 @onready var _credits_panel: Panel = $CreditsPanel
@@ -119,17 +129,24 @@ func _ready() -> void:
 	_start_button.pressed.connect(_on_start_pressed)
 
 	_configure_action(_continue_button, ICON_CONTINUE, "menu_continue")
-	_continue_button.disabled = not _has_existing_profile()
+	# Hidden, not disabled: a first-time player gets nothing from a dead
+	# button, and the disabled chrome's hatch pattern read as visual noise
+	# (owner feedback 2026-08-14).
+	_continue_button.visible = _has_existing_profile()
 	_continue_button.pressed.connect(_on_start_pressed)
 
-	_configure_action(_settings_button, ICON_SETTINGS, "menu_settings")
+	# The secondary row is deliberately lighter than Start: smaller icons and
+	# label-size text, so the one primary action owns the block.
+	_configure_action(_settings_button, ICON_SETTINGS, "menu_settings", SECONDARY_ICON_PX, UiPalette.FONT_SIZE_LABEL)
 	_settings_button.pressed.connect(_on_settings_pressed)
 
-	_configure_action(_credits_button, ICON_CREDITS, "menu_credits")
+	_configure_action(_credits_button, ICON_CREDITS, "menu_credits", SECONDARY_ICON_PX, UiPalette.FONT_SIZE_LABEL)
 	_credits_button.pressed.connect(_on_credits_pressed)
 
-	_configure_action(_quit_button, ICON_QUIT, "menu_quit")
+	_configure_action(_quit_button, ICON_QUIT, "menu_quit", SECONDARY_ICON_PX, UiPalette.FONT_SIZE_LABEL)
 	_quit_button.pressed.connect(_on_quit_pressed)
+
+	_setup_hero()
 
 	_version_plaque.texture = VERSION_PLAQUE
 	_version_plaque.patch_margin_left = 8
@@ -148,12 +165,19 @@ func _ready() -> void:
 	_credits_close.pressed.connect(_close_credits)
 	_credits_panel.visible = false
 
-	(_continue_button if not _continue_button.disabled else _start_button).grab_focus()
+	(_continue_button if _continue_button.visible else _start_button).grab_focus()
 
 
 ## Icon (left) + label (right) inside the existing button chrome, matching
-## the pattern already used for camp buildings/character cards.
-func _configure_action(button: Button, icon_texture: Texture2D, label_key: String) -> void:
+## the pattern already used for camp buildings/character cards. Icon and font
+## size are parameters so secondary actions can visibly weigh less.
+func _configure_action(
+	button: Button,
+	icon_texture: Texture2D,
+	label_key: String,
+	icon_px: float = PRIMARY_ICON_PX,
+	font_size: int = UiPalette.FONT_SIZE_BODY
+) -> void:
 	UiPalette.apply_button_style(button)
 	button.custom_minimum_size.y = max(button.custom_minimum_size.y, 44.0)
 
@@ -166,7 +190,7 @@ func _configure_action(button: Button, icon_texture: Texture2D, label_key: Strin
 
 	var icon := TextureRect.new()
 	icon.texture = icon_texture
-	icon.custom_minimum_size = Vector2(32, 32)
+	icon.custom_minimum_size = Vector2(icon_px, icon_px)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -175,9 +199,32 @@ func _configure_action(button: Button, icon_texture: Texture2D, label_key: Strin
 	var label := Label.new()
 	label.text = LocaleText.ui(label_key)
 	label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
-	label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
+	label.add_theme_font_size_override("font_size", font_size)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(label)
+
+
+## A still hunter on the path. Static on purpose — the backdrop already
+## breathes (fog, sway, motes); a second animated focal point would compete
+## with the menu.
+func _setup_hero() -> void:
+	if not ResourceLoader.exists(HERO_SPRITE):
+		return
+	var hero := TextureRect.new()
+	# expand_mode BEFORE texture and size: with the default EXPAND_KEEP_SIZE
+	# the moment the 512px texture lands the minimum size clamps the rect to
+	# texture size and a later size assignment cannot shrink it back.
+	hero.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	hero.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	hero.texture = load(HERO_SPRITE)
+	hero.custom_minimum_size = HERO_SIZE
+	hero.size = HERO_SIZE
+	hero.position = HERO_POSITION
+	hero.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Behind the menu/logo Controls added later in the tree order, but in
+	# front of the backdrop layers.
+	add_child(hero)
+	move_child(hero, _backdrop_layers.get_index() + 1)
 
 
 ## No multi-slot profile screen exists in M1 (one SaveManager file, not
