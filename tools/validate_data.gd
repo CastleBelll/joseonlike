@@ -14,6 +14,12 @@ const PASSIVE_FIELDS: Array[String] = ["per_stack", "max_stacks"]
 const ORB_FIELDS: Array[String] = [
 	"magnet_radius_px", "collect_radius_px", "magnet_accel_px_s2", "max_speed_px_s"
 ]
+# N3-8 hit feedback contract (data/effects.json).
+const HIT_FEEDBACK_FIELDS: Array[String] = [
+	"enemy_flash_sec", "knockback_speed_px_s", "knockback_decay_px_s2",
+	"boss_knockback_scale", "death_puff_sec", "death_puff_radius_scale",
+	"player_vignette_sec"
+]
 # N3-9 prop field contract (data/props.json).
 const PROP_FIELD_FIELDS: Array[String] = [
 	"width_px", "height_px", "edge_margin_px", "solid_count", "decor_count",
@@ -60,6 +66,10 @@ func _check_combat_cross_references() -> void:
 		var stage: Dictionary = stages[stage_id]
 		if not monsters.has(stage.get("boss_id", "")):
 			_fail("stages.%s.boss_id not in monsters.json" % stage_id)
+		# N5-1: the boss must arrive inside the run window.
+		var boss_at: float = float(stage.get("boss_at_sec", 0.0))
+		if boss_at <= 0.0 or boss_at > float(stage.get("duration_sec", 0.0)):
+			_fail("stages.%s.boss_at_sec missing or outside duration_sec" % stage_id)
 		_require_positive_numbers(
 			stage.get("spawning", {}), SPAWNING_FIELDS, "stages.%s.spawning" % stage_id
 		)
@@ -99,6 +109,10 @@ func _check_combat_cross_references() -> void:
 	# growth 1.0 or below would make the level-up loop free or non-terminating.
 	if float((progression.get("xp_curve", {}) as Dictionary).get("growth", 0.0)) <= 1.0:
 		_fail("progression.xp_curve.growth must be greater than 1.0")
+	var effects: Dictionary = _load(DATA_DIR + "/effects.json")
+	_require_positive_numbers(
+		effects.get("hit_feedback", {}), HIT_FEEDBACK_FIELDS, "effects.hit_feedback"
+	)
 	_check_props()
 
 

@@ -4,6 +4,7 @@
     "name_en": "Bamboo Forest",
     "duration_sec": 600,
     "boss_id": "bamboo_spirit_lord",
+    "boss_at_sec": 540,
     "spawning": {
       "live_cap": 60,
       "spawn_margin_px": 48.0,

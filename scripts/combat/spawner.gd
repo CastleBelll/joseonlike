@@ -4,15 +4,21 @@ extends Node2D
 ## data/stages.json (waves + spawning) and data/monsters.json. Enemies are
 ## reused through EnemyPool; a run never instances per spawn after warm-up.
 
-## Kills only (not off-screen despawns), so drops never spawn unseen.
-signal enemy_killed(at: Vector2, xp: int)
+## Kills only (not off-screen despawns), so drops never spawn unseen. The
+## dying enemy is still valid during this synchronous emit; it returns to the
+## pool right after, so handlers must read its fields immediately.
+signal enemy_killed(enemy: Enemy)
+## N5-1: the single stage boss just entered the field.
+signal boss_spawned(boss: Enemy)
 
 const STAGES_PATH := "res://data/stages.json"
 const MONSTERS_PATH := "res://data/monsters.json"
+const EFFECTS_PATH := "res://data/effects.json"
 const STAGE_ID := "bamboo_forest"
 
 var _monsters: Dictionary = {}
 var _spawning: Dictionary = {}
+var _feedback: Dictionary = {}
 var _pending_waves: Array[Dictionary] = []
 var _running_waves: Array[Dictionary] = []
 var _active: Array[Enemy] = []
@@ -20,6 +26,9 @@ var _pool: EnemyPool
 var _player: Player
 var _elapsed: float = 0.0
 var _rng := RandomNumberGenerator.new()
+var _boss_id: String = ""
+var _boss_at_sec: float = RunFlow.NO_BOSS
+var _boss_spawn_done: bool = false
 
 
 func setup(player: Player) -> void:
@@ -28,8 +37,11 @@ func setup(player: Player) -> void:
 	_rng.randomize()
 	var stage_data: Dictionary = _load_json(STAGES_PATH)
 	_monsters = _load_json(MONSTERS_PATH)
+	_feedback = _load_json(EFFECTS_PATH).get("hit_feedback", {})
 	var stage: Dictionary = stage_data.get(STAGE_ID, {})
 	_spawning = stage.get("spawning", {})
+	_boss_id = String(stage.get("boss_id", ""))
+	_boss_at_sec = RunFlow.boss_spawn_time(stage)
 	if _spawning.is_empty() or _monsters.is_empty():
 		push_error("spawner: missing spawning config or monsters for " + STAGE_ID)
 		return
@@ -47,6 +59,7 @@ func _physics_process(delta: float) -> void:
 	_elapsed += delta
 	_start_due_waves()
 	_run_waves()
+	_start_boss_if_due()
 	_despawn_far_enemies()
 
 
@@ -77,10 +90,21 @@ func _run_waves() -> void:
 	)
 
 
-func _spawn_one(monster_id: String) -> void:
+## The boss ignores the live cap on purpose: its arrival is a timed event,
+## not a wave, and it must never be starved out by a full field.
+func _start_boss_if_due() -> void:
+	if _boss_spawn_done or _boss_at_sec < 0.0 or _elapsed < _boss_at_sec:
+		return
+	_boss_spawn_done = true
+	var boss: Enemy = _spawn_one(_boss_id)
+	if boss != null:
+		boss_spawned.emit(boss)
+
+
+func _spawn_one(monster_id: String) -> Enemy:
 	if not _monsters.has(monster_id):
 		push_error("spawner: unknown monster id " + monster_id)
-		return
+		return null
 	var enemy: Enemy = _pool.acquire()
 	if not enemy.died.is_connected(_on_enemy_died):
 		enemy.died.connect(_on_enemy_died)
@@ -88,7 +112,8 @@ func _spawn_one(monster_id: String) -> void:
 		monster_id,
 		_monsters[monster_id],
 		_player,
-		float(_spawning.get("contact_cooldown_sec", 1.0))
+		float(_spawning.get("contact_cooldown_sec", 1.0)),
+		_feedback
 	)
 	# Player position approximates the smoothed camera center; the margin
 	# absorbs the few-frame camera lag. Accepted tradeoff for N3-4.
@@ -99,10 +124,13 @@ func _spawn_one(monster_id: String) -> void:
 		_rng.randf_range(0.0, TAU)
 	)
 	_active.append(enemy)
+	return enemy
 
 
 func _despawn_far_enemies() -> void:
 	for enemy: Enemy in _active.duplicate():
+		if enemy.is_boss:
+			continue  # a kited boss must keep walking, never silently vanish
 		var gone: bool = CombatMath.should_despawn(
 			enemy.global_position,
 			_player.global_position,
@@ -114,7 +142,7 @@ func _despawn_far_enemies() -> void:
 
 
 func _on_enemy_died(enemy: Enemy) -> void:
-	enemy_killed.emit(enemy.global_position, enemy.xp_drop)
+	enemy_killed.emit(enemy)
 	_release(enemy)
 
 
