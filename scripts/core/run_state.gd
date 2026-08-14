@@ -34,6 +34,7 @@ const CHOICE_KIND := "kind"
 const CHOICE_NAME_KO := "name_ko"
 const CHOICE_NAME_EN := "name_en"
 const CHOICE_DESCRIPTION_KO := "description_ko"
+const CHOICE_DESCRIPTION_EN := "description_en"
 
 const WEAPON_ID := "id"
 const WEAPON_LEVEL := "level"
@@ -509,15 +510,16 @@ func _weapon_upgrade_choices() -> Array[Dictionary]:
 		if current >= max_level:
 			continue
 
-		var name_ko: String = String(data.get(FIELD_NAME_KO, weapon_id))
+		var per_level: Dictionary = data.get("per_level", {}) if data.get("per_level") is Dictionary else {}
+		# The description says what actually grows: "Lv.2/8 · 피해 +3.5 · ...".
+		var level_prefix: String = "Lv.%d/%d" % [current + 1, max_level]
 		choices.append({
 			CHOICE_ID: weapon_id,
 			CHOICE_KIND: KIND_WEAPON_UPGRADE,
-			CHOICE_NAME_KO: name_ko,
+			CHOICE_NAME_KO: String(data.get(FIELD_NAME_KO, weapon_id)),
 			CHOICE_NAME_EN: String(data.get(FIELD_NAME_EN, weapon_id)),
-			# Display text is assembled from data-authored names plus numbers, so
-			# no Korean copy is hardcoded here (ARCHITECTURE.md section 4).
-			CHOICE_DESCRIPTION_KO: "%s Lv.%d / %d" % [name_ko, current + 1, max_level],
+			CHOICE_DESCRIPTION_KO: ChoiceText.SEPARATOR.join([level_prefix, ChoiceText.weapon_upgrade_description(per_level, "ko")]),
+			CHOICE_DESCRIPTION_EN: ChoiceText.SEPARATOR.join([level_prefix, ChoiceText.weapon_upgrade_description(per_level, "en")]),
 		})
 	return choices
 
@@ -541,13 +543,13 @@ func _new_weapon_choices() -> Array[Dictionary]:
 		if bool(data.get(FIELD_EVOLUTION_ONLY, false)):
 			continue
 
-		var name_ko: String = String(data.get(FIELD_NAME_KO, weapon_id))
 		choices.append({
 			CHOICE_ID: weapon_id,
 			CHOICE_KIND: KIND_WEAPON_NEW,
-			CHOICE_NAME_KO: name_ko,
+			CHOICE_NAME_KO: String(data.get(FIELD_NAME_KO, weapon_id)),
 			CHOICE_NAME_EN: String(data.get(FIELD_NAME_EN, weapon_id)),
-			CHOICE_DESCRIPTION_KO: "%s Lv.%d" % [name_ko, WEAPON_START_LEVEL],
+			CHOICE_DESCRIPTION_KO: ChoiceText.weapon_base_description(data, "ko"),
+			CHOICE_DESCRIPTION_EN: ChoiceText.weapon_base_description(data, "en"),
 		})
 	return choices
 
@@ -564,13 +566,18 @@ func _passive_choices() -> Array[Dictionary]:
 		if current >= max_stacks:
 			continue
 
-		var name_ko: String = String(data.get(FIELD_NAME_KO, passive_id))
+		# "+8% (2/5)" — the name already carries the stat, the description
+		# carries the size of the step.
+		var description: String = ChoiceText.passive_description(
+			float(data.get(FIELD_PER_STACK, 0.0)), current + PASSIVE_START_STACKS, max_stacks
+		)
 		choices.append({
 			CHOICE_ID: passive_id,
 			CHOICE_KIND: KIND_PASSIVE,
-			CHOICE_NAME_KO: name_ko,
+			CHOICE_NAME_KO: String(data.get(FIELD_NAME_KO, passive_id)),
 			CHOICE_NAME_EN: String(data.get(FIELD_NAME_EN, passive_id)),
-			CHOICE_DESCRIPTION_KO: "%s %d / %d" % [name_ko, current + PASSIVE_START_STACKS, max_stacks],
+			CHOICE_DESCRIPTION_KO: description,
+			CHOICE_DESCRIPTION_EN: description,
 		})
 	return choices
 
