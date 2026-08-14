@@ -71,12 +71,18 @@ func _ready() -> void:
 	_title_label.text = LocaleText.ui("camp_title")
 	_title_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 	_title_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_TITLE)
+	# The eave decoration runs behind this baseline on the camp; the outline
+	# keeps the title legible over it without drifting from the shared 20/68
+	# title position the layout audit enforces.
+	_title_label.add_theme_constant_override("outline_size", 5)
+	_title_label.add_theme_color_override("font_outline_color", UiPalette.INK)
 
 	_setup_ground()
 	_setup_scenery()
 	_setup_buildings()
 	_setup_gate()
 	_setup_player()
+	_setup_run_button()
 
 	_panel_close.text = LocaleText.ui("close")
 	UiPalette.apply_button_style(_panel_close)
@@ -91,12 +97,10 @@ func _ready() -> void:
 	_hint_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
 	_hint_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 
-	_interact_button.text = LocaleText.ui("camp_interact_button")
 	UiPalette.apply_button_style(_interact_button)
 	_interact_button.focus_mode = Control.FOCUS_ALL
 	_interact_button.pressed.connect(_on_interact_pressed)
 	_set_nearby("")
-	_interact_button.grab_focus()
 
 
 func _process(_delta: float) -> void:
@@ -115,15 +119,19 @@ func _process(_delta: float) -> void:
 		_interact(closest_id)
 
 
+## Appearing beats disabling: a hatched dead button taught nothing, while a
+## button that pops up NAMED after the nearby building both invites the tap
+## and says what it will do (owner design pass 2026-08-14). The hint label
+## became redundant the moment the button carries the name.
 func _set_nearby(id: String) -> void:
 	_nearby_id = id
-	_interact_button.disabled = id.is_empty()
-	_hint_label.visible = not id.is_empty()
+	_interact_button.visible = not id.is_empty()
+	_hint_label.visible = false
 	if id.is_empty():
 		return
 	for point in _interaction_points:
 		if String(point["id"]) == id:
-			_hint_label.text = LocaleText.ui(String(point["label_key"]))
+			_interact_button.text = LocaleText.ui(String(point["label_key"]))
 			return
 
 
@@ -188,6 +196,7 @@ func _setup_buildings() -> void:
 		sprite.texture = load(String(building["sprite"])) if ResourceLoader.exists(String(building["sprite"])) else null
 		sprite.position = position
 		_world.add_child(sprite)
+		_add_world_label(LocaleText.ui(String(building["label_key"])), position)
 
 
 func _setup_gate() -> void:
@@ -196,6 +205,47 @@ func _setup_gate() -> void:
 	sprite.texture = load(SPRITE_GATE) if ResourceLoader.exists(SPRITE_GATE) else null
 	sprite.position = GATE["position"]
 	_world.add_child(sprite)
+	_add_world_label(LocaleText.ui(String(GATE["label_key"])), GATE["position"])
+
+
+const WORLD_LABEL_WIDTH := 160.0
+const WORLD_LABEL_OFFSET_Y := 48.0
+
+
+## Nameplate under a structure. Owner design pass: without these the four
+## buildings were indistinguishable roofs. Outlined so the text survives any
+## ground colour behind it.
+func _add_world_label(text: String, world_position: Vector2) -> void:
+	var label := Label.new()
+	label.text = text
+	label.size = Vector2(WORLD_LABEL_WIDTH, 22.0)
+	label.position = world_position + Vector2(-WORLD_LABEL_WIDTH * 0.5, WORLD_LABEL_OFFSET_Y)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# Dark ink on the sunlit courtyard ground (WCAG-checked by the layout
+	# audit); the light outline guards the label over dark patches.
+	label.add_theme_color_override("font_color", UiPalette.INK)
+	label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
+	label.add_theme_constant_override("outline_size", 4)
+	label.add_theme_color_override("font_outline_color", UiPalette.TEXT_ON_DARK)
+	_world.add_child(label)
+
+
+## The run is the camp's reason to exist, so it gets a persistent button in
+## the thumb corner instead of hiding behind a walk to the gate. Walking to
+## the gate still works — this is the shortcut, not a replacement.
+func _setup_run_button() -> void:
+	var run_button := Button.new()
+	run_button.text = LocaleText.ui("start_run")
+	run_button.custom_minimum_size = Vector2(150, 56)
+	UiPalette.apply_button_style(run_button)
+	run_button.pressed.connect(_interact.bind(GATE_ID))
+	add_child(run_button)
+	run_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	run_button.offset_left = -166.0
+	run_button.offset_top = -72.0
+	run_button.offset_right = -16.0
+	run_button.offset_bottom = -16.0
+	run_button.grab_focus()
 
 
 func _setup_player() -> void:
