@@ -22,6 +22,15 @@
       { "loot_id": "ghost_iron", "chance": 0.02 }
     ]
   },
+  "bamboo_brute_elite": {
+    "drops": [
+      { "loot_id": "whetstone", "chance": 0.35 },
+      { "loot_id": "cinnabar", "chance": 0.3 },
+      { "loot_id": "thunder_stone", "chance": 0.12 },
+      { "loot_id": "ghost_iron", "chance": 0.12 },
+      { "loot_id": "tough_fiber", "chance": 0.5 }
+    ]
+  },
   "bamboo_spirit_lord": {
     "drops": [
       { "loot_id": "fire_spirit_stone", "chance": 1.0 },

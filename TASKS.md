@@ -66,6 +66,15 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
       RunState 런 인벤토리, 특수 재료 사용(무기 변신·레벨 유지)/보관/분해
       팝업 (행 카드 컴포넌트 공유, 큐잉으로 패널 중첩 금지)
 
+- [x] **N4-2 무기 등급 + 15분 페이싱** — weapons.json `_grades` 사다리
+      (일반→고급→희귀→영웅→신화, 단계별 데이터 배수 + mythic tinted 플래그),
+      레벨업 `등급↑` 카드 / 개조 등급 승계(max(승계, 결과 기본)), 최상위
+      도달 골드 콜아웃(DamageNumber 재사용), bamboo_forest 15분 커브
+      (900s 보스, 840s 대량 공세 피크, 5분부터 정예), `bamboo_brute_elite`
+      (elite_of 배수 파생 + 전용 희귀 드랍), soft_enrage(920s+, 스폰 시
+      스탯 스케일), RunFlow 스케줄 불변식 + validate_data 등급/정예/페이싱
+      크로스체크, 보스 hp 7000 재조정
+
 ---
 
 ## 작업 큐 (오너 지시 2026-08-14: 한 번에 하나씩)
@@ -136,4 +145,5 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | 2026-08-14 | N3-12 monster/boss sprite wiring: data-driven sprite sets (idle + 4-frame walk, boss idle_breathe), shared SpriteSheet builder with the player, facing mirror + overbright hit flash, footprint-based hurt circles, validate_data sprite-file check | — |
 | 2026-08-14 | N3-11 fix: prop render scale now derived from visible silhouette content (not the padded export canvas) so declared logical heights actually render; ground variants placed as sparse noise-clustered patches with per-tile rotation instead of an even scatter | — |
 | 2026-08-14 | N2-1 수행자 선택 screen: full-width row cards from characters.json (accent name + hanja, 칭호, quoted line, NEAREST portrait well), GOLD-border 선택됨 badge, silhouetted locked cards with unlock text, SaveService-persisted selection consumed by the run, title corner-utility entry, card copy/accent/unlock cross-checks in validate_data | — |
+| 2026-08-14 | N4-2 weapon grades + 15-min pacing: `_grades` ladder/step multipliers in weapons.json, grade-up level-up card + mod grade carry + top-grade gold callout, 15-min bamboo_forest wave curve (elite from 5:00, surge peak 840s, boss 900s, soft enrage 920s+), `bamboo_brute_elite` data-derived elite + rare-material drop table, RunFlow schedule invariants, validate_data grade/elite/pacing cross-checks, boss hp 7000 | — |
 | 2026-08-14 | N5-2 autosave/auto-resume + settings popup: SaveProfile pure helpers + SaveService autoload (user://profile.save JSON, temp-rename safe write with crash recovery, schema v1 migration hook, corrupt→warning+fresh), run-end gold banking + lifetime stats, result-screen 보유 엽전 row, paper-panel settings popup (3 volume sliders + 한국어/English toggle, applies live + persists), Master/Music/Effects buses, single-primary-action title | — |

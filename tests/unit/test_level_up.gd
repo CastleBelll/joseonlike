@@ -85,6 +85,8 @@ func test_real_data_pool_offers_nothing_when_everything_maxed() -> bool:
 	)
 	var owned: Dictionary = {}
 	for weapon_id: String in weapons:
+		if weapon_id.begins_with("_"):
+			continue  # reserved config keys (N4-2 "_grades") are not weapons
 		owned[weapon_id] = int((weapons[weapon_id] as Dictionary)["max_level"])
 	var stacks: Dictionary = {}
 	for passive_id: String in passives:

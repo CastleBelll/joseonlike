@@ -31,6 +31,24 @@ const PLACEHOLDER_COLORS: Dictionary = {
 ## instance; 60 live enemies must never rebuild atlas slices per spawn.
 static var _frames_cache: Dictionary = {}
 
+## N4-2 elite derivation: an "elite_of" monsters.json entry is pure data-side
+## multipliers over its base monster. Returns a full stats dict the ordinary
+## setup() consumes — same enemy code, bigger and tougher numbers.
+static func derive_elite_stats(base: Dictionary, elite: Dictionary) -> Dictionary:
+	var size_mult: float = float(elite.get("size_mult", 1.0))
+	var reward_mult: float = float(elite.get("reward_mult", 1.0))
+	var derived: Dictionary = base.duplicate()
+	derived["hp"] = float(base.get("hp", 1.0)) * float(elite.get("hp_mult", 1.0))
+	derived["damage"] = float(base.get("damage", 0.0)) * float(elite.get("damage_mult", 1.0))
+	derived["speed"] = float(base.get("speed", 0.0)) * float(elite.get("speed_mult", 1.0))
+	derived["collision_radius"] = float(base.get("collision_radius", 10.0)) * size_mult
+	derived["xp_drop"] = int(round(float(base.get("xp_drop", 0)) * reward_mult))
+	derived["gold_drop"] = int(round(float(base.get("gold_drop", 0)) * reward_mult))
+	derived["size_scale"] = size_mult
+	derived["name_ko"] = String(elite.get("name_ko", base.get("name_ko", "")))
+	derived["name_en"] = String(elite.get("name_en", base.get("name_en", "")))
+	return derived
+
 var monster_id := ""
 var hp: float = 0.0
 var contact_radius: float = 0.0
@@ -47,6 +65,7 @@ var _body: ColorRect
 var _visual: Node2D
 var _sprite: AnimatedSprite2D
 var _has_art := false
+var _size_scale: float = 1.0  # N4-2: elite variants render bigger
 var _facing: int = PlayerMotion.FACING_RIGHT
 var _shape: CollisionShape2D
 var _block_normal := Vector2.ZERO
@@ -102,6 +121,7 @@ func setup(
 	xp_drop = int(stats.get("xp_drop", 0))
 	gold_drop = int(stats.get("gold_drop", 0))
 	is_boss = String(stats.get("behaviour", "")) == "boss"
+	_size_scale = float(stats.get("size_scale", 1.0))
 	_flash_left = 0.0
 	_flash_sec = float(feedback.get("enemy_flash_sec", 0.0))
 	_knockback = Vector2.ZERO
@@ -132,6 +152,9 @@ func _apply_visual(sprite_dir: String) -> void:
 	if not _has_art:
 		_apply_placeholder_visual()
 		return
+	# Pool-safe: the scale is re-derived every arm, so an elite's 1.6x body
+	# never leaks into the next ordinary monster reusing this instance.
+	_sprite.scale = Vector2.ONE / SpriteSheet.EXPORT_SCALE * _size_scale
 	_sprite.sprite_frames = frames_for(sprite_dir)
 	_sprite.modulate = Color.WHITE
 	_sprite.play(SpriteSheet.ANIM_IDLE)

@@ -23,6 +23,8 @@ var weapon_id: String = ""
 
 var _stats: Dictionary = {}
 var _level: int = 1
+var _grade: String = ""
+var _grades: Dictionary = {}
 var _damage_scale: float = 1.0
 var _cooldown_scale: float = 1.0
 var _damage: float = 0.0
@@ -44,6 +46,8 @@ func setup(id: String, player: Player, spawner: Spawner) -> void:
 		return
 	weapon_id = id
 	_stats = weapons[id]
+	_grades = WeaponGrade.config(weapons)
+	_grade = String(_stats.get("grade", ""))
 	_speed = float(_stats.get("speed", 0.0))
 	_recompute()
 
@@ -51,6 +55,13 @@ func setup(id: String, player: Player, spawner: Spawner) -> void:
 ## N3-6 level-up: weapon level drives the per_level curve from weapons.json.
 func set_level(level: int) -> void:
 	_level = level
+	_recompute()
+
+
+## N4-2 grade raise: the run grade compounds the data-driven step factors on
+## top of the level curve.
+func set_grade(grade: String) -> void:
+	_grade = grade
 	_recompute()
 
 
@@ -65,9 +76,9 @@ func set_scales(damage_scale: float, cooldown_scale: float) -> void:
 func _recompute() -> void:
 	if _stats.is_empty():
 		return
-	_damage = LevelUp.weapon_stat_at(_stats, "damage", _level) * _damage_scale
+	_damage = WeaponGrade.stat_at(_stats, "damage", _level, _grade, _grades) * _damage_scale
 	_cooldown = maxf(
-		LevelUp.weapon_stat_at(_stats, "cooldown_sec", _level) * _cooldown_scale,
+		WeaponGrade.stat_at(_stats, "cooldown_sec", _level, _grade, _grades) * _cooldown_scale,
 		MIN_COOLDOWN_SEC
 	)
 
@@ -98,10 +109,17 @@ func _try_fire() -> bool:
 		direction = Vector2.RIGHT  # enemy exactly on the player; any heading hits
 	var projectile: Projectile = _pool.acquire()
 	projectile.launch(
-		_player.global_position, direction, _speed, _damage, _spawner, _player,
-		TINTS.get(weapon_id, UiPalette.PAPER)
+		_player.global_position, direction, _speed, _damage, _spawner, _player, _tint()
 	)
 	return true
+
+
+## Weapon-id tint by default; a grade step flagged "tinted" (N4-2) recolors
+## the projectile with the run grade's tier color so the raise reads on field.
+func _tint() -> Color:
+	if WeaponGrade.has_flag(_grades, String(_stats.get("grade", "")), _grade, "tinted"):
+		return Loot.TIER_COLORS.get(_grade, UiPalette.PAPER)
+	return TINTS.get(weapon_id, UiPalette.PAPER)
 
 
 func _create_projectile() -> Projectile:

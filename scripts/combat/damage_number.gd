@@ -27,7 +27,19 @@ func show_amount(amount: float, at: Vector2, boss_hit: bool = false) -> void:
 	# Pooled instances alternate targets, so restyle on every show.
 	label_settings.font_size = BOSS_FONT_SIZE if boss_hit else FONT_SIZE
 	label_settings.font_color = UiPalette.GOLD if boss_hit else UiPalette.DAMAGE_TEXT
-	text = str(int(round(amount)))
+	_present(str(int(round(amount))), at)
+
+
+## N4-2: brief gold text callout in the same rise-and-fade style — used for
+## the top-grade announcement, so no new toast system exists.
+func show_text(message: String, at: Vector2) -> void:
+	label_settings.font_size = BOSS_FONT_SIZE
+	label_settings.font_color = UiPalette.GOLD
+	_present(message, at)
+
+
+func _present(message: String, at: Vector2) -> void:
+	text = message
 	_age = 0.0
 	modulate.a = 1.0
 	# Center the label on the hit point; size updates after text assignment.

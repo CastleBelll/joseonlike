@@ -43,3 +43,63 @@ static func build_summary(elapsed_sec: float, kills: int, gold: int) -> Dictiona
 		"kills": kills,
 		"gold": gold,
 	}
+
+
+## N4-2 wave-schedule invariants for a stage dict. Returns human-readable
+## violations (empty = valid): wave times monotonic non-decreasing, no wave
+## after the boss, a surge bucket that is the strict spawn-count peak and
+## comes before the boss, and soft enrage never starting before the boss.
+## Shared by tools/validate_data.gd and the unit suite.
+static func schedule_issues(stage: Dictionary) -> Array[String]:
+	var issues: Array[String] = []
+	var boss_at: float = float(stage.get("boss_at_sec", 0.0))
+	var surge_at: float = float(stage.get("surge_at_sec", 0.0))
+	var previous: float = 0.0
+	var buckets: Dictionary = {}
+	for wave: Dictionary in stage.get("waves", []):
+		var at: float = float(wave.get("at_sec", 0.0))
+		if at < previous:
+			issues.append("wave times not monotonic at %ss" % at)
+		previous = at
+		if at > boss_at:
+			issues.append("wave at %ss starts after the boss" % at)
+		buckets[at] = int(buckets.get(at, 0)) + int(wave.get("count", 0))
+	if surge_at <= 0.0 or not buckets.has(surge_at):
+		issues.append("surge_at_sec missing or has no wave")
+	elif surge_at >= boss_at:
+		issues.append("surge must come before the boss")
+	else:
+		for at: float in buckets:
+			if at != surge_at and int(buckets[at]) >= int(buckets[surge_at]):
+				issues.append("surge bucket is not the spawn-count peak (beaten at %ss)" % at)
+	var enrage: Dictionary = stage.get("soft_enrage", {})
+	if not enrage.is_empty() and float(enrage.get("start_sec", 0.0)) < boss_at:
+		issues.append("soft_enrage.start_sec before boss_at_sec")
+	return issues
+
+
+## Soft enrage ramp progress in [0, 1]: 0 before start_sec, 1 once ramp_sec
+## has fully elapsed (GDD §34 — post-boss lingering gets sharply harder).
+static func enrage_progress(elapsed_sec: float, enrage: Dictionary) -> float:
+	if enrage.is_empty():
+		return 0.0
+	var start: float = float(enrage.get("start_sec", 0.0))
+	var ramp: float = maxf(float(enrage.get("ramp_sec", 0.0)), 0.001)
+	return clampf((elapsed_sec - start) / ramp, 0.0, 1.0)
+
+
+## Monster stats scaled for the enrage ramp — a new copy, base data untouched.
+static func enrage_stats(stats: Dictionary, enrage: Dictionary, progress: float) -> Dictionary:
+	if progress <= 0.0:
+		return stats
+	var scaled: Dictionary = stats.duplicate()
+	scaled["hp"] = float(stats.get("hp", 1.0)) * lerpf(
+		1.0, float(enrage.get("hp_mult_max", 1.0)), progress
+	)
+	scaled["damage"] = float(stats.get("damage", 0.0)) * lerpf(
+		1.0, float(enrage.get("damage_mult_max", 1.0)), progress
+	)
+	scaled["speed"] = float(stats.get("speed", 0.0)) * lerpf(
+		1.0, float(enrage.get("speed_mult_max", 1.0)), progress
+	)
+	return scaled

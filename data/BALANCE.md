@@ -1331,3 +1331,78 @@ suggest is a `sprite_directions` object (8 keys, one per compass
 direction) alongside the existing flat `sprite` (kept as the idle/default
 fallback so nothing else breaks), added only once combat confirms it will
 actually branch on it.
+
+---
+
+# N4-2 — Weapon grades & the 15-minute pacing pass (2026-08-14, post-rebuild)
+
+Everything above this line predates the 2026-08-14 full rebuild and is kept
+as history; file paths it cites (`scripts/core/run_state.gd`, weighting,
+crits) no longer exist. This section describes the rebuilt game's current
+numbers.
+
+## Weapon grade ladder (`weapons.json` `_grades`)
+
+GDD §5/§33 vertical axis. Ladder: `common → uncommon → rare → epic →
+mythic` (일반→고급→희귀→영웅→신화; 전설 is deferred until any file needs
+it — the ladder deliberately uses only grade names the data files already
+used). A weapon's data `grade` is its base rung; the run grade rises via
+the `grade_up` level-up card and carries across weapon mods
+(`max(carried, result base)`, GDD §33 승계). Per-step factors compound
+only for steps *above* the base rung — base stats already price the base
+grade in:
+
+| Step | damage | cooldown | flag |
+|---|---|---|---|
+| uncommon | ×1.15 | ×0.96 | — |
+| rare | ×1.18 | ×0.94 | — |
+| epic | ×1.22 | ×0.92 | — |
+| mythic | ×1.30 | ×0.90 | `tinted` (projectile takes the tier color) |
+
+Full common→mythic: damage ×2.15, cooldown ×0.75 → ~2.9x unit dps for
+four level-up picks — comparable to spending the same picks on levels,
+so grade picks compete with, rather than dominate, the pool. Reaching
+the top rung fires the one-off gold callout (damage-number style).
+
+## 15-minute Bamboo Forest curve (`stages.json`)
+
+GDD §23/§34. `duration_sec` 1080 (timeout-as-victory kept per N5-1a),
+`boss_at_sec` 900 (15:00), `surge_at_sec` 840 (14:00 대량 공세),
+elites from 5:00. Shape by bucket (total spawn count): quiet opening
+5/6 (0:00–2:00), steady ramp 12→26 (2:00–10:00) with elite checkpoints
+at 300/540/720, heavy ramp 32→26 (11:00–13:00), **surge 57 at 840 —
+the strict spawn-count peak, enforced by `RunFlow.schedule_issues` and
+validate_data**, boss + escort 24 at 900. `live_cap` stays 60; the surge
+saturates it by design (measured: 60 fps at the saturated cap on the
+Intel UHD 770 dev machine, worst case).
+
+Implied XP: ~1,366 orb XP over the run → level ~20 (≈19 picks), enough
+for one weapon line to reach mythic while still leveling others.
+
+## Elite variant (`monsters.json` `elite_of`)
+
+`bamboo_brute_elite` = `bamboo_brute` × {hp 6.0, damage 1.5, speed 0.85,
+size 1.6, rewards 6.0} → 510 hp, 27 dmg, 59.5 spd, 1.6x sprite. Derived
+at load by `Enemy.derive_elite_stats` — pure multipliers, same enemy
+code. Its drop table is the GDD §21 promise (정예 → 희귀 재료):
+whetstone 35%, cinnabar 30%, thunder/ghost-iron 12% each, tough_fiber
+50% — an elite kill is the run's main special-material faucet.
+
+## Soft enrage (`stages.json` `soft_enrage`)
+
+GDD §34 post-boss rule. From 920s, over a 120s ramp, newly spawned
+monsters scale to ×3 hp / ×2.5 damage / ×1.3 speed (lerp, applied at
+spawn by the spawner; the boss spawns at 900, before the ramp, and is
+never scaled). A stalled post-boss field therefore turns lethal instead
+of dragging; a player who survives anyway still resolves at the 1080s
+timeout victory.
+
+## Boss retune
+
+`bamboo_spirit_lord.hp` 3600 → 7000. The 3600 value was sized for a
+10-minute, grade-less run (~40–85 dps band, see "Boss, round 4" above).
+The 15-minute run adds ~4 more levels and the grade axis (~up to 2.9x on
+invested weapons); 7000 targets a boss fight in the tens-of-seconds
+range for a mid build rather than an instant melt. This is a projection,
+not a sweep-validated number — the next controlled sweep should re-check
+it, per this document's standing practice.

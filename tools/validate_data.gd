@@ -39,6 +39,14 @@ const PROP_ALLOWED_KEYS: Array[String] = [
 const PROP_SHAPES: Array[String] = ["rect", "round"]
 # N4-1 loot contract (data/loot.json, drop_tables.json, weapon_mods.json).
 const LOOT_TIERS: Array[String] = ["common", "uncommon", "rare", "epic", "mythic"]
+# N4-2 elite variant contract (monsters.json entries with "elite_of").
+const ELITE_MULT_FIELDS: Array[String] = [
+	"hp_mult", "damage_mult", "speed_mult", "size_mult", "reward_mult"
+]
+# N4-2 soft enrage contract (stages.json "soft_enrage").
+const SOFT_ENRAGE_FIELDS: Array[String] = [
+	"start_sec", "ramp_sec", "hp_mult_max", "damage_mult_max", "speed_mult_max"
+]
 
 var _errors: int = 0
 
@@ -71,6 +79,9 @@ func _check_combat_cross_references() -> void:
 	var stages: Dictionary = _load(DATA_DIR + "/stages.json")
 	var characters: Dictionary = _load(DATA_DIR + "/characters.json")
 	for monster_id: String in monsters:
+		if (monsters[monster_id] as Dictionary).has("elite_of"):
+			_check_elite(monsters, monster_id)
+			continue
 		_require_positive_numbers(monsters[monster_id], MONSTER_FIELDS, "monsters." + monster_id)
 		_check_monster_sprites(monsters[monster_id], "monsters." + monster_id)
 	for stage_id: String in stages:
@@ -89,7 +100,16 @@ func _check_combat_cross_references() -> void:
 				_fail("stages.%s wave monster_id '%s' not in monsters.json" % [
 					stage_id, wave.get("monster_id", "")
 				])
+		# N4-2 pacing invariants: monotonic times, boss last, surge peak first.
+		for issue: String in RunFlow.schedule_issues(stage):
+			_fail("stages.%s %s" % [stage_id, issue])
+		if stage.has("soft_enrage"):
+			_require_positive_numbers(
+				stage.get("soft_enrage", {}), SOFT_ENRAGE_FIELDS,
+				"stages.%s.soft_enrage" % stage_id
+			)
 	var weapons: Dictionary = _load(DATA_DIR + "/weapons.json")
+	_check_weapon_grades(weapons)
 	var achievements: Dictionary = _load(DATA_DIR + "/achievements.json")
 	for character_id: String in characters:
 		_require_positive_numbers(
@@ -154,6 +174,52 @@ func _check_character_card(
 		for field: String in UNLOCK_TEXT_FIELDS:
 			if String(character.get(field, "")).is_empty():
 				_fail("%s.%s missing or empty" % [label, field])
+
+
+## N4-2 elite variants: multipliers over a real, non-elite base monster.
+func _check_elite(monsters: Dictionary, monster_id: String) -> void:
+	var elite: Dictionary = monsters[monster_id]
+	var label: String = "monsters." + monster_id
+	var base_id: String = String(elite.get("elite_of", ""))
+	if not monsters.has(base_id):
+		_fail(label + ".elite_of not in monsters.json")
+	elif (monsters[base_id] as Dictionary).has("elite_of"):
+		_fail(label + ".elite_of must reference a non-elite base monster")
+	if String(elite.get("name_ko", "")).is_empty():
+		_fail(label + ".name_ko missing or empty")
+	_require_positive_numbers(elite, ELITE_MULT_FIELDS, label)
+
+
+## N4-2 grade ladder: the reserved "_grades" block must define an ordered
+## ladder of unique names, a mult step for every rung above the first, and
+## every weapon's base grade must sit on the ladder.
+func _check_weapon_grades(weapons: Dictionary) -> void:
+	var grades: Dictionary = WeaponGrade.config(weapons)
+	var rungs: Array[String] = WeaponGrade.ladder(grades)
+	if rungs.size() < 2:
+		_fail("weapons._grades.ladder missing or shorter than 2 rungs")
+		return
+	for rung: String in rungs:
+		if rungs.count(rung) > 1:
+			_fail("weapons._grades.ladder rung '%s' duplicated" % rung)
+	var steps: Dictionary = grades.get("steps", {})
+	for step_id: String in steps:
+		if step_id not in rungs:
+			_fail("weapons._grades.steps.%s not on the ladder" % step_id)
+	for rung: String in rungs.slice(1):
+		var mult: Dictionary = (steps.get(rung, {}) as Dictionary).get("mult", {})
+		if mult.is_empty():
+			_fail("weapons._grades.steps.%s.mult missing or empty" % rung)
+			continue
+		for field: String in mult:
+			if float(mult[field]) <= 0.0:
+				_fail("weapons._grades.steps.%s.mult.%s must be positive" % [rung, field])
+	for weapon_id: String in weapons:
+		if weapon_id.begins_with("_"):
+			continue
+		var grade: String = String((weapons[weapon_id] as Dictionary).get("grade", ""))
+		if grade not in rungs:
+			_fail("weapons.%s.grade '%s' not on the _grades ladder" % [weapon_id, grade])
 
 
 ## N4-1 loot chain: every drop table points at a real monster and real loot,

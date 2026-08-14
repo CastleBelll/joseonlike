@@ -33,6 +33,10 @@ var _passives_data: Dictionary = {}
 var _owned_levels: Dictionary = {}
 var _passive_stacks: Dictionary = {}
 var _weapon_nodes: Dictionary = {}
+# N4-2 grade axis: per-weapon run grade plus the data ladder/steps config.
+var _owned_grades: Dictionary = {}
+var _grades_config: Dictionary = {}
+var _grade_ladder: Array[String] = []
 var _popup: LevelUpPopup
 var _pending_level_ups: int = 0
 var _choice_rng := RandomNumberGenerator.new()
@@ -95,6 +99,8 @@ func _ready() -> void:
 	_orb_pool = NodePool.new(self, _create_orb)
 	_number_pool = NodePool.new(self, _create_damage_number)
 	_weapons_data = _load_json(WEAPONS_PATH)
+	_grades_config = WeaponGrade.config(_weapons_data)
+	_grade_ladder = WeaponGrade.ladder(_grades_config)
 	_passives_data = _load_json(PASSIVES_PATH)
 	_loot_data = _load_json(LOOT_PATH)
 	_drop_tables = _load_json(DROP_TABLES_PATH)
@@ -103,6 +109,7 @@ func _ready() -> void:
 	_loot_rng.randomize()  # the run RNG: one seed replays a run's drops
 	var starting_weapon: String = Player.load_starting_weapon()
 	_owned_levels[starting_weapon] = 1
+	_owned_grades[starting_weapon] = LevelUp.current_grade(starting_weapon, _weapons_data, {})
 	_add_weapon_node(starting_weapon)
 	_popup = LevelUpPopup.new()
 	_popup.picked.connect(_on_choice_picked)
@@ -205,13 +212,15 @@ func _on_level_reached(_new_level: int) -> void:
 func _show_next_level_up() -> void:
 	get_tree().paused = true
 	var pool: Array[Dictionary] = LevelUp.candidates(
-		_weapons_data, _passives_data, _owned_levels, _passive_stacks
+		_weapons_data, _passives_data, _owned_levels, _passive_stacks,
+		_owned_grades, _grades_config
 	)
 	var choices: Array[Dictionary] = LevelUp.pick(pool, CHOICES_PER_LEVEL, _choice_rng)
 	var cards: Array[Dictionary] = []
 	for choice: Dictionary in choices:
 		cards.append(LevelUp.as_card(
-			choice, _weapons_data, _passives_data, _owned_levels, _passive_stacks
+			choice, _weapons_data, _passives_data, _owned_levels, _passive_stacks,
+			_owned_grades, _grades_config
 		))
 	_popup.open(POWER_UP_HEADER, cards, _owned_levels, _weapons_data)
 
@@ -233,7 +242,8 @@ func _show_next_special() -> void:
 
 func _on_choice_picked(payload: Dictionary) -> void:
 	match String(payload.get("kind", "")):
-		LevelUp.KIND_NEW_WEAPON, LevelUp.KIND_WEAPON_UP, LevelUp.KIND_PASSIVE:
+		LevelUp.KIND_NEW_WEAPON, LevelUp.KIND_WEAPON_UP, LevelUp.KIND_PASSIVE, \
+		LevelUp.KIND_GRADE_UP:
 			_apply_level_up_choice(payload)
 			_pending_level_ups -= 1
 		Loot.KIND_USE, Loot.KIND_KEEP, Loot.KIND_SALVAGE:
@@ -251,9 +261,17 @@ func _apply_level_up_choice(choice: Dictionary) -> void:
 	var id: String = String(choice.get("id", ""))
 	match String(choice.get("kind", "")):
 		LevelUp.KIND_NEW_WEAPON:
+			# Seed the base grade directly — the callout is for earned raises
+			# only, so a weapon whose data grade is already the top rung must
+			# not fire it on acquisition. AutoWeapon.setup reads the same base.
+			_owned_grades[id] = LevelUp.current_grade(id, _weapons_data, {})
 			_add_weapon_node(id)
 		LevelUp.KIND_WEAPON_UP:
 			(_weapon_nodes[id] as AutoWeapon).set_level(int(_owned_levels[id]))
+		LevelUp.KIND_GRADE_UP:
+			_set_owned_grade(id, WeaponGrade.next(
+				_grade_ladder, LevelUp.current_grade(id, _weapons_data, _owned_grades)
+			))
 		LevelUp.KIND_PASSIVE:
 			_apply_passive_effects(id)
 
@@ -271,6 +289,8 @@ func _apply_loot_choice(choice: Dictionary) -> void:
 
 
 ## Swap the owned base weapon node for the recipe result, carrying its level.
+## N4-2: the run grade carries too (GDD §33), floored at the result weapon's
+## own base grade — a mod can raise the grade, never lower it.
 func _apply_weapon_mod(mod: Dictionary) -> void:
 	var base_id: String = String(mod.get("weapon_id", ""))
 	var result_id: String = String(mod.get("result_weapon", ""))
@@ -278,11 +298,40 @@ func _apply_weapon_mod(mod: Dictionary) -> void:
 	if old_node == null:
 		push_error("stage: weapon mod base '%s' has no node" % base_id)
 		return
+	var carried: String = WeaponGrade.highest(
+		_grade_ladder,
+		LevelUp.current_grade(base_id, _weapons_data, _owned_grades),
+		LevelUp.current_grade(result_id, _weapons_data, {})
+	)
 	_owned_levels = Loot.apply_mod(_owned_levels, mod)
+	_owned_grades.erase(base_id)
 	_weapon_nodes.erase(base_id)
 	old_node.queue_free()
 	_add_weapon_node(result_id)
 	(_weapon_nodes[result_id] as AutoWeapon).set_level(int(_owned_levels[result_id]))
+	_set_owned_grade(result_id, carried)
+
+
+## Single write point for a weapon's run grade: updates the dict, retunes the
+## live weapon node, and fires the one-off top-grade callout (N4-2) in the
+## damage-number style the moment any weapon first reaches the top rung.
+func _set_owned_grade(weapon_id: String, grade: String) -> void:
+	var was_top: bool = WeaponGrade.is_top(
+		_grade_ladder, String(_owned_grades.get(weapon_id, ""))
+	)
+	_owned_grades[weapon_id] = grade
+	var node: AutoWeapon = _weapon_nodes.get(weapon_id)
+	if node != null:
+		node.set_grade(grade)
+	if WeaponGrade.is_top(_grade_ladder, grade) and not was_top:
+		var number: DamageNumber = _number_pool.acquire()
+		number.show_text(
+			"%s %s 등급!" % [
+				String((_weapons_data.get(weapon_id, {}) as Dictionary).get("name_ko", weapon_id)),
+				String(LevelUp.GRADE_KO.get(grade, grade)),
+			],
+			_player.global_position
+		)
 
 
 func _on_popup_dismissed() -> void:

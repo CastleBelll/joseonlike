@@ -29,6 +29,7 @@ var _rng := RandomNumberGenerator.new()
 var _boss_id: String = ""
 var _boss_at_sec: float = RunFlow.NO_BOSS
 var _boss_spawn_done: bool = false
+var _soft_enrage: Dictionary = {}
 
 
 func setup(player: Player) -> void:
@@ -37,16 +38,32 @@ func setup(player: Player) -> void:
 	_rng.randomize()
 	var stage_data: Dictionary = _load_json(STAGES_PATH)
 	_monsters = _load_json(MONSTERS_PATH)
+	_resolve_elites()
 	_feedback = _load_json(EFFECTS_PATH).get("hit_feedback", {})
 	var stage: Dictionary = stage_data.get(STAGE_ID, {})
 	_spawning = stage.get("spawning", {})
 	_boss_id = String(stage.get("boss_id", ""))
 	_boss_at_sec = RunFlow.boss_spawn_time(stage)
+	_soft_enrage = stage.get("soft_enrage", {})
 	if _spawning.is_empty() or _monsters.is_empty():
 		push_error("spawner: missing spawning config or monsters for " + STAGE_ID)
 		return
 	for wave: Dictionary in stage.get("waves", []):
 		_pending_waves.append(wave)
+
+
+## N4-2: "elite_of" entries are multiplier recipes, not full monsters —
+## resolve each one into a complete stats dict once at load time.
+func _resolve_elites() -> void:
+	for monster_id: String in _monsters:
+		var entry: Dictionary = _monsters[monster_id]
+		if not entry.has("elite_of"):
+			continue
+		var base_id: String = String(entry.get("elite_of", ""))
+		if not _monsters.has(base_id):
+			push_error("spawner: elite '%s' references unknown base '%s'" % [monster_id, base_id])
+			continue
+		_monsters[monster_id] = Enemy.derive_elite_stats(_monsters[base_id], entry)
 
 
 func active_enemies() -> Array[Enemy]:
@@ -108,9 +125,15 @@ func _spawn_one(monster_id: String) -> Enemy:
 	var enemy: Enemy = _pool.acquire()
 	if not enemy.died.is_connected(_on_enemy_died):
 		enemy.died.connect(_on_enemy_died)
+	# N4-2 soft enrage: monsters spawned after the ramp start arrive scaled,
+	# so a stalled post-boss field turns lethal instead of dragging (GDD §34).
+	# The boss spawns at boss_at_sec, before the ramp, and is never scaled.
+	var stats: Dictionary = RunFlow.enrage_stats(
+		_monsters[monster_id], _soft_enrage, RunFlow.enrage_progress(_elapsed, _soft_enrage)
+	)
 	enemy.setup(
 		monster_id,
-		_monsters[monster_id],
+		stats,
 		_player,
 		float(_spawning.get("contact_cooldown_sec", 1.0)),
 		_feedback

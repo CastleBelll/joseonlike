@@ -4,14 +4,20 @@ extends RefCounted
 ## All inputs are plain Dictionaries parsed from data/*.json by the caller,
 ## so every function here is testable headless with fixture data.
 ##
-## Choice shape: {"kind": "weapon_up"|"new_weapon"|"passive", "id": String}.
+## Choice shape: {"kind": "weapon_up"|"new_weapon"|"passive"|"grade_up",
+## "id": String}.
 
 const KIND_WEAPON_UP := "weapon_up"
 const KIND_NEW_WEAPON := "new_weapon"
 const KIND_PASSIVE := "passive"
+const KIND_GRADE_UP := "grade_up"
 
-const GRADE_KO := {"common": "일반", "rare": "희귀", "epic": "영웅"}
+const GRADE_KO := {
+	"common": "일반", "uncommon": "고급", "rare": "희귀",
+	"epic": "영웅", "mythic": "신화"
+}
 const DEFAULT_GRADE_KO := "일반"
+const GRADE_UP_LABEL := "등급↑"
 
 ## Only stats the current runtime actually applies may be offered; a card
 ## that changes nothing would lie to the player.
@@ -23,19 +29,31 @@ const OFFERABLE_PASSIVES: Array[String] = [
 
 ## Every legal choice given the current run: owned weapons below max level,
 ## unowned non-evolution weapons the AutoWeapon runtime can fire (speed > 0),
-## and whitelisted passives below their stack cap.
+## whitelisted passives below their stack cap, and — when a grade ladder is
+## configured (N4-2) — a grade raise for each owned weapon below the top rung.
 static func candidates(
 	weapons: Dictionary,
 	passives: Dictionary,
 	owned_levels: Dictionary,
-	passive_stacks: Dictionary
+	passive_stacks: Dictionary,
+	owned_grades: Dictionary = {},
+	grades: Dictionary = {}
 ) -> Array[Dictionary]:
 	var pool: Array[Dictionary] = []
+	var rungs: Array[String] = WeaponGrade.ladder(grades)
 	for weapon_id: String in weapons:
+		if weapon_id.begins_with("_"):
+			continue  # reserved config keys ("_grades") are not weapons
 		var stats: Dictionary = weapons[weapon_id]
 		if owned_levels.has(weapon_id):
 			if int(owned_levels[weapon_id]) < int(stats.get("max_level", 0)):
 				pool.append({"kind": KIND_WEAPON_UP, "id": weapon_id})
+			# Grade-up is deliberately independent of the level cap (GDD §33:
+			# the two growth axes are separate), so a max-level weapon can
+			# still climb the ladder.
+			var current: String = current_grade(weapon_id, weapons, owned_grades)
+			if not rungs.is_empty() and not WeaponGrade.is_top(rungs, current):
+				pool.append({"kind": KIND_GRADE_UP, "id": weapon_id})
 		elif not bool(stats.get("evolution_only", false)) and float(stats.get("speed", 0.0)) > 0.0:
 			pool.append({"kind": KIND_NEW_WEAPON, "id": weapon_id})
 	for passive_id: String in passives:
@@ -61,7 +79,8 @@ static func pick(
 
 
 ## Pure state transition for one picked card. Returns new copies:
-## {"owned_levels": Dictionary, "passive_stacks": Dictionary}.
+## {"owned_levels": Dictionary, "passive_stacks": Dictionary}. Grade raises
+## live in the separate owned_grades dict, handled by the stage.
 static func apply_choice(
 	choice: Dictionary, owned_levels: Dictionary, passive_stacks: Dictionary
 ) -> Dictionary:
@@ -75,9 +94,19 @@ static func apply_choice(
 			owned[id] = 1
 		KIND_PASSIVE:
 			stacks[id] = int(stacks.get(id, 0)) + 1
+		KIND_GRADE_UP:
+			pass  # level/stack state untouched; the grade dict is the stage's
 		_:
 			push_error("level_up: unknown choice kind in " + str(choice))
 	return {"owned_levels": owned, "passive_stacks": stacks}
+
+
+## A weapon's run grade: the tracked raise if any, else its data base grade.
+static func current_grade(
+	weapon_id: String, weapons: Dictionary, owned_grades: Dictionary
+) -> String:
+	var base: String = String((weapons.get(weapon_id, {}) as Dictionary).get("grade", ""))
+	return String(owned_grades.get(weapon_id, base))
 
 
 ## Weapon stat at a given level: base + per_level delta per level past 1.
@@ -96,12 +125,21 @@ static func display_name(
 
 
 ## Grade pill text — always words, never colour alone (DESIGN.md §2).
-## Passives carry no grade in data and read as common.
-static func grade_text(choice: Dictionary, weapons: Dictionary) -> String:
+## Passives carry no grade in data and read as common. Weapons show their
+## run grade; a grade-up card shows the grade it grants (N4-2).
+static func grade_text(
+	choice: Dictionary,
+	weapons: Dictionary,
+	owned_grades: Dictionary = {},
+	grades: Dictionary = {}
+) -> String:
 	if String(choice.get("kind", "")) == KIND_PASSIVE:
 		return DEFAULT_GRADE_KO
-	var stats: Dictionary = weapons.get(String(choice.get("id", "")), {})
-	return String(GRADE_KO.get(String(stats.get("grade", "")), DEFAULT_GRADE_KO))
+	var id: String = String(choice.get("id", ""))
+	var grade: String = current_grade(id, weapons, owned_grades)
+	if String(choice.get("kind", "")) == KIND_GRADE_UP:
+		grade = WeaponGrade.next(WeaponGrade.ladder(grades), grade)
+	return String(GRADE_KO.get(grade, DEFAULT_GRADE_KO))
 
 
 ## Small label under the icon well: next level for anything already owned,
@@ -113,6 +151,8 @@ static func well_label(
 	match String(choice.get("kind", "")):
 		KIND_WEAPON_UP:
 			return "Lv.%d" % (int(owned_levels.get(id, 0)) + 1)
+		KIND_GRADE_UP:
+			return GRADE_UP_LABEL
 		KIND_PASSIVE:
 			var stacks: int = int(passive_stacks.get(id, 0))
 			return "신규!" if stacks == 0 else "Lv.%d" % (stacks + 1)
@@ -120,24 +160,39 @@ static func well_label(
 
 
 ## Effect description with real numbers, per the owner's rule — never a bare
-## level counter. Weapon-up shows before→after, passives show +N% (next/max).
+## level counter. Weapon-up shows before→after (at the weapon's run grade),
+## grade-up shows the grade jump with its damage delta, passives show +N%.
 static func describe(
 	choice: Dictionary,
 	weapons: Dictionary,
 	passives: Dictionary,
 	owned_levels: Dictionary,
-	passive_stacks: Dictionary
+	passive_stacks: Dictionary,
+	owned_grades: Dictionary = {},
+	grades: Dictionary = {}
 ) -> String:
 	var id: String = String(choice.get("id", ""))
 	match String(choice.get("kind", "")):
 		KIND_WEAPON_UP:
 			var stats: Dictionary = weapons.get(id, {})
 			var level: int = int(owned_levels.get(id, 1))
+			var grade: String = current_grade(id, weapons, owned_grades)
 			return "피해 %s→%s · 쿨다운 %s초→%s초" % [
-				_fmt(weapon_stat_at(stats, "damage", level)),
-				_fmt(weapon_stat_at(stats, "damage", level + 1)),
-				_fmt(weapon_stat_at(stats, "cooldown_sec", level)),
-				_fmt(weapon_stat_at(stats, "cooldown_sec", level + 1)),
+				_fmt(WeaponGrade.stat_at(stats, "damage", level, grade, grades)),
+				_fmt(WeaponGrade.stat_at(stats, "damage", level + 1, grade, grades)),
+				_fmt(WeaponGrade.stat_at(stats, "cooldown_sec", level, grade, grades)),
+				_fmt(WeaponGrade.stat_at(stats, "cooldown_sec", level + 1, grade, grades)),
+			]
+		KIND_GRADE_UP:
+			var stats: Dictionary = weapons.get(id, {})
+			var level: int = int(owned_levels.get(id, 1))
+			var grade: String = current_grade(id, weapons, owned_grades)
+			var raised: String = WeaponGrade.next(WeaponGrade.ladder(grades), grade)
+			return "등급 %s→%s · 피해 %s→%s" % [
+				String(GRADE_KO.get(grade, DEFAULT_GRADE_KO)),
+				String(GRADE_KO.get(raised, DEFAULT_GRADE_KO)),
+				_fmt(WeaponGrade.stat_at(stats, "damage", level, grade, grades)),
+				_fmt(WeaponGrade.stat_at(stats, "damage", level, raised, grades)),
 			]
 		KIND_NEW_WEAPON:
 			var stats: Dictionary = weapons.get(id, {})
@@ -168,13 +223,17 @@ static func as_card(
 	weapons: Dictionary,
 	passives: Dictionary,
 	owned_levels: Dictionary,
-	passive_stacks: Dictionary
+	passive_stacks: Dictionary,
+	owned_grades: Dictionary = {},
+	grades: Dictionary = {}
 ) -> Dictionary:
 	return {
 		"name": display_name(choice, weapons, passives),
-		"desc": describe(choice, weapons, passives, owned_levels, passive_stacks),
+		"desc": describe(
+			choice, weapons, passives, owned_levels, passive_stacks, owned_grades, grades
+		),
 		"well_label": well_label(choice, owned_levels, passive_stacks),
-		"grade": grade_text(choice, weapons),
+		"grade": grade_text(choice, weapons, owned_grades, grades),
 		"payload": choice,
 	}
 
