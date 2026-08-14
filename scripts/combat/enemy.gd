@@ -143,10 +143,11 @@ func apply_seal(burst_at: int, burst_damage: float) -> void:
 		take_damage(burst_damage)
 
 
-func take_damage(amount: float, _is_crit: bool = false) -> void:
+func take_damage(amount: float, is_crit: bool = false) -> void:
 	if not is_active or amount <= 0.0:
 		return
 	hp -= amount
+	DamageNumberPool.spawn(amount, is_crit, global_position)
 	CombatAudio.play_hit()
 	# No impact burst here: the damage source plays it, because only the
 	# source knows which weapon landed and therefore which paired art to
