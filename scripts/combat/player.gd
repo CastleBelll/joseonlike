@@ -1,13 +1,21 @@
 class_name Player
 extends CharacterBody2D
-## Stage player (N3-1). The rect visual is a placeholder — N3-2 replaces it
-## with the AC-1 taoist sprite; the facing-flip contract on Visual.scale.x stays.
+## Stage player. Renders the AC-1 taoist sprite set (N3-2): right-facing idle
+## frame plus a 4-frame walk strip, mirrored left through Visual.scale.x.
 
 const CHARACTERS_PATH := "res://data/characters.json"
 const CHARACTER_ID := "taoist"
-const BODY_SIZE := Vector2(20.0, 30.0)  # ~30px logical height, DESIGN.md §5
-const EYE_SIZE := Vector2(4.0, 4.0)
-const EYE_OFFSET := Vector2(5.0, -9.0)  # upper body, toward the facing side
+
+const IDLE_TEXTURE_PATH := "res://asset/characters/taoist/idle.png"
+const WALK_TEXTURE_PATH := "res://asset/characters/taoist/walk.png"
+## AC-1 export contract (asset/characters/taoist/README.md): PNGs are exact
+## 16x nearest-neighbor blocks of 40x40 logical frames, figure 38px tall,
+## which is the intended in-world read on the 540px viewport.
+const SPRITE_EXPORT_SCALE := 16.0
+const WALK_FRAME_COUNT := 4
+const WALK_FPS := 8.0
+const ANIM_IDLE := "idle"
+const ANIM_WALK := "walk"
 
 ## Widest body half-extent; enemies use it for contact-range checks.
 const CONTACT_RADIUS := 15.0
@@ -19,11 +27,13 @@ var joystick_input := Vector2.ZERO
 var facing: int = PlayerMotion.FACING_RIGHT
 var bounds := Rect2()  # zero-size = unclamped; the stage sets the ground rect
 var hp: float = 0.0
+var hp_max: float = 0.0  # raised with hp by the max_hp passive (stage)
 
 var _speed: float = 0.0
 var _invuln_window: float = 0.0
 var _time_since_hit: float = 0.0
 var _visual: Node2D
+var _sprite: AnimatedSprite2D
 
 signal died
 
@@ -62,9 +72,11 @@ static func _load_character_number(field: String) -> float:
 func _ready() -> void:
 	_speed = load_move_speed()
 	hp = load_base_hp()
+	hp_max = hp
 	_invuln_window = load_hit_invuln_sec()
 	_time_since_hit = _invuln_window  # spawn vulnerable, not mid-window
-	_build_placeholder_visual()
+	_build_sprite_visual()
+	_build_hp_bar()
 
 
 func _physics_process(delta: float) -> void:
@@ -75,6 +87,7 @@ func _physics_process(delta: float) -> void:
 	velocity = PlayerMotion.velocity_for(move_input, _speed)
 	facing = PlayerMotion.facing_sign(velocity.x, facing)
 	_visual.scale.x = float(facing)
+	_update_animation()
 	var invulnerable: bool = not CombatMath.can_hit(_time_since_hit, _invuln_window)
 	_visual.modulate.a = INVULN_FLASH_ALPHA if invulnerable else 1.0
 	move_and_slide()
@@ -99,19 +112,75 @@ func take_hit(damage: float) -> bool:
 	return true
 
 
-func _build_placeholder_visual() -> void:
+## Walk speed_scale follows actual travel speed so slow joystick pushes read
+## as a slower stride around the WALK_FPS baseline.
+func _update_animation() -> void:
+	if velocity != Vector2.ZERO:
+		_sprite.play(ANIM_WALK)
+		_sprite.speed_scale = velocity.length() / _speed if _speed > 0.0 else 1.0
+	else:
+		_sprite.play(ANIM_IDLE)
+		_sprite.speed_scale = 1.0
+
+
+## The wrapper keeps the facing flip on Visual.scale.x = ±1 while the sprite
+## child holds the 1/16 export downscale back to logical pixels.
+func _build_sprite_visual() -> void:
 	_visual = Node2D.new()
 	_visual.name = "Visual"
-	var body := ColorRect.new()
-	body.name = "Body"
-	body.color = UiPalette.ACCENT_TAOIST
-	body.size = BODY_SIZE
-	body.position = -BODY_SIZE / 2.0
-	_visual.add_child(body)
-	var eye := ColorRect.new()
-	eye.name = "Eye"
-	eye.color = UiPalette.INK
-	eye.size = EYE_SIZE
-	eye.position = EYE_OFFSET - EYE_SIZE / 2.0
-	_visual.add_child(eye)
+	_sprite = AnimatedSprite2D.new()
+	_sprite.name = "Sprite"
+	_sprite.sprite_frames = build_sprite_frames()
+	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite.scale = Vector2.ONE / SPRITE_EXPORT_SCALE
+	_sprite.play(ANIM_IDLE)
+	_visual.add_child(_sprite)
 	add_child(_visual)
+
+
+## Public and static so the headless suite can verify the frame contract
+## without a SceneTree (same pattern as TitleScreen.build_ui).
+static func build_sprite_frames() -> SpriteFrames:
+	var frames := SpriteFrames.new()
+	frames.rename_animation("default", ANIM_IDLE)
+	frames.add_frame(ANIM_IDLE, load(IDLE_TEXTURE_PATH))
+	frames.add_animation(ANIM_WALK)
+	frames.set_animation_speed(ANIM_WALK, WALK_FPS)
+	var walk: Texture2D = load(WALK_TEXTURE_PATH)
+	var frame_size := Vector2(walk.get_size().x / float(WALK_FRAME_COUNT), walk.get_size().y)
+	for i: int in range(WALK_FRAME_COUNT):
+		var frame := AtlasTexture.new()
+		frame.atlas = walk
+		frame.region = Rect2(Vector2(frame_size.x * float(i), 0.0), frame_size)
+		frames.add_frame(ANIM_WALK, frame)
+	return frames
+
+
+func _build_hp_bar() -> void:
+	var bar := HpBar.new()
+	bar.name = "HpBar"
+	bar.player = self
+	add_child(bar)
+
+
+## Near-invisible HP readout per DESIGN.md §3 ("HP는 최소 표시"): a thin bar
+## under the figure, drawn only after the player has actually taken damage.
+## Kept outside Visual so the facing flip and invuln alpha flash skip it.
+class HpBar:
+	extends Node2D
+
+	const BAR_SIZE := Vector2(26.0, 3.0)
+	const BAR_OFFSET_Y := 22.0
+
+	var player: Player
+
+	func _process(_delta: float) -> void:
+		queue_redraw()
+
+	func _draw() -> void:
+		if player.hp_max <= 0.0 or player.hp >= player.hp_max:
+			return
+		var origin := Vector2(-BAR_SIZE.x / 2.0, BAR_OFFSET_Y)
+		draw_rect(Rect2(origin, BAR_SIZE), UiPalette.INK)
+		var ratio: float = clampf(player.hp / player.hp_max, 0.0, 1.0)
+		draw_rect(Rect2(origin, Vector2(BAR_SIZE.x * ratio, BAR_SIZE.y)), UiPalette.SUCCESS)
