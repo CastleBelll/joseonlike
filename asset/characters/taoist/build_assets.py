@@ -9,32 +9,26 @@ ROOT = Path(__file__).resolve().parents[3]
 SOURCE = ROOT / "new_asset" / "taoist.png"
 WALK_SOURCE = ROOT / "new_asset" / "taoist_walk.png"
 OUT = ROOT / "asset" / "characters" / "taoist"
+PORTRAIT = OUT / "portrait.png"
+LOGICAL_SIZE = (40, 40)
+FIGURE_HEIGHT = 38
+PALETTE_SIZE = 32
 SCALE = 16
 GROUND = (28, 36, 22, 255)
-IDLE_PALETTE = (
-    (0, 0, 0), (0, 0, 3), (0, 2, 1), (2, 0, 1), (7, 3, 4), (25, 27, 53),
-    (30, 84, 103), (36, 43, 82), (51, 0, 18), (61, 66, 117), (64, 46, 69),
-    (79, 71, 116), (88, 131, 108), (106, 6, 47), (149, 94, 68), (169, 5, 47),
-    (183, 20, 53), (189, 100, 78), (211, 11, 69), (219, 146, 80),
-    (232, 185, 109), (252, 233, 180), (253, 202, 151),
-)
-PORTRAIT_PALETTE = (
-    (0, 0, 0), (0, 0, 3), (1, 2, 1), (3, 0, 1), (4, 11, 6), (16, 103, 81),
-    (21, 2, 11), (37, 42, 69), (59, 67, 115), (70, 15, 51), (75, 109, 101),
-    (77, 68, 113), (89, 59, 49), (91, 0, 18), (94, 2, 56), (124, 5, 62),
-    (135, 5, 70), (159, 5, 62), (160, 119, 76), (163, 27, 55), (181, 9, 56),
-    (183, 96, 86), (202, 166, 116), (210, 10, 68), (210, 12, 69), (217, 133, 81),
-    (233, 165, 99), (237, 208, 155), (251, 151, 100), (254, 200, 153),
-    (254, 202, 156), (254, 215, 145),
-)
 
 
 def remove_green(image: Image.Image) -> Image.Image:
+    """Hard-key chroma green at source resolution and despill retained edges."""
     rgba = image.convert("RGBA")
     pixels = []
     for r, g, b, _ in rgba.get_flattened_data():
-        keyed = g >= 170 and g - r >= 72 and g - b >= 72
-        pixels.append((r, g, b, 0 if keyed else 255))
+        keyed = g >= 135 and g - r >= 45 and g - b >= 45
+        if keyed:
+            pixels.append((0, 0, 0, 0))
+            continue
+        # Retain blue-green costume hues, but suppress one-channel green halos.
+        ceiling = max(r, b) + 12
+        pixels.append((r, min(g, ceiling) if g > ceiling else g, b, 255))
     rgba.putdata(pixels)
     return rgba
 
@@ -44,21 +38,6 @@ def trim(image: Image.Image) -> Image.Image:
     if bbox is None:
         raise ValueError("crop contains no foreground")
     return image.crop(bbox)
-
-
-def snap_palette(image: Image.Image, palette: tuple[tuple[int, int, int], ...]) -> Image.Image:
-    alpha = image.getchannel("A").point(lambda value: 255 if value else 0)
-    rgba = image.convert("RGBA")
-    snapped = []
-    for r, g, b, value in rgba.get_flattened_data():
-        if not value:
-            snapped.append((0, 0, 0, 0))
-            continue
-        nearest = min(palette, key=lambda color: (r - color[0]) ** 2 + (g - color[1]) ** 2 + (b - color[2]) ** 2)
-        snapped.append((*nearest, 255))
-    rgba.putdata(snapped)
-    rgba.putalpha(alpha)
-    return rgba
 
 
 def keep_largest_component(image: Image.Image) -> Image.Image:
@@ -85,182 +64,291 @@ def keep_largest_component(image: Image.Image) -> Image.Image:
         raise ValueError("crop contains no foreground component")
     keep = set(max(components, key=len))
     result = image.copy()
-    result.putalpha(Image.new("L", image.size, 0))
-    out_alpha = result.getchannel("A")
+    out_alpha = Image.new("L", image.size, 0)
     for x, y in keep:
         out_alpha.putpixel((x, y), 255)
     result.putalpha(out_alpha)
     return result
 
 
-def logical_from_crop(source: Image.Image, box: tuple[int, int, int, int], size: tuple[int, int], max_subject: tuple[int, int], palette: tuple[tuple[int, int, int], ...], *, largest_only: bool = False) -> Image.Image:
+def box_resize_rgba(image: Image.Image, size: tuple[int, int]) -> Image.Image:
+    """BOX-reduce premultiplied RGB and alpha, then restore binary alpha."""
+    rgba = image.convert("RGBA")
+    red, green, blue, alpha = rgba.split()
+    # Chroma-keyed transparent pixels have RGB zero, so each RGB channel is
+    # already premultiplied by the source's binary alpha.
+    red = red.resize(size, Image.Resampling.BOX)
+    green = green.resize(size, Image.Resampling.BOX)
+    blue = blue.resize(size, Image.Resampling.BOX)
+    alpha = alpha.resize(size, Image.Resampling.BOX)
+
+    result = Image.new("RGBA", size)
+    pixels = []
+    for r, g, b, a in zip(
+        red.get_flattened_data(),
+        green.get_flattened_data(),
+        blue.get_flattened_data(),
+        alpha.get_flattened_data(),
+    ):
+        if a < 128:
+            pixels.append((0, 0, 0, 0))
+            continue
+        # Un-premultiply after filtering so transparent surroundings cannot
+        # darken or green-tint the silhouette edge.
+        pixels.append(
+            (
+                min(255, round(r * 255 / a)),
+                min(255, round(g * 255 / a)),
+                min(255, round(b * 255 / a)),
+                255,
+            )
+        )
+    result.putdata(pixels)
+    return result
+
+
+def logical_from_crop(
+    source: Image.Image,
+    box: tuple[int, int, int, int],
+    *,
+    largest_only: bool = False,
+) -> Image.Image:
     crop = source.crop(box)
     if largest_only:
         crop = keep_largest_component(crop)
-    subject = trim(crop)
-    max_w, max_h = max_subject
-    factor = min(max_w / subject.width, max_h / subject.height)
-    resized = subject.resize((max(1, round(subject.width * factor)), max(1, round(subject.height * factor))), Image.Resampling.NEAREST)
-    canvas = Image.new("RGBA", size)
-    x = (size[0] - resized.width) // 2
-    y = size[1] - resized.height - 1
+    subject = rebalance_two_head(trim(crop))
+    factor = min((LOGICAL_SIZE[0] - 2) / subject.width, FIGURE_HEIGHT / subject.height)
+    size = (
+        max(1, round(subject.width * factor)),
+        max(1, round(subject.height * factor)),
+    )
+    resized = trim(box_resize_rgba(subject, size))
+    canvas = Image.new("RGBA", LOGICAL_SIZE)
+    x = (LOGICAL_SIZE[0] - resized.width) // 2
+    y = LOGICAL_SIZE[1] - resized.height
     canvas.alpha_composite(resized, (x, y))
-    return snap_palette(canvas, palette)
+    return canvas
+
+
+def palette_from_images(images: list[Image.Image], colors: int) -> tuple[tuple[int, int, int], ...]:
+    samples = [pixel[:3] for image in images for pixel in image.get_flattened_data() if pixel[3]]
+    if not samples:
+        raise ValueError("cannot build a palette without opaque pixels")
+    strip = Image.new("RGB", (len(samples), 1))
+    strip.putdata(samples)
+    quantized = strip.quantize(
+        colors=colors - 2,
+        method=Image.Quantize.MEDIANCUT,
+        dither=Image.Dither.NONE,
+    ).convert("RGB")
+    palette = list(dict.fromkeys(quantized.get_flattened_data()))
+
+    # Eye whites occupy very few logical pixels, so a frequency-only median
+    # cut can erase them. Reserve two source-derived light-neutral entries;
+    # this preserves facial readability without inventing or recoloring hues.
+    light_neutrals = sorted(
+        {
+            color
+            for color in samples
+            if min(color) >= 150 and max(color) - min(color) <= 65
+        },
+        key=sum,
+        reverse=True,
+    )
+    anchors: list[tuple[int, int, int]] = []
+    for color in light_neutrals:
+        if all(sum((a - b) ** 2 for a, b in zip(color, anchor)) >= 400 for anchor in anchors):
+            anchors.append(color)
+        if len(anchors) == 2:
+            break
+    palette.extend(color for color in anchors if color not in palette)
+    palette = palette[:colors]
+    palette = tuple(palette)
+    if not 24 <= len(palette) <= 32:
+        raise ValueError(f"expected a 24-32 color palette, got {len(palette)}")
+    return palette
+
+
+def apply_palette(image: Image.Image, palette: tuple[tuple[int, int, int], ...]) -> Image.Image:
+    cache: dict[tuple[int, int, int], tuple[int, int, int]] = {}
+    pixels = []
+    for r, g, b, alpha in image.get_flattened_data():
+        if not alpha:
+            pixels.append((0, 0, 0, 0))
+            continue
+        source = (r, g, b)
+        if source not in cache:
+            cache[source] = min(
+                palette,
+                key=lambda color: sum((channel - target) ** 2 for channel, target in zip(source, color)),
+            )
+        pixels.append((*cache[source], 255))
+    result = Image.new("RGBA", image.size)
+    result.putdata(pixels)
+    return result
+
+
+def measure_head_ratio(idle: Image.Image) -> tuple[int, int, int, float]:
+    """Measure hair-top through chin against full opaque figure height."""
+    bbox = idle.getchannel("A").getbbox()
+    if bbox is None:
+        raise ValueError("idle sprite contains no foreground")
+    total_height = bbox[3] - bbox[1]
+    hair_rows: list[int] = []
+    face_left = bbox[0] + round((bbox[2] - bbox[0]) * 0.35)
+    face_right = bbox[2]
+    for y in range(bbox[1], bbox[3]):
+        for x in range(face_left, face_right):
+            r, g, b, alpha = idle.getpixel((x, y))
+            if alpha and r >= 70 and r >= g * 1.30 and b >= g * 1.15 and 25 <= b <= 155:
+                hair_rows.append(y)
+    if not hair_rows:
+        raise ValueError("could not locate hair-top row")
+    hair_top = min(hair_rows)
+    skin_counts: dict[int, int] = {}
+    skin_threshold = max(4, round((face_right - face_left) * 0.08))
+    for y in range(hair_top + round(total_height * 0.15), min(bbox[3], hair_top + round(total_height * 0.50))):
+        count = 0
+        for x in range(face_left, face_right):
+            r, g, b, alpha = idle.getpixel((x, y))
+            if alpha and r >= 155 and g >= 65 and b >= 45 and r >= g * 1.08:
+                count += 1
+        skin_counts[y] = count
+    chin_candidates = [y for y, count in skin_counts.items() if count >= skin_threshold]
+    if not chin_candidates:
+        raise ValueError("could not locate chin row")
+    chin = max(chin_candidates)
+    return hair_top, chin, total_height, (chin - hair_top + 1) / total_height
 
 
 def rebalance_two_head(image: Image.Image) -> Image.Image:
-    """Compress the source body while retaining its authored head and palette."""
+    """Reallocate the full-resolution head/body before the final BOX reduction."""
     bbox = image.getchannel("A").getbbox()
     if bbox is None:
         raise ValueError("sprite contains no foreground")
-    _, chin, total_height, _ = measure_head_ratio(image)
-    if total_height != 29:
-        raise ValueError(f"expected a 29-pixel source figure, got {total_height}")
+    hair_top, chin, total_height, ratio = measure_head_ratio(image)
+    if 0.45 <= ratio <= 0.52:
+        return image
 
     split = chin + 1
     subject_width = bbox[2] - bbox[0]
     head = image.crop((bbox[0], bbox[1], bbox[2], split))
     body = image.crop((bbox[0], split, bbox[2], bbox[3]))
-    candidates: list[tuple[float, Image.Image]] = []
-    for head_height in range(head.height + 1, min(21, total_height - 7)):
-        body_height = total_height - head_height
-        candidate = Image.new("RGBA", image.size)
-        candidate.alpha_composite(
-            head.resize((subject_width, head_height), Image.Resampling.NEAREST),
-            (bbox[0], bbox[1]),
-        )
-        candidate.alpha_composite(
-            body.resize((subject_width, body_height), Image.Resampling.NEAREST),
-            (bbox[0], bbox[1] + head_height),
-        )
-        _, _, candidate_total, ratio = measure_head_ratio(candidate)
-        if candidate_total == 29 and 0.42 <= ratio <= 0.55:
-            candidates.append((abs(ratio - 0.48), candidate))
-    if not candidates:
-        raise ValueError("could not rebalance source to the 0.42-0.55 head ratio")
-    return min(candidates, key=lambda item: item[0])[1]
+    measured_head = chin - hair_top + 1
+    desired_head = round(total_height * 0.48)
+    head_height = round(head.height * desired_head / measured_head)
+    head_height = min(head_height, total_height - max(7, round(total_height * 0.20)))
+    body_height = total_height - head_height
+    result = Image.new("RGBA", image.size)
+    result.alpha_composite(box_resize_rgba(head, (subject_width, head_height)), (bbox[0], bbox[1]))
+    result.alpha_composite(
+        box_resize_rgba(body, (subject_width, body_height)),
+        (bbox[0], bbox[1] + head_height),
+    )
+    return result
 
 
 def assemble_walk(source_frames: list[Image.Image]) -> list[Image.Image]:
-    """Lock frame-one's upper body and retain the authored leg poses below it."""
+    """Lock frame one's upper body and retain authored lower-body poses."""
     if len(source_frames) != 4:
         raise ValueError("walk assembly requires four source frames")
     base = source_frames[0]
-    cut_row = 23
-    result: list[Image.Image] = []
-    for index, authored in enumerate(source_frames):
-        bob = 1 if index in (1, 3) else 0
-        locked = Image.new("RGBA", base.size)
-        locked.alpha_composite(base, (0, -bob))
-        posed = Image.new("RGBA", authored.size)
-        posed.alpha_composite(authored, (0, -bob))
-        lower_start = cut_row - bob
-        lower_box = (0, lower_start, 32, 32)
-        locked.paste(posed.crop(lower_box), lower_box)
-        result.append(locked)
+    lower_start = round(LOGICAL_SIZE[1] * 0.72)
+    lower_box = (0, lower_start, LOGICAL_SIZE[0], LOGICAL_SIZE[1])
+    result = []
+    for authored in source_frames:
+        frame = base.copy()
+        frame.paste(authored.crop(lower_box), lower_box)
+        result.append(frame)
     return result
+
+
+def assert_no_green_fringe(images: list[Image.Image]) -> None:
+    for image in images:
+        for r, g, b, alpha in image.get_flattened_data():
+            if alpha and g >= 110 and g - r >= 40 and g - b >= 40:
+                raise ValueError(f"green fringe survived as opaque RGB {(r, g, b)}")
 
 
 def upscale(image: Image.Image) -> Image.Image:
     return image.resize((image.width * SCALE, image.height * SCALE), Image.Resampling.NEAREST)
 
 
-def measure_head_ratio(idle: Image.Image) -> tuple[int, int, int, float]:
-    """Measure approved hair-top through chin against full opaque height."""
-    bbox = idle.getchannel("A").getbbox()
-    if bbox is None:
-        raise ValueError("idle sprite contains no foreground")
-    hair_rows: list[int] = []
-    for y in range(bbox[1], bbox[3]):
-        for x in range(10, 25):
-            r, g, b, alpha = idle.getpixel((x, y))
-            if alpha and r >= 80 and g <= 25 and 30 <= b <= 100:
-                hair_rows.append(y)
-    if not hair_rows:
-        raise ValueError("could not locate hair-top row")
-    hair_top = min(hair_rows)
-    skin_counts: dict[int, int] = {}
-    for y in range(hair_top + 7, min(bbox[3], hair_top + 17)):
-        count = 0
-        for x in range(10, 25):
-            r, g, b, alpha = idle.getpixel((x, y))
-            if alpha and r >= 190 and g >= 100 and 70 <= b <= 180:
-                count += 1
-        skin_counts[y] = count
-    chin_candidates = [y for y, count in skin_counts.items() if count >= 3]
-    if not chin_candidates:
-        raise ValueError("could not locate chin row")
-    chin = max(chin_candidates)
-    total_height = bbox[3] - bbox[1]
-    ratio = (chin - hair_top + 1) / total_height
-    return hair_top, chin, total_height, ratio
-
-
-def save_outputs(idle: Image.Image, portrait: Image.Image, walk_logical: list[Image.Image], ratio: float) -> None:
+def save_outputs(idle: Image.Image, walk_logical: list[Image.Image], ratio: float) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
+    if not PORTRAIT.exists():
+        raise FileNotFoundError("approved portrait.png is missing")
+    portrait_export = Image.open(PORTRAIT).convert("RGBA")
 
     idle_export = upscale(idle)
-    portrait_export = upscale(portrait)
-    walk_export = Image.new("RGBA", (128 * SCALE, 32 * SCALE))
+    walk_export = Image.new("RGBA", (LOGICAL_SIZE[0] * 4 * SCALE, LOGICAL_SIZE[1] * SCALE))
     for index, frame in enumerate(walk_logical):
-        walk_export.alpha_composite(upscale(frame), (index * 32 * SCALE, 0))
+        walk_export.alpha_composite(upscale(frame), (index * LOGICAL_SIZE[0] * SCALE, 0))
 
     idle_export.save(OUT / "idle.png", optimize=True)
     walk_export.save(OUT / "walk.png", optimize=True)
-    portrait_export.save(OUT / "portrait.png", optimize=True)
 
     gif_frames = [upscale(frame) for frame in walk_logical]
     gif_frames[0].save(
         OUT / "preview.gif",
         save_all=True,
         append_images=gif_frames[1:],
-        # GIF stores centiseconds, so alternate 120/130 ms for an exact
-        # 125 ms average frame interval (8 fps over the four-frame loop).
         duration=[120, 130, 120, 130],
         loop=0,
         disposal=2,
         transparency=0,
     )
 
-    sheet = Image.new("RGBA", (2560, 1024), GROUND)
+    sheet = Image.new("RGBA", (2880, 1024), GROUND)
     draw = ImageDraw.Draw(sheet)
     draw.text((48, 36), "IDLE", fill=(245, 224, 174, 255))
     sheet.alpha_composite(idle_export, (32, 96))
-    draw.text((608, 36), "WALK 1-4", fill=(245, 224, 174, 255))
-    for index, label in enumerate(("CONTACT", "PASS + BOB", "CONTACT", "PASS + BOB")):
-        draw.text((592 + index * 384, 128), label, fill=(173, 209, 160, 255))
-    walk_display = walk_export.resize((1536, 384), Image.Resampling.NEAREST)
-    sheet.alpha_composite(walk_display, (576, 160))
-    draw.text((2160, 36), "PORTRAIT", fill=(245, 224, 174, 255))
+    draw.text((704, 36), "WALK 1-4", fill=(245, 224, 174, 255))
+    for index, label in enumerate(("CONTACT", "PASS", "CONTACT", "PASS")):
+        draw.text((704 + index * 320, 128), label, fill=(173, 209, 160, 255))
+    walk_display = walk_export.resize((1280, 320), Image.Resampling.NEAREST)
+    sheet.alpha_composite(walk_display, (704, 160))
+    draw.text((2112, 36), "PORTRAIT (UNCHANGED)", fill=(245, 224, 174, 255))
     portrait_display = portrait_export.resize((384, 384), Image.Resampling.NEAREST)
-    sheet.alpha_composite(portrait_display, (2144, 128))
-    draw.text((48, 896), f"Logical 32x32 / 128x32 / 48x48  |  head ratio {ratio:.6f}  |  16x nearest export  |  #1c2416 ground check", fill=(173, 209, 160, 255))
+    sheet.alpha_composite(portrait_display, (2112, 128))
+    draw.text(
+        (48, 896),
+        f"Logical {LOGICAL_SIZE[0]}x{LOGICAL_SIZE[1]} / figure {FIGURE_HEIGHT}px | BOX downscale | {PALETTE_SIZE}-color source palette | head ratio {ratio:.6f} | 16x NEAREST export",
+        fill=(173, 209, 160, 255),
+    )
     sheet.convert("RGB").save(OUT / "contact-sheet.png", optimize=True)
 
 
 def main() -> None:
     source = remove_green(Image.open(SOURCE))
-    idle = logical_from_crop(source, (0, 200, 930, 1770), (32, 32), (30, 29), IDLE_PALETTE, largest_only=True)
-    idle = rebalance_two_head(idle)
-    portrait = logical_from_crop(source, (930, 200, 2048, 1650), (48, 48), (46, 46), PORTRAIT_PALETTE, largest_only=True)
+    idle = logical_from_crop(source, (0, 200, 930, 1770), largest_only=True)
 
     walk_source = remove_green(Image.open(WALK_SOURCE))
     authored_walk = [
         logical_from_crop(
             walk_source,
             (index * 384, 0, (index + 1) * 384, 440),
-            (32, 32),
-            (30, 29),
-            IDLE_PALETTE,
             largest_only=True,
         )
         for index in range(4)
     ]
-    walk_logical = assemble_walk([rebalance_two_head(frame) for frame in authored_walk])
+
+    palette = palette_from_images([idle, *authored_walk], PALETTE_SIZE)
+    idle = apply_palette(idle, palette)
+    authored_walk = [apply_palette(frame, palette) for frame in authored_walk]
+    walk_logical = assemble_walk(authored_walk)
+    assert_no_green_fringe([idle, *walk_logical])
+
     hair_top, chin, total_height, ratio = measure_head_ratio(idle)
+    if total_height != FIGURE_HEIGHT:
+        raise ValueError(f"figure height {total_height} does not match {FIGURE_HEIGHT}")
     if not 0.42 <= ratio <= 0.55:
         raise ValueError(f"head ratio {ratio:.6f} is outside the 0.42-0.55 contract")
-    save_outputs(idle, portrait, walk_logical, ratio)
+    if any(frame.getchannel("A").getbbox()[3] != LOGICAL_SIZE[1] for frame in walk_logical):
+        raise ValueError("every walk frame must place its feet on the bottom row")
+
+    save_outputs(idle, walk_logical, ratio)
+    print(f"palette colors: {len(palette)}")
     print(f"head ratio: ({chin} - {hair_top} + 1) / {total_height} = {ratio:.6f}")
 
 
