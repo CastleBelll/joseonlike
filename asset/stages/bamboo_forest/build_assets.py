@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -205,28 +206,57 @@ def build_sprites(sheet: Image.Image) -> dict[str, Image.Image]:
     return {name: apply_palette(image, palette) for name, image in logical.items()}
 
 
-def mirrored_tile(source: Image.Image) -> Image.Image:
-    patch = source.convert("RGBA").resize((16, 16), Image.Resampling.BOX)
-    tile = Image.new("RGBA", (32, 32))
-    tile.alpha_composite(patch, (0, 0))
-    tile.alpha_composite(patch.transpose(Image.Transpose.FLIP_LEFT_RIGHT), (16, 0))
-    tile.alpha_composite(patch.transpose(Image.Transpose.FLIP_TOP_BOTTOM), (0, 16))
-    tile.alpha_composite(patch.transpose(Image.Transpose.ROTATE_180), (16, 16))
+QUIET_GRAIN = (
+    (4, 6, 1),
+    (9, 24, -1),
+    (14, 11, 1),
+    (20, 27, 1),
+    (23, 8, -1),
+    (27, 18, 1),
+    (6, 17, -1),
+)
+
+
+def median_rgb(image: Image.Image) -> tuple[int, int, int]:
+    histogram = image.convert("RGB").histogram()
+    medians = []
+    for channel in range(3):
+        values = histogram[channel * 256:(channel + 1) * 256]
+        halfway = sum(values) // 2
+        running = 0
+        for value, count in enumerate(values):
+            running += count
+            if running >= halfway:
+                medians.append(value)
+                break
+    return tuple(medians)
+
+
+def quiet_tile(color: tuple[int, int, int]) -> Image.Image:
+    """Make a nearly-flat logical tile with only seven one-pixel grain marks."""
+    tile = Image.new("RGB", (32, 32), color)
+    for x, y, delta in QUIET_GRAIN:
+        tile.putpixel((x, y), tuple(max(0, min(255, value + delta)) for value in color))
     return tile
 
 
 def build_ground(sheet: Image.Image) -> dict[str, Image.Image]:
-    # Keep the chroma gutters outside the BOX footprint: even a few hot-pink
-    # source pixels average into a visible dark-purple seam after quantizing.
-    boxes = {
-        "ground_tile": (24, 24, 1000, 1000),
-        "patchy_grass": (1048, 24, 2024, 1000),
-        "dirt": (24, 1048, 1000, 2024),
-        "moss": (1048, 1048, 2024, 2024),
+    # Anchor the quiet palette to the Higgsfield base swatch, then compress all
+    # variant differences to a few RGB levels. Direct logical-pixel grain
+    # replaces the old mirrored patch, whose symmetry created a tiled diamond.
+    source_base = median_rgb(sheet.crop((24, 24, 1000, 1000)))
+    base = (
+        min(255, source_base[0] + 2),
+        min(255, source_base[1] + 2),
+        min(255, source_base[2] + 1),
+    )
+    colors = {
+        "ground_tile": base,
+        "patchy_grass": (base[0] + 3, base[1] + 4, base[2] + 2),
+        "dirt": (base[0] + 5, base[1] + 1, max(0, base[2] - 1)),
+        "moss": (base[0] + 1, base[1] + 3, max(0, base[2] - 1)),
     }
-    raw = {name: mirrored_tile(sheet.crop(box)) for name, box in boxes.items()}
-    palette = palette_from_images(list(raw.values()), 20)
-    return {name: apply_palette(image, palette).convert("RGB") for name, image in raw.items()}
+    return {name: quiet_tile(color) for name, color in colors.items()}
 
 
 def upscale(image: Image.Image, scale: int = SCALE) -> Image.Image:
@@ -239,6 +269,55 @@ def assert_seamless(tile: Image.Image) -> None:
         raise ValueError("ground tile left/right edges do not match")
     if list(rgb.crop((0, 0, 32, 1)).get_flattened_data()) != list(rgb.crop((0, 31, 32, 32)).get_flattened_data()):
         raise ValueError("ground tile top/bottom edges do not match")
+    edges = (
+        list(rgb.crop((0, 0, 32, 1)).get_flattened_data()),
+        list(rgb.crop((31, 0, 32, 32)).get_flattened_data()),
+        list(rgb.crop((0, 31, 32, 32)).get_flattened_data()),
+        list(rgb.crop((0, 0, 1, 32)).get_flattened_data()),
+    )
+    if any(edge != edges[0] for edge in edges[1:]):
+        raise ValueError("ground tile edges are not interchangeable under 90-degree rotation")
+
+
+def assert_quiet_ground(ground: dict[str, Image.Image]) -> None:
+    dominant: dict[str, tuple[int, int, int]] = {}
+    for name, tile in ground.items():
+        counts = Counter(tile.convert("RGB").get_flattened_data())
+        color, count = counts.most_common(1)[0]
+        dominant[name] = color
+        if len(counts) != 3 or count != 1017:
+            raise ValueError(f"{name} must be one flat color plus exactly seven grain pixels")
+        if any(max(abs(value - anchor) for value, anchor in zip(candidate, color)) > 1 for candidate in counts):
+            raise ValueError(f"{name} grain exceeds one RGB level")
+    base = dominant["ground_tile"]
+    for name, color in dominant.items():
+        if name != "ground_tile" and max(abs(value - anchor) for value, anchor in zip(color, base)) > 5:
+            raise ValueError(f"{name} differs too strongly from the base tile")
+
+
+def rotated(tile: Image.Image, turns: int) -> Image.Image:
+    rotations = (
+        None,
+        Image.Transpose.ROTATE_90,
+        Image.Transpose.ROTATE_180,
+        Image.Transpose.ROTATE_270,
+    )
+    return tile.copy() if turns % 4 == 0 else tile.transpose(rotations[turns % 4])
+
+
+def mixed_ground(ground: dict[str, Image.Image], cells: int = 8) -> Image.Image:
+    """Mix 10/64 variant tiles in three small clusters, with per-tile rotation."""
+    placements = {
+        (1, 1): "moss", (1, 2): "moss", (2, 1): "moss", (2, 2): "moss",
+        (5, 4): "patchy_grass", (5, 5): "patchy_grass", (6, 4): "patchy_grass",
+        (3, 6): "dirt", (4, 6): "dirt", (4, 7): "dirt",
+    }
+    image = Image.new("RGB", (cells * 32, cells * 32))
+    for y in range(cells):
+        for x in range(cells):
+            name = placements.get((x, y), "ground_tile") if cells == 8 else "ground_tile"
+            image.paste(rotated(ground[name], (x + y * 2) % 4), (x * 32, y * 32))
+    return image
 
 
 def save_assets(ground: dict[str, Image.Image], sprites: dict[str, Image.Image]) -> None:
@@ -260,10 +339,14 @@ def make_contact_sheet(ground: dict[str, Image.Image], sprites: dict[str, Image.
             verification.paste(ground["ground_tile"], (x * 32, y * 32))
 
     stage = Image.new("RGB", (128, 128))
-    variants = ("ground_tile", "patchy_grass", "dirt", "moss")
     for y in range(4):
         for x in range(4):
-            stage.paste(ground[variants[(x + y * 3) % 4]], (x * 32, y * 32))
+            name = {
+                (0, 0): "moss",
+                (1, 0): "moss",
+                (3, 3): "dirt",
+            }.get((x, y), "ground_tile")
+            stage.paste(rotated(ground[name], (x + y * 2) % 4), (x * 32, y * 32))
 
     def place(name: str, x: int, y: int) -> None:
         stage.paste(sprites[name], (x, y), sprites[name])
@@ -289,7 +372,12 @@ def make_contact_sheet(ground: dict[str, Image.Image], sprites: dict[str, Image.
     combined.paste(verification, (0, 0))
     combined.paste(stage, (128, 0))
     upscale(combined, CONTACT_SCALE).save(OUT / "contact-sheet.png", optimize=True)
-    upscale(verification, CONTACT_SCALE).save(OUT / "tile-verification.png", optimize=True)
+    pure_base = Image.new("RGB", (256, 256))
+    for y in range(8):
+        for x in range(8):
+            pure_base.paste(rotated(ground["ground_tile"], (x + y * 2) % 4), (x * 32, y * 32))
+    upscale(pure_base, 4).save(OUT / "tile-verification.png", optimize=True)
+    upscale(mixed_ground(ground), 4).save(OUT / "ground-verification.png", optimize=True)
 
 
 def main() -> None:
@@ -298,6 +386,7 @@ def main() -> None:
     ground = build_ground(Image.open(RAW_GROUND))
     sprites = build_sprites(Image.open(RAW_PROPS))
 
+    assert_quiet_ground(ground)
     for tile in ground.values():
         assert_seamless(tile)
     for spec in SPRITES:

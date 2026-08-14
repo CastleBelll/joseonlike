@@ -31,29 +31,42 @@ partial alpha.
 | `decor/pebbles.png` | 14x8 | Non-colliding decor |
 | `decor/fog_wisp.png` | 48x24 | Non-colliding, semi-transparent decor |
 
-`contact-sheet.png` compares a 4x4 repetition of the base tile with a mixed
-stage mock-up containing every prop, every decor sprite, and the Taoist for
-scale. `tile-verification.png` is the dedicated 4x4 seam check.
+`contact-sheet.png` compares a 4x4 repetition of the base tile with a sparse
+mixed-stage mock-up containing every prop, every decor sprite, and the Taoist
+for scale. `tile-verification.png` is a pure 8x8 base grid with per-tile
+rotation. `ground-verification.png` is the required 8x8 gameplay mix: 10 of 64
+cells (15.625%) are variants, grouped into three small clusters, and every cell
+uses a deterministic 0/90/180/270-degree rotation.
 
 ## Palette and processing
 
-Representative ground colours are `#141c1d`, `#161d1e`, `#192020`, `#1e2c2a`,
-`#20312f`, `#223535`, and `#253b3a`. Props use the same low-value night family,
-with cool moonlit accents such as `#293c47`, `#2f444d`, `#415250`, and `#50737f`.
-The script derives a shared 20-colour ground palette and a shared 32-colour
-sprite palette directly from the generated hues; it does not recolour the art.
+The quiet ground palette remains anchored to the median of the Higgsfield base
+swatch. Current dominant colours are base `#161e1f`, patchy grass `#192221`,
+dirt `#1b1f1e`, and moss `#17211e`. Each tile has only seven interior grain
+pixels at exactly one RGB level above or below its dominant colour, so the grain
+survives as real logical pixels without becoming a blurred texture. Props keep
+the original shared 32-colour palette, including cool moonlit accents such as
+`#293c47`, `#2f444d`, `#415250`, and `#50737f`.
 
-Ground cells are cropped inside the atlas gutters, reduced with BOX to a 16x16
-patch, and reflected across both axes to form 32x32 tiles. That construction
-makes opposite edges identical; the script also compares every left/right and
-top/bottom logical edge exactly. The final 4x4 composite was visually inspected
-at 8x: no seam or chroma gutter survives, and the low-contrast ground remains
-visibly darker than the player and props.
+The original ground builder reduced a swatch to 16x16 and reflected it on both
+axes. That forced a countable diamond/lattice motif into every 32x32 tile. The
+replacement deliberately constructs an almost-flat 32x32 logical surface from
+the source-derived night colour and seven non-adjacent one-pixel grain marks.
+Every edge is one flat dominant colour, and the script requires all four edge
+arrays to be interchangeable, not only opposite-edge pairs; therefore any
+90-degree rotation remains seamless. The pure and mixed 8x8 composites were
+visually inspected at 4x NEAREST: there is no repeated figure or visible tile
+grid, while the clustered variants register only as very broad, faint hue/value
+shifts.
 
 Transparent sprites are keyed before resizing. RGB is premultiplied by alpha,
 both colour and alpha are BOX-resampled, solid alpha is thresholded back to
 binary, and the result is palette-snapped before its sole 16x NEAREST upscale.
 The fog uses the same colour process but preserves soft alpha.
+
+The quiet-ground retake reused the already-approved Higgsfield atlas and spent
+no additional generation credits; only the deterministic ground reduction and
+verification composite changed.
 
 ## Higgsfield generation record
 
@@ -118,5 +131,6 @@ $env:PYTHONDONTWRITEBYTECODE='1'
 python asset/stages/bamboo_forest/build_assets.py
 ```
 
-The build fails if a ground edge differs, a solid prop does not reach its base
-row, solid alpha is not binary, or a keyed magenta fringe remains.
+The build fails if a ground edge differs or cannot interchange with a rotated
+edge, a solid prop does not reach its base row, solid alpha is not binary, or a
+keyed magenta fringe remains.
