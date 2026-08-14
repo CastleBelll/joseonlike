@@ -85,6 +85,17 @@
     "special": true,
     "salvage_gold": 15
   },
+  "cinnabar": {
+    "name_ko": "주사",
+    "name_en": "Cinnabar",
+    "tier": "rare",
+    "tags": [
+      "spiritual",
+      "seal"
+    ],
+    "special": true,
+    "salvage_gold": 8
+  },
   "thunder_stone": {
     "name_ko": "뇌정석",
     "name_en": "Thunder Stone",

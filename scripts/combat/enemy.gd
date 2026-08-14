@@ -79,6 +79,7 @@ var _hit_flash_left: float = 0.0
 var _bob_time: float = 0.0
 var _rng: RandomNumberGenerator = CombatRng.create()
 var _burn: BurnStatus = BurnStatus.new()
+var _seal: SealStatus = SealStatus.new()
 
 @onready var _sprite: Sprite2D = $Sprite2D
 @onready var _collider: CollisionShape2D = $CollisionShape2D
@@ -110,8 +111,9 @@ func activate(new_monster_id: String, data: Dictionary, spawn_position: Vector2)
 	_charge_phase_left = CHARGER_WINDUP_SEC
 	_weave_phase = _rng.randf() * TAU
 	_hit_flash_left = 0.0
-	# Pooled instance: a burn from the previous life must not carry over.
+	# Pooled instance: a burn or seal from the previous life must not carry over.
 	_burn = BurnStatus.new()
+	_seal = SealStatus.new()
 
 	_apply_visuals(data)
 	_apply_collision(data)
@@ -129,6 +131,16 @@ func apply_burn(dps: float, duration_sec: float) -> void:
 	if not is_active:
 		return
 	_burn.apply(dps, duration_sec)
+
+
+## One seal mark; bursts through take_damage at the data-declared threshold so
+## a burst kill pays out exactly like a weapon kill.
+func apply_seal(burst_at: int, burst_damage: float) -> void:
+	if not is_active or burst_damage <= 0.0:
+		return
+	if _seal.apply(burst_at):
+		EffectPool.play(EffectPool.HIT, global_position)
+		take_damage(burst_damage)
 
 
 func take_damage(amount: float, _is_crit: bool = false) -> void:

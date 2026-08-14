@@ -42,6 +42,10 @@ var on_hit_status: Dictionary = {}
 ## the nearest other enemies in range. Empty = no chain.
 var on_hit_chain: Dictionary = {}
 
+## Optional weapons.json on_hit_seal payload ({"burst_at","burst_damage_scale"}):
+## every hit stacks a mark on the target, bursting at the threshold.
+var on_hit_seal: Dictionary = {}
+
 var _age_sec: float = 0.0
 var _hit_ids: Array[int] = []
 
@@ -94,6 +98,7 @@ func _on_body_entered(body: Node2D) -> void:
 	body.take_damage(damage, is_crit)
 	_apply_on_hit_status(body)
 	_apply_on_hit_chain(body)
+	_apply_on_hit_seal(body)
 	if pierce_left <= 0:
 		_despawn()
 		return
@@ -108,6 +113,15 @@ func _apply_on_hit_status(body: Node2D) -> void:
 			float(on_hit_status.get("dps", 0.0)),
 			float(on_hit_status.get("duration_sec", 0.0))
 		)
+
+
+func _apply_on_hit_seal(body: Node2D) -> void:
+	if on_hit_seal.is_empty() or not body.has_method(&"apply_seal"):
+		return
+	body.apply_seal(
+		int(on_hit_seal.get("burst_at", 0)),
+		damage * float(on_hit_seal.get("burst_damage_scale", 0.0))
+	)
 
 
 ## Instant local arcs from the impact point — no extra projectiles, so the

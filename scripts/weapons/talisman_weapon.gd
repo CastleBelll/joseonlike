@@ -48,5 +48,6 @@ func _make_charm(caster: Node2D, direction: Vector2, hit: Dictionary) -> Project
 	charm.global_position = caster.global_position
 	charm.on_hit_status = data().get("on_hit_status", {})
 	charm.on_hit_chain = data().get("on_hit_chain", {})
+	charm.on_hit_seal = data().get("on_hit_seal", {})
 	charm.configure_for_player()
 	return charm

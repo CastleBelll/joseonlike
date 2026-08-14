@@ -51,6 +51,23 @@
     "on_hit_status": { "id": "burn", "dps": 7.0, "duration_sec": 3.0 },
     "sprite": "res://asset/weapon/icons/phoenix_talisman.png"
   },
+  "beopgeom": {
+    "name_ko": "법검",
+    "name_en": "Ritual Sword",
+    "category": "spiritual",
+    "grade": "epic",
+    "damage": 14.0,
+    "cooldown_sec": 0.7,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 320.0,
+    "max_level": 8,
+    "per_level": { "damage": 2.5, "cooldown_sec": -0.03 },
+    "evolution_only": true,
+    "on_hit_seal": { "burst_at": 4, "burst_damage_scale": 3.0 },
+    "sprite": "res://asset/weapon/icons/old_talisman.png"
+  },
   "lightning_talisman": {
     "name_ko": "뇌전 부적",
     "name_en": "Lightning Talisman",

@@ -10,7 +10,9 @@
     "drops": [
       { "loot_id": "wonhon_shard", "chance": 0.08 },
       { "loot_id": "talisman_paper", "chance": 0.06 },
-      { "loot_id": "dokkaebi_flame", "chance": 0.02 }
+      { "loot_id": "dokkaebi_flame", "chance": 0.02 },
+      { "loot_id": "thunder_stone", "chance": 0.01 },
+      { "loot_id": "cinnabar", "chance": 0.015 }
     ]
   },
   "bamboo_brute": {

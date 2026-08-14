@@ -284,6 +284,16 @@ static func _validate_weapons(weapons: Dictionary, evolutions: Dictionary, weapo
 				if _num(chain, "range_px") <= 0.0:
 					errors.append("%s: '%s'.on_hit_chain.range_px must be > 0" % [file, id])
 
+		if w.has("on_hit_seal"):
+			var seal: Variant = w.get("on_hit_seal")
+			if not (seal is Dictionary):
+				errors.append("%s: '%s'.on_hit_seal must be an object" % [file, id])
+			else:
+				if _num(seal, "burst_at") <= 0.0:
+					errors.append("%s: '%s'.on_hit_seal.burst_at must be > 0" % [file, id])
+				if _num(seal, "burst_damage_scale") <= 0.0:
+					errors.append("%s: '%s'.on_hit_seal.burst_damage_scale must be > 0" % [file, id])
+
 		if w.has("on_hit_status"):
 			var status: Variant = w.get("on_hit_status")
 			if not (status is Dictionary):

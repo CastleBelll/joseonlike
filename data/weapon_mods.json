@@ -19,6 +19,11 @@
     "loot_id": "fire_spirit_stone",
     "result_weapon": "fire_talisman"
   },
+  "beopgeom_mod": {
+    "weapon_id": "old_talisman",
+    "loot_id": "cinnabar",
+    "result_weapon": "beopgeom"
+  },
   "lightning_talisman_mod": {
     "weapon_id": "old_talisman",
     "loot_id": "thunder_stone",
