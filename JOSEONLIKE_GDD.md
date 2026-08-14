@@ -44,8 +44,8 @@ The game does not focus on a single hero.
 
 Players choose different hunters with unique combat styles.
 
-Characters: - Taoist - Warrior - Archer - Assassin - Shaman - Monk -
-Hunter
+Characters: - Taoist - Warrior - Archer - Assassin - Shaman (Mudang) -
+Monk - Hunter - Firearm Hunter - Executioner (Mangnani)
 
 ------------------------------------------------------------------------
 
@@ -105,6 +105,11 @@ Allowed categories: - Spiritual
 
 Weapon: - Talisman
 
+Visual: wandering mystic — satgat (conical bamboo hat, low over the eyes),
+gray-white dopo robe with blue trim, a seokjang (ringed pilgrim staff) held
+upright, yellow talisman slips tucked in the belt. Palette: gray-white +
+blue trim + gold talisman accent.
+
 Examples: Old Talisman → Fire Talisman → Five Elements Talisman → Divine
 Seal
 
@@ -118,6 +123,10 @@ Allowed categories: - Melee
 
 Weapon: - Sword
 
+Visual: Joseon soldier — jeonrip (military hat with red tassel), navy
+cheollik coat or lamellar chest piece, hwando sword held low, broad stance.
+Palette: navy + crimson + steel highlight. High contrast, never muddy.
+
 ------------------------------------------------------------------------
 
 ## Archer
@@ -127,6 +136,10 @@ Role: - Long range damage
 Allowed categories: - Ranged
 
 Weapons: - Bow - Korean Bow - Fire Arrow
+
+Visual: mountain hunter — paeraengi (flat straw hat), deep-green hunting
+jacket, tan trousers, red quiver strap across the chest as the accent
+colour, gakgung (composite bow) in hand, quiver visible on the back.
 
 ------------------------------------------------------------------------
 
@@ -147,6 +160,35 @@ Role: - Critical damage - Evasion
 Allowed categories: - Melee - Ranged
 
 Weapons: - Throwing Knife - Poison Weapon
+
+------------------------------------------------------------------------
+
+## Mudang (Shaman)
+
+Role: - Spiritual support - Area damage - Spirit summons
+
+Allowed categories: - Spiritual
+
+Weapons: - Divination Fan - Spirit Bells
+
+Visual: female shaman in full gut-attire — red skirt with deep-blue
+jeogori jacket, rainbow-striped saekdong ribbons streaming from the arms,
+folding fan in one hand and a cluster of brass bells in the other. The most
+saturated palette in the roster: red + blue + white.
+
+------------------------------------------------------------------------
+
+## Executioner (Mangnani)
+
+Role: - Heavy melee - Slow swings - High risk, high damage
+
+Allowed categories: - Melee
+
+Weapons: - Executioner's Blade (daedo)
+
+Visual: burly outcast — bare arms in a rough vest, rope belt, cloth
+headwrap, scarred build, an oversized curved daedo blade resting on the
+shoulder. Palette: skin tone + dark red + iron gray.
 
 ------------------------------------------------------------------------
 
