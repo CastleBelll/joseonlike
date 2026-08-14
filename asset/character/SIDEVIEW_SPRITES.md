@@ -1,208 +1,130 @@
-# Side-view character sprites (v4)
+# Side-view character sprites (V6)
 
-## Runtime format
+V6 is based exclusively on the definitive design sheet at
+`new_asset/Character.png`. It supersedes all earlier chunky 32 x 32 anchors and
+all earlier no-weapon directions.
 
-- Logical canvas: **32 × 32 pixels** per frame.
-- Export scale: **16× nearest-neighbour**, matching `new_asset/basic.png`.
-- Exported frame size: **512 × 512 pixels**.
-- `idle.png`: one three-quarter-right idle frame, **512 × 512**.
-- `walk.png`: four three-quarter-right walk frames in one horizontal strip, **2048 × 512**.
-- Color: RGBA PNG with binary alpha. Every exported mark is a uniform **16 × 16** block from the logical grid.
-- Shared ground line: logical row **29**. Frames retain their full canvases and transparent margins.
+## Source measurement and runtime format
 
-The movement direction is screen-right, while the face and torso retain the natural three-quarter view used by `basic.png`. Mirror the same textures in-engine for leftward movement.
+- Definitive source: **2688 x 1520 px**, magenta-backed, three characters.
+- Measured authored pixel cadence: approximately **22 source pixels per logical
+  pixel** (the source is softly rendered rather than an exact integer upscale).
+- Measured source figures: approximately **55-58 logical pixels tall**, including
+  the Warrior's plume.
+- V6 logical canvas: **48 x 64 px** per frame.
+- Export scale: **16x nearest-neighbour**.
+- Exported frame size: **768 x 1024 px**.
+- Shared ground line: logical row **61**.
+- `idle.png`: one right-facing frame, **768 x 1024 px**.
+- `walk.png`: four right-facing frames in one horizontal strip,
+  **3072 x 1024 px**.
+- Pixel format: RGBA PNG, binary alpha, 20-color reference-derived opaque
+  palette, one-logical-pixel near-black outline.
 
-## V4 youthful character design bible
+The 48 x 64 canvas keeps all three characters on one canvas, export scale, and
+ground line while retaining the taller four-head design and the Taoist sword,
+Warrior hwando, Archer bow, and Archer back quiver without cropping.
 
-V4 removes the beard, heavy jaw, hidden-eye, and bulky-body cues that made the
-previous roster read as three middle-aged men after reduction to 32 x 32. The
-classes and gameplay silhouettes stay intact, but the lineup now reads as three
-young adventurers rather than veteran archetypes.
+## Definitive V6 designs
 
-- **Taoist, youthful wandering mystic:** clean-shaven bright face, visible eyes,
-  satgat tilted upward, slim gray-white dopo with cobalt binding, ringed seokjang,
-  and gold talismans. Palette: gray-white, straw gold, cobalt, dark brown.
-- **Warrior, youthful cadet:** lean athletic build, bright clean face, short dark
-  hair below a navy jeonrip, lively crimson tassel and sash, fitted lamellar, and
-  low-held hwando. Palette: navy, cobalt highlights, crimson, steel, brass.
-- **Archer, youthful mountain scout:** clean-shaven smiling face, visible eyes,
-  short tied hair, paeraengi worn back, cropped forest jacket, tapered tan trousers,
-  red quiver strap, and front-held gakgung. Palette: forest green, tan, straw gold,
-  coral red, dark brown.
+- **Taoist (도사):** black scholar yugun/heukrip with tail, white dopo, cobalt
+  sash and trim, yellow belt talisman, vivid red ritual sword held low.
+- **Warrior (무관):** navy jeonrip with red plume, dark lamellar chest vest,
+  red waist sash, curved hwando held low.
+- **Archer (궁수):** woven straw satgat, forest-green jacket, tan baggy trousers,
+  white gaiters, back quiver with visible arrows, gakgung held in front.
 
-The final Higgsfield MCP v4 source sheets are preserved at:
+The character crops used as the only generation references are preserved at:
 
-- `asset/character/Taoist/raw/side_sheet_youth_v4_higgsfield.png`
-- `asset/character/Warrior/raw/side_sheet_youth_v4_higgsfield.png`
-- `asset/character/Archer/raw/side_sheet_youth_v4_higgsfield.png`
+- `asset/character/Taoist/raw/character_v6_reference.png`
+- `asset/character/Warrior/raw/character_v6_reference.png`
+- `asset/character/Archer/raw/character_v6_reference.png`
 
-The processor prefers these final MCP files, then the uploaded v4 conditioning
-references (`side_sheet_youth_v4.png`), and finally the v3
-`side_sheet_higgsfield.png` sources.
-
-### V4 generation prompts
-
-V4 was produced through the Higgsfield MCP with GPT Image 2 at 2K, high quality,
-16:9, one result per character. Each `side_sheet_youth_v4.png` conditioning
-reference was uploaded to the Higgsfield Asset library before generation. Final
-generation job IDs:
-
-- Taoist: `efe0cb67-b2db-4298-8993-6ba4a6270e98`
-- Warrior: `6f15f0b6-d09f-429c-b996-4a7dfd401006`
-- Archer: `c18897e6-51e0-4981-9e8b-90a53cbb55ef`
-
-All three prompts shared these production constraints:
-
-```text
-Redesign the character as a clearly youthful Korean adventurer while preserving
-exactly five separated poses in one horizontal row: idle, contact A, passing A,
-contact B, passing B. Keep one identical scale, face, costume, held item, palette,
-and ground line. Use chunky two-heads-tall 32x32 logical-pixel art, a one-pixel dark
-outline, large clean clusters, flat shading, and 2-3 shades per material. Put the
-figures on perfectly flat #FF00FF. No beard, moustache, stubble, wrinkles, bulky
-body, hidden eyes, antialiasing, gradients, dithering, labels, dividers, shadows,
-scenery, or watermark.
-```
-
-Character-specific prompt blocks were:
-
-```text
-Taoist: clean-shaven man in his early twenties with bright eyes and dark side hair;
-straw satgat tilted upward; slim gray-white dopo with cobalt trim; gold talismans;
-upright ringed seokjang 10-15% taller than the character.
-
-Warrior: clean-shaven male cadet in his late teens or early twenties with a lean
-athletic build and short dark hair; navy round jeonrip and crimson tassel; fitted
-navy lamellar and crimson sash; low-held hwando with brass guard and steel edge.
-
-Archer: lean clean-shaven man around twenty with a small confident smile and tied
-hair; paeraengi worn slightly back; cropped forest-green jacket and tapered tan
-trousers; coral-red quiver strap, visible arrows, and front-held dark wood gakgung.
-```
-
-## V3 character design bible
-
-The three palettes intentionally occupy different color families so the roster stays readable on the game's dark backgrounds and leaves room for the planned Mudang and Executioner.
-
-- **Taoist (도사), wandering mystic:** wide conical straw satgat low over the eyes; gray-white dopo with strong blue binding; upright ringed seokjang pilgrim staff taller than the character; yellow-gold talisman flashes tucked into the belt. Palette: gray-white, straw tan, medium blue, gold.
-- **Warrior (무사), Joseon soldier:** round navy jeonrip with a bright red tassel; broad navy cheollik/lamellar silhouette with crimson sash accents; low-held curved hwando with a bright steel edge. Palette: navy, readable blue highlights, crimson, steel; no brown-dominant armor.
-- **Archer (궁수), mountain hunter:** flat straw paeraengi; deep-green hunting jacket separated clearly from tan trousers; bright red diagonal quiver strap and visible back quiver/arrow tips; front-held gakgung. Palette: forest green, tan, straw gold, red; no brown monochrome.
-
-Held gear and costume marks contain no lettering or one-sided emblem, so horizontal mirroring remains valid.
-
-## Walk order and slicing
-
-Slice `walk.png` as **4 columns × 1 row**, using 512 × 512 regions:
-
-1. Contact A
-2. Passing A
-3. Contact B
-4. Passing B
-
-Loop frames `0 → 1 → 2 → 3` at approximately 8–10 fps. Contact A and
-Contact B keep the head and face fixed while the legs form mirrored, two-pixel
-scissors: the leading heel reaches logical ground row 29 and the rear foot rolls
-up onto its toe. Passing A and Passing B gather the legs beneath the hip, keep
-the planted foot on row 29, and raise the body by exactly one logical pixel. The
-free arm counter-swings by one logical pixel between the two contact poses.
+Crop rectangles in the 2688 x 1520 source were Taoist `(0,64)-(896,1440)`,
+Warrior `(896,32)-(1696,1440)`, and Archer `(1696,64)-(2688,1440)`.
 
 ## Higgsfield generation
 
-Each final v3 character used exactly **one Higgsfield generation containing all five poses** (idle plus four walk phases). No pose was generated independently.
+Each final character uses exactly one Higgsfield generation containing idle plus
+all four walk phases. No frame was independently generated.
 
-- Service: Higgsfield MCP image generation.
 - Model: **GPT Image 2** (`gpt_image_2`).
-- Parameters: **2K**, **high** quality, **16:9**, one result.
-- Conditioning: uploaded `new_asset/basic.png` as the only image reference in every call.
-- Chroma backdrop: flat `#FF00FF`, selected so the Archer's required deep green survives extraction.
-- Raw sheet size: **2688 × 1520**.
-- Final generation job IDs:
-  - Taoist: `3af062d3-7b40-451f-b9b4-38c2799fc2cc`
-  - Warrior: `919396d1-64f7-45b7-bb2a-093bdcb1b9a8`
-  - Archer: `4f292ca4-da7f-465a-a918-c9d2fc4fc385`
+- Output: **2K**, high quality, 16:9, one result per character.
+- Background: perfectly flat `#FF00FF`.
+- Final job IDs:
+  - Taoist: `7f499a2b-6603-4eda-b3e2-8b739f8afacf`
+  - Warrior: `92bba6ff-8ad1-4a5d-aed5-e57f1a011917`
+  - Archer: `21549b97-36b8-4736-86f9-6173e992e40b`
 
-Raw generated sheets are preserved at:
+Final raw sheets:
 
-- `asset/character/Taoist/raw/side_sheet_higgsfield.png`
-- `asset/character/Warrior/raw/side_sheet_higgsfield.png`
-- `asset/character/Archer/raw/side_sheet_higgsfield.png`
+- `asset/character/Taoist/raw/side_sheet_v6_natural_higgsfield.png`
+- `asset/character/Warrior/raw/side_sheet_v6_natural_higgsfield.png`
+- `asset/character/Archer/raw/side_sheet_v6_natural_higgsfield.png`
 
-### Final prompt structure
+The final generation prompt explicitly defines a relaxed human walk: heel-strike
+contact, planted support-leg passing, opposite heel-strike contact, opposite
+support-leg passing. At least one complete foot must remain on the same ground
+line in every phase; pelvis movement is horizontal; shoulder height is level;
+and airborne, jumping, hopping, running, lunging, crouching, and high-knee
+marching poses are prohibited. Character-specific prompt clauses require the
+authoritative costume and held weapon in every frame.
 
-All three calls shared this production constraint block:
+## Walk order and processing
 
-```text
-Create one horizontal sheet with exactly five poses of one identical character:
-idle, contact A, passing A, contact B, passing B. Use basic.png's chunky,
-approximately two-heads-tall, three-quarter-right 32x32 logical-pixel style.
-Lock the face, hat, torso, palette, held item, scale, and ground line. Animate only
-the legs and the smallest necessary arm shift. Use a one-logical-pixel dark outline,
-large clean clusters, flat cel shading, and only 2-3 shades per material. No dithering,
-noise, gradients, antialiasing, tiny detail, dividers, labels, shadows, or scenery.
-Keep five separated connected silhouettes on perfectly flat #FF00FF.
-```
+Slice `walk.png` as **4 columns x 1 row**, using 768 x 1024 cells:
 
-The character-specific prompt blocks were:
+1. Contact A: front heel strike, rear toe leaving.
+2. Passing A: planted support leg, opposite swing knee passing.
+3. Contact B: opposite heel strike, opposite rear toe leaving.
+4. Passing B: opposite planted support leg and swing knee passing.
 
-```text
-Taoist: conical straw-tan satgat (not a black flat gat); gray-white dopo with vivid
-blue trim; upright ringed seokjang attached to the hand and 10-15% taller than the
-character; two yellow-gold talisman slips tucked at the belt. Keep gray-white, straw,
-blue, and gold as clean distinct material blocks.
+`tools/process_higgsfield_sideview_sprites.py` performs only sheet-level and
+pixel-grid post-processing:
 
-Warrior: dark navy round jeonrip with a bright red tassel; broad navy cheollik and
-simplified lamellar chest; crimson sash accents; low-held curved hwando with brass
-guard and bright steel edge. Use essentially no muddy brown and keep navy, crimson,
-and steel strongly separated.
-
-Archer: flat straw paeraengi (not conical); deep forest-green hunting jacket, clearly
-tan trousers, bright red diagonal quiver strap, visible back quiver with arrow tips,
-and front-held gakgung with taut string. Keep green, tan, straw, and red distinct.
-```
-
-## Local post-processing
+1. Removes the magenta backdrop and extracts the five Higgsfield silhouettes.
+2. Applies one reduction scale and a shared head/ground anchor on 48 x 64.
+3. Quantizes every pose to one palette derived from its authoritative crop.
+4. Adds the one-logical-pixel outline and binary alpha.
+5. Keeps Higgsfield's authored contact and passing leg art intact. No limbs are
+   synthesized, mirrored, or redrawn.
+6. Raises each generated passing pose by exactly one logical pixel and retains
+   its generated sole row on ground row 61, so the support foot never floats.
+7. Exports all frames at 16x nearest-neighbour and writes the verification GIFs.
 
 Run from the repository root:
 
 ```text
-python tools/process_higgsfield_sideview_sprites.py
+python tools/process_higgsfield_sideview_sprites.py \
+  --metrics asset/character/side_v6_metrics.json
 ```
-
-The processor performs generated-image transformations only; it does not draw character pixels:
-
-1. Removes green or magenta chroma pixels by color dominance.
-2. Finds the five largest connected foreground components and orders them left-to-right.
-3. Reduces all figures with one per-character scale onto a 32 × 32 logical grid.
-4. Aligns each frame from its hat/head anchor and fixes the feet to logical ground row 29.
-5. Reuses the first generated walk frame's upper layer through row 22, removing face and costume flicker.
-6. Repositions only approved logical-pixel clusters from that shared base to create mirrored contact legs, gathered passing legs, the one-pixel passing bob, and the one-pixel free-arm counter-swing.
-7. Quantizes all five frames together to a per-character authored palette of up to **16 opaque colors** with no dithering.
-8. Exports at 16× using nearest-neighbour sampling.
 
 ## Verification
 
-All raw sheets, idle sprites, and four-frame strips were visually inspected against a dark background after processing. Automated checks confirmed:
+Automated verification recorded in `asset/character/side_v6_metrics.json`
+confirms for all three characters:
 
-- exact dimensions: idle 512 × 512; walk 2048 × 512;
-- transparent corners and binary alpha;
-- all opaque pixels snapped to the 16× export grid;
-- equal 512-pixel walk cells and one common canvas height;
-- at most 17 RGBA entries per character including transparency (up to 16 opaque authored palette entries);
-- logical alpha bounds ending on ground row 29;
-- stable, pixel-identical head and face art across the walk loop (the passing
-  frames translate that shared art upward by exactly one logical pixel);
-- mirrored contact silhouettes with alternating grounded heels and raised rear
-  toes, plus gathered passing silhouettes with alternating lifted feet;
-- a one-logical-pixel body bob on both passing frames and a one-logical-pixel
-  opposing free-arm swing on the contact frames;
-- no chroma remnants, dividers, labels, or watermark;
-- the required hat, costume, held weapon, and palette identity remain readable at the actual 32 × 32 logical resolution.
+- idle 768 x 1024 and walk 3072 x 1024;
+- four distinct 48 x 64 logical walk cells;
+- binary alpha and exact 16x logical-grid alignment;
+- all four phases end on shared ground row 61;
+- logical top rows `3, 2, 3, 2`, giving exactly a one-pixel passing bob;
+- head-anchor horizontal spread of 0.995 px (Taoist), 0.794 px (Warrior), and
+  1.092 px (Archer);
+- contact and passing silhouettes are distinct and the mandatory held gear is
+  present in every generated phase.
 
-The final three loops were assembled into a nearest-neighbour preview GIF at
-**8 fps** (125 ms per frame) on a dark background and watched through repeated
-cycles. Taoist, Warrior, and Archer each read as walking rather than gliding:
-the contact stride alternates sides, the passing pose compresses beneath the
-torso, the body rises on both passing frames, and the planted foot returns to
-the same ground row without sliding.
+The final loops are preserved at:
 
-Keep texture filtering and mipmaps disabled in Godot so the logical pixels remain crisp.
+- `asset/character/Taoist/raw/walk_v6_preview.gif`
+- `asset/character/Warrior/raw/walk_v6_preview.gif`
+- `asset/character/Archer/raw/walk_v6_preview.gif`
+
+They were inspected at **8.3 fps** (120 ms per frame) on a dark background. The
+sequence reads as heel contact -> planted passing step -> opposite heel contact
+-> opposite planted passing step: one sole stays on row 61 in every phase, the
+stride alternates, the body rises only on the two passing frames, and there is no
+airborne/jump frame or sliding ground-line change.
+
+Keep texture filtering and mipmaps disabled in Godot so the logical pixels remain
+crisp.
