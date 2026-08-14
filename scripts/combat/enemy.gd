@@ -78,6 +78,7 @@ var _hit_flash_left: float = 0.0
 ## player: whole pixels, vertical only, reset on any state change.
 var _bob_time: float = 0.0
 var _rng: RandomNumberGenerator = CombatRng.create()
+var _burn: BurnStatus = BurnStatus.new()
 
 @onready var _sprite: Sprite2D = $Sprite2D
 @onready var _collider: CollisionShape2D = $CollisionShape2D
@@ -109,6 +110,8 @@ func activate(new_monster_id: String, data: Dictionary, spawn_position: Vector2)
 	_charge_phase_left = CHARGER_WINDUP_SEC
 	_weave_phase = _rng.randf() * TAU
 	_hit_flash_left = 0.0
+	# Pooled instance: a burn from the previous life must not carry over.
+	_burn = BurnStatus.new()
 
 	_apply_visuals(data)
 	_apply_collision(data)
@@ -120,6 +123,12 @@ func deactivate() -> void:
 	_set_enabled(false)
 	if was_active:
 		despawned.emit(self)
+
+
+func apply_burn(dps: float, duration_sec: float) -> void:
+	if not is_active:
+		return
+	_burn.apply(dps, duration_sec)
 
 
 func take_damage(amount: float, _is_crit: bool = false) -> void:
@@ -142,6 +151,13 @@ func _physics_process(delta: float) -> void:
 	if not is_active:
 		return
 	_tick_hit_flash(delta)
+	# Through take_damage, not hp directly, so a burn kill pays out drops and
+	# counters exactly like a weapon kill.
+	var burn_damage: float = _burn.advance(delta)
+	if burn_damage > 0.0:
+		take_damage(burn_damage)
+		if not is_active:
+			return
 	var target: Node2D = get_tree().get_first_node_in_group(PLAYER_GROUP) as Node2D
 	if target == null:
 		velocity = Vector2.ZERO

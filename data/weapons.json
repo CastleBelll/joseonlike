@@ -31,6 +31,7 @@
     "per_level": { "damage": 4.0, "cooldown_sec": -0.05 },
     "evolves_to": "phoenix_talisman",
     "evolution_only": true,
+    "on_hit_status": { "id": "burn", "dps": 4.0, "duration_sec": 3.0 },
     "sprite": "res://asset/weapon/icons/fire_talisman.png"
   },
   "phoenix_talisman": {
@@ -47,6 +48,7 @@
     "max_level": 8,
     "per_level": { "damage": 2.2, "cooldown_sec": -0.04 },
     "evolution_only": true,
+    "on_hit_status": { "id": "burn", "dps": 7.0, "duration_sec": 3.0 },
     "sprite": "res://asset/weapon/icons/phoenix_talisman.png"
   },
   "sword": {

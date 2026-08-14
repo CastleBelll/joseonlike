@@ -46,5 +46,6 @@ func _make_charm(caster: Node2D, direction: Vector2, hit: Dictionary) -> Project
 	charm.impact_effect = WeaponArt.impact_for_weapon(weapon_id)
 	charm.direction = direction
 	charm.global_position = caster.global_position
+	charm.on_hit_status = data().get("on_hit_status", {})
 	charm.configure_for_player()
 	return charm

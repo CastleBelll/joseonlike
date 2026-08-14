@@ -33,6 +33,10 @@ var texture: Texture2D = null
 var impact_effect: StringName = EffectPool.HIT
 var target_group: StringName = &"enemy"
 
+## Optional weapons.json on_hit_status payload ({"id","dps","duration_sec"}).
+## Empty for weapons and enemy shots that apply nothing.
+var on_hit_status: Dictionary = {}
+
 var _age_sec: float = 0.0
 var _hit_ids: Array[int] = []
 
@@ -83,10 +87,21 @@ func _on_body_entered(body: Node2D) -> void:
 	_hit_ids.append(body_id)
 	EffectPool.play(impact_effect, body.global_position)
 	body.take_damage(damage, is_crit)
+	_apply_on_hit_status(body)
 	if pierce_left <= 0:
 		_despawn()
 		return
 	pierce_left -= 1
+
+
+func _apply_on_hit_status(body: Node2D) -> void:
+	if on_hit_status.is_empty():
+		return
+	if String(on_hit_status.get("id", "")) == "burn" and body.has_method(&"apply_burn"):
+		body.apply_burn(
+			float(on_hit_status.get("dps", 0.0)),
+			float(on_hit_status.get("duration_sec", 0.0))
+		)
 
 
 func _ensure_shape() -> void:

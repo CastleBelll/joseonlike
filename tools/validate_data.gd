@@ -47,6 +47,7 @@ const LOOT_TIERS: Array[String] = ["common", "uncommon", "rare", "epic", "legend
 const LOOT_REQUIRED: Array[String] = ["name_ko", "name_en", "tier", "tags", "special", "salvage_gold"]
 const DROP_REQUIRED: Array[String] = ["loot_id", "chance"]
 const WEAPON_MOD_REQUIRED: Array[String] = ["weapon_id", "loot_id", "result_weapon"]
+const STATUS_IDS: Array[String] = ["burn"]
 
 
 func _init() -> void:
@@ -256,6 +257,18 @@ static func _validate_weapons(weapons: Dictionary, evolutions: Dictionary, weapo
 			errors.append("%s: '%s'.sprite must be a res:// path" % [file, id])
 		elif not FileAccess.file_exists(sprite):
 			errors.append("%s: '%s'.sprite '%s' does not exist" % [file, id, sprite])
+
+		if w.has("on_hit_status"):
+			var status: Variant = w.get("on_hit_status")
+			if not (status is Dictionary):
+				errors.append("%s: '%s'.on_hit_status must be an object" % [file, id])
+			else:
+				if not STATUS_IDS.has(String((status as Dictionary).get("id", ""))):
+					errors.append("%s: '%s'.on_hit_status.id must be one of %s" % [file, id, STATUS_IDS])
+				if _num(status, "dps") <= 0.0:
+					errors.append("%s: '%s'.on_hit_status.dps must be > 0" % [file, id])
+				if _num(status, "duration_sec") <= 0.0:
+					errors.append("%s: '%s'.on_hit_status.duration_sec must be > 0" % [file, id])
 
 
 # ---- data/passives.json ----
