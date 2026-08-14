@@ -35,7 +35,7 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 - [x] N3-3 자동 공격 무기 1종 (부적 투척)
 - [x] N3-4 몬스터 스폰/추적/접촉 피해/사망
 - [x] N3-5 XP 드랍 → 자석 픽업 → 레벨업
-- [ ] N3-6 파워 업 팝업 (행 카드 문법, 실수치 설명)
+- [x] N3-6 파워 업 팝업 (행 카드 문법, 실수치 설명)
 - [ ] N3-7 전투 HUD (타이머/XP바/카운터, DESIGN.md §3)
 - [ ] N3-8 피격 피드백 (데미지 숫자는 N3-3에서 선반영)
 
@@ -62,3 +62,4 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | 2026-08-14 | N3-1 stage scene: camera-follow player, touch joystick + WASD, title routing | — |
 | 2026-08-14 | N3-4 enemy spawn/chase/contact damage/death: pooled wave spawner, player HP + invuln, data cross-checks | — |
 | 2026-08-14 | N3-3 + N3-5 auto-attack talisman, damage numbers, XP orbs + magnet, RunState leveling (progression.json curve) | — |
+| 2026-08-14 | N3-6 power-up popup: paper panel row cards, real-number descriptions, weapon levels + passive stacks, queued multi-level | — |

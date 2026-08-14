@@ -82,6 +82,11 @@ func _physics_process(delta: float) -> void:
 		position = position.clamp(bounds.position, bounds.end)
 
 
+## N3-6 move-speed passive: rescale from the data base so stacks never compound.
+func set_speed_scale(scale: float) -> void:
+	_speed = load_move_speed() * scale
+
+
 ## Returns true when the hit landed; false while the invulnerability window
 ## from the previous hit is still open.
 func take_hit(damage: float) -> bool:

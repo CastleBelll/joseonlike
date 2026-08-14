@@ -79,6 +79,17 @@ Used by:   data/weapon_mods.json results (R2-4)
 Fallback:  the base sword icon (asset/weapon/icons/sword.png)
 ```
 
+```
+[MISSING] power-up card icons: weapon icons (old_talisman, sword, bow + upgrades)
+          and passive stat icons (attack_damage, attack_speed, move_speed,
+          max_hp, magnet_radius)
+Size:      72x72 px card well (48x48 reuse in the owned-weapon strip)
+Members:   weapons.json sprite paths (res://asset/weapon/icons/<id>.png) +
+           res://asset/ui/passive_icons/<passive_id>.png
+Used by:   N3-6 power-up popup (scripts/ui/level_up_popup.gd icon wells)
+Fallback:  INK well + first syllable of name_ko as a GOLD glyph
+```
+
 ## Anticipated (not yet needed — do not pre-produce)
 
 These become `[MISSING]` entries only when the feature that needs them is actually

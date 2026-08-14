@@ -18,6 +18,13 @@ const VERMILION := Color("#bf402a")
 const SUCCESS := Color("#58d858")
 const TEXT_ON_DARK := Color("#f0e6d2")
 
+# Paper-panel popup tokens (DESIGN.md §3 종이 패널 / 선택 카드, capture _07).
+const PAPER_INSET := Color("#f7f0e2")
+const PAPER_CARD_BORDER := Color("#c9a0a6")
+const LATTICE := Color("#a89880")
+const TEXT_MUTED_ON_PAPER := Color("#6b6258")
+const PILL_TEXT := Color("#ffffff")
+
 # In-game world tokens (DESIGN.md §5 dark forest look).
 const FOREST_GROUND := Color("#232b1e")
 const FOREST_SHADOW := Color("#1a2117")

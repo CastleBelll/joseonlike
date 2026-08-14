@@ -10,6 +10,7 @@ const SPAWNING_FIELDS: Array[String] = [
 const CHARACTER_FIELDS: Array[String] = ["base_hp", "base_speed", "hit_invuln_sec"]
 const MONSTER_FIELDS: Array[String] = ["hp", "damage", "speed", "collision_radius", "xp_drop"]
 const XP_CURVE_FIELDS: Array[String] = ["base_xp", "growth"]
+const PASSIVE_FIELDS: Array[String] = ["per_stack", "max_stacks"]
 const ORB_FIELDS: Array[String] = [
 	"magnet_radius_px", "collect_radius_px", "magnet_accel_px_s2", "max_speed_px_s"
 ]
@@ -70,6 +71,17 @@ func _check_combat_cross_references() -> void:
 			_fail("characters.%s.starting_weapon '%s' not in weapons.json" % [
 				character_id, starting_weapon
 			])
+	# N3-6 power-up pool: every passive needs a display name and a usable
+	# stack contract, and every offerable stat id must still exist in the file.
+	var passives: Dictionary = _load(DATA_DIR + "/passives.json")
+	for passive_id: String in passives:
+		var passive: Dictionary = passives[passive_id]
+		_require_positive_numbers(passive, PASSIVE_FIELDS, "passives." + passive_id)
+		if String(passive.get("name_ko", "")).is_empty():
+			_fail("passives.%s.name_ko missing or empty" % passive_id)
+	for offered_id: String in LevelUp.OFFERABLE_PASSIVES:
+		if not passives.has(offered_id):
+			_fail("LevelUp.OFFERABLE_PASSIVES id '%s' not in passives.json" % offered_id)
 	var progression: Dictionary = _load(DATA_DIR + "/progression.json")
 	_require_positive_numbers(
 		progression.get("xp_curve", {}), XP_CURVE_FIELDS, "progression.xp_curve"
