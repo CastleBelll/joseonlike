@@ -37,6 +37,17 @@ var _choice_rng := RandomNumberGenerator.new()
 var _kills: int = 0
 var _ground_size := Vector2.ZERO  # from data/props.json "field" block
 
+# N3-8 feedback + N5-1 run flow state.
+var _feedback: Dictionary = {}
+var _puff_pool: NodePool
+var _gold: int = 0
+var _run_elapsed: float = 0.0
+var _duration_sec: float = 0.0
+var _boss: Enemy
+var _boss_hp_max: float = 0.0
+var _outcome: String = RunFlow.OUTCOME_NONE
+var _result: ResultScreen
+
 
 func _ready() -> void:
 	var props_config: Dictionary = StageField.load_config()
@@ -52,8 +63,18 @@ func _ready() -> void:
 		props_config.get("props", {}) as Dictionary, field_config, _decor_layer, randi()
 	)
 	_player.died.connect(_on_player_died)
+	_player.hit_taken.connect(_on_player_hit)
 	_spawner.setup(_player)
 	_spawner.enemy_killed.connect(_on_enemy_killed)
+	_spawner.boss_spawned.connect(_on_boss_spawned)
+	_feedback = _load_json(Spawner.EFFECTS_PATH).get("hit_feedback", {})
+	_duration_sec = float(
+		(_load_json(Spawner.STAGES_PATH).get(Spawner.STAGE_ID, {}) as Dictionary)
+		.get("duration_sec", 0.0)
+	)
+	_puff_pool = NodePool.new(self, _create_puff)
+	_result = ResultScreen.new()
+	add_child(_result)
 	_run_state = RunState.new()
 	_run_state.level_reached.connect(_on_level_reached)
 	_orb_config_base = RunState.load_orb_config()
@@ -69,25 +90,64 @@ func _ready() -> void:
 	_popup.picked.connect(_on_choice_picked)
 	_popup.dismissed.connect(_on_popup_dismissed)
 	add_child(_popup)
-	# Gold stays 0 until an earn source exists (workshop economy phase).
-	_hud.set_gold(0)
+	_hud.set_gold(0)  # run gold is display-only until the workshop economy phase
 	_refresh_progress_hud()
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	_player.joystick_input = _joystick.output
+	_run_elapsed += delta
+	if _duration_sec > 0.0 and _run_elapsed >= _duration_sec:
+		_end_run(RunFlow.resolve_outcome(false, false, true))
+	if _boss != null and not CombatMath.is_dead(_boss.hp):
+		_hud.set_boss_hp(_boss.hp, _boss_hp_max)
 
 
-## N3-4 run-over is a clean freeze; the results screen is a later feature.
 func _on_player_died() -> void:
-	get_tree().paused = true
+	_end_run(RunFlow.resolve_outcome(true, false, false))
 
 
-func _on_enemy_killed(at: Vector2, xp: int) -> void:
+## N3-8: the invulnerability blink lives on the player; the HUD adds the
+## screen-edge red pulse so a hit is legible even off-center.
+func _on_player_hit() -> void:
+	_hud.pulse_damage(float(_feedback.get("player_vignette_sec", 0.0)))
+
+
+## The enemy reference is only valid during this synchronous call — it goes
+## back to its pool right after (see Spawner.enemy_killed).
+func _on_enemy_killed(enemy: Enemy) -> void:
 	_kills += 1
+	_gold += enemy.gold_drop
 	_hud.set_kills(_kills)
+	_hud.set_gold(_gold)
+	var puff: DeathPuff = _puff_pool.acquire()
+	puff.puff(
+		enemy.global_position,
+		enemy.contact_radius * float(_feedback.get("death_puff_radius_scale", 1.0)),
+		float(_feedback.get("death_puff_sec", 0.0))
+	)
 	var orb: XpOrb = _orb_pool.acquire()
-	orb.launch(at, xp, _player, _orb_config)
+	orb.launch(enemy.global_position, enemy.xp_drop, _player, _orb_config)
+	if enemy.is_boss:
+		_boss = null
+		_hud.hide_boss_bar()
+		_end_run(RunFlow.resolve_outcome(false, true, false))
+
+
+func _on_boss_spawned(boss: Enemy) -> void:
+	_boss = boss
+	_boss_hp_max = boss.hp
+	_hud.show_boss_bar()
+	_hud.set_boss_hp(boss.hp, _boss_hp_max)
+
+
+## Single exit point for the three end conditions; the first one wins.
+func _end_run(outcome: String) -> void:
+	if _outcome != RunFlow.OUTCOME_NONE or outcome == RunFlow.OUTCOME_NONE:
+		return
+	_outcome = outcome
+	get_tree().paused = true
+	_result.open(outcome, RunFlow.build_summary(_run_elapsed, _kills, _gold))
 
 
 func _on_orb_collected(orb: XpOrb) -> void:
@@ -101,9 +161,9 @@ func _refresh_progress_hud() -> void:
 	_hud.set_xp(_run_state.xp, _run_state.xp_needed())
 
 
-func _on_hit_landed(amount: float, at: Vector2) -> void:
+func _on_hit_landed(amount: float, at: Vector2, boss_hit: bool) -> void:
 	var number: DamageNumber = _number_pool.acquire()
-	number.show_amount(amount, at)
+	number.show_amount(amount, at, boss_hit)
 
 
 func _on_number_finished(number: DamageNumber) -> void:
@@ -216,6 +276,14 @@ func _create_damage_number() -> DamageNumber:
 	var number := DamageNumber.new()
 	number.finished.connect(_on_number_finished)
 	return number
+
+
+func _create_puff() -> DeathPuff:
+	var puff := DeathPuff.new()
+	puff.finished.connect(
+		func(done: DeathPuff) -> void: _puff_pool.release(done)
+	)
+	return puff
 
 
 func _draw() -> void:

@@ -37,9 +37,17 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 - [x] N3-5 XP 드랍 → 자석 픽업 → 레벨업
 - [x] N3-6 파워 업 팝업 (행 카드 문법, 실수치 설명)
 - [x] N3-7 전투 HUD (타이머/XP바/카운터, DESIGN.md §3)
-- [ ] N3-8 피격 피드백 (데미지 숫자는 N3-3에서 선반영)
+- [x] N3-8 피격 피드백 (데미지 숫자는 N3-3에서 선반영)
 - [x] N3-9 절차 생성 스테이지 필드 — 대나무숲 프롭 (충돌형 솔리드 + 데코,
       매 런 새 랜덤 배치, data/props.json 카탈로그)
+
+## N5 — 런 완결 (보스 → 승패 → 결과)
+
+- [x] N5-1a 보스 웨이브 — stages.json `boss_at_sec` 시점 단일 보스 스폰,
+      상단 얇은 보스 HP바, 처치 = 승리, 타임아웃 = 승리 (GDD §34 소프트
+      인레이지는 클리어 후 잔류로 해석)
+- [x] N5-1b 결과 화면 — 종이 패널 (승리/패배, 생존 시간, 처치, 엽전
+      표시 전용) + 타이틀 복귀 CTA. 메타/뱅킹은 후속 페이즈
 
 ## N4+ — ROADMAP.md 페이즈 진입 시 세분화
 
@@ -68,3 +76,6 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | 2026-08-14 | N3-2 taoist in-world sprite: idle + 4-frame walk (8fps, speed-scaled), facing mirror, 16x NEAREST downscale | — |
 | 2026-08-14 | N3-7 combat HUD: outlined timer, thin XP bar, Lv/kill/gold counters, glyph placeholder icons, paper-panel pause overlay, minimal player HP bar | — |
 | 2026-08-14 | N3-9 procedural bamboo forest field: data/props.json catalogue, seeded deterministic scatter, solid StaticBody2D props, enemy slide/avoid steering, Y-sorted world | — |
+| 2026-08-14 | N3-8 hit feedback: white flash + knockback (data/effects.json), pooled particle-free death puff, player screen-edge vermilion vignette | — |
+| 2026-08-14 | N5-1a boss wave: data-driven boss_at_sec spawn, no-despawn/no-cap boss, top thin HP bar, gold boss damage numbers | — |
+| 2026-08-14 | N5-1b run result screen: RunFlow outcome arbiter (death > boss kill > timeout-as-victory), paper-panel 승리/패배 + time/kills/gold, CTA to title | — |
