@@ -1,8 +1,8 @@
-"""Build the V6 side-view sprites from definitive Character.png-conditioned sheets.
+"""Build the V8 48px two-head side-view sprites from Higgsfield sheets.
 
 The generator supplies the character pixels.  This script removes the chroma key,
-snaps the five poses to one 48x64 logical grid, locks the upper body and held weapon,
-and derives a deterministic contact/passing cycle from generated pixel clusters.
+snaps the five poses to one 48x48 logical grid, locks the head drawing across poses,
+and exports the authored contact/passing cycle on a shared ground line.
 """
 
 from __future__ import annotations
@@ -18,25 +18,39 @@ from PIL import Image
 
 CHARACTERS = ("Taoist", "Warrior", "Archer")
 LOGICAL_WIDTH = 48
-LOGICAL_HEIGHT = 64
+LOGICAL_HEIGHT = 48
 EXPORT_SCALE = 16
-GROUND_Y = 61
-TARGET_HEIGHT = 57
+GROUND_Y = 46
+TARGET_HEIGHT = 43
 OPAQUE_PALETTE_COLORS = 20
 OUTLINE_COLOR = (20, 20, 27, 255)
 
 POSE_CONFIG: dict[str, dict[str, int]] = {
-    "Taoist": {"center_x": 23, "leg_left": 14, "leg_right": 34, "leg_top": 49},
-    "Warrior": {"center_x": 23, "leg_left": 15, "leg_right": 34, "leg_top": 47},
-    "Archer": {"center_x": 23, "leg_left": 13, "leg_right": 35, "leg_top": 46},
+    "Taoist": {
+        "center_x": 23,
+        "leg_left": 12,
+        "leg_right": 35,
+        "head_left": 9,
+        "head_right": 34,
+    },
+    "Warrior": {
+        "center_x": 23,
+        "leg_left": 13,
+        "leg_right": 35,
+        "head_left": 10,
+        "head_right": 36,
+    },
+    "Archer": {
+        "center_x": 23,
+        "leg_left": 12,
+        "leg_right": 36,
+        "head_left": 9,
+        "head_right": 36,
+    },
 }
 
 SOURCE_FILENAMES = (
-    "side_sheet_v6_natural_higgsfield.png",
-    "side_sheet_v6_higgsfield.png",
-    "side_sheet_youth_v4_higgsfield.png",
-    "side_sheet_youth_v4.png",
-    "side_sheet_higgsfield.png",
+    "side_sheet_v8_higgsfield.png",
 )
 
 
@@ -175,6 +189,31 @@ def add_outline(frame: Image.Image) -> Image.Image:
     return Image.fromarray(pixels, "RGBA")
 
 
+def lock_head_drawing(frames: list[Image.Image], character: str) -> list[Image.Image]:
+    """Use the idle head pixels in every pose while leaving limbs and gear authored.
+
+    The generated sheets are already consistent, but small eye/hat variations become
+    distracting after reduction.  Locking only the central head rectangle preserves
+    the staff, sword, bow, quiver, shoulders, and their generated motion.
+    """
+    idle = np.asarray(frames[0])
+    rows, _ = np.nonzero(idle[:, :, 3])
+    if not len(rows):
+        raise ValueError(f"empty idle frame for {character}")
+    top = int(rows.min())
+    head_bottom = min(LOGICAL_HEIGHT, top + 22)
+    config = POSE_CONFIG[character]
+    left, right = config["head_left"], config["head_right"]
+    locked = [frames[0]]
+    for frame in frames[1:]:
+        pixels = np.asarray(frame).copy()
+        # Clear the full top slice first so a taller generated hat cannot peek
+        # above the canonical idle drawing.
+        pixels[:head_bottom, left:right] = idle[:head_bottom, left:right]
+        locked.append(Image.fromarray(pixels, "RGBA"))
+    return locked
+
+
 def build_walk_cycle(frames: list[Image.Image], character: str) -> list[Image.Image]:
     """Keep Higgsfield's authored walk poses and apply only the required bob.
 
@@ -243,6 +282,7 @@ def export_character(character_root: Path) -> dict[str, object]:
     frames = resize_and_align(extract_figures(source))
     frames = apply_palette(frames, reference_palette(reference_path))
     frames = [add_outline(frame) for frame in frames]
+    frames = lock_head_drawing(frames, character_root.name)
     frames = build_walk_cycle(frames, character_root.name)
     exported = [
         frame.resize(
@@ -263,7 +303,7 @@ def export_character(character_root: Path) -> dict[str, object]:
     for index, frame in enumerate(exported[1:]):
         walk.alpha_composite(frame, (index * LOGICAL_WIDTH * EXPORT_SCALE, 0))
     walk.save(output_root / "walk.png", optimize=True)
-    save_preview(frames[1:], character_root / "raw" / "walk_v6_preview.gif")
+    save_preview(frames[1:], character_root / "raw" / "walk_v8_preview.gif")
 
     bounds = [frame.getbbox() for frame in frames]
     return {
@@ -337,12 +377,23 @@ def verify_exports(asset_root: Path) -> dict[str, object]:
         config = POSE_CONFIG[character]
         head_centers: list[float] = []
         for frame in frames:
-            head_alpha = frame[:22, 12:38, 3] > 0
+            head_alpha = frame[:24, 9:38, 3] > 0
             _, columns = np.nonzero(head_alpha)
-            center = float((columns + 12).mean()) if len(columns) else 0.0
+            center = float((columns + 9).mean()) if len(columns) else 0.0
             head_centers.append(center)
         if max(head_centers) - min(head_centers) > 1.25:
             raise ValueError(f"head anchor drift for {character}")
+
+        canonical_head = frames[0][:24, config["head_left"] : config["head_right"]]
+        for index, frame in enumerate(frames[1:], start=1):
+            if index in (1, 3):
+                restored = np.zeros_like(frame)
+                restored[1:] = frame[:-1]
+                candidate = restored[:24, config["head_left"] : config["head_right"]]
+            else:
+                candidate = frame[:24, config["head_left"] : config["head_right"]]
+            if candidate.tobytes() != canonical_head.tobytes():
+                raise ValueError(f"head pixels drifted in {character} frame {index + 1}")
 
         ground_centers: list[float] = []
         strides: list[int] = []
@@ -353,18 +404,65 @@ def verify_exports(asset_root: Path) -> dict[str, object]:
                 frame[GROUND_Y - 3, config["leg_left"] : config["leg_right"], 3]
             )[0]
             strides.append(int(leg_columns.max() - leg_columns.min()))
+        if not (strides[0] > strides[1] and strides[2] > strides[3]):
+            raise ValueError(f"contact/passing stride order failed for {character}: {strides}")
         verification[character] = {
             "walk_top_rows": tops,
             "walk_bottom_rows": bottoms,
             "grounded_foot_centers": ground_centers,
             "stride_widths": strides,
             "head_center_spread": round(max(head_centers) - min(head_centers), 3),
+            "head_pixels_locked": True,
+            "head_height_px": 22,
+            "figure_height_px": bottoms[0] - tops[0] + 1,
             "distinct_frames": 4,
             "binary_alpha": True,
             "grid_aligned": True,
             "gif_fps": 8.3,
         }
     return verification
+
+
+def save_contact_sheet(asset_root: Path) -> None:
+    """Save a 1x-logical silhouette review sheet enlarged without smoothing."""
+    scale = 6
+    margin = 4
+    sheet = Image.new(
+        "RGBA",
+        (
+            (LOGICAL_WIDTH * 5 + margin * 6) * scale,
+            (LOGICAL_HEIGHT * len(CHARACTERS) + margin * 4) * scale,
+        ),
+        (25, 28, 38, 255),
+    )
+    for row, character in enumerate(CHARACTERS):
+        side = asset_root / character / "side"
+        idle = Image.open(side / "idle.png").convert("RGBA").resize(
+            (LOGICAL_WIDTH, LOGICAL_HEIGHT), Image.Resampling.NEAREST
+        )
+        walk = Image.open(side / "walk.png").convert("RGBA").resize(
+            (LOGICAL_WIDTH * 4, LOGICAL_HEIGHT), Image.Resampling.NEAREST
+        )
+        frames = [idle] + [
+            walk.crop(
+                (
+                    index * LOGICAL_WIDTH,
+                    0,
+                    (index + 1) * LOGICAL_WIDTH,
+                    LOGICAL_HEIGHT,
+                )
+            )
+            for index in range(4)
+        ]
+        for column, frame in enumerate(frames):
+            preview = frame.resize(
+                (LOGICAL_WIDTH * scale, LOGICAL_HEIGHT * scale),
+                Image.Resampling.NEAREST,
+            )
+            x = (margin + column * (LOGICAL_WIDTH + margin)) * scale
+            y = (margin + row * (LOGICAL_HEIGHT + margin)) * scale
+            sheet.alpha_composite(preview, (x, y))
+    sheet.convert("RGB").save(asset_root / "side_v8_contact_sheet.png", optimize=True)
 
 
 def main() -> None:
@@ -375,7 +473,7 @@ def main() -> None:
     metrics: dict[str, object] = {
         "source_design": "new_asset/Character.png",
         "source_size": [2688, 1520],
-        "measured_source_logical_unit_px": 22,
+        "proportion_reference": "git show 97eb0d0 -- asset/character/*/side/",
         "logical_canvas": [LOGICAL_WIDTH, LOGICAL_HEIGHT],
         "export_scale": EXPORT_SCALE,
         "ground_row": GROUND_Y,
@@ -385,6 +483,7 @@ def main() -> None:
         },
     }
     metrics["verification"] = verify_exports(args.asset_root)
+    save_contact_sheet(args.asset_root)
     if args.metrics:
         args.metrics.parent.mkdir(parents=True, exist_ok=True)
         args.metrics.write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
