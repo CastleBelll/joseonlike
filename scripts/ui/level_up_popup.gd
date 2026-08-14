@@ -2,10 +2,10 @@ class_name LevelUpPopup
 extends CanvasLayer
 ## Paper-panel choice popup, capture _07 grammar: lattice corners, header band,
 ## full-width row cards stacked vertically, and the owned-weapon strip outside
-## the panel. Serves both the level-up choices (N3-6) and the special-loot
-## choices (N4-1) — callers pass pre-built display cards (LevelUp.as_card /
-## Loot.as_card) so this stays one card component. All colors are UiPalette
-## tokens; the icon wells show a glyph placeholder until icon art lands (AC-3).
+## the panel. Serves the level-up choices (N3-6) — including the 개조 card
+## (N4-6) — from pre-built display cards (LevelUp.as_card), so this stays one
+## card component. All colors are UiPalette tokens; the icon wells show a
+## glyph placeholder until icon art lands (AC-3).
 
 signal picked(payload: Dictionary)
 signal dismissed

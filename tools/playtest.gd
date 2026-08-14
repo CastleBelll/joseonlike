@@ -1,8 +1,9 @@
 extends Node
 ## Autoplay verification harness (N4-2b): boots the real combat stage, kites
-## with a simple steering bot, auto-picks popup cards (grade-line priority),
-## and reports the run — outcome, level-ups, grade climb, surge-window fps,
-## special-material times — plus surge/result screenshots.
+## with a simple steering bot, auto-picks popup cards (개조 card first, then
+## grade line), and reports the run — outcome, level-ups, grade climb,
+## surge-window fps, mod cards offered/taken — plus surge/result/mod-card
+## screenshots.
 ## Run: godot --path . res://tools/playtest.tscn
 ## Every timing below derives from data/stages.json duration_sec/boss_at_sec/
 ## surge_at_sec — nothing here hardcodes the run length.
@@ -10,6 +11,7 @@ extends Node
 const STAGE_SCENE := "res://scenes/stage.tscn"
 const SURGE_SHOT_PATH := "user://playtest_surge.png"
 const RESULT_SHOT_PATH := "user://playtest_result.png"
+const MOD_SHOT_PATH := "user://playtest_mod_card.png"
 const SURGE_SHOT_DELAY_SEC := 10.0
 const PICK_COOLDOWN_SEC := 0.4
 const DANGER_RADIUS := 120.0
@@ -32,6 +34,8 @@ var _fps_sum: float = 0.0
 var _fps_samples: int = 0
 var _special_times: Array[float] = []
 var _grade_picks: int = 0
+var _mod_offers: int = 0
+var _mod_shot_done: bool = false
 var _real_elapsed: float = 0.0
 
 
@@ -131,16 +135,23 @@ func _release_moves() -> void:
 		Input.action_release(action)
 
 
-## Card priority proves the N4-2b targets: grade raises first (two-step climb
-## on one line), then transforms (special-material mod flow), then weapon
-## levels, then whatever is left.
+## Card priority proves the N4-6 targets: the 개조 card first (folded-in mod
+## flow, screenshot on first sight), then grade raises, then weapon levels,
+## then whatever is left.
 func _pick_card() -> void:
 	var buttons: Array[Button] = []
 	_collect_buttons(_stage._popup, buttons)
 	if buttons.is_empty():
 		return
+	var mod_on_screen: bool = false
+	for button: Button in buttons:
+		if _button_has_label(button, LevelUp.MOD_LABEL):
+			mod_on_screen = true
+			break
+	if mod_on_screen:
+		_mod_offers += 1
 	var chosen: Button = null
-	for wanted: String in [LevelUp.GRADE_UP_LABEL, "변신!", "Lv."]:
+	for wanted: String in [LevelUp.MOD_LABEL, LevelUp.GRADE_UP_LABEL, "Lv."]:
 		for button: Button in buttons:
 			if _button_has_label(button, wanted):
 				chosen = button
@@ -151,8 +162,12 @@ func _pick_card() -> void:
 		chosen = buttons[0]
 	if _button_has_label(chosen, LevelUp.GRADE_UP_LABEL):
 		_grade_picks += 1
-	if _button_has_label(chosen, "변신!"):
+	if _button_has_label(chosen, LevelUp.MOD_LABEL):
 		_special_times.append(_stage._run_elapsed)
+	if mod_on_screen and not _mod_shot_done:
+		# Capture the 개조 card on the open popup before pressing anything.
+		_mod_shot_done = true
+		await _capture(MOD_SHOT_PATH)
 	chosen.pressed.emit()
 
 
@@ -188,7 +203,9 @@ func _finish() -> void:
 	print("PLAYTEST surge fps: min %.0f avg %.0f over %d samples" % [
 		_fps_min if _fps_samples > 0 else 0.0, fps_avg, _fps_samples
 	])
-	print("PLAYTEST special transforms at: %s" % str(_special_times))
+	print("PLAYTEST mod cards: offered on %d screens, taken %d at %s" % [
+		_mod_offers, _special_times.size(), str(_special_times)
+	])
 	print("PLAYTEST kills: %d gold: %d" % [_stage._kills, _stage._gold])
 	if _stage._boss != null:
 		print("PLAYTEST boss hp left: %.0f / %.0f" % [_stage._boss.hp, _stage._boss_hp_max])

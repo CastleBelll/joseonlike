@@ -74,6 +74,15 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
       (elite_of 배수 파생 + 전용 희귀 드랍), soft_enrage(920s+, 스폰 시
       스탯 스케일), RunFlow 스케줄 불변식 + validate_data 등급/정예/페이싱
       크로스체크, 보스 hp 7000 재조정
+- [x] **N4-6 전리품 자동 획득 + 개조 레벨업 카드 흡수** — 특수 재료 3택
+      팝업과 큐잉 삭제 (DESIGN.md §5.2 인터랙션 예산), 모든 재료는 XP·엽전
+      처럼 무음 자동 획득 (특수 재료만 데미지 숫자 스타일 플로팅 라벨),
+      쓸 수 없는 재료(레시피 없음/결과 무기 보유/개조로 대체됨)는 픽업
+      즉시 자동 분해 → 엽전, 재료+기반 무기 보유 시 "개조" 카드가 레벨업
+      3택에 등장(화면당 최대 1장, 결과 무기 등급 필 + 실수치), 선택 시
+      재료 소모 + 레벨·등급 승계 스왑, **개조로 대체된 무기는 신규·강화
+      풀에서 런 내내 영구 제외 (오너 리포트 버그 픽스, 회귀 테스트 포함)**,
+      개조 후 죽은 인벤토리 자동 정산
 - [x] **N4-2b 5분 런 리스케일** — 오너 결정(모바일 1런 = 5분) 반영:
       bamboo_forest 300s 커브 (2:00 정예, 3:30 대량 공세 피크 57, 4:00 보스,
       4:40 소프트 인레이지, 5:00 타임아웃 승리), XP 곡선 6×1.5^(L-1)로
@@ -98,7 +107,6 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 
 | # | 작업 | 왜 지금 |
 |---|---|---|
-| 0 | **N4-6 전리품 팝업 제거 → 자동 획득 + 선택지 풀 정리** | (a) 오너 지시: 전리품도 XP·엽전처럼 그냥 주워지게. 특수 재료 3택 팝업을 없애고 **개조 선택은 레벨업 카드로 흡수**한다 (재료 보유 시 "개조" 카드가 3택 중 하나로 등장). 중복 재료는 자동 분해 → 엽전. 탭 횟수 증가 금지. (b) **버그**: 낡은 부적 → 화염 부적/법검으로 개조한 뒤에도 낡은 부적이 레벨업 선택지에 다시 뜬다. 개조로 대체된 무기는 신규·강화 풀에서 영구 제외 |
 | 1 | **N3-14 몬스터 겹침 해소** | 지금 몬스터가 플레이어 중앙에 전부 포개진다. 개체 간 분리(separation) 조향으로 뭉개짐 제거 |
 | 2 | **N3-15 조준 범위를 화면 안으로** | 화면 밖 적에게 투사체가 유도탄처럼 날아간다. 보이는 적만 조준, 사거리/시야 데이터화 |
 | 3 | **N4-4 도사 무기 4~5종** | 무기가 부적 하나뿐. 석장 근접, 부적 투척, 뇌부(연쇄), 봉인부(폭발), 도깨비불(선회) — 각각 개조 분기 보유 |
@@ -155,3 +163,4 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | 2026-08-14 | N4-2 weapon grades + 15-min pacing: `_grades` ladder/step multipliers in weapons.json, grade-up level-up card + mod grade carry + top-grade gold callout, 15-min bamboo_forest wave curve (elite from 5:00, surge peak 840s, boss 900s, soft enrage 920s+), `bamboo_brute_elite` data-derived elite + rare-material drop table, RunFlow schedule invariants, validate_data grade/elite/pacing cross-checks, boss hp 7000 | — |
 | 2026-08-14 | N4-2b 5-minute run rescale: 300s bamboo_forest curve (elite 2:00, surge peak 57 at 3:30, boss 4:00 hp 2400, enrage 4:40), XP curve 6×1.5^(L-1) for 8–10 level-ups, early special-material drop bias, duration_sec bound invariant in schedule_issues, autoplay verification harness (tools/playtest.tscn) | — |
 | 2026-08-14 | N5-2 autosave/auto-resume + settings popup: SaveProfile pure helpers + SaveService autoload (user://profile.save JSON, temp-rename safe write with crash recovery, schema v1 migration hook, corrupt→warning+fresh), run-end gold banking + lifetime stats, result-screen 보유 엽전 row, paper-panel settings popup (3 volume sliders + 한국어/English toggle, applies live + persists), Master/Music/Effects buses, single-primary-action title | — |
+| 2026-08-14 | N4-6 loot auto-collect + mod-as-level-up-card: special-material popup and queueing deleted (DESIGN.md §5.2), every material collects silently via the magnet path (floating cue label for specials), dead materials auto-salvage to gold at pickup, 개조 card in the level-up 3-pick (max one per screen, result grade pill, real numbers, consumes material, carries level+grade), replaced weapons permanently excluded from new/upgrade pools (owner-reported regression, covered by failing-first test), dead-inventory sweep after each mod | — |

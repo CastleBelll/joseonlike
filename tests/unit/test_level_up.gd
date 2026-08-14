@@ -36,6 +36,36 @@ const PASSIVES := {
 }
 
 
+# N4-6 mod-card fixtures: one recipe joining the talisman to its rare result.
+const MOD_WEAPONS := {
+	"talisman": {
+		"name_ko": "낡은 부적", "grade": "common", "damage": 12.0,
+		"cooldown_sec": 1.2, "speed": 260.0, "max_level": 8,
+		"per_level": {"damage": 3.0, "cooldown_sec": -0.05},
+		"evolution_only": false,
+	},
+	"fire_talisman": {
+		"name_ko": "화염 부적", "grade": "rare", "damage": 18.0,
+		"cooldown_sec": 1.1, "speed": 260.0, "max_level": 8,
+		"per_level": {"damage": 4.0, "cooldown_sec": -0.05},
+		"evolution_only": true,
+	},
+}
+const MODS := {
+	"fire_mod": {
+		"weapon_id": "talisman", "loot_id": "fire_stone",
+		"result_weapon": "fire_talisman",
+	},
+	"sword_mod": {
+		"weapon_id": "sword", "loot_id": "whetstone", "result_weapon": "sharp_sword"
+	},
+}
+const GRADES := {
+	"ladder": ["common", "rare"],
+	"steps": {"rare": {"mult": {"damage": 2.0}}},
+}
+
+
 func _rng() -> RandomNumberGenerator:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20260814
@@ -92,6 +122,92 @@ func test_real_data_pool_offers_nothing_when_everything_maxed() -> bool:
 	for passive_id: String in passives:
 		stacks[passive_id] = int((passives[passive_id] as Dictionary)["max_stacks"])
 	return LevelUp.candidates(weapons, passives, owned, stacks).is_empty()
+
+
+## N4-6 regression (owner-reported): a weapon replaced by a mod must be out
+## of BOTH the new-weapon pool and the upgrade pool for the rest of the run.
+func test_replaced_weapon_out_of_new_weapon_pool() -> bool:
+	# talisman is unowned with speed > 0 — without the replaced guard it would
+	# come straight back as a new-weapon card after the mod swapped it away.
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		WEAPONS, {}, {"bow": 1}, {}, {}, {}, ["talisman"]
+	)
+	for choice: Dictionary in pool:
+		if String(choice["id"]) == "talisman":
+			return false
+	return true
+
+
+func test_replaced_weapon_out_of_upgrade_pool() -> bool:
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		WEAPONS, {}, {"talisman": 1}, {}, {}, {}, ["talisman"]
+	)
+	for choice: Dictionary in pool:
+		if String(choice["id"]) == "talisman":
+			return false
+	return true
+
+
+func test_mod_candidates_need_material_and_owned_base() -> bool:
+	var with_both: Array[Dictionary] = LevelUp.mod_candidates(
+		MODS, {"fire_stone": 1}, {"talisman": 2}
+	)
+	var no_material: Array[Dictionary] = LevelUp.mod_candidates(MODS, {}, {"talisman": 2})
+	var no_base: Array[Dictionary] = LevelUp.mod_candidates(MODS, {"fire_stone": 1}, {"bow": 1})
+	return (
+		with_both.size() == 1
+		and String(with_both[0]["id"]) == "fire_mod"
+		and no_material.is_empty()
+		and no_base.is_empty()
+	)
+
+
+func test_mod_candidates_exclude_owned_or_replaced_result() -> bool:
+	var result_owned: Array[Dictionary] = LevelUp.mod_candidates(
+		MODS, {"fire_stone": 1}, {"talisman": 2, "fire_talisman": 1}
+	)
+	var result_replaced: Array[Dictionary] = LevelUp.mod_candidates(
+		MODS, {"fire_stone": 1}, {"talisman": 2}, ["fire_talisman"]
+	)
+	return result_owned.is_empty() and result_replaced.is_empty()
+
+
+func test_assemble_keeps_at_most_one_mod_card_and_fills_three() -> bool:
+	var pool: Array[Dictionary] = LevelUp.candidates(WEAPONS, PASSIVES, {"talisman": 1}, {})
+	var mod_pool: Array[Dictionary] = [
+		{"kind": LevelUp.KIND_MOD, "id": "fire_mod", "mod": MODS["fire_mod"]},
+		{"kind": LevelUp.KIND_MOD, "id": "sword_mod", "mod": MODS["sword_mod"]},
+	]
+	var cards: Array[Dictionary] = LevelUp.assemble(pool, mod_pool, 3, _rng())
+	var mod_count: int = 0
+	for card: Dictionary in cards:
+		if String(card["kind"]) == LevelUp.KIND_MOD:
+			mod_count += 1
+	return cards.size() == 3 and mod_count == 1
+
+
+func test_assemble_without_mods_is_plain_pick() -> bool:
+	var pool: Array[Dictionary] = LevelUp.candidates(WEAPONS, PASSIVES, {"talisman": 1}, {})
+	var cards: Array[Dictionary] = LevelUp.assemble(pool, [], 3, _rng())
+	for card: Dictionary in cards:
+		if String(card["kind"]) == LevelUp.KIND_MOD:
+			return false
+	return cards.size() == 3
+
+
+func test_mod_card_reads_like_the_old_popup() -> bool:
+	var choice := {"kind": LevelUp.KIND_MOD, "id": "fire_mod", "mod": MODS["fire_mod"]}
+	var card: Dictionary = LevelUp.as_card(
+		choice, MOD_WEAPONS, {}, {"talisman": 1}, {}, {}, GRADES
+	)
+	# Result damage 18 stays flat: the carried grade equals its own base rung.
+	return (
+		String(card["name"]) == "개조"
+		and String(card["desc"]) == "낡은 부적 → 화염 부적 · 피해 12→18 (레벨 유지)"
+		and String(card["grade"]) == "희귀"
+		and String(card["well_label"]) == "변신!"
+		and card["payload"] == choice
+	)
 
 
 func test_pick_three_from_larger_pool_has_no_duplicates() -> bool:

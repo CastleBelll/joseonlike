@@ -1,7 +1,7 @@
 extends RefCounted
-## Guards the N4-1 pure loot helpers: seeded drop rolling, run inventory
-## transitions, mod recipe lookup with its waste-guards, salvage math and the
-## special-material choice list. Fixture dicts mirror data/loot.json,
+## Guards the pure loot helpers: seeded drop rolling, run inventory
+## transitions, salvage math and the N4-6 silent-pickup rules (useful vs dead
+## materials, dead-inventory sweep). Fixture dicts mirror data/loot.json,
 ## data/drop_tables.json and data/weapon_mods.json field shapes.
 
 const SAMPLE_ROLLS := 10000
@@ -17,12 +17,6 @@ const LOOT := {
 	"fire_stone": {
 		"name_ko": "화령석", "tier": "epic", "special": true, "salvage_gold": 15
 	},
-}
-const WEAPONS := {
-	"sword": {"name_ko": "환도"},
-	"sharp_sword": {"name_ko": "예리한 환도"},
-	"talisman": {"name_ko": "낡은 부적"},
-	"fire_talisman": {"name_ko": "화염 부적"},
 }
 const MODS := {
 	"sharp_sword_mod": {
@@ -90,20 +84,6 @@ func test_inventory_spend_erases_at_zero() -> bool:
 	return int(one["bamboo"]) == 1 and not none.has("bamboo") and int(two["bamboo"]) == 2
 
 
-func test_usable_mods_requires_owned_base() -> bool:
-	return Loot.usable_mods(MODS, "whetstone", {"talisman": 3}).is_empty()
-
-
-func test_usable_mods_excludes_owned_result() -> bool:
-	var owned := {"sword": 2, "sharp_sword": 1}
-	return Loot.usable_mods(MODS, "whetstone", owned).is_empty()
-
-
-func test_usable_mods_matches_owned_base() -> bool:
-	var matches: Array[Dictionary] = Loot.usable_mods(MODS, "whetstone", {"sword": 4})
-	return matches.size() == 1 and String(matches[0]["result_weapon"]) == "sharp_sword"
-
-
 func test_salvage_gold_math() -> bool:
 	return (
 		Loot.salvage_gold(LOOT, "fire_stone") == 15
@@ -112,20 +92,40 @@ func test_salvage_gold_math() -> bool:
 	)
 
 
-func test_choices_have_three_cards_with_recipe() -> bool:
-	var choices: Array[Dictionary] = Loot.build_choices("whetstone", MODS, {"sword": 1})
-	var kinds: Array[String] = []
-	for choice: Dictionary in choices:
-		kinds.append(String(choice["kind"]))
-	return kinds == [Loot.KIND_USE, Loot.KIND_KEEP, Loot.KIND_SALVAGE]
+## N4-6: useful = some recipe can still consume it. The base weapon need not
+## be owned yet — it may still be acquired later in the run.
+func test_material_useful_even_before_base_owned() -> bool:
+	return (
+		Loot.is_material_useful("whetstone", MODS, {"talisman": 3})
+		and Loot.is_material_useful("whetstone", MODS, {"sword": 4})
+	)
 
 
-func test_choices_hide_use_without_recipe() -> bool:
-	var choices: Array[Dictionary] = Loot.build_choices("whetstone", MODS, {"talisman": 1})
-	var kinds: Array[String] = []
-	for choice: Dictionary in choices:
-		kinds.append(String(choice["kind"]))
-	return kinds == [Loot.KIND_KEEP, Loot.KIND_SALVAGE]
+func test_material_dead_without_any_recipe() -> bool:
+	return not Loot.is_material_useful("bamboo", MODS, {"sword": 1})
+
+
+func test_material_dead_when_result_owned() -> bool:
+	return not Loot.is_material_useful("whetstone", MODS, {"sword": 2, "sharp_sword": 1})
+
+
+func test_material_dead_when_recipe_weapon_replaced() -> bool:
+	var base_gone: bool = not Loot.is_material_useful("whetstone", MODS, {}, ["sword"])
+	var result_gone: bool = not Loot.is_material_useful("whetstone", MODS, {}, ["sharp_sword"])
+	return base_gone and result_gone
+
+
+func test_salvage_dead_cashes_out_only_dead_materials() -> bool:
+	var inventory := {"whetstone": 2, "fire_stone": 1}
+	# sharp_sword owned kills the whetstone recipe; fire_stone stays live.
+	var sweep: Dictionary = Loot.salvage_dead(
+		inventory, LOOT, MODS, {"sharp_sword": 1, "talisman": 1}
+	)
+	return (
+		sweep["inventory"] == {"fire_stone": 1}
+		and int(sweep["gold"]) == 16
+		and int(inventory["whetstone"]) == 2
+	)
 
 
 func test_apply_mod_swaps_weapon_and_carries_level() -> bool:
@@ -137,25 +137,6 @@ func test_apply_mod_swaps_weapon_and_carries_level() -> bool:
 		and int(updated["talisman"]) == 2
 		and int(owned["sword"]) == 5
 	)
-
-
-func test_use_card_names_the_transformation() -> bool:
-	var choice := {
-		"kind": Loot.KIND_USE, "loot_id": "fire_stone",
-		"mod": MODS["fire_talisman_mod"],
-	}
-	var card: Dictionary = Loot.as_card(choice, LOOT, WEAPONS, {})
-	return (
-		String(card["desc"]).contains("낡은 부적")
-		and String(card["desc"]).contains("화염 부적")
-		and card["payload"] == choice
-	)
-
-
-func test_salvage_card_shows_real_gold() -> bool:
-	var choice := {"kind": Loot.KIND_SALVAGE, "loot_id": "fire_stone"}
-	var card: Dictionary = Loot.as_card(choice, LOOT, WEAPONS, {})
-	return String(card["desc"]).contains("15") and String(card["grade"]) == "영웅"
 
 
 func test_level_up_card_carries_display_fields() -> bool:

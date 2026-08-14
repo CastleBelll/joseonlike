@@ -5,12 +5,14 @@ extends RefCounted
 ## so every function here is testable headless with fixture data.
 ##
 ## Choice shape: {"kind": "weapon_up"|"new_weapon"|"passive"|"grade_up",
-## "id": String}.
+## "id": String}. N4-6 adds {"kind": "weapon_mod", "id": mod_id,
+## "mod": Dictionary} — the 개조 choice folded in from the old loot popup.
 
 const KIND_WEAPON_UP := "weapon_up"
 const KIND_NEW_WEAPON := "new_weapon"
 const KIND_PASSIVE := "passive"
 const KIND_GRADE_UP := "grade_up"
+const KIND_MOD := "weapon_mod"
 
 const GRADE_KO := {
 	"common": "일반", "uncommon": "고급", "rare": "희귀",
@@ -18,6 +20,8 @@ const GRADE_KO := {
 }
 const DEFAULT_GRADE_KO := "일반"
 const GRADE_UP_LABEL := "등급↑"
+const MOD_LABEL := "변신!"
+const MOD_NAME := "개조"
 
 ## Only stats the current runtime actually applies may be offered; a card
 ## that changes nothing would lie to the player.
@@ -31,19 +35,24 @@ const OFFERABLE_PASSIVES: Array[String] = [
 ## unowned non-evolution weapons the AutoWeapon runtime can fire (speed > 0),
 ## whitelisted passives below their stack cap, and — when a grade ladder is
 ## configured (N4-2) — a grade raise for each owned weapon below the top rung.
+## `replaced` (N4-6) lists weapons a mod swapped away this run: they are out
+## of BOTH the new-weapon and the upgrade pool for good.
 static func candidates(
 	weapons: Dictionary,
 	passives: Dictionary,
 	owned_levels: Dictionary,
 	passive_stacks: Dictionary,
 	owned_grades: Dictionary = {},
-	grades: Dictionary = {}
+	grades: Dictionary = {},
+	replaced: Array = []
 ) -> Array[Dictionary]:
 	var pool: Array[Dictionary] = []
 	var rungs: Array[String] = WeaponGrade.ladder(grades)
 	for weapon_id: String in weapons:
 		if weapon_id.begins_with("_"):
 			continue  # reserved config keys ("_grades") are not weapons
+		if replaced.has(weapon_id):
+			continue
 		var stats: Dictionary = weapons[weapon_id]
 		if owned_levels.has(weapon_id):
 			if int(owned_levels[weapon_id]) < int(stats.get("max_level", 0)):
@@ -63,6 +72,43 @@ static func candidates(
 		if int(passive_stacks.get(passive_id, 0)) < int(passive.get("max_stacks", 0)):
 			pool.append({"kind": KIND_PASSIVE, "id": passive_id})
 	return pool
+
+
+## 개조 candidates (N4-6): one per recipe whose material is held, base weapon
+## owned, and result neither owned nor already replaced by an earlier mod.
+static func mod_candidates(
+	mods: Dictionary,
+	inventory: Dictionary,
+	owned_levels: Dictionary,
+	replaced: Array = []
+) -> Array[Dictionary]:
+	var pool: Array[Dictionary] = []
+	for mod_id: String in mods:
+		var mod: Dictionary = mods[mod_id]
+		if int(inventory.get(String(mod.get("loot_id", "")), 0)) <= 0:
+			continue
+		if not owned_levels.has(String(mod.get("weapon_id", ""))):
+			continue
+		var result_id: String = String(mod.get("result_weapon", ""))
+		if owned_levels.has(result_id) or replaced.has(result_id):
+			continue
+		pool.append({"kind": KIND_MOD, "id": mod_id, "mod": mod})
+	return pool
+
+
+## One level-up screen (N4-6): at most ONE 개조 card — attractive but never
+## crowding out the pool — plus regular picks filling up to `count`.
+static func assemble(
+	pool: Array[Dictionary],
+	mod_pool: Array[Dictionary],
+	count: int,
+	rng: RandomNumberGenerator
+) -> Array[Dictionary]:
+	if mod_pool.is_empty():
+		return pick(pool, count, rng)
+	var cards: Array[Dictionary] = [mod_pool[rng.randi_range(0, mod_pool.size() - 1)]]
+	cards.append_array(pick(pool, count - 1, rng))
+	return cards
 
 
 ## Draw up to `count` distinct choices from the pool without mutating it.
@@ -119,9 +165,23 @@ static func weapon_stat_at(stats: Dictionary, field: String, level: int) -> floa
 static func display_name(
 	choice: Dictionary, weapons: Dictionary, passives: Dictionary
 ) -> String:
+	if String(choice.get("kind", "")) == KIND_MOD:
+		return MOD_NAME
 	var id: String = String(choice.get("id", ""))
 	var source: Dictionary = passives if String(choice.get("kind", "")) == KIND_PASSIVE else weapons
 	return String((source.get(id, {}) as Dictionary).get("name_ko", id))
+
+
+## The grade a mod result lands on: the base weapon's run grade carries, but
+## never below the result weapon's own data grade (mirrors the stage swap).
+static func mod_carried_grade(
+	mod: Dictionary, weapons: Dictionary, owned_grades: Dictionary, grades: Dictionary
+) -> String:
+	return WeaponGrade.highest(
+		WeaponGrade.ladder(grades),
+		current_grade(String(mod.get("weapon_id", "")), weapons, owned_grades),
+		current_grade(String(mod.get("result_weapon", "")), weapons, {})
+	)
 
 
 ## Grade pill text — always words, never colour alone (DESIGN.md §2).
@@ -135,6 +195,12 @@ static func grade_text(
 ) -> String:
 	if String(choice.get("kind", "")) == KIND_PASSIVE:
 		return DEFAULT_GRADE_KO
+	if String(choice.get("kind", "")) == KIND_MOD:
+		# The pill shows the RESULT weapon's grade after the carry (N4-6).
+		var carried: String = mod_carried_grade(
+			choice.get("mod", {}) as Dictionary, weapons, owned_grades, grades
+		)
+		return String(GRADE_KO.get(carried, DEFAULT_GRADE_KO))
 	var id: String = String(choice.get("id", ""))
 	var grade: String = current_grade(id, weapons, owned_grades)
 	if String(choice.get("kind", "")) == KIND_GRADE_UP:
@@ -153,6 +219,8 @@ static func well_label(
 			return "Lv.%d" % (int(owned_levels.get(id, 0)) + 1)
 		KIND_GRADE_UP:
 			return GRADE_UP_LABEL
+		KIND_MOD:
+			return MOD_LABEL
 		KIND_PASSIVE:
 			var stacks: int = int(passive_stacks.get(id, 0))
 			return "신규!" if stacks == 0 else "Lv.%d" % (stacks + 1)
@@ -193,6 +261,25 @@ static func describe(
 				String(GRADE_KO.get(raised, DEFAULT_GRADE_KO)),
 				_fmt(WeaponGrade.stat_at(stats, "damage", level, grade, grades)),
 				_fmt(WeaponGrade.stat_at(stats, "damage", level, raised, grades)),
+			]
+		KIND_MOD:
+			# Reads like the old loot popup did: the full transformation, plus
+			# the real damage change at the carried level and grade (N4-6).
+			var mod: Dictionary = choice.get("mod", {})
+			var base_id: String = String(mod.get("weapon_id", ""))
+			var result_id: String = String(mod.get("result_weapon", ""))
+			var level: int = int(owned_levels.get(base_id, 1))
+			var carried: String = mod_carried_grade(mod, weapons, owned_grades, grades)
+			return "%s → %s · 피해 %s→%s (레벨 유지)" % [
+				String((weapons.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
+				String((weapons.get(result_id, {}) as Dictionary).get("name_ko", result_id)),
+				_fmt(WeaponGrade.stat_at(
+					weapons.get(base_id, {}) as Dictionary, "damage", level,
+					current_grade(base_id, weapons, owned_grades), grades
+				)),
+				_fmt(WeaponGrade.stat_at(
+					weapons.get(result_id, {}) as Dictionary, "damage", level, carried, grades
+				)),
 			]
 		KIND_NEW_WEAPON:
 			var stats: Dictionary = weapons.get(id, {})

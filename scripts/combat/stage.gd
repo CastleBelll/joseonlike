@@ -43,13 +43,14 @@ var _choice_rng := RandomNumberGenerator.new()
 var _kills: int = 0
 var _ground_size := Vector2.ZERO  # from data/props.json "field" block
 
-# N4-1 loot state: data tables, pooled drops, run-seeded RNG, special queue.
+# N4-1 loot state: data tables, pooled drops, run-seeded RNG. N4-6: weapons
+# a mod replaced this run — banned from every choice pool for good.
 var _loot_data: Dictionary = {}
 var _drop_tables: Dictionary = {}
 var _mods_data: Dictionary = {}
 var _loot_pool: NodePool
 var _loot_rng := RandomNumberGenerator.new()
-var _special_queue: Array[String] = []
+var _replaced_weapons: Array[String] = []
 
 # N3-8 feedback + N5-1 run flow state.
 var _feedback: Dictionary = {}
@@ -200,9 +201,8 @@ func _on_number_finished(number: DamageNumber) -> void:
 	_number_pool.release(number)
 
 
-## One grant can cross several levels; each one earns a choice screen. Level-up
-## screens and special-loot screens share one popup and one queue discipline:
-## a single panel at a time, level-ups first, then pending special materials.
+## One grant can cross several levels; each one earns a choice screen — the
+## only tap a run asks for (DESIGN.md §5.2). Loot never opens a panel (N4-6).
 func _on_level_reached(_new_level: int) -> void:
 	_pending_level_ups += 1
 	if not _popup.visible:
@@ -213,9 +213,14 @@ func _show_next_level_up() -> void:
 	get_tree().paused = true
 	var pool: Array[Dictionary] = LevelUp.candidates(
 		_weapons_data, _passives_data, _owned_levels, _passive_stacks,
-		_owned_grades, _grades_config
+		_owned_grades, _grades_config, _replaced_weapons
 	)
-	var choices: Array[Dictionary] = LevelUp.pick(pool, CHOICES_PER_LEVEL, _choice_rng)
+	var mod_pool: Array[Dictionary] = LevelUp.mod_candidates(
+		_mods_data, _run_state.inventory, _owned_levels, _replaced_weapons
+	)
+	var choices: Array[Dictionary] = LevelUp.assemble(
+		pool, mod_pool, CHOICES_PER_LEVEL, _choice_rng
+	)
 	var cards: Array[Dictionary] = []
 	for choice: Dictionary in choices:
 		cards.append(LevelUp.as_card(
@@ -225,32 +230,20 @@ func _show_next_level_up() -> void:
 	_popup.open(POWER_UP_HEADER, cards, _owned_levels, _weapons_data)
 
 
-## The special-material 3-choice screen (N4-1): built at show time so a queued
-## material sees the weapon state left by the previous choice.
-func _show_next_special() -> void:
-	get_tree().paused = true
-	var loot_id: String = _special_queue[0]
-	var choices: Array[Dictionary] = Loot.build_choices(loot_id, _mods_data, _owned_levels)
-	var cards: Array[Dictionary] = []
-	for choice: Dictionary in choices:
-		cards.append(Loot.as_card(choice, _loot_data, _weapons_data, _run_state.inventory))
-	var header: String = "%s 획득!" % String(
-		(_loot_data.get(loot_id, {}) as Dictionary).get("name_ko", loot_id)
-	)
-	_popup.open(header, cards, _owned_levels, _weapons_data)
-
-
 func _on_choice_picked(payload: Dictionary) -> void:
 	match String(payload.get("kind", "")):
 		LevelUp.KIND_NEW_WEAPON, LevelUp.KIND_WEAPON_UP, LevelUp.KIND_PASSIVE, \
 		LevelUp.KIND_GRADE_UP:
 			_apply_level_up_choice(payload)
-			_pending_level_ups -= 1
-		Loot.KIND_USE, Loot.KIND_KEEP, Loot.KIND_SALVAGE:
-			_apply_loot_choice(payload)
-			_special_queue.pop_front()
+		LevelUp.KIND_MOD:
+			var mod: Dictionary = payload.get("mod", {})
+			_run_state.inventory = Loot.spend(
+				_run_state.inventory, String(mod.get("loot_id", ""))
+			)
+			_apply_weapon_mod(mod)
 		_:
 			push_error("stage: unknown popup payload " + str(payload))
+	_pending_level_ups -= 1
 	_advance_popup_queue()
 
 
@@ -276,21 +269,11 @@ func _apply_level_up_choice(choice: Dictionary) -> void:
 			_apply_passive_effects(id)
 
 
-func _apply_loot_choice(choice: Dictionary) -> void:
-	var loot_id: String = String(choice.get("loot_id", ""))
-	match String(choice.get("kind", "")):
-		Loot.KIND_USE:
-			_apply_weapon_mod(choice.get("mod", {}) as Dictionary)
-		Loot.KIND_KEEP:
-			_run_state.inventory = Loot.add(_run_state.inventory, loot_id)
-		Loot.KIND_SALVAGE:
-			_gold += Loot.salvage_gold(_loot_data, loot_id)
-			_hud.set_gold(_gold)
-
-
 ## Swap the owned base weapon node for the recipe result, carrying its level.
 ## N4-2: the run grade carries too (GDD §33), floored at the result weapon's
-## own base grade — a mod can raise the grade, never lower it.
+## own base grade — a mod can raise the grade, never lower it. N4-6: the base
+## weapon is banned from every future choice pool, and materials whose every
+## recipe just died cash out to gold.
 func _apply_weapon_mod(mod: Dictionary) -> void:
 	var base_id: String = String(mod.get("weapon_id", ""))
 	var result_id: String = String(mod.get("result_weapon", ""))
@@ -310,6 +293,14 @@ func _apply_weapon_mod(mod: Dictionary) -> void:
 	_add_weapon_node(result_id)
 	(_weapon_nodes[result_id] as AutoWeapon).set_level(int(_owned_levels[result_id]))
 	_set_owned_grade(result_id, carried)
+	_replaced_weapons.append(base_id)
+	var sweep: Dictionary = Loot.salvage_dead(
+		_run_state.inventory, _loot_data, _mods_data, _owned_levels, _replaced_weapons
+	)
+	_run_state.inventory = sweep["inventory"]
+	if int(sweep["gold"]) > 0:
+		_gold += int(sweep["gold"])
+		_hud.set_gold(_gold)
 
 
 ## Single write point for a weapon's run grade: updates the dict, retunes the
@@ -324,14 +315,17 @@ func _set_owned_grade(weapon_id: String, grade: String) -> void:
 	if node != null:
 		node.set_grade(grade)
 	if WeaponGrade.is_top(_grade_ladder, grade) and not was_top:
-		var number: DamageNumber = _number_pool.acquire()
-		number.show_text(
-			"%s %s 등급!" % [
-				String((_weapons_data.get(weapon_id, {}) as Dictionary).get("name_ko", weapon_id)),
-				String(LevelUp.GRADE_KO.get(grade, grade)),
-			],
-			_player.global_position
-		)
+		_float_label("%s %s 등급!" % [
+			String((_weapons_data.get(weapon_id, {}) as Dictionary).get("name_ko", weapon_id)),
+			String(LevelUp.GRADE_KO.get(grade, grade)),
+		])
+
+
+## Non-blocking floating cue in the damage-number style — never pauses,
+## never asks for input (DESIGN.md §5.2).
+func _float_label(text: String) -> void:
+	var number: DamageNumber = _number_pool.acquire()
+	number.show_text(text, _player.global_position)
 
 
 func _on_popup_dismissed() -> void:
@@ -342,9 +336,6 @@ func _on_popup_dismissed() -> void:
 func _advance_popup_queue() -> void:
 	if _pending_level_ups > 0:
 		_show_next_level_up()
-		return
-	if not _special_queue.is_empty():
-		_show_next_special()
 		return
 	_popup.close()
 	get_tree().paused = false
@@ -417,16 +408,24 @@ func _spawn_loot(enemy: Enemy) -> void:
 		)
 
 
-## Ordinary materials bank silently; special ones queue the 3-choice screen.
+## N4-6: every material collects silently, exactly like XP and gold. Useful
+## ones (a live recipe exists) bank into the run inventory; dead ones cash
+## out to gold on the spot — the player never holds dead inventory. Special
+## materials float a small cue label; commons just tick the counters.
 func _on_loot_collected(orb: XpOrb) -> void:
 	var loot_id: String = (orb as LootDrop).loot_id
 	_loot_pool.release(orb)
-	if bool((_loot_data.get(loot_id, {}) as Dictionary).get("special", false)):
-		_special_queue.append(loot_id)
-		if not _popup.visible:
-			_advance_popup_queue()
+	var stats: Dictionary = _loot_data.get(loot_id, {})
+	if Loot.is_material_useful(loot_id, _mods_data, _owned_levels, _replaced_weapons):
+		_run_state.inventory = Loot.add(_run_state.inventory, loot_id)
+		if bool(stats.get("special", false)):
+			_float_label("%s 획득" % String(stats.get("name_ko", loot_id)))
 		return
-	_run_state.inventory = Loot.add(_run_state.inventory, loot_id)
+	var gold: int = Loot.salvage_gold(_loot_data, loot_id)
+	_gold += gold
+	_hud.set_gold(_gold)
+	if bool(stats.get("special", false)):
+		_float_label("엽전 +%d" % gold)
 
 
 func _create_loot_drop() -> LootDrop:
