@@ -1,47 +1,92 @@
 # Side-view character sprites
 
-## Format
+## Runtime format
 
 - Logical canvas: **32 × 32 pixels** per frame.
 - Export scale: **16× nearest-neighbour**, matching `new_asset/basic.png`.
 - Exported frame size: **512 × 512 pixels**.
-- `idle.png`: one right-facing frame, **512 × 512**.
-- `walk.png`: four right-facing frames in one horizontal strip, **2048 × 512**; each cell is 512 pixels wide.
-- Color: RGBA PNG with binary alpha (fully transparent or fully opaque). All marks align to the 16× export grid; there are no antialiased or subpixel edge colors.
+- `idle.png`: one right-facing / three-quarter-right idle frame, **512 × 512**.
+- `walk.png`: four right-facing walk frames in one horizontal strip, **2048 × 512**.
+- Color: RGBA PNG with binary alpha. Every exported mark is a uniform **16 × 16** block from the logical grid.
+- Shared ground line: logical row **29**. Every frame keeps its full 32 × 32 canvas rather than trimming transparent margins.
 
-The idle logical alpha bounds are `(9, 3)–(26, 29)` for Taoist, `(7, 5)–(26, 29)` for Warrior, and `(7, 3)–(27, 29)` for Archer. These remain centered on the same 32 × 32 canvas and share the same ground line.
+The authored pose follows `basic.png`: movement reads toward screen-right, while the face and torso retain a natural three-quarter view instead of a rigid 90-degree profile. Mirror these files in-engine for leftward movement.
 
-## Walk order
+## Character identity and held weapon
 
-The strip is ordered left to right:
+- **Taoist (도사):** black gat, white dopo with navy binding, held yellow paper talismans (부적).
+- **Warrior (무사):** brick-red cheollik, restrained lamellar vest, navy headband, held hwando (환도).
+- **Archer (궁수):** tan paeraengi, ochre hunting clothes, leather chest strap, held gakgung (각궁).
 
-1. Contact A — rear leg back, leading leg forward; arms counter-swing.
-2. Passing A — legs gather under the torso.
-3. Contact B — the opposite leg leads; arms reverse.
-4. Passing B — the forward foot lifts into the next loop.
+The weapon silhouettes contain no lettering or asymmetric emblem, so horizontal mirroring remains valid.
 
-Loop frames `0 → 1 → 2 → 3` at about 8–10 fps. The head and central torso crop is byte-identical in every walk frame; only the limb parts and their resulting silhouette outlines change.
+## Walk order and slicing
 
-## Generation method
+Slice `walk.png` as **4 columns × 1 row**, with 512 × 512 regions:
 
-The sprites are deterministic pixel constructions in `tools/generate_sideview_sprites.py`. The script draws each character once on a 32 × 32 RGBA canvas from flat polygons and rectangles, builds a one-logical-pixel dark outer outline from the combined silhouette, reuses the fixed head/torso layers for all poses, and changes only programmatic arm/leg parts. It then enlarges with nearest-neighbour sampling and writes the six runtime PNGs.
+1. Contact A
+2. Passing A
+3. Contact B
+4. Passing B
 
-Regenerate from the repository root with:
+Loop frames `0 → 1 → 2 → 3` at about 8–10 fps. The walk frames share one pixel-identical upper-body layer through logical row 22; generated lower robe and leg pixels below it retain the alternating walk poses.
+
+## Higgsfield generation
+
+Each character came from **one five-pose sheet generation**, never from independent frame generations. This keeps identity, costume, weapon, and proportions coherent before local stabilization.
+
+- Service: Higgsfield MCP image generation.
+- Model: **GPT Image 2** (`gpt_image_2`).
+- Preset/parameters: **2K**, **high** quality, **16:9**, one result.
+- Style conditioning: uploaded `new_asset/basic.png` in every final generation.
+- Structure conditioning: a prior whole five-pose sheet for the same character was also supplied to the final weapon-bearing generation.
+- Final raw sheet size: **2688 × 1520**.
+- Final generation job IDs:
+  - Taoist: `487b1777-095d-4bd1-984b-b30e160d68a9`
+  - Warrior: `afa6940e-3354-4723-9618-124453026322`
+  - Archer: `96d56675-ea72-4a26-b700-dc651f78d367`
+
+The requested Higgsfield `get_workflow_instructions({ workflow: "character-sheet" })` operation was not registered in this worker session. Work paused and the coordinator explicitly authorized using the available Higgsfield generation tools directly; all single-sheet consistency constraints remained in force.
+
+Raw generated sheets are preserved at:
+
+- `asset/character/Taoist/raw/side_sheet_higgsfield.png`
+- `asset/character/Warrior/raw/side_sheet_higgsfield.png`
+- `asset/character/Archer/raw/side_sheet_higgsfield.png`
+
+## Local post-processing
+
+Run from the repository root:
 
 ```text
-python tools/generate_sideview_sprites.py
+python tools/process_higgsfield_sideview_sprites.py
 ```
 
-The generator validates dimensions, binary transparency, bounded palettes, distinct walk poses, stable head/torso bytes, and uniform 16 × 16 export blocks before saving.
+The processor performs only generated-image transformations; it does not draw character pixels:
 
-## Visual verification
+1. Removes the generated green chroma background by color dominance.
+2. Finds the five largest connected foreground components and orders them left-to-right.
+3. Reduces all five figures with one per-character scale onto a 32 × 32 logical grid.
+4. Aligns each frame from the hat/head anchor and fixes the feet to logical ground row 29.
+5. Reuses the first generated walk frame's upper layer for the other walk frames through row 22, eliminating head, costume, and held-item flicker.
+6. Quantizes the whole five-frame sheet together to a shared bounded palette with no dithering.
+7. Exports the logical pixels at 16× using nearest-neighbour sampling.
 
-All six exports were inspected as nearest-neighbour representations of their 1× logical pixels. At logical scale, the three silhouettes remain distinct: the Taoist has a topknot and pale blue-trimmed dopo, the Warrior has a tied headband and broad lamellar chest, and the Archer has a wide paeraengi with a diagonal leather harness. The walk strips were read left-to-right and as a loop; contact frames alternate cleanly, passing frames keep the feet from sliding, hands remain empty, and the fixed upper body prevents frame-to-frame costume flicker.
+The earlier `tools/generate_sideview_sprites.py` Pillow drawing workflow was removed. It is superseded by the Higgsfield source sheets and the extraction-only processor above.
 
-## Integrator notes
+## Verification
 
-- The authored direction is **right**. Mirror the same textures horizontally in-engine for left-facing movement; no lettering, weapon, or direction-specific emblem needs a separate left asset.
-- Slice `walk.png` as a 4-column, 1-row sprite sheet using 512 × 512 regions.
-- Use nearest-neighbour sampling. In Godot, keep texture filtering and mipmaps disabled for crisp logical pixels.
-- Keep every frame on its full canvas rather than trimming transparent margins; shared canvas alignment prevents animation jitter.
-- Do not scale these relative to `new_asset/basic.png`; both use the same 16× export factor.
+All six runtime PNGs and all three four-frame strips were visually inspected after processing. The checks confirmed:
+
+- exact dimensions: idle 512 × 512; walk 2048 × 512;
+- transparent PNG output with binary alpha;
+- all opaque pixels snapped to the 16× export grid;
+- equal 512-pixel walk cells and one common canvas height;
+- palette totals of 16–17 RGBA entries including transparency;
+- logical alpha bounds ending on ground row 29;
+- **0.0 logical-pixel upper-body center spread** across each four-frame walk loop;
+- stable gat/headband/paeraengi, costume, face, and held weapon across the walk frames;
+- distinct alternating lower-body poses and readable loop order;
+- no background remnants, dividers, labels, or watermark.
+
+Keep texture filtering and mipmaps disabled in Godot so the 32 × 32 logical pixels remain crisp.
