@@ -11,7 +11,10 @@
     "area_scale": 1.2,
     "speed": 260.0,
     "max_level": 8,
-    "per_level": { "damage": 3.0, "cooldown_sec": -0.05 },
+    "per_level": {
+      "damage": 3.0,
+      "cooldown_sec": -0.05
+    },
     "evolves_to": "fire_talisman",
     "evolution_only": false,
     "sprite": "res://asset/weapon/icons/old_talisman.png"
@@ -28,10 +31,17 @@
     "area_scale": 1.4,
     "speed": 260.0,
     "max_level": 8,
-    "per_level": { "damage": 4.0, "cooldown_sec": -0.05 },
+    "per_level": {
+      "damage": 4.0,
+      "cooldown_sec": -0.05
+    },
     "evolves_to": "phoenix_talisman",
     "evolution_only": true,
-    "on_hit_status": { "id": "burn", "dps": 4.0, "duration_sec": 3.0 },
+    "on_hit_status": {
+      "id": "burn",
+      "dps": 4.0,
+      "duration_sec": 3.0
+    },
     "sprite": "res://asset/weapon/icons/fire_talisman.png"
   },
   "phoenix_talisman": {
@@ -46,9 +56,16 @@
     "area_scale": 1.8,
     "speed": 280.0,
     "max_level": 8,
-    "per_level": { "damage": 2.2, "cooldown_sec": -0.04 },
+    "per_level": {
+      "damage": 2.2,
+      "cooldown_sec": -0.04
+    },
     "evolution_only": true,
-    "on_hit_status": { "id": "burn", "dps": 7.0, "duration_sec": 3.0 },
+    "on_hit_status": {
+      "id": "burn",
+      "dps": 7.0,
+      "duration_sec": 3.0
+    },
     "sprite": "res://asset/weapon/icons/phoenix_talisman.png"
   },
   "beopgeom": {
@@ -63,10 +80,16 @@
     "area_scale": 1.0,
     "speed": 320.0,
     "max_level": 8,
-    "per_level": { "damage": 2.5, "cooldown_sec": -0.03 },
+    "per_level": {
+      "damage": 2.5,
+      "cooldown_sec": -0.03
+    },
     "evolution_only": true,
-    "on_hit_seal": { "burst_at": 4, "burst_damage_scale": 3.0 },
-    "sprite": "res://asset/weapon/icons/old_talisman.png"
+    "on_hit_seal": {
+      "burst_at": 4,
+      "burst_damage_scale": 3.0
+    },
+    "sprite": "res://asset/weapon/icons/beopgeom.png"
   },
   "lightning_talisman": {
     "name_ko": "뇌전 부적",
@@ -80,10 +103,17 @@
     "area_scale": 1.2,
     "speed": 280.0,
     "max_level": 8,
-    "per_level": { "damage": 3.0, "cooldown_sec": -0.04 },
+    "per_level": {
+      "damage": 3.0,
+      "cooldown_sec": -0.04
+    },
     "evolution_only": true,
-    "on_hit_chain": { "targets": 3, "damage_scale": 0.6, "range_px": 140.0 },
-    "sprite": "res://asset/weapon/icons/old_talisman.png"
+    "on_hit_chain": {
+      "targets": 3,
+      "damage_scale": 0.6,
+      "range_px": 140.0
+    },
+    "sprite": "res://asset/weapon/icons/lightning_talisman.png"
   },
   "sword": {
     "name_ko": "환도",
@@ -97,7 +127,10 @@
     "area_scale": 1.0,
     "speed": 0.0,
     "max_level": 8,
-    "per_level": { "damage": 3.5, "cooldown_sec": -0.04 },
+    "per_level": {
+      "damage": 3.5,
+      "cooldown_sec": -0.04
+    },
     "evolves_to": "twin_sword",
     "evolution_only": false,
     "sprite": "res://asset/weapon/icons/sword.png"
@@ -114,7 +147,10 @@
     "area_scale": 1.1,
     "speed": 0.0,
     "max_level": 8,
-    "per_level": { "damage": 4.5, "cooldown_sec": -0.03 },
+    "per_level": {
+      "damage": 4.5,
+      "cooldown_sec": -0.03
+    },
     "evolution_only": true,
     "sprite": "res://asset/weapon/icons/twin_sword.png"
   },
@@ -130,9 +166,12 @@
     "area_scale": 1.1,
     "speed": 0.0,
     "max_level": 8,
-    "per_level": { "damage": 4.0, "cooldown_sec": -0.04 },
+    "per_level": {
+      "damage": 4.0,
+      "cooldown_sec": -0.04
+    },
     "evolution_only": true,
-    "sprite": "res://asset/weapon/icons/sword.png"
+    "sprite": "res://asset/weapon/icons/sharp_sword.png"
   },
   "ghost_sword": {
     "name_ko": "귀철도",
@@ -146,9 +185,12 @@
     "area_scale": 1.1,
     "speed": 0.0,
     "max_level": 8,
-    "per_level": { "damage": 5.0, "cooldown_sec": -0.03 },
+    "per_level": {
+      "damage": 5.0,
+      "cooldown_sec": -0.03
+    },
     "evolution_only": true,
-    "sprite": "res://asset/weapon/icons/sword.png"
+    "sprite": "res://asset/weapon/icons/ghost_sword.png"
   },
   "flame_sword": {
     "name_ko": "화염도",
@@ -162,9 +204,12 @@
     "area_scale": 1.3,
     "speed": 0.0,
     "max_level": 8,
-    "per_level": { "damage": 3.5, "cooldown_sec": -0.04 },
+    "per_level": {
+      "damage": 3.5,
+      "cooldown_sec": -0.04
+    },
     "evolution_only": true,
-    "sprite": "res://asset/weapon/icons/sword.png"
+    "sprite": "res://asset/weapon/icons/flame_sword.png"
   },
   "bow": {
     "name_ko": "각궁",
@@ -178,7 +223,10 @@
     "area_scale": 1.0,
     "speed": 380.0,
     "max_level": 8,
-    "per_level": { "damage": 2.5, "cooldown_sec": -0.03 },
+    "per_level": {
+      "damage": 2.5,
+      "cooldown_sec": -0.03
+    },
     "evolves_to": "divine_bow",
     "evolution_only": false,
     "sprite": "res://asset/weapon/icons/bow.png"
@@ -195,7 +243,10 @@
     "area_scale": 1.0,
     "speed": 420.0,
     "max_level": 8,
-    "per_level": { "damage": 3.5, "cooldown_sec": -0.03 },
+    "per_level": {
+      "damage": 3.5,
+      "cooldown_sec": -0.03
+    },
     "evolution_only": true,
     "sprite": "res://asset/weapon/icons/divine_bow.png"
   }
