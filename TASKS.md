@@ -8,15 +8,15 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 
 ---
 
-## N0 — 리셋 & 부트 — CURRENT
+## N0 — 리셋 & 부트 — DONE
 
-- [ ] **N0-1 리포 리셋** — scenes/ scripts/ tests/ tools/ asset/ 및 구
+- [x] **N0-1 리포 리셋** — scenes/ scripts/ tests/ tools/ asset/ 및 구
       게임 파일 제거 (Neo둥근모 ttf + ASSET_LICENSES.md 항목은 유지·이동).
       data/, 문서, example/, new_asset/ 유지. project.godot 정리.
-- [ ] **N0-2 최소 부트** — NIGHT 배경 + 픽셀 폰트 "조선라이크" 타이틀
+- [x] **N0-2 최소 부트** — NIGHT 배경 + 픽셀 폰트 "조선라이크" 타이틀
       스텁이 에러 없이 뜬다. 헤드리스 테스트 러너 골격이 PASS를 출력한다.
 
-## N1 — 타이틀
+## N1 — 타이틀 — CURRENT
 
 - [ ] N1-1 타이틀 레이아웃 (플레이스홀더 아트, DESIGN.md §4 배치)
 - [ ] N1-2 codex AC-2 아트 통합 (배경 레이어 + 현판 로고)
@@ -56,3 +56,5 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | Date | Feature | Commit |
 |---|---|---|
 | 2026-08-14 | Full rebuild decision; docs reset (DESIGN v3 / ROADMAP / TASKS) | — |
+| 2026-08-14 | N0-1 repo reset (old code/assets removed, font kept) | 7042085 |
+| 2026-08-14 | N0-2 minimal boot: title stub + test runner + data validator | — |

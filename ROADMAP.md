@@ -12,12 +12,12 @@ Higgsfield 에셋 생성 (게임플레이 커밋과 분리).
 
 ---
 
-## N0 — 리셋 & 부트 — **CURRENT**
+## N0 — 리셋 & 부트 — DONE (2026-08-14)
 
 구 scenes/scripts/tests/tools/asset 제거, 최소 부트(타이틀 스텁) + 테스트
 러너 골격 재구축. Exit: 클린 실행, PASS 출력, push.
 
-## N1 — 타이틀 화면
+## N1 — 타이틀 화면 — **CURRENT**
 
 DESIGN.md §4 타이틀 스펙 완전 구현 (야경 배경 + 현판 로고 + 버튼 스택 +
 코너 유틸). 에셋은 codex AC-트랙 산출물, 도착 전 플레이스홀더.
