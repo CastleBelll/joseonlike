@@ -30,7 +30,6 @@ const BACKDROP_FLAT: Texture2D = preload("res://asset/stage/backdrops/main_menu.
 const VERSION_PLAQUE: Texture2D = preload("res://asset/ui/main/version_plaque_9slice.png")
 
 const ICON_START: Texture2D = preload("res://asset/ui/main/start.png")
-const ICON_CONTINUE: Texture2D = preload("res://asset/ui/main/continue.png")
 const ICON_SETTINGS: Texture2D = preload("res://asset/ui/main/settings.png")
 const ICON_CREDITS: Texture2D = preload("res://asset/ui/main/credits.png")
 const ICON_QUIT: Texture2D = preload("res://asset/ui/main/quit.png")
@@ -96,7 +95,6 @@ const HERO_POSITION := Vector2(238.0, 580.0)
 @onready var _backdrop_layers: Control = $BackdropLayers
 @onready var _logo: TextureRect = $Logo
 @onready var _start_button: Button = $Actions/StartButton
-@onready var _continue_button: Button = $Actions/ContinueButton
 @onready var _settings_button: Button = $Actions/SecondaryRow/SettingsButton
 @onready var _credits_button: Button = $Actions/SecondaryRow/CreditsButton
 @onready var _quit_button: Button = $Actions/SecondaryRow/QuitButton
@@ -125,15 +123,11 @@ func _ready() -> void:
 	_logo.texture = LocaleText.texture(TITLE_KO, TITLE_EN)
 	_animate_logo_entrance()
 
+	# One entry point on purpose: the profile autosaves and the game resumes
+	# it automatically, so a separate Continue action carried no meaning
+	# (owner decision 2026-08-14).
 	_configure_action(_start_button, ICON_START, "menu_start")
 	_start_button.pressed.connect(_on_start_pressed)
-
-	_configure_action(_continue_button, ICON_CONTINUE, "menu_continue")
-	# Hidden, not disabled: a first-time player gets nothing from a dead
-	# button, and the disabled chrome's hatch pattern read as visual noise
-	# (owner feedback 2026-08-14).
-	_continue_button.visible = _has_existing_profile()
-	_continue_button.pressed.connect(_on_start_pressed)
 
 	# The secondary row is deliberately lighter than Start: smaller icons and
 	# label-size text, so the one primary action owns the block.
@@ -165,7 +159,7 @@ func _ready() -> void:
 	_credits_close.pressed.connect(_close_credits)
 	_credits_panel.visible = false
 
-	(_continue_button if _continue_button.visible else _start_button).grab_focus()
+	_start_button.grab_focus()
 
 
 ## Icon (left) + label (right) inside the existing button chrome, matching
@@ -225,12 +219,6 @@ func _setup_hero() -> void:
 	# front of the backdrop layers.
 	add_child(hero)
 	move_child(hero, _backdrop_layers.get_index() + 1)
-
-
-## No multi-slot profile screen exists in M1 (one SaveManager file, not
-## slots); a returning player is anyone who has finished at least one run.
-func _has_existing_profile() -> bool:
-	return AchievementTracker.counter("run_completed") > 0
 
 
 func _animate_logo_entrance() -> void:
