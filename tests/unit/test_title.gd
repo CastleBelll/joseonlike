@@ -38,3 +38,24 @@ func test_title_builds_menu_from_locale() -> bool:
 
 	title.free()
 	return passed
+
+
+func test_title_logo_texture_follows_locale() -> bool:
+	# N1-2: the signboard logo is baked art per locale, swapped by refresh_texts.
+	var scene: PackedScene = load(TITLE_SCENE)
+	var title: TitleScreen = scene.instantiate()
+	title.build_ui()
+	var logo: TextureRect = title.get_node("Logo")
+
+	var original_locale: String = UiLocale.current_locale
+	UiLocale.current_locale = "en"
+	title.refresh_texts()
+	var en_texture: Texture2D = logo.texture
+	UiLocale.current_locale = "ko"
+	title.refresh_texts()
+	var passed: bool = logo.texture != null and en_texture != null \
+		and logo.texture != en_texture
+
+	UiLocale.current_locale = original_locale
+	title.free()
+	return passed

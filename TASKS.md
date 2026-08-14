@@ -19,7 +19,7 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 ## N1 — 타이틀 — CURRENT
 
 - [x] N1-1 타이틀 레이아웃 (플레이스홀더 아트, DESIGN.md §4 배치)
-- [ ] N1-2 codex AC-2 아트 통합 (배경 레이어 + 현판 로고)
+- [x] N1-2 codex AC-2 아트 통합 (배경 레이어 + 현판 로고)
 - [x] N1-3 설정 팝업 (음량/언어, 자동 저장) — N5-2에서 구현
 
 ## N2 — 수행자 선택
@@ -119,6 +119,7 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | 2026-08-14 | Full rebuild decision; docs reset (DESIGN v3 / ROADMAP / TASKS) | — |
 | 2026-08-14 | N0-1 repo reset (old code/assets removed, font kept) | 7042085 |
 | 2026-08-14 | N0-2 minimal boot: title stub + test runner + data validator | — |
+| 2026-08-14 | N1-2 title art integration: sky/village texture layers + locale-swapped signboard logo | — |
 | 2026-08-14 | N1-1 design tokens (UiPalette/UiLocale/WoodButton, global theme) + title layout | — |
 | 2026-08-14 | N3-1 stage scene: camera-follow player, touch joystick + WASD, title routing | — |
 | 2026-08-14 | N3-4 enemy spawn/chase/contact damage/death: pooled wave spawner, player HP + invuln, data cross-checks | — |

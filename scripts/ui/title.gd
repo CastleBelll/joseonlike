@@ -1,26 +1,30 @@
 class_name TitleScreen
 extends Control
-## Title screen layout (N1-1), DESIGN.md §4. The gradient background and the
-## logo plaque are placeholders; N1-2 swaps LogoArea and the background bands
-## for the AC-2 art. "start" routes to the stage scene (N3-1); other targets
-## do not exist yet, so their presses only emit menu_selected.
+## Title screen layout (N1-1) with the N1-2 art layers, DESIGN.md §4.
+## Sky and village are full-bleed 540x960 textures exported at 2x; the
+## signboard logo carries the lettering baked per locale (asset/title/README.md).
+## "start" routes to the stage scene (N3-1); other targets do not exist yet,
+## so their presses only emit menu_selected.
 
 signal menu_selected(id: String)
 
 const STAGE_SCENE := "res://scenes/stage.tscn"
 const SELECT_SCENE := "res://scenes/character_select.tscn"
 
+const SKY_TEXTURE := "res://asset/title/bg_sky.png"
+const VILLAGE_TEXTURE := "res://asset/title/bg_village.png"
+const LOGO_TEXTURES: Dictionary = {
+	"ko": "res://asset/title/logo_ko.png",
+	"en": "res://asset/title/logo_en.png",
+}
+# Logical placement from asset/title/build_assets.py's preview composition.
+const LOGO_POSITION := Vector2(60, 90)
+const LOGO_SIZE := Vector2(420, 200)
+
 const MENU_WIDTH_RATIO := 0.85
 const MENU_BUTTON_HEIGHT := 64
 const MENU_BOTTOM_MARGIN := 48
-const LOGO_ANCHOR_SIDE := 0.14
-const LOGO_ANCHOR_TOP := 0.12
-const LOGO_ANCHOR_BOTTOM := 0.30
-const LOGO_FONT_SCALE := 2
-const VILLAGE_BAND_RATIO := 0.32
 const UTILITY_BUTTON_SIZE := 48
-const SKY_TOP_DARKEN := 0.4
-const SKY_MID_OFFSET := 0.55
 
 var _settings_popup: SettingsPopup
 
@@ -54,7 +58,7 @@ func _on_menu_selected(id: String) -> void:
 ## Re-applies every locale-sensitive text in place; called when the settings
 ## popup toggles the language so the change shows immediately.
 func refresh_texts() -> void:
-	(get_node("LogoArea/GameName") as Label).text = UiLocale.text("title.game_name")
+	(get_node("Logo") as TextureRect).texture = load(_logo_texture_path())
 	var settings_button: Button = get_node("CornerUtilities/SettingsButton")
 	settings_button.text = UiLocale.text("title.settings")
 	settings_button.tooltip_text = UiLocale.text("title.settings")
@@ -77,52 +81,36 @@ func build_ui() -> void:
 
 
 func _build_background() -> void:
-	var sky := TextureRect.new()
-	sky.name = "SkyBackground"
-	var gradient := Gradient.new()
-	gradient.colors = PackedColorArray([
-		UiPalette.NIGHT.darkened(SKY_TOP_DARKEN), UiPalette.NIGHT, UiPalette.NIGHT_BROWN,
-	])
-	gradient.offsets = PackedFloat32Array([0.0, SKY_MID_OFFSET, 1.0])
-	var texture := GradientTexture2D.new()
-	texture.gradient = gradient
-	texture.fill_from = Vector2.ZERO
-	texture.fill_to = Vector2(0.0, 1.0)
-	sky.texture = texture
+	var sky: TextureRect = _pixel_texture_rect("SkyBackground", SKY_TEXTURE)
 	sky.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(sky)
 
-	var village := ColorRect.new()
-	village.name = "VillageSilhouette"
-	village.color = UiPalette.INK
-	village.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	village.anchor_top = 1.0 - VILLAGE_BAND_RATIO
+	var village: TextureRect = _pixel_texture_rect("VillageBackdrop", VILLAGE_TEXTURE)
+	village.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(village)
 
 
 func _build_logo() -> void:
-	var plaque := PanelContainer.new()
-	plaque.name = "LogoArea"
-	plaque.anchor_left = LOGO_ANCHOR_SIDE
-	plaque.anchor_right = 1.0 - LOGO_ANCHOR_SIDE
-	plaque.anchor_top = LOGO_ANCHOR_TOP
-	plaque.anchor_bottom = LOGO_ANCHOR_BOTTOM
-	var style := StyleBoxFlat.new()
-	style.bg_color = UiPalette.NIGHT_BROWN
-	style.border_color = UiPalette.WOOD_BORDER
-	style.set_border_width_all(WoodButton.BORDER_WIDTH)
-	style.set_corner_radius_all(WoodButton.CORNER_RADIUS)
-	plaque.add_theme_stylebox_override("panel", style)
+	var logo: TextureRect = _pixel_texture_rect("Logo", _logo_texture_path())
+	logo.position = LOGO_POSITION
+	logo.size = LOGO_SIZE
+	add_child(logo)
 
-	var game_name := Label.new()
-	game_name.name = "GameName"
-	game_name.text = UiLocale.text("title.game_name")
-	game_name.add_theme_color_override("font_color", UiPalette.GOLD)
-	game_name.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_TITLE * LOGO_FONT_SCALE)
-	game_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	game_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	plaque.add_child(game_name)
-	add_child(plaque)
+
+## The art is exported at 2x logical size; forcing the rect to the logical
+## size renders every exported 2x2 block as one screen pixel (NEAREST is the
+## project-wide canvas default), keeping the art pixel-crisp.
+func _pixel_texture_rect(node_name: String, texture_path: String) -> TextureRect:
+	var rect := TextureRect.new()
+	rect.name = node_name
+	rect.texture = load(texture_path)
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.stretch_mode = TextureRect.STRETCH_SCALE
+	return rect
+
+
+static func _logo_texture_path() -> String:
+	return String(LOGO_TEXTURES.get(UiLocale.current_locale, LOGO_TEXTURES[UiLocale.DEFAULT_LOCALE]))
 
 
 func _build_utilities() -> void:
