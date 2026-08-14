@@ -4,8 +4,9 @@ extends CharacterBody2D
 ## frame plus a 4-frame walk strip, mirrored left through Visual.scale.x.
 
 const CHARACTERS_PATH := "res://data/characters.json"
-const CHARACTER_ID := "taoist"
 
+## AC-1 art only exists for the taoist; locked characters cannot be selected
+## (N2-1), so the sprite set stays taoist until another roster entry ships art.
 const IDLE_TEXTURE_PATH := "res://asset/characters/taoist/idle.png"
 const WALK_TEXTURE_PATH := "res://asset/characters/taoist/walk.png"
 ## AC-1 export contract (asset/characters/taoist/README.md): PNGs are exact
@@ -41,6 +42,14 @@ signal died
 signal hit_taken
 
 
+## The run starts with the profile's selected character (N2-1); node-free
+## headless tests have no SaveService instance and fall back to the default.
+static func _character_id() -> String:
+	if SaveService.instance != null:
+		return SaveService.instance.selected_character()
+	return SaveProfile.DEFAULT_CHARACTER
+
+
 static func load_move_speed() -> float:
 	return _load_character_number("base_speed")
 
@@ -54,21 +63,23 @@ static func load_hit_invuln_sec() -> float:
 
 
 static func load_starting_weapon() -> String:
+	var character_id: String = _character_id()
 	var text: String = FileAccess.get_file_as_string(CHARACTERS_PATH)
 	var data: Variant = JSON.parse_string(text)
-	if data is not Dictionary or not (data as Dictionary).has(CHARACTER_ID):
-		push_error("player: cannot read '%s' from %s" % [CHARACTER_ID, CHARACTERS_PATH])
+	if data is not Dictionary or not (data as Dictionary).has(character_id):
+		push_error("player: cannot read '%s' from %s" % [character_id, CHARACTERS_PATH])
 		return ""
-	return String((data[CHARACTER_ID] as Dictionary).get("starting_weapon", ""))
+	return String((data[character_id] as Dictionary).get("starting_weapon", ""))
 
 
 static func _load_character_number(field: String) -> float:
+	var character_id: String = _character_id()
 	var text: String = FileAccess.get_file_as_string(CHARACTERS_PATH)
 	var data: Variant = JSON.parse_string(text)
-	if data is not Dictionary or not (data as Dictionary).has(CHARACTER_ID):
-		push_error("player: cannot read '%s' from %s" % [CHARACTER_ID, CHARACTERS_PATH])
+	if data is not Dictionary or not (data as Dictionary).has(character_id):
+		push_error("player: cannot read '%s' from %s" % [character_id, CHARACTERS_PATH])
 		return 0.0
-	var character: Dictionary = data[CHARACTER_ID]
+	var character: Dictionary = data[character_id]
 	return float(character.get(field, 0.0))
 
 

@@ -8,6 +8,7 @@ extends Control
 signal menu_selected(id: String)
 
 const STAGE_SCENE := "res://scenes/stage.tscn"
+const SELECT_SCENE := "res://scenes/character_select.tscn"
 
 const MENU_WIDTH_RATIO := 0.85
 const MENU_BUTTON_HEIGHT := 64
@@ -44,6 +45,8 @@ func _ready() -> void:
 func _on_menu_selected(id: String) -> void:
 	if id == "start":
 		get_tree().change_scene_to_file(STAGE_SCENE)
+	elif id == "select_character":
+		get_tree().change_scene_to_file(SELECT_SCENE)
 	elif id == "settings" and _settings_popup != null:
 		_settings_popup.open()
 
@@ -55,6 +58,9 @@ func refresh_texts() -> void:
 	var settings_button: Button = get_node("CornerUtilities/SettingsButton")
 	settings_button.text = UiLocale.text("title.settings")
 	settings_button.tooltip_text = UiLocale.text("title.settings")
+	var select_button: Button = get_node("CornerUtilities/SelectCharacterButton")
+	select_button.text = UiLocale.text("title.select_character")
+	select_button.tooltip_text = UiLocale.text("title.select_character")
 	var stack: VBoxContainer = get_node("MenuButtons")
 	var defs: Array[Dictionary] = menu_button_defs()
 	for i: int in range(mini(defs.size(), stack.get_child_count())):
@@ -134,6 +140,18 @@ func _build_utilities() -> void:
 	settings.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 	settings.pressed.connect(func() -> void: menu_selected.emit("settings"))
 	row.add_child(settings)
+
+	# N2-1 secondary affordance: the single-primary-button rule (N5-2) keeps
+	# 수행자 선택 out of the menu stack, so it lives in the utility corner.
+	var select_character := Button.new()
+	select_character.name = "SelectCharacterButton"
+	select_character.text = UiLocale.text("title.select_character")
+	select_character.tooltip_text = UiLocale.text("title.select_character")
+	select_character.custom_minimum_size = Vector2(0, UTILITY_BUTTON_SIZE)
+	WoodButton.apply(select_character)
+	select_character.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
+	select_character.pressed.connect(func() -> void: menu_selected.emit("select_character"))
+	row.add_child(select_character)
 	add_child(row)
 
 
