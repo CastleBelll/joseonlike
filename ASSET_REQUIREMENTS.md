@@ -98,6 +98,15 @@ Used by:   N3-7 combat HUD (scripts/ui/combat_hud.gd)
 Fallback:  code-drawn palette-token glyphs (PauseGlyph/InfoGlyph/SkullIcon/CoinIcon)
 ```
 
+```
+[MISSING] title corner settings gear glyph
+Size:      48x48 px touch glyph
+Members:   res://asset/ui/title/settings_gear.png
+Used by:   title corner utilities (scripts/ui/title.gd _build_utilities);
+           DESIGN.md §4 and asset/title/preview.png show a gear icon
+Fallback:  wood-styled text button "설정"/"Settings"
+```
+
 ## Anticipated (not yet needed — do not pre-produce)
 
 These become `[MISSING]` entries only when the feature that needs them is actually
