@@ -9,6 +9,8 @@ const SPAWNING_FIELDS: Array[String] = [
 ]
 const CHARACTER_FIELDS: Array[String] = ["base_hp", "base_speed", "hit_invuln_sec"]
 const MONSTER_FIELDS: Array[String] = ["hp", "damage", "speed", "collision_radius", "xp_drop"]
+# N3-12: a declared sprite set must ship both animation files.
+const MONSTER_SPRITE_FILES: Array[String] = ["idle.png", "walk.png"]
 const XP_CURVE_FIELDS: Array[String] = ["base_xp", "growth"]
 const PASSIVE_FIELDS: Array[String] = ["per_stack", "max_stacks"]
 const ORB_FIELDS: Array[String] = [
@@ -64,6 +66,7 @@ func _check_combat_cross_references() -> void:
 	var characters: Dictionary = _load(DATA_DIR + "/characters.json")
 	for monster_id: String in monsters:
 		_require_positive_numbers(monsters[monster_id], MONSTER_FIELDS, "monsters." + monster_id)
+		_check_monster_sprites(monsters[monster_id], "monsters." + monster_id)
 	for stage_id: String in stages:
 		var stage: Dictionary = stages[stage_id]
 		if not monsters.has(stage.get("boss_id", "")):
@@ -215,6 +218,20 @@ func _check_prop_collision(
 	)
 	if not inside:
 		_fail(label + ".collision box exceeds the sprite bounds")
+
+
+## Art is optional — artless monsters fall back to the placeholder rect — but
+## a declared sprite directory must exist on disk with every animation file.
+func _check_monster_sprites(monster: Dictionary, label: String) -> void:
+	if not monster.has("sprite"):
+		return
+	var sprite_dir: String = String(monster.get("sprite", ""))
+	if not sprite_dir.begins_with("res://"):
+		_fail(label + ".sprite must be a res:// directory path")
+		return
+	for file_name: String in MONSTER_SPRITE_FILES:
+		if not FileAccess.file_exists(sprite_dir.path_join(file_name)):
+			_fail("%s.sprite file missing: %s" % [label, sprite_dir.path_join(file_name)])
 
 
 func _require_positive_numbers(entry: Dictionary, fields: Array[String], label: String) -> void:

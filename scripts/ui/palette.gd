@@ -41,6 +41,9 @@ const DAMAGE_TEXT := Color("#ffffff")
 # N3-8 hit feedback / N5-1 boss: flash white, spirit-white death puff, and a
 # violet boss silhouette separated from every mob green/white/brown.
 const HIT_FLASH := Color("#ffffff")
+## Overbright modulate for sprite hit flash (N3-12): fills clamp toward white
+## while the near-black outlines stay dark, so the silhouette survives the hit.
+const SPRITE_HIT_FLASH := Color(8.0, 8.0, 8.0)
 const DEATH_PUFF := ENEMY_SPIRIT
 const ENEMY_BOSS := Color("#8a56c9")
 

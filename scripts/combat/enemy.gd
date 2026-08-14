@@ -1,13 +1,19 @@
 class_name Enemy
 extends CharacterBody2D
 ## Chasing contact-damage monster (N3-4). Stats come from data/monsters.json;
-## the rect visual is a placeholder until the AC-5 monster art lands. All
-## behaviours chase for now — ranged/charger AI is a later feature.
+## monsters with a "sprite" set render the AC-5 art (N3-12): idle + 4-frame
+## walk mirrored by travel direction, 16x NEAREST downscale like the player.
+## Artless monsters keep the placeholder rect. All behaviours chase for now —
+## ranged/charger AI is a later feature.
 
 signal died(enemy: Enemy)
 
 const VISUAL_HEIGHT_RATIO := 2.4  # slightly taller than wide, like the player
 const EYE_RATIO := 0.18
+const WALK_FPS := 8.0
+## The boss idle_breathe strip reads as a slow one-pixel inhale at this rate.
+const IDLE_FPS := 2.0
+const BREATHE_FILE := "idle_breathe.png"
 ## Enemies overlap the player and each other freely (VS-like feel); damage is
 ## the proximity check below, never physics. Layer 2 keeps them off the
 ## player's default layer 1 so nothing pushes anything.
@@ -20,6 +26,10 @@ const PLACEHOLDER_COLORS: Dictionary = {
 	"forest_spirit": UiPalette.ENEMY_SPIRIT,
 	"bamboo_brute": UiPalette.ENEMY_BRUTE,
 }
+
+## SpriteFrames are built once per sprite set and shared by every pooled
+## instance; 60 live enemies must never rebuild atlas slices per spawn.
+static var _frames_cache: Dictionary = {}
 
 var monster_id := ""
 var hp: float = 0.0
@@ -34,6 +44,10 @@ var _contact_cooldown: float = 0.0
 var _time_since_contact: float = 0.0
 var _target: Player
 var _body: ColorRect
+var _visual: Node2D
+var _sprite: AnimatedSprite2D
+var _has_art := false
+var _facing: int = PlayerMotion.FACING_RIGHT
 var _shape: CollisionShape2D
 var _block_normal := Vector2.ZERO
 var _avoid_sign: float = 1.0
@@ -53,9 +67,19 @@ func _ready() -> void:
 	_shape = CollisionShape2D.new()
 	_shape.shape = CircleShape2D.new()
 	add_child(_shape)
+	# The Visual wrapper carries the facing flip (scale.x = ±1) for both the
+	# sprite and the placeholder rect, mirroring the player's structure.
+	_visual = Node2D.new()
+	_visual.name = "Visual"
+	add_child(_visual)
+	_sprite = AnimatedSprite2D.new()
+	_sprite.name = "Sprite"
+	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite.scale = Vector2.ONE / SpriteSheet.EXPORT_SCALE
+	_visual.add_child(_sprite)
 	_body = ColorRect.new()
 	_body.name = "Body"
-	add_child(_body)
+	_visual.add_child(_body)
 	var eye := ColorRect.new()
 	eye.name = "Eye"
 	eye.color = UiPalette.INK
@@ -92,7 +116,41 @@ func setup(
 	# Fixed per-instance detour side keeps two blocked enemies from mirroring
 	# each other forever on the same wall face.
 	_avoid_sign = 1.0 if (get_instance_id() & 1) == 0 else -1.0
-	_apply_placeholder_visual()
+	_apply_visual(String(stats.get("sprite", "")))
+
+
+## Pool-safe visual (re)arm: facing, animation, frame and flash tint are all
+## reset so a reused instance never shows a previous life's state.
+func _apply_visual(sprite_dir: String) -> void:
+	_facing = PlayerMotion.FACING_RIGHT
+	_visual.scale.x = 1.0
+	_has_art = not sprite_dir.is_empty() and ResourceLoader.exists(
+		sprite_dir.path_join("idle.png")
+	)
+	_sprite.visible = _has_art
+	_body.visible = not _has_art
+	if not _has_art:
+		_apply_placeholder_visual()
+		return
+	_sprite.sprite_frames = frames_for(sprite_dir)
+	_sprite.modulate = Color.WHITE
+	_sprite.play(SpriteSheet.ANIM_IDLE)
+	_sprite.frame = 0
+
+
+## Cached per sprite directory. The boss ships a 2-frame idle_breathe strip
+## that replaces the static idle when present.
+static func frames_for(sprite_dir: String) -> SpriteFrames:
+	if _frames_cache.has(sprite_dir):
+		return _frames_cache[sprite_dir]
+	var idle_path: String = sprite_dir.path_join(BREATHE_FILE)
+	if not ResourceLoader.exists(idle_path):
+		idle_path = sprite_dir.path_join("idle.png")
+	var frames: SpriteFrames = SpriteSheet.build_frames(
+		idle_path, sprite_dir.path_join("walk.png"), WALK_FPS, IDLE_FPS
+	)
+	_frames_cache[sprite_dir] = frames
+	return frames
 
 
 func _physics_process(delta: float) -> void:
@@ -113,6 +171,7 @@ func _physics_process(delta: float) -> void:
 		get_slide_collision(0).get_normal() if get_slide_collision_count() > 0
 		else Vector2.ZERO
 	)
+	_update_visual_motion()
 	_try_contact_damage()
 
 
@@ -122,18 +181,38 @@ func take_damage(amount: float, hit_direction: Vector2 = Vector2.ZERO) -> void:
 		died.emit(self)
 		return
 	_flash_left = _flash_sec
-	_body.color = UiPalette.HIT_FLASH
+	if _has_art:
+		_sprite.modulate = UiPalette.SPRITE_HIT_FLASH
+	else:
+		_body.color = UiPalette.HIT_FLASH
 	var scale_factor: float = _boss_knockback_scale if is_boss else 1.0
 	_knockback = hit_direction * _knockback_speed * scale_factor
 
 
-## Flash is a plain color swap on the placeholder rect — no tween, no alloc.
+## Flash is a plain color/modulate swap — no tween, no alloc.
 func _update_flash(delta: float) -> void:
 	if _flash_left <= 0.0:
 		return
 	_flash_left -= delta
-	if _flash_left <= 0.0:
+	if _flash_left > 0.0:
+		return
+	if _has_art:
+		_sprite.modulate = Color.WHITE
+	else:
 		_body.color = _base_color()
+
+
+## Walk while chasing, idle when knock-back and steering cancel out; face the
+## actual travel direction, keeping the last facing on vertical-only travel.
+func _update_visual_motion() -> void:
+	_facing = PlayerMotion.facing_sign(velocity.x, _facing)
+	_visual.scale.x = float(_facing)
+	if not _has_art:
+		return
+	if velocity != Vector2.ZERO:
+		_sprite.play(SpriteSheet.ANIM_WALK)
+	else:
+		_sprite.play(SpriteSheet.ANIM_IDLE)
 
 
 func _base_color() -> Color:

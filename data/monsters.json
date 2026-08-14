@@ -8,8 +8,8 @@
     "xp_drop": 1,
     "gold_drop": 1,
     "behaviour": "chase",
-    "collision_radius": 11.5,
-    "sprite": "res://asset/monster/forest_goblin.png"
+    "collision_radius": 9.5,
+    "sprite": "res://asset/monsters/forest_goblin"
   },
   "forest_spirit": {
     "name_ko": "숲의 원혼",
@@ -20,8 +20,8 @@
     "xp_drop": 5,
     "gold_drop": 2,
     "behaviour": "ranged",
-    "collision_radius": 8.0,
-    "sprite": "res://asset/monster/forest_spirit.png"
+    "collision_radius": 10.0,
+    "sprite": "res://asset/monsters/forest_spirit"
   },
   "bamboo_brute": {
     "name_ko": "죽림 거한",
@@ -32,8 +32,8 @@
     "xp_drop": 8,
     "gold_drop": 4,
     "behaviour": "charger",
-    "collision_radius": 21.5,
-    "sprite": "res://asset/monster/bamboo_brute.png"
+    "collision_radius": 18.5,
+    "sprite": "res://asset/monsters/bamboo_brute"
   },
   "bamboo_spirit_lord": {
     "name_ko": "죽림 정령왕",
@@ -44,8 +44,8 @@
     "xp_drop": 200,
     "gold_drop": 150,
     "behaviour": "boss",
-    "collision_radius": 47.5,
-    "sprite": "res://asset/monster/bamboo_spirit_lord.png"
+    "collision_radius": 33.5,
+    "sprite": "res://asset/monsters/bamboo_spirit_lord"
   },
   "gwimyeon_dokkaebi": {
     "name_ko": "귀면 도깨비",
@@ -56,8 +56,7 @@
     "xp_drop": 2,
     "gold_drop": 2,
     "behaviour": "chase",
-    "collision_radius": 13.5,
-    "sprite": "res://asset/monster/gwimyeon_dokkaebi.png"
+    "collision_radius": 13.5
   },
   "blue_dokkaebi": {
     "name_ko": "푸른 도깨비",
@@ -68,8 +67,7 @@
     "xp_drop": 2,
     "gold_drop": 2,
     "behaviour": "swarm",
-    "collision_radius": 14.0,
-    "sprite": "res://asset/monster/blue_dokkaebi.png"
+    "collision_radius": 14.0
   },
   "gumiho_scout": {
     "name_ko": "여우 정찰병",
@@ -80,8 +78,7 @@
     "xp_drop": 2,
     "gold_drop": 2,
     "behaviour": "chase",
-    "collision_radius": 21.0,
-    "sprite": "res://asset/monster/gumiho_scout.png"
+    "collision_radius": 21.0
   },
   "seonbi_wraith": {
     "name_ko": "선비 원혼",
@@ -92,8 +89,7 @@
     "xp_drop": 8,
     "gold_drop": 3,
     "behaviour": "ranged",
-    "collision_radius": 9.0,
-    "sprite": "res://asset/monster/seonbi_wraith.png"
+    "collision_radius": 9.0
   },
   "haetae_guardian": {
     "name_ko": "해태 수호상",
@@ -104,8 +100,7 @@
     "xp_drop": 13,
     "gold_drop": 6,
     "behaviour": "charger",
-    "collision_radius": 20.5,
-    "sprite": "res://asset/monster/haetae_guardian.png"
+    "collision_radius": 20.5
   },
   "dokkaebi_king": {
     "name_ko": "도깨비 왕",
@@ -116,8 +111,7 @@
     "xp_drop": 320,
     "gold_drop": 240,
     "behaviour": "boss",
-    "collision_radius": 25.5,
-    "sprite": "res://asset/monster/dokkaebi_king.png"
+    "collision_radius": 25.5
   },
   "cheonyeo_gwisin": {
     "name_ko": "처녀 귀신",
@@ -128,8 +122,7 @@
     "xp_drop": 12,
     "gold_drop": 5,
     "behaviour": "ranged",
-    "collision_radius": 23.5,
-    "sprite": "res://asset/monster/cheonyeo_gwisin.png"
+    "collision_radius": 23.5
   },
   "dalgyal_gwisin": {
     "name_ko": "달걀 귀신",
@@ -140,8 +133,7 @@
     "xp_drop": 2,
     "gold_drop": 2,
     "behaviour": "chase",
-    "collision_radius": 23.5,
-    "sprite": "res://asset/monster/dalgyal_gwisin.png"
+    "collision_radius": 23.5
   },
   "jeoseung_saja": {
     "name_ko": "저승사자",
@@ -152,8 +144,7 @@
     "xp_drop": 21,
     "gold_drop": 11,
     "behaviour": "charger",
-    "collision_radius": 25.5,
-    "sprite": "res://asset/monster/jeoseung_saja.png"
+    "collision_radius": 25.5
   },
   "tomb_jangseung": {
     "name_ko": "무덤 장승",
@@ -164,8 +155,7 @@
     "xp_drop": 12,
     "gold_drop": 5,
     "behaviour": "ranged",
-    "collision_radius": 9.0,
-    "sprite": "res://asset/monster/tomb_jangseung.png"
+    "collision_radius": 9.0
   },
   "imugi_whelp": {
     "name_ko": "새끼 이무기",
@@ -176,8 +166,7 @@
     "xp_drop": 2,
     "gold_drop": 2,
     "behaviour": "chase",
-    "collision_radius": 14.0,
-    "sprite": "res://asset/monster/imugi_whelp.png"
+    "collision_radius": 14.0
   },
   "ancient_imugi": {
     "name_ko": "늙은 이무기",
@@ -188,8 +177,7 @@
     "xp_drop": 480,
     "gold_drop": 360,
     "behaviour": "boss",
-    "collision_radius": 26.0,
-    "sprite": "res://asset/monster/ancient_imugi.png"
+    "collision_radius": 26.0
   },
   "wonhon": {
     "name_ko": "떠도는 원혼",
@@ -200,8 +188,7 @@
     "xp_drop": 17,
     "gold_drop": 7,
     "behaviour": "ranged",
-    "collision_radius": 13.0,
-    "sprite": "res://asset/monster/wonhon.png"
+    "collision_radius": 13.0
   },
   "dokkaebi_fire": {
     "name_ko": "도깨비불",
@@ -212,8 +199,7 @@
     "xp_drop": 17,
     "gold_drop": 7,
     "behaviour": "ranged",
-    "collision_radius": 17.0,
-    "sprite": "res://asset/monster/dokkaebi_fire.png"
+    "collision_radius": 17.0
   },
   "shadow_dokkaebi": {
     "name_ko": "그림자 도깨비",
@@ -224,8 +210,7 @@
     "xp_drop": 3,
     "gold_drop": 3,
     "behaviour": "chase",
-    "collision_radius": 14.5,
-    "sprite": "res://asset/monster/shadow_dokkaebi.png"
+    "collision_radius": 14.5
   },
   "fox_spirit": {
     "name_ko": "여우 요괴",
@@ -236,8 +221,7 @@
     "xp_drop": 3,
     "gold_drop": 3,
     "behaviour": "swarm",
-    "collision_radius": 18.5,
-    "sprite": "res://asset/monster/fox_spirit.png"
+    "collision_radius": 18.5
   },
   "bulgasari": {
     "name_ko": "불가사리",
@@ -248,8 +232,7 @@
     "xp_drop": 27,
     "gold_drop": 14,
     "behaviour": "charger",
-    "collision_radius": 20.5,
-    "sprite": "res://asset/monster/bulgasari.png"
+    "collision_radius": 20.5
   },
   "gumiho": {
     "name_ko": "구미호",
@@ -260,7 +243,6 @@
     "xp_drop": 680,
     "gold_drop": 510,
     "behaviour": "boss",
-    "collision_radius": 29.5,
-    "sprite": "res://asset/monster/gumiho.png"
+    "collision_radius": 29.5
   }
 }

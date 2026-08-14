@@ -11,11 +11,12 @@ const WALK_TEXTURE_PATH := "res://asset/characters/taoist/walk.png"
 ## AC-1 export contract (asset/characters/taoist/README.md): PNGs are exact
 ## 16x nearest-neighbor blocks of 40x40 logical frames, figure 38px tall,
 ## which is the intended in-world read on the 540px viewport.
-const SPRITE_EXPORT_SCALE := 16.0
+const SPRITE_EXPORT_SCALE := SpriteSheet.EXPORT_SCALE
 const WALK_FRAME_COUNT := 4
 const WALK_FPS := 8.0
-const ANIM_IDLE := "idle"
-const ANIM_WALK := "walk"
+const IDLE_FPS := 1.0  # single idle frame; the speed value is inert
+const ANIM_IDLE := SpriteSheet.ANIM_IDLE
+const ANIM_WALK := SpriteSheet.ANIM_WALK
 
 ## Widest body half-extent; enemies use it for contact-range checks.
 const CONTACT_RADIUS := 15.0
@@ -144,21 +145,10 @@ func _build_sprite_visual() -> void:
 
 
 ## Public and static so the headless suite can verify the frame contract
-## without a SceneTree (same pattern as TitleScreen.build_ui).
+## without a SceneTree (same pattern as TitleScreen.build_ui). The actual
+## strip slicing lives in SpriteSheet, shared with the monster path (N3-12).
 static func build_sprite_frames() -> SpriteFrames:
-	var frames := SpriteFrames.new()
-	frames.rename_animation("default", ANIM_IDLE)
-	frames.add_frame(ANIM_IDLE, load(IDLE_TEXTURE_PATH))
-	frames.add_animation(ANIM_WALK)
-	frames.set_animation_speed(ANIM_WALK, WALK_FPS)
-	var walk: Texture2D = load(WALK_TEXTURE_PATH)
-	var frame_size := Vector2(walk.get_size().x / float(WALK_FRAME_COUNT), walk.get_size().y)
-	for i: int in range(WALK_FRAME_COUNT):
-		var frame := AtlasTexture.new()
-		frame.atlas = walk
-		frame.region = Rect2(Vector2(frame_size.x * float(i), 0.0), frame_size)
-		frames.add_frame(ANIM_WALK, frame)
-	return frames
+	return SpriteSheet.build_frames(IDLE_TEXTURE_PATH, WALK_TEXTURE_PATH, WALK_FPS, IDLE_FPS)
 
 
 func _build_hp_bar() -> void:

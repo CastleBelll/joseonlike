@@ -105,5 +105,8 @@ being built:
 
 - Abandoned Temple stage ground and backdrop (ROADMAP M3-1)
 - Second boss set (M3-3)
+- Stage 2/3 monster sprite sets (gwimyeon_dokkaebi .. gumiho): their
+  data/monsters.json entries carry no `sprite` key yet and render the
+  placeholder rect until each stage is actually built
 - Camp interiors for Workshop / Training Ground / Shrine (M2-3..M2-5)
 - Icons for weapons added past the current 7 (M3-4..N)
