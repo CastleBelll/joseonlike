@@ -111,7 +111,7 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | 2 | ~~**N3-15 조준 범위를 화면 안으로**~~ ✅ | 완료 — 뷰 렉트+마진 내 & 무기 range_px 내 적만 조준, 대상 없으면 발사 보류, 투사체 화면 밖 소멸 |
 | 3 | ~~**N4-4a 도사 핵심 무기 6종**~~ ✅ | 완료 — 6종 메커니즘(단일/폭발/연쇄/근접원호/선회도트/관통) + 개조 분기 5종(화령부·뇌정부·봉마검·귀철석장·화령혼불) 데이터 구동. 봉인은 법검 분기로 이동, lightning_talisman 삭제. 플레이테스트: 승리 298.5s, 서지 fps min 59, peak live 51 |
 | 4 | **N4-4b 도사 확장 4종 + 액티브 2종** | 결계(장판)·신장(소환)·진언(광역제어)·살(전염) + 축지·벽사진 |
-| 4.5 | **N3-16 바닥 렌더 범위 버그** | 플레이테스트 스크린샷에서 화면 하단 1/3이 회색 공백. GroundLayer가 카메라 시야를 못 덮는다 — 타일 범위를 뷰포트+마진으로 갱신 |
+| 4.5 | ~~**N3-16 바닥 렌더 범위 버그**~~ ✅ | 완료 — GroundLayer가 카메라 시야 타일 윈도우를 따라간다 (좌표+시드 순수함수 배리언트/회전, 윈도우 변경 시에만 redraw). 필드 코너 스크린샷으로 회색 밴드 소멸 확인 (tools/ground_check.tscn) |
 | 5 | **N4-3 5분 런 실플레이 튜닝** | 무기·스킬이 다 들어온 뒤 드랍률·XP곡선·난이도 조정 |
 | 6 | **N6-1 첫 실행 흐름(FTUE)** | 첫 부팅 즉시 출정, 조작 오버레이 1회, 첫 개조 팝업 설명 |
 | 7 | **N3-13 무기·전리품 아이콘 아트 연결** | 카드 아이콘이 전부 글자 플레이스홀더 |
@@ -166,4 +166,5 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | 2026-08-14 | N5-2 autosave/auto-resume + settings popup: SaveProfile pure helpers + SaveService autoload (user://profile.save JSON, temp-rename safe write with crash recovery, schema v1 migration hook, corrupt→warning+fresh), run-end gold banking + lifetime stats, result-screen 보유 엽전 row, paper-panel settings popup (3 volume sliders + 한국어/English toggle, applies live + persists), Master/Music/Effects buses, single-primary-action title | — |
 | 2026-08-14 | N3-15 on-screen-only targeting: nearest enemy inside view rect + data margin AND per-weapon range_px (weapons.json `_targeting` + every weapon), hold-fire when nothing visible, projectile expires on leaving view rect + margin, validate_data targeting contract | — |
 | 2026-08-14 | N3-14 enemy separation steering: bucketed-grid neighbour lookup (Separation, reused buffers, no per-frame alloc), weighted push blended into chase, boss push-exempt but crowd-blocking, tuning in effects.json, playtest crowd metric avg-stacked 8.46 → 0.00 | — |
+| 2026-08-14 | N3-16 ground coverage fix: GroundLayer follows the camera's tile window (per-tile seed-hash variant/rotation, redraw only on window change), grey band gone at field edges, coverage invariant test + tools/ground_check.tscn edge screenshot | — |
 | 2026-08-14 | N4-6 loot auto-collect + mod-as-level-up-card: special-material popup and queueing deleted (DESIGN.md §5.2), every material collects silently via the magnet path (floating cue label for specials), dead materials auto-salvage to gold at pickup, 개조 card in the level-up 3-pick (max one per screen, result grade pill, real numbers, consumes material, carries level+grade), replaced weapons permanently excluded from new/upgrade pools (owner-reported regression, covered by failing-first test), dead-inventory sweep after each mod | — |

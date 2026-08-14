@@ -97,6 +97,48 @@ func test_different_seeds_can_change_variant_choice() -> bool:
 	return false
 
 
+## N3-16: the drawn tile window must always contain the camera view rect —
+## this is the invariant whose absence showed as the grey bottom band. Checked
+## far from spawn, at the old field edge, and with a non-tile-aligned view.
+func test_tile_window_covers_camera_view_anywhere() -> bool:
+	var view_size := Vector2(540.0, 960.0)
+	var centers: Array[Vector2] = [
+		Vector2.ZERO,
+		Vector2(1000.0, 1000.0),  # old field edge: view extends past 1024
+		Vector2(-3277.5, 5121.3),  # far off-field, unaligned to the tile grid
+		Vector2(0.0, 1024.0),  # bottom edge, where the band showed
+	]
+	for center: Vector2 in centers:
+		var view := Rect2(center - view_size / 2.0, view_size)
+		var covered: Rect2 = GroundLayer.window_rect(
+			GroundLayer.tile_window(view.grow(GroundLayer.VIEW_MARGIN_PX))
+		)
+		if not covered.encloses(view):
+			return false
+	return true
+
+
+## Variant and rotation are pure functions of world tile coordinate + seed, so
+## any two windows overlapping the same tile agree on its look.
+func test_per_tile_pattern_is_seed_stable() -> bool:
+	var density: FastNoiseLite = GroundLayer.make_density_noise(SEED_A)
+	var type_noise: FastNoiseLite = GroundLayer.make_type_noise(SEED_A)
+	var density_b: FastNoiseLite = GroundLayer.make_density_noise(SEED_A)
+	var type_b: FastNoiseLite = GroundLayer.make_type_noise(SEED_A)
+	for tile: Vector2i in [Vector2i(-40, 77), Vector2i(0, 0), Vector2i(999, -1234)]:
+		if (
+			GroundLayer.tile_variant(density, type_noise, tile.x, tile.y)
+			!= GroundLayer.tile_variant(density_b, type_b, tile.x, tile.y)
+		):
+			return false
+		if (
+			GroundLayer.tile_rotation(SEED_A, tile.x, tile.y)
+			!= GroundLayer.tile_rotation(SEED_A, tile.x, tile.y)
+		):
+			return false
+	return true
+
+
 func test_tiles_cover_the_field_with_no_gap() -> bool:
 	var field: Dictionary = _field()
 	var tiles: Array[Dictionary] = GroundLayer.generate_layout(field, SEED_A)
