@@ -1,7 +1,9 @@
 class_name AutoWeapon
 extends Node2D
 ## Data-driven auto-attack (N3-3): every cooldown_sec, fire one straight
-## projectile at the nearest live enemy within the view-radius firing range.
+## projectile at the nearest live enemy that is visible on screen (view rect
+## + _targeting.view_margin_px) AND within the weapon's own range_px (N3-15).
+## No visible target -> every weapon holds fire, keeping the shot ready.
 ## All balance numbers come from data/weapons.json.
 
 signal hit_landed(amount: float, at: Vector2, boss_hit: bool)
@@ -30,6 +32,8 @@ var _cooldown_scale: float = 1.0
 var _damage: float = 0.0
 var _cooldown: float = 0.0
 var _speed: float = 0.0
+var _range: float = 0.0
+var _view_margin: float = 0.0
 var _cooldown_left: float = 0.0
 var _player: Player
 var _spawner: Spawner
@@ -49,6 +53,10 @@ func setup(id: String, player: Player, spawner: Spawner) -> void:
 	_grades = WeaponGrade.config(weapons)
 	_grade = String(_stats.get("grade", ""))
 	_speed = float(_stats.get("speed", 0.0))
+	_range = float(_stats.get("range_px", 0.0))
+	_view_margin = float(
+		((weapons as Dictionary).get("_targeting", {}) as Dictionary).get("view_margin_px", 0.0)
+	)
 	_recompute()
 
 
@@ -98,8 +106,12 @@ func _try_fire() -> bool:
 	var positions: Array[Vector2] = []
 	for enemy: Enemy in enemies:
 		positions.append(enemy.global_position)
-	var firing_range: float = get_viewport_rect().size.length() / 2.0
-	var index: int = CombatMath.nearest_index(_player.global_position, positions, firing_range)
+	# Player position approximates the smoothed camera center, same tradeoff
+	# as the spawner (N3-4).
+	var index: int = CombatMath.nearest_visible_index(
+		_player.global_position, _player.global_position, get_viewport_rect().size,
+		_view_margin, positions, _range
+	)
 	if index < 0:
 		return false
 	var direction: Vector2 = CombatMath.chase_direction(
@@ -109,7 +121,8 @@ func _try_fire() -> bool:
 		direction = Vector2.RIGHT  # enemy exactly on the player; any heading hits
 	var projectile: Projectile = _pool.acquire()
 	projectile.launch(
-		_player.global_position, direction, _speed, _damage, _spawner, _player, _tint()
+		_player.global_position, direction, _speed, _damage, _spawner, _player,
+		_tint(), _view_margin
 	)
 	return true
 

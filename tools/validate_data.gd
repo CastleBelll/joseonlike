@@ -110,6 +110,7 @@ func _check_combat_cross_references() -> void:
 			)
 	var weapons: Dictionary = _load(DATA_DIR + "/weapons.json")
 	_check_weapon_grades(weapons)
+	_check_weapon_targeting(weapons)
 	var achievements: Dictionary = _load(DATA_DIR + "/achievements.json")
 	for character_id: String in characters:
 		_require_positive_numbers(
@@ -220,6 +221,19 @@ func _check_weapon_grades(weapons: Dictionary) -> void:
 		var grade: String = String((weapons[weapon_id] as Dictionary).get("grade", ""))
 		if grade not in rungs:
 			_fail("weapons.%s.grade '%s' not on the _grades ladder" % [weapon_id, grade])
+
+
+## N3-15 targeting contract: a shared positive view margin and a positive
+## per-weapon range, so no weapon can ever fall back to "target anywhere".
+func _check_weapon_targeting(weapons: Dictionary) -> void:
+	var targeting: Dictionary = weapons.get("_targeting", {})
+	if float(targeting.get("view_margin_px", 0.0)) <= 0.0:
+		_fail("weapons._targeting.view_margin_px missing or not positive")
+	for weapon_id: String in weapons:
+		if weapon_id.begins_with("_"):
+			continue
+		if float((weapons[weapon_id] as Dictionary).get("range_px", 0.0)) <= 0.0:
+			_fail("weapons.%s.range_px missing or not positive" % weapon_id)
 
 
 ## N4-1 loot chain: every drop table points at a real monster and real loot,

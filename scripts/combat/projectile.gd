@@ -1,7 +1,8 @@
 class_name Projectile
 extends Node2D
 ## Straight-line talisman projectile (N3-3). Pooled by AutoWeapon; finishes
-## on first enemy hit or on leaving the view ring around the player.
+## on first enemy hit or on leaving the visible view rect plus the shared
+## targeting margin (N3-15) — it never chases anything off-screen.
 ## ponytail: no pierce yet — old_talisman has pierce 0; add when a pierced
 ## weapon becomes obtainable in a run.
 
@@ -13,6 +14,7 @@ const HIT_RADIUS := 4.0
 
 var _velocity := Vector2.ZERO
 var _damage: float = 0.0
+var _view_margin: float = 0.0
 var _spawner: Spawner
 var _player: Player
 var _paper: ColorRect
@@ -34,12 +36,14 @@ func _ready() -> void:
 
 
 func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
-		spawner: Spawner, player: Player, tint: Color = UiPalette.PAPER) -> void:
+		spawner: Spawner, player: Player, tint: Color = UiPalette.PAPER,
+		view_margin: float = 0.0) -> void:
 	global_position = from
 	_velocity = direction * speed
 	# The talisman's long side leads the flight direction.
 	rotation = direction.angle() + PI / 2.0
 	_damage = damage
+	_view_margin = view_margin
 	_spawner = spawner
 	_player = player
 	# N4-1: modded weapons tint the paper so a transformation reads on field.
@@ -62,8 +66,8 @@ func _physics_process(delta: float) -> void:
 		return
 	# Player position approximates the smoothed camera center, same tradeoff
 	# as the spawner (N3-4).
-	var gone: bool = CombatMath.should_despawn(
-		global_position, _player.global_position, get_viewport_rect().size, 0.0
+	var gone: bool = CombatMath.outside_view(
+		global_position, _player.global_position, get_viewport_rect().size, _view_margin
 	)
 	if gone:
 		finished.emit(self)

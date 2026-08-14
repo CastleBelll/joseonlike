@@ -79,22 +79,65 @@ func test_starting_weapon_reads_characters_json() -> bool:
 	return Player.load_starting_weapon() == "old_talisman"
 
 
-func test_nearest_index_picks_closest() -> bool:
+func test_nearest_visible_picks_closest_valid() -> bool:
 	var candidates: Array[Vector2] = [
 		Vector2(100.0, 0.0), Vector2(30.0, 40.0), Vector2(0.0, 200.0)
 	]
-	return CombatMath.nearest_index(Vector2.ZERO, candidates, 500.0) == 1
+	return CombatMath.nearest_visible_index(
+		Vector2.ZERO, Vector2.ZERO, VIEW, 48.0, candidates, 500.0
+	) == 1
 
 
-func test_nearest_index_ignores_beyond_range() -> bool:
-	var candidates: Array[Vector2] = [Vector2(100.0, 0.0), Vector2(60.0, 0.0)]
-	var in_range: bool = CombatMath.nearest_index(Vector2.ZERO, candidates, 60.0) == 1
-	return in_range and CombatMath.nearest_index(Vector2.ZERO, candidates, 50.0) == -1
+## The old bug (N3-15): the nearest enemy sat outside the screen and the
+## talisman flew off like a guided missile. Off-view candidates must lose to
+## a farther on-view one, and an empty field must return -1 (hold fire).
+func test_nearest_visible_excludes_out_of_view() -> bool:
+	# VIEW is 540x960: x=400 is past the 270+48 right edge, x=200 is inside.
+	var candidates: Array[Vector2] = [Vector2(400.0, 0.0), Vector2(200.0, 0.0)]
+	var picked: int = CombatMath.nearest_visible_index(
+		Vector2.ZERO, Vector2.ZERO, VIEW, 48.0, candidates, 1000.0
+	)
+	var none: int = CombatMath.nearest_visible_index(
+		Vector2.ZERO, Vector2.ZERO, VIEW, 48.0,
+		[Vector2(400.0, 0.0)] as Array[Vector2], 1000.0
+	)
+	return picked == 1 and none == -1
 
 
-func test_nearest_index_empty_returns_minus_one() -> bool:
+func test_nearest_visible_excludes_out_of_range() -> bool:
+	# On screen (y axis has 480px half-extent) but beyond the weapon's range.
+	var candidates: Array[Vector2] = [Vector2(0.0, 450.0)]
+	var out: int = CombatMath.nearest_visible_index(
+		Vector2.ZERO, Vector2.ZERO, VIEW, 48.0, candidates, 420.0
+	)
+	var boundary: int = CombatMath.nearest_visible_index(
+		Vector2.ZERO, Vector2.ZERO, VIEW, 48.0, candidates, 450.0
+	)
+	return out == -1 and boundary == 0
+
+
+func test_nearest_visible_empty_returns_minus_one() -> bool:
 	var none: Array[Vector2] = []
-	return CombatMath.nearest_index(Vector2.ZERO, none, 500.0) == -1
+	return CombatMath.nearest_visible_index(
+		Vector2.ZERO, Vector2.ZERO, VIEW, 48.0, none, 500.0
+	) == -1
+
+
+func test_projectile_expires_outside_view_rect() -> bool:
+	var margin: float = 48.0
+	# Just inside and just outside the right edge (270 + margin).
+	var inside: Vector2 = Vector2(VIEW.x / 2.0 + margin - 1.0, 0.0)
+	var outside: Vector2 = Vector2(VIEW.x / 2.0 + margin + 1.0, 0.0)
+	var keeps: bool = not CombatMath.outside_view(inside, Vector2.ZERO, VIEW, margin)
+	return keeps and CombatMath.outside_view(outside, Vector2.ZERO, VIEW, margin)
+
+
+## Circle despawn would keep a projectile alive here: the corner-distance
+## ring reaches ~550px but the rect edge is 270+48. The rect must win.
+func test_view_rect_tighter_than_old_circle() -> bool:
+	var position := Vector2(400.0, 0.0)
+	var circle_kept: bool = not CombatMath.should_despawn(position, Vector2.ZERO, VIEW, 48.0)
+	return circle_kept and CombatMath.outside_view(position, Vector2.ZERO, VIEW, 48.0)
 
 
 func test_projectile_travels_straight() -> bool:
@@ -102,15 +145,6 @@ func test_projectile_travels_straight() -> bool:
 		Vector2(10.0, 20.0), Vector2.RIGHT, 260.0, 0.5
 	)
 	return at.distance_to(Vector2(140.0, 20.0)) < EPSILON
-
-
-func test_projectile_expires_by_despawn_rule() -> bool:
-	var speed: float = 260.0
-	var direction := Vector2.RIGHT
-	var near: Vector2 = CombatMath.projectile_position(Vector2.ZERO, direction, speed, 1.0)
-	var far: Vector2 = CombatMath.projectile_position(Vector2.ZERO, direction, speed, 10.0)
-	var keeps_near: bool = not CombatMath.should_despawn(near, Vector2.ZERO, VIEW, 0.0)
-	return keeps_near and CombatMath.should_despawn(far, Vector2.ZERO, VIEW, 0.0)
 
 
 func test_xp_to_next_matches_documented_curve() -> bool:

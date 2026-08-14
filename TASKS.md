@@ -108,7 +108,7 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | # | 작업 | 왜 지금 |
 |---|---|---|
 | 1 | ~~**N3-14 몬스터 겹침 해소**~~ ✅ | 완료 — 그리드 기반 분리 조향, 평균 겹침 8.46 → 0.00 (플레이테스트 261/240 샘플) |
-| 2 | **N3-15 조준 범위를 화면 안으로** | 화면 밖 적에게 투사체가 유도탄처럼 날아간다. 보이는 적만 조준, 사거리/시야 데이터화 |
+| 2 | ~~**N3-15 조준 범위를 화면 안으로**~~ ✅ | 완료 — 뷰 렉트+마진 내 & 무기 range_px 내 적만 조준, 대상 없으면 발사 보류, 투사체 화면 밖 소멸 |
 | 3 | **N4-4a 도사 핵심 무기 6종** | GDD §11.1: 낡은 부적(단일)·화부(폭발)·뇌부(연쇄)·석장(근접)·혼불(도트선회)·법검(관통). 메커니즘이 전부 다르고 각각 개조 분기 보유 |
 | 4 | **N4-4b 도사 확장 4종 + 액티브 2종** | 결계(장판)·신장(소환)·진언(광역제어)·살(전염) + 축지·벽사진 |
 | 5 | **N4-3 5분 런 실플레이 튜닝** | 무기·스킬이 다 들어온 뒤 드랍률·XP곡선·난이도 조정 |
@@ -163,5 +163,6 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | 2026-08-14 | N4-2 weapon grades + 15-min pacing: `_grades` ladder/step multipliers in weapons.json, grade-up level-up card + mod grade carry + top-grade gold callout, 15-min bamboo_forest wave curve (elite from 5:00, surge peak 840s, boss 900s, soft enrage 920s+), `bamboo_brute_elite` data-derived elite + rare-material drop table, RunFlow schedule invariants, validate_data grade/elite/pacing cross-checks, boss hp 7000 | — |
 | 2026-08-14 | N4-2b 5-minute run rescale: 300s bamboo_forest curve (elite 2:00, surge peak 57 at 3:30, boss 4:00 hp 2400, enrage 4:40), XP curve 6×1.5^(L-1) for 8–10 level-ups, early special-material drop bias, duration_sec bound invariant in schedule_issues, autoplay verification harness (tools/playtest.tscn) | — |
 | 2026-08-14 | N5-2 autosave/auto-resume + settings popup: SaveProfile pure helpers + SaveService autoload (user://profile.save JSON, temp-rename safe write with crash recovery, schema v1 migration hook, corrupt→warning+fresh), run-end gold banking + lifetime stats, result-screen 보유 엽전 row, paper-panel settings popup (3 volume sliders + 한국어/English toggle, applies live + persists), Master/Music/Effects buses, single-primary-action title | — |
+| 2026-08-14 | N3-15 on-screen-only targeting: nearest enemy inside view rect + data margin AND per-weapon range_px (weapons.json `_targeting` + every weapon), hold-fire when nothing visible, projectile expires on leaving view rect + margin, validate_data targeting contract | — |
 | 2026-08-14 | N3-14 enemy separation steering: bucketed-grid neighbour lookup (Separation, reused buffers, no per-frame alloc), weighted push blended into chase, boss push-exempt but crowd-blocking, tuning in effects.json, playtest crowd metric avg-stacked 8.46 → 0.00 | — |
 | 2026-08-14 | N4-6 loot auto-collect + mod-as-level-up-card: special-material popup and queueing deleted (DESIGN.md §5.2), every material collects silently via the magnet path (floating cue label for specials), dead materials auto-salvage to gold at pickup, 개조 card in the level-up 3-pick (max one per screen, result grade pill, real numbers, consumes material, carries level+grade), replaced weapons permanently excluded from new/upgrade pools (owner-reported regression, covered by failing-first test), dead-inventory sweep after each mod | — |

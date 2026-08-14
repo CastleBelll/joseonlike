@@ -58,12 +58,39 @@ static func should_despawn(
 	return enemy_position.distance_to(camera_center) > limit
 
 
-## Index of the candidate nearest to `from` within `max_range`, -1 when none
-## qualifies. A candidate exactly at the range boundary is targetable.
-static func nearest_index(from: Vector2, candidates: Array[Vector2], max_range: float) -> int:
+## Camera view rectangle grown by `margin` on every side (N3-15). The rect —
+## not the old half-diagonal circle — is what "visible" means for targeting
+## and projectile life, so nothing tracks or flies where the player can't see.
+static func view_rect(camera_center: Vector2, view_size: Vector2, margin: float) -> Rect2:
+	var margin_vector := Vector2(margin, margin)
+	return Rect2(
+		camera_center - view_size / 2.0 - margin_vector, view_size + margin_vector * 2.0
+	)
+
+
+static func outside_view(
+	position: Vector2, camera_center: Vector2, view_size: Vector2, margin: float
+) -> bool:
+	return not view_rect(camera_center, view_size, margin).has_point(position)
+
+
+## N3-15 targeting: nearest candidate that is BOTH inside the visible view
+## rect (+margin) and within the weapon's own range. -1 when nothing
+## qualifies — the weapon holds fire rather than shooting off-screen.
+static func nearest_visible_index(
+	from: Vector2,
+	camera_center: Vector2,
+	view_size: Vector2,
+	margin: float,
+	candidates: Array[Vector2],
+	max_range: float
+) -> int:
+	var visible: Rect2 = view_rect(camera_center, view_size, margin)
 	var best: int = -1
 	var best_distance_squared: float = max_range * max_range
 	for i: int in range(candidates.size()):
+		if not visible.has_point(candidates[i]):
+			continue
 		var distance_squared: float = from.distance_squared_to(candidates[i])
 		if distance_squared <= best_distance_squared:
 			best = i
