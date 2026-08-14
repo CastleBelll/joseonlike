@@ -27,6 +27,12 @@ Fresh Session
 **One feature = one session = one commit.** Never start the next feature in the
 same session. Never commit unverified work.
 
+**Serial only (owner direction 2026-08-14).** Run one worker at a time. Finish
+the feature, verify it, commit, push, show the owner, then start the next from
+the queue in [TASKS.md](TASKS.md). Do not fan out parallel workers across
+worktrees; the only exception is an asset-generation task that touches no game
+code and lands as its own commit.
+
 A "feature" is a single verifiable behaviour: `enemy death drop`, `gold spend in
 workshop`, `pause menu resume`. `combat system` is not a feature — decompose it.
 
