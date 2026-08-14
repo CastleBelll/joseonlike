@@ -51,6 +51,10 @@ const WALK_OFFSETS: Array[Vector2i] = [
 const FRAME_COUNT: int = 4
 const DIRECTION_COUNT: int = 8
 
+## Side-view facing (GDD v2 section 6): sprites face left or right only.
+const FACING_RIGHT: int = 1
+const FACING_LEFT: int = -1
+
 ## No cycle or recoil offset may exceed this on either axis. Two offsets that
 ## compose past it read as a glitch rather than as animation.
 const MAX_OFFSET_PX: int = 2
@@ -63,6 +67,17 @@ static func direction_name(vector: Vector2) -> String:
 		return DEFAULT_DIRECTION
 	var bucket: int = int(round(vector.angle() / (TAU / float(DIRECTION_COUNT))))
 	return DIRECTION_NAMES[posmod(bucket, DIRECTION_COUNT)]
+
+
+## Side-view facing for a movement vector: the horizontal component decides,
+## and pure-vertical or zero movement keeps `current` so the sprite never
+## snaps to a default mid-strafe (GDD v2 section 6).
+static func facing_sign(vector: Vector2, current: int) -> int:
+	if vector.x > 0.0:
+		return FACING_RIGHT
+	if vector.x < 0.0:
+		return FACING_LEFT
+	return current
 
 
 ## Which frame of a `hz`-rate cycle `elapsed_sec` lands on.

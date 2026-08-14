@@ -24,9 +24,19 @@ const HIT_FLASH_HZ: float = 12.0
 const PLACEHOLDER_TINT: Color = Color(0.42, 0.78, 1.0)
 const SPRITE_KEY: String = "sprite"
 
-## One authored sprite per direction (asset/M1_ASSET_REPORT.md). Warrior and
-## Archer only ship "south" for M1, so a missing rotation falls back rather
-## than leaving the hunter invisible.
+## Side-view art (GDD v2 section 6): one right-facing idle plus a 4-frame walk
+## strip; left is flip_h. When a character has both, the 8-direction rotation
+## path below is never touched.
+const SIDE_IDLE_PATH: String = "res://asset/character/%s/side/idle.png"
+const SIDE_WALK_PATH: String = "res://asset/character/%s/side/walk.png"
+const SIDE_WALK_FRAMES: int = 4
+## The side sprites are exported at this nearest-neighbour upscale
+## (asset/character/SIDEVIEW_SPRITES.md). Loading shrinks them back to logical
+## pixels so the node keeps scale 1.0 and whole-pixel offsets stay honest.
+const SIDE_EXPORT_SCALE: int = 16
+
+## Legacy 8-direction fallback (asset/M1_ASSET_REPORT.md) for entities without
+## side-view art yet.
 const ROTATION_PATH: String = "res://asset/character/%s/Idle/rotations/%s.png"
 const CHARACTER_FOLDERS: Dictionary = {
 	"taoist": "Taoist",
@@ -78,6 +88,9 @@ var _recoil_ticks_left: int = 0
 var _recoil_offset: Vector2i = Vector2i.ZERO
 var _direction_name: String = CharacterMotion.DEFAULT_DIRECTION
 var _rotation_cache: Dictionary = {}
+var _facing_sign: int = CharacterMotion.FACING_RIGHT
+var _side_idle: Texture2D = null
+var _side_walk: Texture2D = null
 
 @onready var _sprite: Sprite2D = $Sprite2D
 @onready var _hurt_box: Area2D = $HurtBox
@@ -234,7 +247,19 @@ func _apply_sprite(_character_data_unused: Dictionary) -> void:
 	if _sprite == null:
 		return
 	_sprite.centered = true
+	var folder: String = String(CHARACTER_FOLDERS.get(_character_id(), ""))
+	if not folder.is_empty():
+		_side_idle = _logical_side_texture(_load_texture(SIDE_IDLE_PATH % folder))
+		_side_walk = _logical_side_texture(_load_texture(SIDE_WALK_PATH % folder))
+	if _has_side_art():
+		_sprite.texture = _side_idle
+		_sprite.hframes = 1
+		return
 	_apply_direction(CharacterMotion.DEFAULT_DIRECTION)
+
+
+func _has_side_art() -> bool:
+	return _side_idle != null and _side_walk != null
 
 
 ## Swaps in the authored rotation for `direction`, caching loads because this is
@@ -263,11 +288,28 @@ func _rotation_texture(direction: String) -> Texture2D:
 
 
 func _load_rotation(folder: String, direction: String) -> Texture2D:
-	var path: String = ROTATION_PATH % [folder, direction]
+	return _load_texture(ROTATION_PATH % [folder, direction])
+
+
+func _load_texture(path: String) -> Texture2D:
 	if not ResourceLoader.exists(path):
 		return null
 	var resource: Resource = ResourceLoader.load(path)
 	return resource as Texture2D
+
+
+## Shrinks a 16x-exported side sprite back to its logical pixel grid with
+## nearest sampling — an exact inverse of the export, so no pixel is invented.
+func _logical_side_texture(texture: Texture2D) -> Texture2D:
+	if texture == null:
+		return null
+	var image: Image = texture.get_image()
+	if image == null:
+		return texture
+	var logical_width: int = maxi(image.get_width() / SIDE_EXPORT_SCALE, 1)
+	var logical_height: int = maxi(image.get_height() / SIDE_EXPORT_SCALE, 1)
+	image.resize(logical_width, logical_height, Image.INTERPOLATE_NEAREST)
+	return ImageTexture.create_from_image(image)
 
 
 func _character_id() -> String:
@@ -369,15 +411,29 @@ func _advance_motion(direction: Vector2, delta: float) -> void:
 		_sprite.position = Vector2.ZERO
 	_motion_time += delta
 
-	if walking:
+	if _has_side_art():
+		_facing_sign = CharacterMotion.facing_sign(direction, _facing_sign)
+		_sprite.flip_h = _facing_sign == CharacterMotion.FACING_LEFT
+		if walking:
+			_sprite.texture = _side_walk
+			_sprite.hframes = SIDE_WALK_FRAMES
+			_sprite.frame = CharacterMotion.frame_index(_motion_time, CharacterMotion.WALK_HZ)
+		else:
+			_sprite.texture = _side_idle
+			_sprite.hframes = 1
+			_sprite.frame = 0
+	elif walking:
 		_apply_direction(CharacterMotion.direction_name(direction))
 
 	var is_recoiling: bool = _recoil_ticks_left > 0
 	if is_recoiling:
 		_recoil_ticks_left -= 1
 
+	# With a walk strip the frames carry the motion, so the pixel-offset hop is
+	# only the fallback (and the idle breath / recoil still apply either way).
+	var use_offset_hop: bool = walking and not _has_side_art()
 	var offset: Vector2i = CharacterMotion.sprite_offset(
-		_motion_time, walking, _recoil_offset, is_recoiling
+		_motion_time, use_offset_hop, _recoil_offset, is_recoiling
 	)
 	if not is_recoiling:
 		_recoil_offset = Vector2i.ZERO
