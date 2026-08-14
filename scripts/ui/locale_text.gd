@@ -64,6 +64,11 @@ const UI_STRINGS: Dictionary = {
 	"kind_weapon_upgrade": {"ko": "무기 강화", "en": "Weapon Upgrade"},
 	"kind_passive": {"ko": "패시브", "en": "Passive"},
 	"no_choices": {"ko": "선택지가 없습니다.", "en": "No choices available."},
+	"grade_common": {"ko": "일반", "en": "Common"},
+	"grade_rare": {"ko": "희귀", "en": "Rare"},
+	"grade_epic": {"ko": "영웅", "en": "Epic"},
+	"grade_legendary": {"ko": "전설", "en": "Legendary"},
+	"grade_mythic": {"ko": "신화", "en": "Mythic"},
 
 	"loot_choice_title_template": {"ko": "%s 획득!", "en": "%s acquired!"},
 	"kind_loot_use": {"ko": "개조", "en": "Modify"},

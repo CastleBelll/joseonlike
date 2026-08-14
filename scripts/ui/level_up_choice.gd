@@ -24,13 +24,11 @@ const KIND_LABEL_KEYS := {
 ## adding a new core field, with "epic" read as the top "legendary" art tier.
 ## Passives carry no grade in data/passives.json, so they render at the
 ## common tier (they are small incremental stat bumps, never a headline pick).
-const TIER_DIR := "res://asset/ui/level_up"
 const GRADE_TO_TIER := {
 	"common": "common",
 	"rare": "rare",
 	"epic": "legendary",
 }
-const CARD_MARGIN := 12
 
 @onready var _dim: ColorRect = $Dim
 @onready var _panel: Panel = $Panel
@@ -126,43 +124,56 @@ func render_choices(choices: Array[Dictionary]) -> void:
 		first_card.grab_focus()
 
 
+## DESIGN.md selection-card grammar: bright paper card with a vermilion
+## frame, a square dark icon well on the left, big name + data description,
+## and a grade pill in text (never colour alone) on the right.
 func _build_choice_card(model: Dictionary) -> Button:
-	var tier: String = String(model.get("tier", "common"))
-
 	var button := Button.new()
-	button.custom_minimum_size = Vector2(0, 96)
+	button.custom_minimum_size = Vector2(0, 104)
 	button.focus_mode = Control.FOCUS_ALL
-	_style_tier_card(button, tier)
+	button.add_theme_stylebox_override("normal", UiPalette.panel_style(UiPalette.PAPER.lightened(0.45), UiPalette.VERMILION, 3, 10))
+	button.add_theme_stylebox_override("hover", UiPalette.panel_style(UiPalette.PAPER.lightened(0.6), UiPalette.VERMILION, 3, 10))
+	button.add_theme_stylebox_override("pressed", UiPalette.panel_style(UiPalette.PAPER.lightened(0.3), UiPalette.VERMILION, 3, 10))
+	button.add_theme_stylebox_override("focus", UiPalette.panel_style(Color.TRANSPARENT, UiPalette.GOLD, 3, 10))
 	button.pressed.connect(_on_choice_selected.bind(String(model.get("id", ""))))
+
+	var margin := MarginContainer.new()
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", UiPalette.SPACING_SM)
+	margin.add_theme_constant_override("margin_right", UiPalette.SPACING_SM)
+	margin.add_theme_constant_override("margin_top", UiPalette.SPACING_SM)
+	margin.add_theme_constant_override("margin_bottom", UiPalette.SPACING_SM)
+	button.add_child(margin)
 
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.set_anchors_preset(Control.PRESET_FULL_RECT)
-	row.add_theme_constant_override("separation", UiPalette.SPACING_SM)
-	button.add_child(row)
+	row.add_theme_constant_override("separation", UiPalette.SPACING_MD)
+	margin.add_child(row)
 
-	var icon_texture: Texture2D = model.get("icon")
+	# Icon well: dark square so any icon art pops, like the benchmark cards.
+	var well := PanelContainer.new()
+	well.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	well.custom_minimum_size = Vector2(64, 64)
+	well.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	well.add_theme_stylebox_override("panel", UiPalette.panel_style(UiPalette.INK, Color.TRANSPARENT, 0, 8))
+	row.add_child(well)
+	var icon_texture: Texture2D = _choice_icon(model)
 	if icon_texture != null:
 		var icon := TextureRect.new()
 		icon.texture = icon_texture
-		icon.custom_minimum_size = Vector2(32, 32)
+		icon.custom_minimum_size = Vector2(48, 48)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(icon)
+		well.add_child(icon)
 
 	var box := VBoxContainer.new()
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_theme_constant_override("separation", UiPalette.SPACING_XS)
 	row.add_child(box)
-
-	var kind_label_text: String = String(model.get("kind_label", ""))
-	if not kind_label_text.is_empty():
-		var kind_label := Label.new()
-		kind_label.text = kind_label_text
-		kind_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
-		kind_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
-		box.add_child(kind_label)
 
 	var name_label := Label.new()
 	name_label.text = String(model.get("name", ""))
@@ -179,56 +190,50 @@ func _build_choice_card(model: Dictionary) -> Button:
 		description_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 		box.add_child(description_label)
 
-	var tier_icon_texture: Texture2D = _tier_icon(tier)
-	if tier_icon_texture != null:
-		var tier_icon := TextureRect.new()
-		tier_icon.texture = tier_icon_texture
-		tier_icon.custom_minimum_size = Vector2(20, 20)
-		tier_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tier_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		tier_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(tier_icon)
+	var pill := _grade_pill(model)
+	if pill != null:
+		row.add_child(pill)
 
 	return button
 
 
-static func _style_tier_card(button: Button, tier: String) -> void:
-	var texture: Texture2D = _card_texture(tier)
-	if texture == null:
-		UiPalette.apply_button_style(button)
-		return
-
-	var normal := _card_nine_slice(texture)
-	var focused := _card_nine_slice(texture)
-	button.add_theme_stylebox_override("normal", normal)
-	button.add_theme_stylebox_override("hover", focused)
-	button.add_theme_stylebox_override("pressed", focused)
-	button.add_theme_stylebox_override("focus", UiPalette.panel_style(Color.TRANSPARENT, UiPalette.VERMILION, 3, 6))
-	button.add_theme_color_override("font_color", UiPalette.TEXT_ON_PAPER)
-	button.add_theme_color_override("font_hover_color", UiPalette.TEXT_ON_PAPER)
-	button.add_theme_color_override("font_pressed_color", UiPalette.TEXT_ON_PAPER)
-	button.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
-	button.custom_minimum_size.y = max(button.custom_minimum_size.y, UiPalette.TOUCH_TARGET_MIN)
+## Weapon choices show their weapon icon; passives keep their passive icon.
+func _choice_icon(model: Dictionary) -> Texture2D:
+	var icon_texture: Texture2D = model.get("icon")
+	if icon_texture != null:
+		return icon_texture
+	var kind: String = String(model.get("kind", ""))
+	if kind == "weapon_new" or kind == "weapon_upgrade":
+		var sprite_path: String = String(GameData.weapon(String(model.get("id", ""))).get("sprite", ""))
+		if not sprite_path.is_empty() and ResourceLoader.exists(sprite_path):
+			return load(sprite_path)
+	return null
 
 
-static func _card_nine_slice(texture: Texture2D) -> StyleBoxTexture:
-	var style := StyleBoxTexture.new()
-	style.texture = texture
-	style.texture_margin_left = CARD_MARGIN
-	style.texture_margin_right = CARD_MARGIN
-	style.texture_margin_top = CARD_MARGIN
-	style.texture_margin_bottom = CARD_MARGIN
-	return style
+## Text pill naming the grade (weapons) or the kind (passives): the grade is
+## information, so it is words, never colour alone.
+func _grade_pill(model: Dictionary) -> Control:
+	var kind: String = String(model.get("kind", ""))
+	var text: String
+	if kind == "weapon_new" or kind == "weapon_upgrade":
+		var grade: String = String(GameData.weapon(String(model.get("id", ""))).get("grade", "common"))
+		text = LocaleText.ui("grade_%s" % grade)
+	else:
+		text = String(model.get("kind_label", ""))
+	if text.is_empty():
+		return null
 
-
-static func _card_texture(tier: String) -> Texture2D:
-	var path: String = "%s/card_%s_9slice.png" % [TIER_DIR, tier]
-	return load(path) if ResourceLoader.exists(path) else null
-
-
-static func _tier_icon(tier: String) -> Texture2D:
-	var path: String = "%s/tier_%s.png" % [TIER_DIR, tier]
-	return load(path) if ResourceLoader.exists(path) else null
+	var pill := PanelContainer.new()
+	pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pill.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	pill.add_theme_stylebox_override("panel", UiPalette.panel_style(UiPalette.VERMILION, Color.TRANSPARENT, 0, 12))
+	var label := Label.new()
+	label.text = text
+	label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+	label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pill.add_child(label)
+	return pill
 
 
 func _on_choice_selected(choice_id: String) -> void:
