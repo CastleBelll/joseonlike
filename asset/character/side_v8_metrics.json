@@ -1,0 +1,261 @@
+{
+  "source_design": "new_asset/Character.png",
+  "source_size": [
+    2688,
+    1520
+  ],
+  "proportion_reference": "git show 97eb0d0 -- asset/character/*/side/",
+  "logical_canvas": [
+    48,
+    48
+  ],
+  "export_scale": 16,
+  "ground_row": 46,
+  "characters": {
+    "Taoist": {
+      "source": "asset/character/Taoist/raw/side_sheet_v8_higgsfield.png",
+      "source_size": [
+        2688,
+        1520
+      ],
+      "reference": "asset/character/Taoist/raw/character_v6_reference.png",
+      "logical_canvas": [
+        48,
+        48
+      ],
+      "export_scale": 16,
+      "ground_row": 46,
+      "logical_bounds": [
+        [
+          11,
+          2,
+          37,
+          47
+        ],
+        [
+          9,
+          2,
+          37,
+          47
+        ],
+        [
+          11,
+          1,
+          37,
+          47
+        ],
+        [
+          9,
+          2,
+          37,
+          47
+        ],
+        [
+          11,
+          1,
+          37,
+          47
+        ]
+      ],
+      "opaque_palette_colors": 19
+    },
+    "Warrior": {
+      "source": "asset/character/Warrior/raw/side_sheet_v8_higgsfield.png",
+      "source_size": [
+        2688,
+        1520
+      ],
+      "reference": "asset/character/Warrior/raw/character_v6_reference.png",
+      "logical_canvas": [
+        48,
+        48
+      ],
+      "export_scale": 16,
+      "ground_row": 46,
+      "logical_bounds": [
+        [
+          15,
+          2,
+          35,
+          47
+        ],
+        [
+          12,
+          2,
+          39,
+          47
+        ],
+        [
+          15,
+          1,
+          35,
+          47
+        ],
+        [
+          11,
+          2,
+          38,
+          47
+        ],
+        [
+          15,
+          1,
+          35,
+          47
+        ]
+      ],
+      "opaque_palette_colors": 20
+    },
+    "Archer": {
+      "source": "asset/character/Archer/raw/side_sheet_v8_higgsfield.png",
+      "source_size": [
+        2688,
+        1520
+      ],
+      "reference": "asset/character/Archer/raw/character_v6_reference.png",
+      "logical_canvas": [
+        48,
+        48
+      ],
+      "export_scale": 16,
+      "ground_row": 46,
+      "logical_bounds": [
+        [
+          13,
+          2,
+          41,
+          47
+        ],
+        [
+          12,
+          2,
+          42,
+          47
+        ],
+        [
+          13,
+          1,
+          39,
+          47
+        ],
+        [
+          11,
+          2,
+          42,
+          47
+        ],
+        [
+          13,
+          1,
+          40,
+          47
+        ]
+      ],
+      "opaque_palette_colors": 20
+    }
+  },
+  "verification": {
+    "Taoist": {
+      "walk_top_rows": [
+        2,
+        1,
+        2,
+        1
+      ],
+      "walk_bottom_rows": [
+        46,
+        46,
+        46,
+        46
+      ],
+      "grounded_foot_centers": [
+        18.9,
+        32.0,
+        18.9,
+        32.0
+      ],
+      "stride_widths": [
+        22,
+        16,
+        21,
+        16
+      ],
+      "head_center_spread": 0.187,
+      "head_pixels_locked": true,
+      "head_height_px": 22,
+      "figure_height_px": 45,
+      "distinct_frames": 4,
+      "binary_alpha": true,
+      "grid_aligned": true,
+      "gif_fps": 8.3
+    },
+    "Warrior": {
+      "walk_top_rows": [
+        2,
+        1,
+        2,
+        1
+      ],
+      "walk_bottom_rows": [
+        46,
+        46,
+        46,
+        46
+      ],
+      "grounded_foot_centers": [
+        22.75,
+        26.5,
+        21.75,
+        26.0
+      ],
+      "stride_widths": [
+        21,
+        10,
+        21,
+        9
+      ],
+      "head_center_spread": 0.016,
+      "head_pixels_locked": true,
+      "head_height_px": 22,
+      "figure_height_px": 45,
+      "distinct_frames": 4,
+      "binary_alpha": true,
+      "grid_aligned": true,
+      "gif_fps": 8.3
+    },
+    "Archer": {
+      "walk_top_rows": [
+        2,
+        1,
+        2,
+        1
+      ],
+      "walk_bottom_rows": [
+        46,
+        46,
+        46,
+        46
+      ],
+      "grounded_foot_centers": [
+        22.455,
+        24.0,
+        24.273,
+        25.0
+      ],
+      "stride_widths": [
+        23,
+        8,
+        23,
+        12
+      ],
+      "head_center_spread": 0.385,
+      "head_pixels_locked": true,
+      "head_height_px": 22,
+      "figure_height_px": 45,
+      "distinct_frames": 4,
+      "binary_alpha": true,
+      "grid_aligned": true,
+      "gif_fps": 8.3
+    }
+  }
+}
