@@ -47,6 +47,14 @@ const FONT_SIZE_LABEL: int = 16
 ## sampled from the PNGs match PAPER/VERMILION/VERMILION_DARK exactly, so no
 ## per-call tinting is applied -- these are used as authored.
 const CHROME_PANEL: Texture2D = preload("res://asset/ui/chrome/panel_9slice.png")
+
+## Crafted wood/paper chrome (v9 batch) — the design-system button and panel
+## surfaces. Slice margin 12 per the asset contract.
+const WOOD_BUTTON_NORMAL: Texture2D = preload("res://asset/ui/chrome/wood_button_normal_9slice.png")
+const WOOD_BUTTON_HOVER: Texture2D = preload("res://asset/ui/chrome/wood_button_hover_9slice.png")
+const WOOD_BUTTON_PRESSED: Texture2D = preload("res://asset/ui/chrome/wood_button_pressed_9slice.png")
+const PAPER_PANEL: Texture2D = preload("res://asset/ui/chrome/paper_panel_9slice.png")
+const WOOD_SLICE_MARGIN: int = 12
 const CHROME_BUTTON_NORMAL: Texture2D = preload("res://asset/ui/chrome/button_normal_9slice.png")
 const CHROME_BUTTON_HOVER: Texture2D = preload("res://asset/ui/chrome/button_hover_9slice.png")
 const CHROME_BUTTON_PRESSED: Texture2D = preload("res://asset/ui/chrome/button_pressed_9slice.png")
@@ -90,8 +98,8 @@ static func panel_style(bg: Color, border: Color = Color.TRANSPARENT, border_wid
 ## restyles without call-site churn; the nine-slice chrome textures remain
 ## available for bespoke uses.
 static func nine_slice_panel() -> StyleBox:
-	var style := panel_style(PAPER, WOOD_BORDER, 3, 12)
-	style.set_content_margin_all(PANEL_MARGIN * 2)
+	var style := _nine_slice(PAPER_PANEL, WOOD_SLICE_MARGIN, WOOD_SLICE_MARGIN)
+	style.set_content_margin_all(WOOD_SLICE_MARGIN)
 	return style
 
 
@@ -100,9 +108,9 @@ static func nine_slice_panel() -> StyleBox:
 ## absent from the design system (hide, never disable); the flat fallback
 ## here only guards legacy callers.
 static func apply_button_style(button: Button) -> void:
-	button.add_theme_stylebox_override("normal", panel_style(WOOD, WOOD_BORDER, 3, 10))
-	button.add_theme_stylebox_override("hover", panel_style(WOOD_HOVER, WOOD_BORDER, 3, 10))
-	button.add_theme_stylebox_override("pressed", panel_style(WOOD_PRESSED, WOOD_BORDER, 3, 10))
+	button.add_theme_stylebox_override("normal", _nine_slice(WOOD_BUTTON_NORMAL, WOOD_SLICE_MARGIN, WOOD_SLICE_MARGIN))
+	button.add_theme_stylebox_override("hover", _nine_slice(WOOD_BUTTON_HOVER, WOOD_SLICE_MARGIN, WOOD_SLICE_MARGIN))
+	button.add_theme_stylebox_override("pressed", _nine_slice(WOOD_BUTTON_PRESSED, WOOD_SLICE_MARGIN, WOOD_SLICE_MARGIN))
 	button.add_theme_stylebox_override("disabled", panel_style(WOOD.darkened(0.35), WOOD_BORDER, 3, 10))
 	button.add_theme_stylebox_override("focus", panel_style(Color.TRANSPARENT, GOLD, 3, 10))
 
