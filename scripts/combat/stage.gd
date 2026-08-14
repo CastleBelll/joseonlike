@@ -129,7 +129,7 @@ func _on_enemy_killed(monster_id: String, position: Vector2) -> void:
 ## along so the pool can tint its placeholder without a data lookup.
 func _roll_loot(monster_id: String) -> Array[Dictionary]:
 	var entries: Array[Dictionary] = []
-	for loot_id: String in LootDrops.roll(GameData.drop_table(monster_id), _loot_rng):
+	for loot_id: String in LootDrops.roll(GameData.drop_table(monster_id), _loot_rng, RunState.stat_total("luck")):
 		var loot_data: Dictionary = GameData.loot(loot_id)
 		if loot_data.is_empty():
 			continue

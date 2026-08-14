@@ -20,6 +20,9 @@ const STAT_ATTACK_DAMAGE: String = "attack_damage"
 const STAT_ATTACK_SPEED: String = "attack_speed"
 const STAT_CRIT_CHANCE: String = "crit_chance"
 const STAT_SKILL_POWER: String = "skill_power"
+const STAT_PROJECTILE_COUNT: String = "projectile_count"
+const STAT_PROJECTILE_SPEED: String = "projectile_speed"
+const STAT_AREA_SCALE: String = "area_scale"
 
 signal fired(weapon_id: String)
 var weapon_id: String = ""
@@ -75,8 +78,10 @@ func roll_hit() -> Dictionary:
 	)
 
 
+## Passive bonuses layer on top of the weapon's own level curve: extra
+## projectiles are flat, speed and area are fractional (0.10 == +10%).
 func projectile_count() -> int:
-	return CombatMath.projectile_count_at_level(_data, level)
+	return CombatMath.projectile_count_at_level(_data, level) + int(_stat(STAT_PROJECTILE_COUNT))
 
 
 func pierce() -> int:
@@ -84,11 +89,11 @@ func pierce() -> int:
 
 
 func area_scale() -> float:
-	return CombatMath.area_scale_at_level(_data, level)
+	return CombatMath.area_scale_at_level(_data, level) * (1.0 + _stat(STAT_AREA_SCALE))
 
 
 func projectile_speed() -> float:
-	return CombatMath.projectile_speed_at_level(_data, level)
+	return CombatMath.projectile_speed_at_level(_data, level) * (1.0 + _stat(STAT_PROJECTILE_SPEED))
 
 
 func _process(delta: float) -> void:

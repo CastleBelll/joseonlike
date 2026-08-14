@@ -14,6 +14,10 @@ const DEFAULT_BASE_SPEED: float = 90.0
 
 const STAT_MOVE_SPEED: String = "move_speed"
 const STAT_MAX_HP: String = "max_hp"
+const STAT_DEFENSE: String = "defense"
+## Defense is fractional damage reduction, hard-capped so stacking can never
+## reach immunity.
+const DEFENSE_CAP: float = 0.8
 
 ## Grace window after a hit. Without it, standing inside a swarm drains the bar
 ## in a single frame instead of giving the player time to walk out.
@@ -175,6 +179,7 @@ func is_invulnerable() -> bool:
 func take_damage(amount: float, _is_crit: bool = false) -> void:
 	if amount <= 0.0 or not is_alive() or is_invulnerable():
 		return
+	amount *= 1.0 - clampf(RunState.stat_total(STAT_DEFENSE), 0.0, DEFENSE_CAP)
 	hp = maxf(hp - amount, 0.0)
 	_invulnerable_left = INVULNERABLE_SEC
 	EventBus.player_damaged.emit(amount, hp)

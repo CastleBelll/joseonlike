@@ -44,7 +44,9 @@ const ELITE_CHEST: StringName = &"chest_rare"
 const MAX_CONCURRENT_DROPS: int = 128
 const DROP_Z_INDEX: int = 10
 
+## Base radius; the magnet_radius passive scales it fractionally per frame.
 const MAGNET_RADIUS_PX: float = 90.0
+const STAT_MAGNET_RADIUS: String = "magnet_radius"
 const MAGNET_SPEED_PX_SEC: float = 420.0
 const COLLECT_RADIUS_PX: float = 12.0
 const COLLECT_FRAME_SEC: float = 0.06
@@ -197,7 +199,7 @@ func _attract(drop: Dictionary, player: Node2D, delta: float) -> void:
 	var sprite: Sprite2D = drop["sprite"]
 	var offset: Vector2 = player.global_position - sprite.global_position
 	var distance: float = offset.length()
-	if distance > MAGNET_RADIUS_PX:
+	if distance > MAGNET_RADIUS_PX * (1.0 + RunState.stat_total(STAT_MAGNET_RADIUS)):
 		return
 	if distance <= COLLECT_RADIUS_PX:
 		_begin_collect(drop)

@@ -31,14 +31,14 @@
     "name_ko": "최대 체력",
     "name_en": "Max HP",
     "stat": "max_hp",
-    "per_stack": 0.10,
+    "per_stack": 0.1,
     "max_stacks": 5
   },
   "xp_gain": {
     "name_ko": "경험치 획득",
     "name_en": "XP Gain",
     "stat": "xp_gain",
-    "per_stack": 0.10,
+    "per_stack": 0.1,
     "max_stacks": 5
   },
   "luck": {
@@ -52,7 +52,42 @@
     "name_ko": "도력",
     "name_en": "Skill Power",
     "stat": "skill_power",
-    "per_stack": 0.10,
+    "per_stack": 0.1,
+    "max_stacks": 5
+  },
+  "projectile_count": {
+    "name_ko": "다중 투사",
+    "name_en": "Multi Shot",
+    "stat": "projectile_count",
+    "per_stack": 1.0,
+    "max_stacks": 2
+  },
+  "projectile_speed": {
+    "name_ko": "신속 투사",
+    "name_en": "Swift Shot",
+    "stat": "projectile_speed",
+    "per_stack": 0.1,
+    "max_stacks": 5
+  },
+  "area_scale": {
+    "name_ko": "광역 확장",
+    "name_en": "Area Up",
+    "stat": "area_scale",
+    "per_stack": 0.08,
+    "max_stacks": 5
+  },
+  "defense": {
+    "name_ko": "방비",
+    "name_en": "Defense",
+    "stat": "defense",
+    "per_stack": 0.05,
+    "max_stacks": 4
+  },
+  "magnet_radius": {
+    "name_ko": "끌어당김",
+    "name_en": "Magnet",
+    "stat": "magnet_radius",
+    "per_stack": 0.15,
     "max_stacks": 5
   }
 }

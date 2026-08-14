@@ -26,7 +26,9 @@ const KEY_CHANCE := "chance"
 
 ## Rolls every entry of a monster's drop table independently and returns the
 ## loot ids that dropped. {} (a monster with no table) rolls nothing.
-static func roll(drop_table: Dictionary, rng: RandomNumberGenerator) -> Array[String]:
+## `luck_bonus` scales every chance fractionally (0.25 == +25%), so the luck
+## passive is a real loot stat rather than a dead key.
+static func roll(drop_table: Dictionary, rng: RandomNumberGenerator, luck_bonus: float = 0.0) -> Array[String]:
 	var dropped: Array[String] = []
 	var drops: Variant = drop_table.get(KEY_DROPS)
 	if not (drops is Array):
@@ -39,7 +41,7 @@ static func roll(drop_table: Dictionary, rng: RandomNumberGenerator) -> Array[St
 		var loot_id: String = String(drop.get(KEY_LOOT_ID, ""))
 		if loot_id.is_empty():
 			continue
-		var chance: float = float(drop.get(KEY_CHANCE, 0.0))
+		var chance: float = float(drop.get(KEY_CHANCE, 0.0)) * (1.0 + maxf(luck_bonus, 0.0))
 		if chance <= 0.0:
 			continue
 		# randf() < 1.0 can miss on the boundary, so a guaranteed drop short-circuits.

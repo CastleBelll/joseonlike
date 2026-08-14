@@ -13,6 +13,7 @@ func run() -> Array[String]:
 	failures.append_array(_test_empty_table_rolls_nothing())
 	failures.append_array(_test_malformed_entries_are_skipped())
 	failures.append_array(_test_partial_chance_is_probabilistic())
+	failures.append_array(_test_luck_scales_chances())
 	failures.append_array(_test_tier_tints())
 	failures.append_array(_test_run_state_loot_counts())
 	return failures
@@ -85,6 +86,35 @@ func _test_partial_chance_is_probabilistic() -> Array[String]:
 	# that the roll is neither always nor never.
 	if hits == 0 or hits == ROLL_ITERATIONS:
 		failures.append("chance 0.5 rolled %d/%d — not probabilistic" % [hits, ROLL_ITERATIONS])
+
+	return failures
+
+
+func _test_luck_scales_chances() -> Array[String]:
+	var failures: Array[String] = []
+	var rng := _seeded_rng()
+	var table: Dictionary = {"drops": [{"loot_id": "gem", "chance": 0.6}]}
+
+	# 0.6 * (1 + 1.0) >= 1.0, so enough luck turns a partial chance guaranteed.
+	for _iteration in 50:
+		if LootDrops.roll(table, rng, 1.0).is_empty():
+			failures.append("chance 0.6 with +100% luck failed to drop")
+			break
+
+	# Negative luck must never help nor invert a chance.
+	var never: Dictionary = {"drops": [{"loot_id": "gem", "chance": 0.5}]}
+	var with_negative: int = 0
+	var without: int = 0
+	rng = _seeded_rng()
+	for _iteration in ROLL_ITERATIONS:
+		if not LootDrops.roll(never, rng, -0.5).is_empty():
+			with_negative += 1
+	rng = _seeded_rng()
+	for _iteration in ROLL_ITERATIONS:
+		if not LootDrops.roll(never, rng).is_empty():
+			without += 1
+	if with_negative != without:
+		failures.append("negative luck changed the odds (%d vs %d)" % [with_negative, without])
 
 	return failures
 

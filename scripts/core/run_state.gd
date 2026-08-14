@@ -207,8 +207,11 @@ func add_xp(amount: int) -> void:
 	if amount <= 0:
 		return
 
-	xp += amount
-	EventBus.xp_gained.emit(amount)
+	# xp_gain passive: a fractional bonus on every pickup, rounded per pickup
+	# so small gems still visibly benefit.
+	var scaled: int = maxi(int(round(float(amount) * (1.0 + stat_total("xp_gain")))), 1)
+	xp += scaled
+	EventBus.xp_gained.emit(scaled)
 
 	# A single pickup can cross several thresholds at once (late-game gems, boss
 	# drops), so drain the pool instead of levelling only once.
