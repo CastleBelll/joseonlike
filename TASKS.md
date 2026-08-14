@@ -44,13 +44,45 @@ Baseline recorded 2026-08-13 at commit `9d3b8b5`:
 
 ### UNKNOWN — needs a look when touched
 
-- Coverage of `asset/**` versus what scenes actually load (asset work is frozen; do
-  not audit it now).
+- Coverage of `asset/**` versus what scenes actually load. The 8-direction
+  rotation sheets under `asset/character/*/raw` become legacy once P1-3 lands;
+  audit and prune them in a later cleanup feature.
 - Whether `data/BALANCE.md` numbers still match `data/*.json` after M1 changes.
 
 ---
 
 ## 2. Feature backlog
+
+### P1 — Framework pivot (side-view + character identity) — CURRENT
+
+Owner decision 2026-08-14: 8-direction art retired, 2D side-view with
+left/right facing only; per-character weapon categories enforced.
+Codex asset worktree `side-sprites` generates the character sprites
+(style: `new_asset/basic.png`).
+
+- [ ] **P1-1 2-direction facing** — the player sprite faces right when moving
+      right, left when moving left (mirror), and keeps its last facing while
+      moving purely vertically or standing still; `CharacterMotion` facing
+      logic is unit-tested; 8-direction bucket selection is no longer used for
+      the player.
+- [ ] **P1-2 Character weapon identity** — `data/characters.json` gains
+      `weapon_categories`; level-up weapon offers only contain weapons whose
+      category is allowed for the run's character; `tools/validate_data.gd`
+      fails when a starting weapon's category is not allowed or a character
+      has an empty pool; existing runs with now-forbidden weapons still load.
+- [ ] **P1-3 Side-view sprite integration** — the reviewed sprites from the
+      `side-sprites` worktree are merged; Taoist/Warrior/Archer render the new
+      `side/idle.png` in camp, character select and combat; old rotation
+      sheets are no longer referenced by the player path. (blocked on codex
+      worker output review)
+- [ ] **P1-4 Walk-cycle animation** — while moving, the player plays the
+      4-frame `side/walk.png` strip at the existing `WALK_HZ`; idle shows
+      `side/idle.png`; the pixel-offset hop is removed for characters that
+      have a strip and remains as fallback otherwise. (blocked on P1-3)
+- [ ] **P1-5 Monster 2-direction conversion** — monsters follow the same
+      left/right facing rule; monsters without side-view art keep current
+      sprites but stop using 8-direction buckets. (art regeneration is a later
+      asset session)
 
 ### M2 — Meta progression
 
@@ -120,3 +152,4 @@ unrelated commit.
 | Date | Feature | Commit |
 |---|---|---|
 | 2026-08-13 | Development process switched to the one-feature loop; parallel worktrees removed | see git log |
+| 2026-08-14 | P1 framework pivot planned: side-view 2-direction art + character weapon identity; codex sprite worktree dispatched | see git log |

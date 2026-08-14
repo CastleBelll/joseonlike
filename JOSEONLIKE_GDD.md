@@ -73,6 +73,12 @@ Upgrade Base ↓ Unlock Content
 
 Inspired by Vampire Survivors style.
 
+Presentation (revised 2026-08-14): side-view pixel art. Characters and
+monsters face left or right only — no 8-direction rotations. Facing follows
+the horizontal component of movement; pure vertical movement keeps the last
+facing. Left is an in-engine horizontal mirror of the right-facing sprite.
+Walking plays a 4-frame walk cycle. Style anchor: `new_asset/basic.png`.
+
 Player: - Movement only
 
 Combat: - Automatic attacks
@@ -84,9 +90,18 @@ Evolution system
 
 # 7. Character System
 
+Weapon identity rule (revised 2026-08-14): every character declares its
+allowed weapon categories in `data/characters.json` (`weapon_categories`).
+A character can only be offered and equip weapons whose category is in that
+list — a Taoist can never wield a sword. The starting weapon is fixed per
+character and must belong to an allowed category. Passives are shared by all
+characters.
+
 ## Taoist
 
 Role: - Magic damage - Area damage - Status effects
+
+Allowed categories: - Spiritual
 
 Weapon: - Talisman
 
@@ -99,6 +114,8 @@ Seal
 
 Role: - Melee combat - High damage - Defense
 
+Allowed categories: - Melee
+
 Weapon: - Sword
 
 ------------------------------------------------------------------------
@@ -106,6 +123,8 @@ Weapon: - Sword
 ## Archer
 
 Role: - Long range damage
+
+Allowed categories: - Ranged
 
 Weapons: - Bow - Korean Bow - Fire Arrow
 
@@ -115,6 +134,8 @@ Weapons: - Bow - Korean Bow - Fire Arrow
 
 Role: - Slow but powerful attacks
 
+Allowed categories: - Ranged
+
 Weapons: - Matchlock - Improved Matchlock
 
 ------------------------------------------------------------------------
@@ -122,6 +143,8 @@ Weapons: - Matchlock - Improved Matchlock
 ## Assassin
 
 Role: - Critical damage - Evasion
+
+Allowed categories: - Melee - Ranged
 
 Weapons: - Throwing Knife - Poison Weapon
 

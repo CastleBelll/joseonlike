@@ -62,16 +62,23 @@ Details and known runner gaps: [docs/CI.md](docs/CI.md).
 - Style contract: [ARCHITECTURE.md](ARCHITECTURE.md) §6 (typed vars, no `print()`,
   balance numbers in `data/`, English "why" comments).
 
-## 5. Assets — currently frozen
+## 5. Assets — pipeline, not freeze (revised 2026-08-14)
 
-**Do not generate, cut, or commission art or audio.** The owner supplies assets later.
+Art direction: side-view pixel art anchored to `new_asset/basic.png`
+(chunky proportions, 1px outline, flat cel shading). Sprites face left/right
+only; left is an in-engine mirror of right.
 
-- New entities use `PlaceholderArt` (`scripts/combat/placeholder_art.gd`) or an
-  existing sprite; a missing texture must never block a gameplay feature.
-- Every asset a feature would want goes into
-  [ASSET_REQUIREMENTS.md](ASSET_REQUIREMENTS.md) instead of being produced.
-- Third-party asset licences go in [ASSET_LICENSES.md](ASSET_LICENSES.md).
-- Art polish is not a gameplay feature and does not share its commit.
+- **Character sprites** are generated in a dedicated asset worktree session
+  (codex) from the `basic.png` style reference — never inside a gameplay
+  feature commit. Walk cycles must be frame-consistent (derived from one base
+  sprite, not independently generated frames).
+- **Weapons, props, effects**: free third-party assets; licences go in
+  [ASSET_LICENSES.md](ASSET_LICENSES.md).
+- New entities without art use `PlaceholderArt`
+  (`scripts/combat/placeholder_art.gd`); a missing texture must never block a
+  gameplay feature.
+- Wanted-but-missing assets go into [ASSET_REQUIREMENTS.md](ASSET_REQUIREMENTS.md).
+- Art integration is its own feature commit, separate from gameplay changes.
 
 ## 6. Review
 

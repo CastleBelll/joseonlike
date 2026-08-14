@@ -11,7 +11,27 @@ Feature-level breakdown and current state: [TASKS.md](TASKS.md).
 level-up choice → boss → results`, with settings, achievements, quest counters,
 music and SFX buses. 22 headless test files pass.
 
-## M2 — Meta progression that sticks — **CURRENT**
+## P1 — Framework pivot: side-view + character identity — **CURRENT**
+
+Direction change (2026-08-14, owner decision). The 8-direction rotation art is
+retired. The game presents as 2D side-view: sprites face left/right only, left
+is a mirror, walking is a real 4-frame cycle. Character sprites are regenerated
+in the `new_asset/basic.png` style by a codex asset worktree; weapons and props
+will come from free assets. Each character also gets a hard weapon identity —
+allowed weapon categories in data, enforced in the level-up offer.
+
+1. 2-direction facing: player faces left/right from horizontal movement,
+   vertical movement keeps last facing (`P1-1`).
+2. Character weapon identity in data + level-up filtering (`P1-2`).
+3. Integrate codex side-view sprites for Taoist/Warrior/Archer (`P1-3`).
+4. Real walk-cycle animation replacing the pixel-offset hop (`P1-4`).
+5. Monsters converted to the 2-direction rule (`P1-5`).
+
+Exit condition: no scene renders an 8-direction rotation sprite for the player,
+the three characters animate side-view walks, and no character can be offered a
+weapon outside its categories.
+
+## M2 — Meta progression that sticks — **NEXT**
 
 The run loop plays, but almost nothing a run produces survives it. M2 closes that.
 
