@@ -1,0 +1,7 @@
+{
+  "sharp_knife_mod": {
+    "weapon_id": "poison_knife",
+    "loot_id": "whetstone",
+    "result_weapon": "sharp_knife"
+  }
+}

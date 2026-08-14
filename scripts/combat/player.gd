@@ -99,6 +99,9 @@ func _ready() -> void:
 	if _weapons.is_empty():
 		push_warning("Player: no weapons in RunState and no starting_weapon, entering the stage unarmed")
 	EventBus.upgrade_chosen.connect(_on_upgrade_chosen)
+	# A mod rewrites the RunState entry directly, so resyncing the nodes is the
+	# whole job; same deferred path as an upgrade pick.
+	EventBus.weapon_modified.connect(_on_weapon_modified)
 
 
 func _physics_process(delta: float) -> void:
@@ -277,6 +280,10 @@ func _character_id() -> String:
 ## RunState listen to upgrade_chosen, and only RunState knows whether the id was
 ## a weapon or a passive.
 func _on_upgrade_chosen(_choice_id: String) -> void:
+	_apply_run_state.call_deferred()
+
+
+func _on_weapon_modified(_from_id: String, _to_id: String) -> void:
 	_apply_run_state.call_deferred()
 
 

@@ -70,6 +70,21 @@
     "max_level": 2,
     "per_level": { "damage": 2.0 }
   },
+  "sharp_knife": {
+    "name_ko": "예리한 독칼",
+    "name_en": "Sharp Knife",
+    "category": "melee",
+    "grade": "rare",
+    "damage": 11.0,
+    "cooldown_sec": 0.55,
+    "projectile_count": 1,
+    "pierce": 1,
+    "area_scale": 1.0,
+    "speed": 0.0,
+    "max_level": 2,
+    "per_level": { "damage": 3.0 },
+    "evolution_only": true
+  },
   "phoenix_talisman": {
     "name_ko": "봉황 부적",
     "name_en": "Phoenix Talisman",

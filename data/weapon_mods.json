@@ -1,0 +1,17 @@
+{
+  "sharp_sword_mod": {
+    "weapon_id": "sword",
+    "loot_id": "whetstone",
+    "result_weapon": "sharp_sword"
+  },
+  "ghost_sword_mod": {
+    "weapon_id": "sword",
+    "loot_id": "ghost_iron",
+    "result_weapon": "ghost_sword"
+  },
+  "flame_sword_mod": {
+    "weapon_id": "sword",
+    "loot_id": "fire_spirit_stone",
+    "result_weapon": "flame_sword"
+  }
+}

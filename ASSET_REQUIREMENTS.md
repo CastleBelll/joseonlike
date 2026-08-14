@@ -35,6 +35,14 @@ Used by:   DropPool loot drops (R2-2), data/loot.json
 Fallback:  PlaceholderArt swatch tinted by tier (LootDrops.TIER_TINTS)
 ```
 
+```
+[MISSING] mod weapon icons (3): sharp_sword, ghost_sword, flame_sword
+Size:      same as existing weapon icons
+Members:   res://asset/weapon/icons/<weapon_id>.png
+Used by:   data/weapon_mods.json results (R2-4)
+Fallback:  the base sword icon (asset/weapon/icons/sword.png)
+```
+
 ## Anticipated (not yet needed — do not pre-produce)
 
 These become `[MISSING]` entries only when the feature that needs them is actually

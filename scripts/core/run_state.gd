@@ -154,6 +154,38 @@ func loot_count(loot_id: String) -> int:
 	return int(loot_counts.get(loot_id, 0))
 
 
+## Spends one unit of `loot_id` to mod `weapon_id` per weapon_mods.json.
+## Returns false (with the reason as a warning) when the recipe does not exist,
+## the run does not hold the weapon, or the material is not in stock. The
+## in-place swap reuses evolve_weapon so level inheritance stays in one place.
+func apply_weapon_mod(weapon_id: String, loot_id: String) -> bool:
+	var result: String = String(_content().mod_for(weapon_id, loot_id))
+	if result.is_empty():
+		push_warning("RunState.apply_weapon_mod: no recipe for \"%s\" + \"%s\"" % [weapon_id, loot_id])
+		return false
+	if weapon_level(weapon_id) <= 0:
+		push_warning("RunState.apply_weapon_mod: the run does not hold \"%s\"" % weapon_id)
+		return false
+	if loot_count(loot_id) <= 0:
+		push_warning("RunState.apply_weapon_mod: no \"%s\" in stock" % loot_id)
+		return false
+	# Without this the material would be spent while evolve_weapon produced a
+	# duplicate loadout entry for the already-held result.
+	if weapon_level(result) > 0:
+		push_warning("RunState.apply_weapon_mod: the run already holds \"%s\"" % result)
+		return false
+
+	var remaining: int = int(loot_counts[loot_id]) - 1
+	if remaining <= 0:
+		loot_counts.erase(loot_id)
+	else:
+		loot_counts[loot_id] = remaining
+
+	evolve_weapon(weapon_id, result)
+	EventBus.weapon_modified.emit(weapon_id, result)
+	return true
+
+
 func add_xp(amount: int) -> void:
 	if amount <= 0:
 		return

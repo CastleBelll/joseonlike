@@ -35,6 +35,11 @@ const WEAPON_TRAVEL: Dictionary = {
 const WEAPON_MELEE: Dictionary = {
 	"sword": &"wide_sword_arc",
 	"twin_sword": &"dual_blade_cross",
+	# R2-4 mod results reuse the base swings until their own art lands
+	# (asset/ASSET_REQUIREMENTS.md).
+	"sharp_sword": &"wide_sword_arc",
+	"ghost_sword": &"heavy_overhead",
+	"flame_sword": &"wide_sword_arc",
 }
 
 const GENERIC_IMPACT: StringName = &"impact_hit"

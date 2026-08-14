@@ -21,6 +21,7 @@ const REQUIRED_COLLECTIONS: Array[String] = [
 	"achievements",
 	"loot",
 	"drop_tables",
+	"weapon_mods",
 ]
 
 const COLLECTION_CHARACTERS := "characters"
@@ -32,6 +33,12 @@ const COLLECTION_EVOLUTIONS := "evolutions"
 const COLLECTION_ACHIEVEMENTS := "achievements"
 const COLLECTION_LOOT := "loot"
 const COLLECTION_DROP_TABLES := "drop_tables"
+const COLLECTION_WEAPON_MODS := "weapon_mods"
+
+## Mod rule fields (data/weapon_mods.json, GDD v2 section 33).
+const MOD_WEAPON := "weapon_id"
+const MOD_LOOT := "loot_id"
+const MOD_RESULT := "result_weapon"
 
 ## JSON objects are keyed by id, so entries carry no id field of their own.
 ## The list accessors inject it because UI code iterates without the key.
@@ -98,6 +105,29 @@ func passive(id: String) -> Dictionary:
 
 func loot(id: String) -> Dictionary:
 	return _lookup(COLLECTION_LOOT, id)
+
+
+## The weapon a (weapon, loot material) pair mods into, or "" when no recipe
+## matches. Unlike evolution_for this checks no run thresholds: holding the
+## material is the whole requirement, and RunState owns that check.
+func mod_for(weapon_id: String, loot_id: String) -> String:
+	if not _loaded:
+		push_error("GameData.mod_for called before load_all()")
+		return ""
+
+	var mods: Dictionary = _collections.get(COLLECTION_WEAPON_MODS, {})
+	for rule_id: String in mods.keys():
+		var entry: Variant = mods[rule_id]
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		var rule: Dictionary = entry
+		if String(rule.get(MOD_WEAPON, "")) != weapon_id:
+			continue
+		if String(rule.get(MOD_LOOT, "")) != loot_id:
+			continue
+		return String(rule.get(MOD_RESULT, ""))
+
+	return ""
 
 
 ## Drop table for a monster, or {} for monsters that drop nothing. Unlike the

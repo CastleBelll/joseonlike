@@ -46,6 +46,7 @@ const ACHIEVEMENT_REQUIRED: Array[String] = ["name_ko", "name_en", "counter_key"
 const LOOT_TIERS: Array[String] = ["common", "uncommon", "rare", "epic", "legendary", "mythic"]
 const LOOT_REQUIRED: Array[String] = ["name_ko", "name_en", "tier", "tags", "special"]
 const DROP_REQUIRED: Array[String] = ["loot_id", "chance"]
+const WEAPON_MOD_REQUIRED: Array[String] = ["weapon_id", "loot_id", "result_weapon"]
 
 
 func _init() -> void:
@@ -73,9 +74,10 @@ static func validate_all() -> Array[String]:
 	var achievements := _load_json("achievements.json", errors)
 	var loot := _load_json("loot.json", errors)
 	var drop_tables := _load_json("drop_tables.json", errors)
+	var weapon_mods := _load_json("weapon_mods.json", errors)
 
 	_validate_characters(characters, weapons, achievements, errors)
-	_validate_weapons(weapons, evolutions, errors)
+	_validate_weapons(weapons, evolutions, weapon_mods, errors)
 	_validate_passives(passives, errors)
 	_validate_evolutions(evolutions, weapons, passives, errors)
 	_validate_monsters(monsters, errors)
@@ -83,6 +85,7 @@ static func validate_all() -> Array[String]:
 	_validate_achievements(achievements, errors)
 	_validate_loot(loot, errors)
 	_validate_drop_tables(drop_tables, monsters, loot, errors)
+	_validate_weapon_mods(weapon_mods, weapons, loot, errors)
 
 	return errors
 
@@ -173,29 +176,32 @@ static func _validate_characters(characters: Dictionary, weapons: Dictionary, ac
 				errors.append("%s: '%s'.unlock.cost must be > 0" % [file, id])
 
 
-## Every result_weapon named by an evolutions.json rule, as a set (Dictionary
-## used for O(1) `.has()`; values are unused). Shared by the evolves_to and
-## evolution_only reachability checks so an id must be an actual evolution
-## payoff, not merely another entry in weapons.json.
-static func _result_weapons(evolutions: Dictionary) -> Dictionary:
+## Every result_weapon named by an evolutions.json or weapon_mods.json rule, as
+## a set (Dictionary used for O(1) `.has()`; values are unused). Shared by the
+## evolves_to and evolution_only reachability checks so an id must be an actual
+## rule payoff, not merely another entry in weapons.json. evolution_only now
+## means "not offered directly in the level-up pool" — mods produce such
+## weapons too.
+static func _result_weapons(evolutions: Dictionary, weapon_mods: Dictionary) -> Dictionary:
 	var produced: Dictionary = {}
-	for rule_id in evolutions.keys():
-		var entry: Variant = evolutions[rule_id]
-		if not (entry is Dictionary):
-			continue
-		var result_weapon: Variant = entry.get("result_weapon")
-		if result_weapon is String and not result_weapon.is_empty():
-			produced[result_weapon] = true
+	for rules: Dictionary in [evolutions, weapon_mods]:
+		for rule_id in rules.keys():
+			var entry: Variant = rules[rule_id]
+			if not (entry is Dictionary):
+				continue
+			var result_weapon: Variant = entry.get("result_weapon")
+			if result_weapon is String and not result_weapon.is_empty():
+				produced[result_weapon] = true
 	return produced
 
 
 # ---- data/weapons.json ----
 
-static func _validate_weapons(weapons: Dictionary, evolutions: Dictionary, errors: Array[String]) -> void:
+static func _validate_weapons(weapons: Dictionary, evolutions: Dictionary, weapon_mods: Dictionary, errors: Array[String]) -> void:
 	var file := "weapons.json"
 	_check_ids(file, weapons, errors)
 
-	var produced_weapons: Dictionary = _result_weapons(evolutions)
+	var produced_weapons: Dictionary = _result_weapons(evolutions, weapon_mods)
 
 	for id in weapons.keys():
 		var w: Dictionary = weapons[id]
@@ -512,3 +518,35 @@ static func _validate_drop_tables(drop_tables: Dictionary, monsters: Dictionary,
 			var chance := _num(drop, "chance")
 			if not (chance > 0.0 and chance <= 1.0):
 				errors.append("%s: '%s'.drops[%d].chance must be in (0, 1]" % [file, monster_id, i])
+
+
+# ---- data/weapon_mods.json ----
+
+static func _validate_weapon_mods(weapon_mods: Dictionary, weapons: Dictionary, loot: Dictionary, errors: Array[String]) -> void:
+	var file := "weapon_mods.json"
+	_check_ids(file, weapon_mods, errors)
+
+	for id in weapon_mods.keys():
+		var entry: Variant = weapon_mods[id]
+		if not (entry is Dictionary):
+			errors.append("%s: '%s' must be an object" % [file, id])
+			continue
+
+		var m: Dictionary = entry
+		var missing := _missing_fields(m, WEAPON_MOD_REQUIRED)
+		for field in missing:
+			errors.append("%s: '%s' missing required field '%s'" % [file, id, field])
+		if not missing.is_empty():
+			continue
+
+		var weapon_id: String = m.get("weapon_id", "")
+		if not weapons.has(weapon_id):
+			errors.append("%s: '%s'.weapon_id '%s' does not exist in weapons.json" % [file, id, weapon_id])
+		var loot_id: String = m.get("loot_id", "")
+		if not loot.has(loot_id):
+			errors.append("%s: '%s'.loot_id '%s' does not exist in loot.json" % [file, id, loot_id])
+		var result_weapon: String = m.get("result_weapon", "")
+		if not weapons.has(result_weapon):
+			errors.append("%s: '%s'.result_weapon '%s' does not exist in weapons.json" % [file, id, result_weapon])
+		elif result_weapon == weapon_id:
+			errors.append("%s: '%s' mods '%s' into itself" % [file, id, weapon_id])

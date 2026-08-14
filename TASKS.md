@@ -84,7 +84,7 @@ GDD §4, §6, §7, §20, §33.
       엔티티가 생성되고 자석 반경에서 흡수된다; 일반 재료는 자동 누적.
 - [ ] **R2-3 특수 재료 3택 팝업** — 특수 재료 획득 시 시간 정지 팝업
       (사용/보관 6칸/분해→엽전 카운터). 인벤 초과 시 교체 선택.
-- [ ] **R2-4 개조 레시피** — `data/weapon_mods.json`: 환도+숫돌→예리한
+- [x] **R2-4 개조 레시피** — `data/weapon_mods.json`: 환도+숫돌→예리한
       환도, 환도+귀철→귀철도, 환도+화령석→화염도. 적용 시 무기 교체.
 - [ ] **R2-5 개조 체감** — 3갈래가 실제로 다르게 동작한다 (참격 관통 /
       흡혈+자해 / 화상 지속피해). 상태이상 태그 최소 구현 포함.
@@ -151,3 +151,4 @@ GDD §4, §6, §7, §20, §33.
 | 2026-08-14 | GDD v2 build & loot revision adopted; R-series backlog | see git log |
 | 2026-08-14 | R2-1 loot schema + loader (`loot.json`, `drop_tables.json`, GameData accessors, validator, tests 23/23) | see git log |
 | 2026-08-14 | R2-2 loot drop → pickup (LootDrops.roll, DropPool loot spawn, RunState.loot_counts, tests 24/24, soak-verified) | see git log |
+| 2026-08-14 | R2-4 weapon mod recipes (`weapon_mods.json`, GameData.mod_for, RunState.apply_weapon_mod, weapon_modified signal, tests 25/25) | see git log |

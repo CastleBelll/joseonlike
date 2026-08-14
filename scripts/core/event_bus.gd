@@ -18,6 +18,9 @@ signal loot_collected(loot_id: String)
 signal level_reached(level: int, choices: Array[Dictionary])
 signal upgrade_chosen(choice_id: String)
 signal weapon_evolved(from_id: String, to_id: String)
+## A loot-material mod replaced a weapon (GDD v2 section 33). Distinct from
+## weapon_evolved so achievement counters do not conflate the two.
+signal weapon_modified(from_id: String, to_id: String)
 
 signal boss_spawned(boss_id: String)
 signal boss_defeated(boss_id: String)
