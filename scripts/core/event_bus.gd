@@ -14,6 +14,7 @@ signal player_died()
 signal enemy_killed(monster_id: String, position: Vector2)
 
 signal xp_gained(amount: int)
+signal loot_collected(loot_id: String)
 signal level_reached(level: int, choices: Array[Dictionary])
 signal upgrade_chosen(choice_id: String)
 signal weapon_evolved(from_id: String, to_id: String)

@@ -92,6 +92,9 @@ var elapsed_sec: float = 0.0
 var kills: int = 0
 var weapons: Array[Dictionary] = []
 var passives: Dictionary = {}
+## Run-scoped loot: loot_id -> collected count. Cleared on reset(); loot never
+## survives a run (GDD v2 section 32) — what persists is the record, not the item.
+var loot_counts: Dictionary = {}
 
 ## Content source. Defaults to the GameData autoload; tests inject a
 ## fixture-backed instance so they never depend on shipped content.
@@ -136,7 +139,19 @@ func reset() -> void:
 	kills = 0
 	weapons = []
 	passives = {}
+	loot_counts = {}
 	_pending_choices = []
+
+
+func add_loot(loot_id: String) -> void:
+	if loot_id.is_empty():
+		push_error("RunState.add_loot called with an empty loot id")
+		return
+	loot_counts[loot_id] = int(loot_counts.get(loot_id, 0)) + 1
+
+
+func loot_count(loot_id: String) -> int:
+	return int(loot_counts.get(loot_id, 0))
 
 
 func add_xp(amount: int) -> void:

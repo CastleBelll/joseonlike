@@ -13,8 +13,13 @@ extends Node2D
 ## ascending order before the pickup is freed.
 
 signal drop_collected(xp_amount: int, gold_amount: int)
+signal loot_collected(loot_id: String)
 
 const IDLE_PATH: String = "res://asset/drop/%s/idle.png"
+## Authored loot art lands here per loot id; until then the tier tint swatch
+## stands in (asset/ASSET_REQUIREMENTS.md), because loot must drop either way.
+const LOOT_IDLE_PATH: String = "res://asset/drop/loot/%s/idle.png"
+const LOOT_KEY: String = "loot_id"
 const COLLECT_PATH: String = "res://asset/drop/%s/collect/%d.png"
 const COLLECT_FRAMES: int = 4
 
@@ -70,8 +75,10 @@ func _exit_tree() -> void:
 
 
 ## Everything a monster leaves behind. Experience and gold come from its data;
-## a chest is added for a boss or an elite.
-static func spawn_for_kill(monster_data: Dictionary, world_position: Vector2) -> void:
+## a chest is added for a boss or an elite; `loot_entries` is the already-rolled
+## loot as [{"id": String, "tier": String}] — rolling stays with the caller so
+## this pool never touches data or randomness.
+static func spawn_for_kill(monster_data: Dictionary, world_position: Vector2, loot_entries: Array[Dictionary] = []) -> void:
 	if _instance == null:
 		return
 	var xp: int = maxi(int(monster_data.get("xp_drop", 0)), 0)
@@ -86,6 +93,11 @@ static func spawn_for_kill(monster_data: Dictionary, world_position: Vector2) ->
 	var chest: StringName = chest_id_for(behaviour)
 	if not chest.is_empty():
 		_instance._spawn(chest, world_position + Vector2(-9, 5), 0, 0)
+	for index in loot_entries.size():
+		var entry: Dictionary = loot_entries[index]
+		# Fan drops out so simultaneous loot does not stack into one pixel.
+		var offset := Vector2(-9 - 8 * index, -7)
+		_instance._spawn_loot(String(entry.get("id", "")), String(entry.get("tier", "")), world_position + offset)
 
 
 static func xp_drop_id(amount: int) -> StringName:
@@ -149,6 +161,22 @@ func _spawn(drop_id: StringName, world_position: Vector2, xp: int, gold: int) ->
 	})
 
 
+## Loot uses the placeholder fallback where xp/gold drops skip the spawn: a
+## missing texture there only loses a visual, but a swallowed loot drop would
+## silently break the build loop the run is made of.
+func _spawn_loot(loot_id: String, tier: String, world_position: Vector2) -> void:
+	if loot_id.is_empty() or _idle.is_empty():
+		return
+	var sprite: Sprite2D = _idle.pop_back()
+	sprite.texture = PlaceholderArt.texture_or_placeholder(LOOT_IDLE_PATH % loot_id, LootDrops.tier_tint(tier))
+	sprite.global_position = world_position
+	sprite.visible = true
+	_active.append({
+		"sprite": sprite, "id": StringName(loot_id), "xp": 0, "gold": 0,
+		LOOT_KEY: loot_id, "age": 0.0, "collecting": false, "collect_elapsed": 0.0,
+	})
+
+
 func _physics_process(delta: float) -> void:
 	var player: Node2D = get_tree().get_first_node_in_group(PLAYER_GROUP) as Node2D
 	for index in range(_active.size() - 1, -1, -1):
@@ -183,11 +211,19 @@ func _begin_collect(drop: Dictionary) -> void:
 	drop["collecting"] = true
 	drop["collect_elapsed"] = 0.0
 	CombatAudio.play_pickup()
-	drop_collected.emit(int(drop["xp"]), int(drop["gold"]))
+	var loot_id: String = String(drop.get(LOOT_KEY, ""))
+	if loot_id.is_empty():
+		drop_collected.emit(int(drop["xp"]), int(drop["gold"]))
+	else:
+		loot_collected.emit(loot_id)
 
 
 ## Returns true once the sequence has finished and the slot can be recycled.
 func _advance_collect(drop: Dictionary, delta: float) -> bool:
+	# Loot has no authored collect frames yet; finishing immediately avoids a
+	# missing-art warning per pickup. Remove this guard when the frames land.
+	if drop.has(LOOT_KEY):
+		return true
 	var elapsed: float = float(drop["collect_elapsed"]) + delta
 	drop["collect_elapsed"] = elapsed
 	var frame: int = int(elapsed / COLLECT_FRAME_SEC)

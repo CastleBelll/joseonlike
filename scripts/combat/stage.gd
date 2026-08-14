@@ -32,6 +32,8 @@ var gold: int = 0
 var _stage_data: Dictionary = {}
 var _is_choice_open: bool = false
 var _has_ended: bool = false
+## Own stream so a seeded measurement run reproduces its loot (see CombatRng).
+var _loot_rng: RandomNumberGenerator = CombatRng.create()
 
 @onready var _actors: Node2D = $Actors
 @onready var _pickups: Node2D = $Pickups
@@ -68,6 +70,7 @@ func _ready() -> void:
 	EventBus.upgrade_chosen.connect(_on_upgrade_chosen)
 	EventBus.weapon_evolved.connect(_on_weapon_evolved)
 	_drops.drop_collected.connect(_on_drop_collected)
+	_drops.loot_collected.connect(_on_loot_collected)
 
 
 func _process(delta: float) -> void:
@@ -118,7 +121,25 @@ func _on_enemy_killed(monster_id: String, position: Vector2) -> void:
 	var data: Dictionary = GameData.monster(monster_id)
 	# Gold and experience are now earned off the ground rather than credited on
 	# death, so the player sees what a kill paid.
-	DropPool.spawn_for_kill(data, position)
+	DropPool.spawn_for_kill(data, position, _roll_loot(monster_id))
+
+
+## The rolled loot for a kill as DropPool entries [{"id", "tier"}]. Tier rides
+## along so the pool can tint its placeholder without a data lookup.
+func _roll_loot(monster_id: String) -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
+	for loot_id: String in LootDrops.roll(GameData.drop_table(monster_id), _loot_rng):
+		var loot_data: Dictionary = GameData.loot(loot_id)
+		if loot_data.is_empty():
+			continue
+		entries.append({"id": loot_id, "tier": String(loot_data.get("tier", ""))})
+	return entries
+
+
+## Loot is recorded the moment its collect starts, same contract as xp/gold.
+func _on_loot_collected(loot_id: String) -> void:
+	RunState.add_loot(loot_id)
+	EventBus.loot_collected.emit(loot_id)
 
 
 ## A drop pays out as its collect sequence begins.

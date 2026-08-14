@@ -80,7 +80,7 @@ GDD §4, §6, §7, §20, §33.
 - [x] **R2-1 loot 스키마+로더** — `data/loot.json`(id, 이름 ko/en, tier,
       태그, 특수 여부)과 `data/drop_tables.json`을 `GameData`가 로드하고
       `tools/validate_data.gd`가 교차 검증한다.
-- [ ] **R2-2 드랍→픽업** — 몬스터 사망 시 드랍 테이블 확률로 전리품
+- [x] **R2-2 드랍→픽업** — 몬스터 사망 시 드랍 테이블 확률로 전리품
       엔티티가 생성되고 자석 반경에서 흡수된다; 일반 재료는 자동 누적.
 - [ ] **R2-3 특수 재료 3택 팝업** — 특수 재료 획득 시 시간 정지 팝업
       (사용/보관 6칸/분해→엽전 카운터). 인벤 초과 시 교체 선택.
@@ -150,3 +150,4 @@ GDD §4, §6, §7, §20, §33.
 | 2026-08-14 | v3 side-view sprites (side-sprites worktree, codex+Higgsfield) | `4967433` (worktree) |
 | 2026-08-14 | GDD v2 build & loot revision adopted; R-series backlog | see git log |
 | 2026-08-14 | R2-1 loot schema + loader (`loot.json`, `drop_tables.json`, GameData accessors, validator, tests 23/23) | see git log |
+| 2026-08-14 | R2-2 loot drop → pickup (LootDrops.roll, DropPool loot spawn, RunState.loot_counts, tests 24/24, soak-verified) | see git log |

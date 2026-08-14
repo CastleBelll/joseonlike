@@ -26,8 +26,14 @@ Fallback:  <what ships until it arrives>
 
 ## Missing
 
-Nothing outstanding as of 2026-08-13 — every `sprite` path in `data/*.json` resolves to
-a file on disk.
+```
+[MISSING] loot drop icons (9): bamboo, tough_fiber, beast_fang, talisman_paper,
+          wonhon_shard, dokkaebi_flame, whetstone, ghost_iron, fire_spirit_stone
+Size:      24x24 px idle (+ optional 32x32 collect frames x4, like existing drops)
+Members:   res://asset/drop/loot/<loot_id>/idle.png per loot id
+Used by:   DropPool loot drops (R2-2), data/loot.json
+Fallback:  PlaceholderArt swatch tinted by tier (LootDrops.TIER_TINTS)
+```
 
 ## Anticipated (not yet needed — do not pre-produce)
 

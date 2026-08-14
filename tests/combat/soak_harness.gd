@@ -548,6 +548,9 @@ func _observe_drops() -> void:
 func _report_drops() -> void:
 	print("SOAK drops idle=%s collect=%s peak=%d" % [
 		_drop_idle_seen.keys(), _drop_collect_seen.keys(), _drop_peak])
+	# Loot uses placeholder textures with no resource_path, so it cannot appear
+	# in the id lists above; the collected counts are the proof it round-trips.
+	print("SOAK loot_collected=%s" % [RunState.loot_counts])
 
 
 ## --- pickup voice budget: does energy_sound survive the round-robin? ---------
