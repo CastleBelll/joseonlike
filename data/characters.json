@@ -2,6 +2,12 @@
   "taoist": {
     "name_ko": "도사",
     "name_en": "Taoist",
+    "name_hanja": "道士",
+    "title_ko": "요괴를 봉인하는 술사",
+    "title_en": "Sealer of Wicked Spirits",
+    "quote_ko": "부적 한 장이면, 백귀도 길을 비켜 가는 법이지.",
+    "quote_en": "One talisman is enough to part a hundred ghosts.",
+    "accent": "taoist_blue",
     "role": "magic_aoe",
     "base_hp": 120,
     "base_speed": 90.0,
@@ -20,21 +26,37 @@
   "warrior": {
     "name_ko": "무사",
     "name_en": "Warrior",
+    "name_hanja": "武士",
+    "title_ko": "환도를 벼리는 무인",
+    "title_en": "Blade of the Unyielding",
+    "quote_ko": "칼끝에 망설임을 남기지 않는다.",
+    "quote_en": "No hesitation remains on the edge of my blade.",
+    "accent": "warrior_crimson",
     "role": "melee_bruiser",
     "base_hp": 140,
     "base_speed": 80.0,
     "hit_invuln_sec": 0.8,
     "starting_weapon": "sword",
-    "unlock": { "type": "achievement", "achievement_id": "goblin_hunter" }
+    "unlock": { "type": "achievement", "achievement_id": "goblin_hunter" },
+    "unlock_text_ko": "업적 '도깨비 사냥꾼' 달성 시 해금",
+    "unlock_text_en": "Unlocks with the 'Goblin Hunter' achievement"
   },
   "archer": {
     "name_ko": "궁수",
     "name_en": "Archer",
+    "name_hanja": "弓手",
+    "title_ko": "바람을 읽는 명궁",
+    "title_en": "Archer Who Reads the Wind",
+    "quote_ko": "시위를 떠난 화살은 돌아오지 않는다.",
+    "quote_en": "An arrow loosed never returns.",
+    "accent": "archer_green",
     "role": "ranged_dps",
     "base_hp": 80,
     "base_speed": 100.0,
     "hit_invuln_sec": 0.8,
     "starting_weapon": "bow",
-    "unlock": { "type": "gold", "cost": 500 }
+    "unlock": { "type": "gold", "cost": 500 },
+    "unlock_text_ko": "엽전 500냥으로 해금",
+    "unlock_text_en": "Unlocks for 500 coins"
   }
 }

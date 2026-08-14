@@ -29,6 +29,18 @@ const PILL_TEXT := Color("#ffffff")
 const FOREST_GROUND := Color("#232b1e")
 const FOREST_SHADOW := Color("#1a2117")
 const ACCENT_TAOIST := Color("#4a7fd6")
+# N2-1 character accents (DESIGN.md §4 수행자 선택, GDD 부록 A palettes):
+# warrior crimson (진홍), archer deep green (진녹).
+const ACCENT_WARRIOR := Color("#e2604e")
+const ACCENT_ARCHER := Color("#8bc45e")
+
+# N2-1 select-card tokens (DESIGN.md §3 선택 카드, capture _01): dark row
+# cards on the near-black screen, dim low-saturation border when unselected,
+# darker square portrait well on the left.
+const CARD_BG := Color("#211c26")
+const CARD_BG_SELECTED := Color("#28230f")
+const CARD_BORDER_DIM := Color("#453d54")
+const CARD_WELL := Color("#2b2531")
 # Monster silhouette separation per DESIGN.md §5.1 (goblin=green, spirit=white).
 const ENEMY_GOBLIN := Color("#6faa4e")
 const ENEMY_SPIRIT := Color("#d8dfd2")

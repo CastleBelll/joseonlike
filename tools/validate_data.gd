@@ -8,6 +8,12 @@ const SPAWNING_FIELDS: Array[String] = [
 	"live_cap", "spawn_margin_px", "despawn_margin_px", "contact_cooldown_sec"
 ]
 const CHARACTER_FIELDS: Array[String] = ["base_hp", "base_speed", "hit_invuln_sec"]
+# N2-1 select-card copy: every roster entry must render a full row card.
+const CHARACTER_TEXT_FIELDS: Array[String] = [
+	"name_ko", "name_en", "name_hanja", "title_ko", "title_en", "quote_ko", "quote_en"
+]
+const UNLOCK_TYPES: Array[String] = ["default", "achievement", "gold"]
+const UNLOCK_TEXT_FIELDS: Array[String] = ["unlock_text_ko", "unlock_text_en"]
 const MONSTER_FIELDS: Array[String] = ["hp", "damage", "speed", "collision_radius", "xp_drop"]
 # N3-12: a declared sprite set must ship both animation files.
 const MONSTER_SPRITE_FILES: Array[String] = ["idle.png", "walk.png"]
@@ -84,6 +90,7 @@ func _check_combat_cross_references() -> void:
 					stage_id, wave.get("monster_id", "")
 				])
 	var weapons: Dictionary = _load(DATA_DIR + "/weapons.json")
+	var achievements: Dictionary = _load(DATA_DIR + "/achievements.json")
 	for character_id: String in characters:
 		_require_positive_numbers(
 			characters[character_id], CHARACTER_FIELDS, "characters." + character_id
@@ -95,6 +102,7 @@ func _check_combat_cross_references() -> void:
 			_fail("characters.%s.starting_weapon '%s' not in weapons.json" % [
 				character_id, starting_weapon
 			])
+		_check_character_card(characters[character_id], achievements, character_id)
 	# N3-6 power-up pool: every passive needs a display name and a usable
 	# stack contract, and every offerable stat id must still exist in the file.
 	var passives: Dictionary = _load(DATA_DIR + "/passives.json")
@@ -120,6 +128,32 @@ func _check_combat_cross_references() -> void:
 	)
 	_check_props()
 	_check_loot(monsters, weapons)
+
+
+## N2-1 select-card contract: full card copy, an accent the screen can
+## resolve, a known unlock type, and unlock text on every locked character.
+func _check_character_card(
+	character: Dictionary, achievements: Dictionary, character_id: String
+) -> void:
+	var label: String = "characters." + character_id
+	for field: String in CHARACTER_TEXT_FIELDS:
+		if String(character.get(field, "")).is_empty():
+			_fail("%s.%s missing or empty" % [label, field])
+	if not CharacterSelectScreen.ACCENT_COLORS.has(String(character.get("accent", ""))):
+		_fail(label + ".accent not a known accent token")
+	var unlock: Dictionary = character.get("unlock", {})
+	var unlock_type: String = String(unlock.get("type", ""))
+	if unlock_type not in UNLOCK_TYPES:
+		_fail(label + ".unlock.type must be one of " + str(UNLOCK_TYPES))
+		return
+	if unlock_type == "achievement" and not achievements.has(unlock.get("achievement_id", "")):
+		_fail(label + ".unlock.achievement_id not in achievements.json")
+	if unlock_type == "gold":
+		_require_positive_numbers(unlock, ["cost"], label + ".unlock")
+	if unlock_type != "default":
+		for field: String in UNLOCK_TEXT_FIELDS:
+			if String(character.get(field, "")).is_empty():
+				_fail("%s.%s missing or empty" % [label, field])
 
 
 ## N4-1 loot chain: every drop table points at a real monster and real loot,
