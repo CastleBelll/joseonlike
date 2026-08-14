@@ -1,80 +1,80 @@
 # JOSEONLIKE — Roadmap
 
-Milestone order. One feature at a time, per [CLAUDE.md](CLAUDE.md).
-Feature-level breakdown and current state: [TASKS.md](TASKS.md).
+GDD v2(빌드·전리품 개편, 2026-08-14) 기준 재개발. One feature at a time,
+per [CLAUDE.md](CLAUDE.md). Feature-level breakdown: [TASKS.md](TASKS.md).
+
+M1 수직 슬라이스(구 로드맵)는 재개발의 토대로 유지된다 — 동작하는
+시스템(전투/스폰/레벨업/세이브/오디오/테스트 러너)은 버리지 않고 GDD v2
+방향으로 개조한다.
 
 ---
 
-## M1 — Vertical slice — **DONE**
+## R0 — 컨셉 확정 — **DONE 2026-08-14**
 
-`boot → title → camp → character select → area select → Bamboo Forest → auto combat →
-level-up choice → boss → results`, with settings, achievements, quest counters,
-music and SFX buses. 22 headless test files pass.
+GDD v2 채택 (오너 초안 §1–§27 + 보완 §28–§36). 사이드뷰 아트 파이프라인
+가동, v3 스프라이트 `side-sprites` 워크트리에서 대기 중.
 
-## P1 — Framework pivot: side-view + character identity — **CURRENT**
+## R1 — 첫 실행 경험 (FTUE) — **CURRENT**
 
-Direction change (2026-08-14, owner decision). The 8-direction rotation art is
-retired. The game presents as 2D side-view: sprites face left/right only, left
-is a mirror, walking is a real 4-frame cycle. Character sprites are regenerated
-in the `new_asset/basic.png` style by a codex asset worktree; weapons and props
-will come from free assets. Each character also gets a hard weapon identity —
-allowed weapon categories in data, enforced in the level-up offer.
+사용자가 설치 후 처음 실행하는 순간부터 다시 만든다 (GDD §28).
 
-1. 2-direction facing: player faces left/right from horizontal movement,
-   vertical movement keeps last facing (`P1-1`).
-2. Character weapon identity in data + level-up filtering (`P1-2`).
-3. Integrate codex side-view sprites for Taoist/Warrior/Archer (`P1-3`).
-4. Real walk-cycle animation replacing the pixel-offset hop (`P1-4`).
-5. Monsters converted to the 2-direction rule (`P1-5`).
+1. 첫 부팅 분기 — 세이브 없으면 선택 화면 생략, 도사+대나무숲 즉시 출정.
+2. 조작 오버레이 1회 (이동 안내).
+3. 첫 판 축약 스크립트 — 30초 내 보장 드랍, 5분 전후 약화 보스.
+4. 첫 전리품 → 첫 개조 3택 팝업 (게임 정체성을 가르치는 순간).
+5. 첫 귀환 — 본거지 하이라이트(괴이록·지역 선택), 2판째부터 정식 흐름.
 
-Exit condition: no scene renders an 8-direction rotation sprite for the player,
-the three characters animate side-view walks, and no character can be offered a
-weapon outside its categories.
+Exit: 새 프로필 기준 설치 첫 10분 안에 "전리품 → 무기 변화"를 1회
+반드시 체험하고, 기존 세이브 사용자는 기존 흐름 그대로다.
 
-## M2 — Meta progression that sticks — **NEXT**
+## R2 — 전리품 코어 루프
 
-The run loop plays, but almost nothing a run produces survives it. M2 closes that.
+"이번 판에 뭐가 떨어졌고 뭘 만들까"를 시스템으로 (GDD §4, §6, §7, §20, §33).
 
-1. Bank the gold a run earns into the profile (today it is displayed and dropped).
-2. Spend gold: character unlock purchase (`unlock.type == "gold"` currently always
-   returns locked, so Archer is unreachable).
-3. Make one camp building do something real, then the next
-   (Workshop → Training Ground → Shrine). Archive already routes to achievements/quests.
-4. Quest definitions in data, so the counters `Quests` already tracks have targets
-   and rewards.
+1. `loot.json` + `drop_tables.json` 스키마와 로더.
+2. 몬스터 드랍 → 필드 드랍 엔티티 → 자석 픽업.
+3. 특수 재료 3택 팝업 (사용/보관 6칸/분해→엽전).
+4. `weapon_mods.json` — 환도 3갈래(예리/귀철/화염)를 첫 증명으로.
+5. 개조가 실제 무기 동작을 바꾼다 (투사체/이펙트/상태이상 태그).
 
-Exit condition: a player who clears a run is measurably stronger or richer next run,
-and every camp building either works or is removed from the screen.
+## R3 — 무기 등급
 
-## M3 — Content breadth
+세로축 성장 (GDD §5, §33): 등급 6단계, 등급별 신규 효과, 재료 누적 +
+레벨업 강화 선택. 신화 도달 = 빌드 완성 연출.
 
-Data-driven expansion on top of a proven loop. 18 monsters already exist in
-`data/monsters.json` with no stage using them.
+## R4 — 15분 페이싱
 
-1. Second stage — Abandoned Temple (GDD §14) with its own waves and boss.
-2. Stage unlock rule (area select already renders locked cards).
-3. Weapons toward the MVP bar of 20, one weapon per session.
-4. Remaining bosses (MVP bar: 3).
-5. Achievements toward the MVP bar of 50.
+GDD §21, §23, §34: 정예(드랍 미리보기), 중간 보스, 대량 공세, 소프트
+인레이지, `data/BALANCE.md` 곡선 정리. 첫 판 축약 테이블 분리.
 
-## M4 — Release readiness
+## R5 — 괴이록과 해금
 
-1. Real ad SDK behind `AdsService` (stub today).
-2. Real analytics SDK behind `AnalyticsService` (stub today), PII audit.
-3. Balance pass against `data/BALANCE.md`.
-4. Export verification for Android/iOS/PC.
-5. Owner-supplied asset integration pass (see [ASSET_REQUIREMENTS.md](ASSET_REQUIREMENTS.md)).
-6. Localization completeness check (`ko`/`en`, no hardcoded strings).
+GDD §15–§18, §31, §32: 괴이록(??? 표시), 조건형 해금(`unlocks.json`),
+발견형 해금(`secret_recipes.json`) 1종, 엽전 환전, 사망 결과 화면.
+
+## R6 — 콘텐츠 확장
+
+지역(공동묘지→폐허 마을→설산), 캐릭터(승려→자객→포수→무당→망나니),
+액티브 기술(GDD §30), 무기·특성 풀 확대. 한 세션 = 한 콘텐츠.
+
+## A-트랙 — 사이드뷰 아트 (병행, 게임플레이 커밋과 분리)
+
+1. `side-sprites` v3 검수 → main 머지.
+2. 2방향 facing 코드 + 4프레임 워크 사이클 (구 P1-1/P1-4).
+3. 몬스터 2방향 전환, 신규 캐릭터 스프라이트 생성 (같은 파이프라인).
+
+## RZ — 릴리즈 (구 M4)
+
+광고/분석 SDK (GDD §35 원칙), 밸런스 패스, 수출 검증, 현지화 완성도.
 
 ---
 
-## MVP bar (GDD §16) vs. today
+## 구 로드맵 대응표
 
-| Item | Target | Now |
-|---|---|---|
-| Characters | 3 | 3 defined, 1 reachable (Warrior needs an achievement, Archer's gold unlock is not implemented) |
-| Areas | 2 | 1 |
-| Weapons | 20 | 7 |
-| Monsters | 15 | 22 defined, 4 used |
-| Bosses | 3 | 1 |
-| Achievements | 50 | 8 |
+| 구 | 처리 |
+| --- | --- |
+| M2 메타 진행 (골드 뱅킹/구매 해금) | R5로 흡수 — 엽전·조건형 해금으로 재설계 |
+| M2 캠프 건물 업그레이드 | GDD v2 §19 원칙(수치 성장 지양)에 따라 폐기, 본거지는 §24 기능으로 |
+| M3 콘텐츠 확장 | R6 |
+| M4 릴리즈 | RZ |
+| P1 사이드뷰 전환 | A-트랙 |

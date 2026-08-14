@@ -6,6 +6,9 @@ Tick a box only after commit **and** push succeeded.
 Baseline recorded 2026-08-13 at commit `9d3b8b5`:
 `godot --headless --path . --script tests/run_tests.gd` → `PASS 22 file(s): 22 passed, 0 failed, 0 errored`.
 
+2026-08-14: GDD v2(빌드·전리품 개편) 채택. 백로그를 R-시리즈로 재편.
+기존 시스템은 재개발의 토대다 — 버리지 않고 개조한다.
+
 ---
 
 ## 1. State inventory
@@ -18,7 +21,7 @@ Baseline recorded 2026-08-13 at commit `9d3b8b5`:
 - [x] Settings screen — Master/Music/Effects sliders, ko/en language, persisted
 - [x] Camp screen — walkable camp, building panels, Archive → achievements/quests
 - [x] Character select — 3 characters, unlock state displayed
-- [x] Area select — Bamboo Forest selectable, other GDD areas rendered locked
+- [x] Area select — Bamboo Forest selectable, other areas rendered locked
 - [x] Combat stage — spawner, wave schedule, boss spawn, contact damage, death
 - [x] Auto-attack weapons — sword, bow, talisman, projectiles, melee arc, evolution
 - [x] XP drops, pickups, level-up choice, weapon/passive grants
@@ -29,121 +32,111 @@ Baseline recorded 2026-08-13 at commit `9d3b8b5`:
 - [x] `MusicDirector` + `Music`/`Effects` audio buses
 - [x] Headless test runner, 22 test files, `tools/validate_data.gd`, GitHub Actions CI
 
-### BROKEN — known defects, each is its own feature below
+### BROKEN — known defects
 
-- Run gold is never banked into the profile (`M2-1`)
-- `unlock.type == "gold"` always evaluates to locked → Archer is unreachable (`M2-2`)
-- Level-up choice logs `GameData: unknown weapons id "choice_..."` errors (`DEBT-1`)
+- Run gold is never banked (구 M2-1) — R5 엽전 환전으로 재설계 예정
+- `unlock.type == "gold"` always locked (구 M2-2) — R5 `unlocks.json`으로 대체 예정
+- Level-up choice logs unknown weapon id errors (`DEBT-1`)
 
 ### UNUSED — present but nothing calls it
 
-- `scripts/services/ads.gd`, `scripts/services/analytics.gd` — deliberate M4 stubs,
-  not autoloaded, no call sites. Keep, do not extend until M4.
-- 18 of 22 monsters in `data/monsters.json` have no stage referencing them.
-- Camp Workshop / Training Ground / Shrine open a "Coming soon" panel.
+- `scripts/services/ads.gd`, `scripts/services/analytics.gd` — RZ 스텁 유지.
+- 18 of 22 monsters in `data/monsters.json` unused — R2 드랍 테이블/ R6 지역에서 소비.
+- Camp Workshop / Training Ground / Shrine "Coming soon" — GDD v2 §24 기준 재정의 대상.
 
-### UNKNOWN — needs a look when touched
+### ASSETS — side-sprites worktree (A-트랙)
 
-- Coverage of `asset/**` versus what scenes actually load. The 8-direction
-  rotation sheets under `asset/character/*/raw` become legacy once P1-3 lands;
-  audit and prune them in a later cleanup feature.
-- Whether `data/BALANCE.md` numbers still match `data/*.json` after M1 changes.
+- v3 스프라이트(도사/무관/궁수, idle+walk) `side-sprites` 워크트리 커밋
+  `4967433` 검수 통과, main 머지 대기. 오너 승인 후 A-1.
 
 ---
 
 ## 2. Feature backlog
 
-### P1 — Framework pivot (side-view + character identity) — CURRENT
+### R1 — 첫 실행 경험 (FTUE) — CURRENT
 
-Owner decision 2026-08-14: 8-direction art retired, 2D side-view with
-left/right facing only; per-character weapon categories enforced.
-Codex asset worktree `side-sprites` generates the character sprites
-(style: `new_asset/basic.png`).
+GDD §28. 목표: 설치 첫 10분 안에 "전리품 → 무기 변화" 1회 체험.
 
-- [ ] **P1-1 2-direction facing** — the player sprite faces right when moving
-      right, left when moving left (mirror), and keeps its last facing while
-      moving purely vertically or standing still; `CharacterMotion` facing
-      logic is unit-tested; 8-direction bucket selection is no longer used for
-      the player.
-- [ ] **P1-2 Character weapon identity** — `data/characters.json` gains
-      `weapon_categories`; level-up weapon offers only contain weapons whose
-      category is allowed for the run's character; `tools/validate_data.gd`
-      fails when a starting weapon's category is not allowed or a character
-      has an empty pool; existing runs with now-forbidden weapons still load.
-- [ ] **P1-3 Side-view sprite integration** — the reviewed sprites from the
-      `side-sprites` worktree are merged; Taoist/Warrior/Archer render the new
-      `side/idle.png` in camp, character select and combat; old rotation
-      sheets are no longer referenced by the player path. (blocked on codex
-      worker output review)
-- [ ] **P1-4 Walk-cycle animation** — while moving, the player plays the
-      4-frame `side/walk.png` strip at the existing `WALK_HZ`; idle shows
-      `side/idle.png`; the pixel-offset hop is removed for characters that
-      have a strip and remains as fallback otherwise. (blocked on P1-3)
-- [ ] **P1-5 Monster 2-direction conversion** — monsters follow the same
-      left/right facing rule; monsters without side-view art keep current
-      sprites but stop using 8-direction buckets. (art regeneration is a later
-      asset session)
+- [ ] **R1-1 첫 부팅 분기** — 세이브가 없으면 타이틀 [모험 시작]이 캐릭터/
+      지역 선택을 생략하고 도사+대나무숲으로 즉시 출정한다; 세이브가 있으면
+      기존 흐름 그대로다 (회귀 기준).
+- [ ] **R1-2 조작 오버레이** — 첫 출정 개시 시 이동 안내 오버레이가 1회
+      표시되고, 입력이 들어오면 사라지며, 다시는 나타나지 않는다.
+- [ ] **R1-3 첫 판 축약 스크립트** — 첫 판만 별도 웨이브 테이블: 30초 내
+      보장 전리품 드랍, 5분 전후 약화 보스, 이후 판은 정식 테이블.
+- [ ] **R1-4 첫 개조 팝업 튜토리얼** — 첫 특수 재료 획득 시 3택 팝업이
+      1회성 설명과 함께 뜨고, 선택 결과가 무기에 즉시 반영된다.
+      (R2-3/R2-4 최소 구현을 전제로 하며, 순서상 R2 코어를 먼저 당겨도 된다)
+- [ ] **R1-5 첫 귀환 하이라이트** — 첫 클리어/사망 후 본거지에서 괴이록·
+      지역 선택 두 곳만 하이라이트된다.
 
-### M2 — Meta progression
+주의: R1-4가 R2 코어(드랍→픽업→팝업)를 필요로 하므로, 실제 세션 순서는
+R2-1→R2-2→R2-3→R1 순으로 당겨 잡아도 된다. 세션 시작 시 판단.
 
-- [ ] **M2-1 Bank run gold** — the gold in a run's result is added to the profile's
-      `gold` save value exactly once, survives restart, and is not double-counted on
-      a results screen re-entry.
-- [ ] **M2-2 Gold character unlock** — a character with `unlock.type == "gold"` can be
-      bought on the character-select screen when the profile has `cost` gold; the gold
-      is deducted, the unlock persists, and an insufficient balance is refused with a
-      readable reason.
-- [ ] **M2-3 Workshop: one permanent upgrade** — a single gold-priced permanent stat
-      upgrade bought in the camp Workshop and applied to the next run.
-- [ ] **M2-4 Training Ground: one permanent upgrade** — same shape, different stat.
-- [ ] **M2-5 Shrine: one permanent upgrade** — same shape, different stat.
-- [ ] **M2-6 `data/quests.json` schema + loader** — quest definitions with counter key,
-      target and reward, read through `GameData`.
-- [ ] **M2-7 Quest claim flow** — a completed quest can be claimed once on the
-      achievements/quests screen and pays its reward.
+### R2 — 전리품 코어 루프
 
-### M3 — Content
+GDD §4, §6, §7, §20, §33.
 
-- [ ] **M3-1 Abandoned Temple stage data** — a second `data/stages.json` entry using
-      existing monsters, validated by `tools/validate_data.gd`.
-- [ ] **M3-2 Stage unlock rule** — the second area unlocks on a recorded condition and
-      area select reflects it.
-- [ ] **M3-3 Second boss** — one boss entry plus its spawn behaviour.
-- [ ] **M3-4..N New weapon** — one weapon per session toward the MVP bar of 20.
-- [ ] **M3-x Achievements batch** — small batches toward the MVP bar of 50.
+- [ ] **R2-1 loot 스키마+로더** — `data/loot.json`(id, 이름 ko/en, tier,
+      태그, 특수 여부)과 `data/drop_tables.json`을 `GameData`가 로드하고
+      `tools/validate_data.gd`가 교차 검증한다.
+- [ ] **R2-2 드랍→픽업** — 몬스터 사망 시 드랍 테이블 확률로 전리품
+      엔티티가 생성되고 자석 반경에서 흡수된다; 일반 재료는 자동 누적.
+- [ ] **R2-3 특수 재료 3택 팝업** — 특수 재료 획득 시 시간 정지 팝업
+      (사용/보관 6칸/분해→엽전 카운터). 인벤 초과 시 교체 선택.
+- [ ] **R2-4 개조 레시피** — `data/weapon_mods.json`: 환도+숫돌→예리한
+      환도, 환도+귀철→귀철도, 환도+화령석→화염도. 적용 시 무기 교체.
+- [ ] **R2-5 개조 체감** — 3갈래가 실제로 다르게 동작한다 (참격 관통 /
+      흡혈+자해 / 화상 지속피해). 상태이상 태그 최소 구현 포함.
 
-### M4 — Release readiness
+### R3 — 무기 등급 (코스 그레인, R2 완료 후 상세화)
 
-- [ ] **M4-1 Ad SDK integration** behind `AdsService`
-- [ ] **M4-2 Analytics SDK integration** behind `AnalyticsService` + PII audit
-- [ ] **M4-3 Balance pass** against `data/BALANCE.md`
-- [ ] **M4-4 Export verification** (Android / iOS / PC)
-- [ ] **M4-5 Owner-supplied asset integration** (see `ASSET_REQUIREMENTS.md`)
-- [ ] **M4-6 Localization completeness** — no hardcoded display strings
+- [ ] R3-1 등급 데이터 스키마 (weapons.json 확장, 등급 6단계 효과)
+- [ ] R3-2 재료 누적/레벨업 강화 선택으로 등급 상승
+- [ ] R3-3 신화 도달 = 빌드 완성 연출 + 기록
+
+### R4 — 15분 페이싱 (코스 그레인)
+
+- [ ] R4-1 정예 몬스터 (전용 표시 + 드랍 미리보기)
+- [ ] R4-2 중간 보스 / 대량 공세 웨이브
+- [ ] R4-3 소프트 인레이지 + BALANCE.md 곡선 정리
+- [ ] R4-4 첫 판 축약 테이블 분리 (R1-3과 연동)
+
+### R5 — 괴이록과 해금 (코스 그레인)
+
+- [ ] R5-1 괴이록 화면 (??? 표시, 발견 공개)
+- [ ] R5-2 `unlocks.json` 조건형 해금 + 기존 achievement 통합
+- [ ] R5-3 발견형 해금 1종 (`secret_recipes.json`)
+- [ ] R5-4 엽전 환전 + 사망 결과 화면 (구 M2-1 대체)
+
+### R6 — 콘텐츠 확장 (코스 그레인)
+
+지역 1개 = 1세션 묶음, 캐릭터 1명 = 1세션 묶음. GDD §8, §30 순서 참조.
+
+### A-트랙 — 사이드뷰 아트 (게임플레이 커밋과 분리)
+
+- [ ] **A-1 v3 스프라이트 머지** — `side-sprites` 워크트리(`4967433`)를
+      main에 머지하고 씬 참조 없이 에셋만 들어온다.
+- [ ] **A-2 2방향 facing** — 좌/우 facing (수평 이동이 방향 결정, 수직은
+      유지), `CharacterMotion` 단위 테스트, 플레이어 경로에서 8방향 버킷
+      제거.
+- [ ] **A-3 워크 사이클** — 이동 중 4프레임 walk 스트립 재생, idle 프레임,
+      오프셋 홉은 스트립 없는 엔티티의 폴백으로 유지.
+- [ ] **A-4 몬스터 2방향 전환** — 8방향 버킷 미사용화 (아트 재생성은 별도).
+- [ ] A-5+ 신규 캐릭터/몬스터 스프라이트 생성 세션 (Higgsfield 파이프라인)
 
 ---
 
 ## 3. Tech debt
 
-Each entry is a normal feature session when it is picked up. Do not fold one into an
-unrelated commit.
-
-- [ ] **DEBT-1** `scripts/ui/level_up_choice.gd` `_tier_for()` calls `GameData.weapon()`
-      with choice ids (`choice_old_talisman_upgrade`, `w`, `u`), producing
-      `push_error` noise on every level-up and in the test run. Resolve the tier from
-      the choice's weapon id instead.
-- [ ] **DEBT-2** Godot `*.import` files are tracked and rewrite themselves per machine,
-      so a second checkout showed ~1800 modified files. Decide: gitignore them or
-      normalise them.
-- [ ] **DEBT-3** `ARCHITECTURE.md` §1 documented a six-worktree parallel ownership
-      contract. The worktrees are gone (2026-08-13); the section now describes the
-      single-session workflow. Re-check the rest of the document for leftover
-      "worktree owns X" phrasing when next editing it.
-- [ ] **DEBT-4** Autoload `_ready()` never fires under the headless test runner
-      (`docs/CI.md`), so `_ready`-driven logic is untestable there. Revisit if it
-      starts hiding real defects.
-- [ ] **DEBT-5** `scripts/core/run_state.gd` is 512 lines — the largest file in the
-      project. Split only if a feature needs to touch it and the size is in the way.
+- [ ] **DEBT-1** `scripts/ui/level_up_choice.gd` `_tier_for()` choice id로
+      `GameData.weapon()` 호출 → push_error 노이즈. 무기 id로 해석하도록 수정.
+- [ ] **DEBT-2** `*.import` 파일 추적 문제 (~1800 modified). gitignore 여부 결정.
+- [ ] **DEBT-3** `ARCHITECTURE.md` 워크트리 잔재 표현 정리.
+- [ ] **DEBT-4** headless 러너에서 autoload `_ready()` 미실행 (docs/CI.md).
+- [ ] **DEBT-5** `run_state.gd` 512줄 — 필요 시 분리.
+- [ ] **DEBT-6** GDD v2로 무효화된 코드 식별 (골드 구매 해금 경로 등) —
+      R5 진입 시 정리 세션으로.
 
 ---
 
@@ -151,5 +144,8 @@ unrelated commit.
 
 | Date | Feature | Commit |
 |---|---|---|
-| 2026-08-13 | Development process switched to the one-feature loop; parallel worktrees removed | see git log |
-| 2026-08-14 | P1 framework pivot planned: side-view 2-direction art + character weapon identity; codex sprite worktree dispatched | see git log |
+| 2026-08-13 | Development process switched to the one-feature loop | see git log |
+| 2026-08-14 | P1 framework pivot planned (side-view + weapon identity) | `1f478ab` |
+| 2026-08-14 | Character visual design bible + roster expansion | `b4e3921` |
+| 2026-08-14 | v3 side-view sprites (side-sprites worktree, codex+Higgsfield) | `4967433` (worktree) |
+| 2026-08-14 | GDD v2 build & loot revision adopted; R-series backlog | see git log |

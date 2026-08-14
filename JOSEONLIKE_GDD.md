@@ -1,315 +1,1067 @@
 # JOSEONLIKE
 
-## Game Design Document (GDD)
+## Game Design Document v2 — Build & Loot System Revision
+
+문서 상태: 2026-08-14 오너 초안(§1–§27) 채택 + 설계 보완(§28–§36, 부록).
+v1(8방향/단순 무기 성장 기준)은 git 히스토리로만 남는다.
+§1–§27은 오너가 작성한 확정 컨셉이며, §28–§36은 이를 구현 가능하게
+구체화한 보완이다. 충돌 시 §1–§27의 의도가 우선한다.
 
-Version: 0.1
+---
 
-------------------------------------------------------------------------
+# 1. 게임 핵심 컨셉
 
-# 1. Project Overview
+**JOSEONLIKE**는 조선과 한국 설화를 모티브로 한 픽셀 아트 로그라이크 서바이벌 게임이다.
 
-## Project Name
+플레이어는 서로 다른 전투 방식을 가진 인물을 선택하여 괴이 현상이 발생한 지역으로 출정한다.
 
-JOSEONLIKE
+각 캐릭터는 고유한 시작 무기와 특성을 가지며, 전투 중 획득하는 **전리품, 무기 개조, 특성 선택**에 따라 매 판 전혀 다른 빌드를 완성한다.
 
-## Genre
+한 판의 기본 플레이 시간은 약 **15분**이다.
 
-Pixel Art Roguelike Survival Action RPG
+---
 
-## Platform
+# 2. 핵심 게임 루프
 
--   Android
--   iOS
--   PC (Steam)
+```text
+캐릭터 선택
+↓
+지역 선택
+↓
+출정
+↓
+몬스터 사냥
+↓
+경험치 + 전리품 획득
+↓
+레벨업
+↓
+특성 / 기술 선택
+↓
+전리품을 이용한 무기 강화 및 개조
+↓
+정예 몬스터
+↓
+희귀 전리품 획득
+↓
+빌드 완성
+↓
+지역 보스
+↓
+15분 전후 클리어
+↓
+본거지 귀환
+↓
+새로운 콘텐츠 해금
+↓
+다른 빌드로 재도전
+```
+
+게임의 핵심 재미는 단순한 수치 상승이 아니라
+
+**"이번 판에는 무엇이 떨어졌고, 이것으로 어떤 무기를 만들 것인가?"**
+
+에 있다.
+
+---
+
+# 3. 캐릭터 시스템
+
+캐릭터는 단순한 스킨이 아니다.
 
-## Business Model
+각 캐릭터마다
+
+* 고유 시작 무기
+* 무기 계통
+* 기본 능력
+* 고유 특성
+* 선호 전리품
+* 전용 개조
+* 전용 기술
+* 해금 조건
 
-Free-to-play with advertisement monetization.
+을 가진다.
 
-------------------------------------------------------------------------
+초기 캐릭터 예시:
 
-# 2. Game Concept
+| 캐릭터 | 전투 스타일         | 대표 무기  |
+| --- | -------------- | ------ |
+| 도사  | 술법 / 범위 / 상태이상 | 부적, 법검 |
+| 무관  | 근접 / 방어 / 반격   | 환도, 창  |
+| 궁수  | 원거리 / 관통 / 치명타 | 각궁     |
+| 승려  | 범위 / 넉백 / 생존   | 선장, 염주 |
+| 자객  | 속도 / 치명타 / 출혈  | 비수, 암기 |
+| 포수  | 느린 강공격 / 폭발    | 조총, 화포 |
 
-A Joseon-inspired pixel roguelike survival game where various hunters
-fight against spirits, monsters, and forgotten creatures.
+확장 로스터(후순위): 무당(굿 부채·방울, 술법 지원), 망나니(대도, 고위험 근접).
 
-Core keywords: - Korean folklore - Joseon fantasy - Roguelike - Auto
-combat - Character collection - Weapon evolution - Pixel art
+캐릭터는 플레이를 통해 순차적으로 해금한다.
 
-------------------------------------------------------------------------
+무기 정체성 규칙: 각 캐릭터는 자신의 무기 계통(`weapon_categories`)
+안의 무기·개조만 제안받고 장착할 수 있다. 도사는 환도를 들 수 없다.
+(액티브 기술 정의는 §30, 비주얼 바이블은 부록 A.)
 
-# 3. Core Direction
+---
 
-The game does not focus on a single hero.
+# 4. 무기 시스템
 
-Players choose different hunters with unique combat styles.
+모든 캐릭터는 기본 무기를 가지고 출정한다.
 
-Characters: - Taoist - Warrior - Archer - Assassin - Shaman (Mudang) -
-Monk - Hunter - Firearm Hunter - Executioner (Mangnani)
+하지만 무기는 처음부터 완성된 상태가 아니다.
 
-------------------------------------------------------------------------
+전리품과 선택에 따라 한 판 안에서 지속적으로 변화한다.
 
-# 4. World Setting
+예:
 
-A fictional Joseon era.
+```text
+낡은 환도
+     │
+     ├─ 숫돌
+     │    ↓
+     │  예리한 환도
+     │    ↓
+     │  참격 빌드
+     │
+     ├─ 귀철
+     │    ↓
+     │  귀철도
+     │    ↓
+     │  저주 빌드
+     │
+     └─ 화령석
+          ↓
+        화염도
+          ↓
+        화상 빌드
+```
 
-As people gradually forget old legends and beliefs, forgotten spirits
-begin appearing.
+같은 환도로 시작하더라도 플레이어의 선택과 전리품에 따라 완전히 다른 무기가 된다.
 
-The balance between humans and spirits collapses, causing supernatural
-incidents.
+(등급 상승과 개조가 어떻게 맞물리는지는 §33에서 정의한다.)
 
-------------------------------------------------------------------------
+---
 
-# 5. Gameplay Loop
+# 5. 무기 등급
 
-Base Camp ↓ Select Character ↓ Select Area ↓ Enter Stage ↓ Auto Combat ↓
-Collect Experience ↓ Choose Upgrade ↓ Defeat Boss ↓ Acquire Rewards ↓
-Upgrade Base ↓ Unlock Content
+무기는 다음 등급을 가진다.
 
-------------------------------------------------------------------------
+```text
+일반
+↓
+고급
+↓
+희귀
+↓
+영웅
+↓
+전설
+↓
+신화
+```
 
-# 6. Combat System
+단순히 공격력만 증가하지 않는다.
 
-Inspired by Vampire Survivors style.
+등급이 올라갈수록 새로운 효과가 추가된다.
 
-Presentation (revised 2026-08-14): side-view pixel art. Characters and
-monsters face left or right only — no 8-direction rotations. Facing follows
-the horizontal component of movement; pure vertical movement keeps the last
-facing. Left is an in-engine horizontal mirror of the right-facing sprite.
-Walking plays a 4-frame walk cycle. Style anchor: `new_asset/basic.png`.
+예:
 
-Player: - Movement only
+### 일반 환도
 
-Combat: - Automatic attacks
+```text
+공격력 +5%
+```
 
-Growth: - Weapon upgrades - Passive abilities - Skill selection -
-Evolution system
+### 고급 환도
 
-------------------------------------------------------------------------
+```text
+공격 범위 +10%
+```
 
-# 7. Character System
+### 희귀 환도
 
-Weapon identity rule (revised 2026-08-14): every character declares its
-allowed weapon categories in `data/characters.json` (`weapon_categories`).
-A character can only be offered and equip weapons whose category is in that
-list — a Taoist can never wield a sword. The starting weapon is fixed per
-character and must belong to an allowed category. Passives are shared by all
-characters.
+```text
+참격이 적 1명을 추가 관통
+```
 
-## Taoist
+### 영웅 환도
 
-Role: - Magic damage - Area damage - Status effects
+```text
+치명타 발생 시 추가 참격
+```
 
-Allowed categories: - Spiritual
+### 전설 환도
 
-Weapon: - Talisman
+```text
+참격이 검기를 발생
+```
 
-Visual: wandering mystic — satgat (conical bamboo hat, low over the eyes),
-gray-white dopo robe with blue trim, a seokjang (ringed pilgrim staff) held
-upright, yellow talisman slips tucked in the belt. Palette: gray-white +
-blue trim + gold talisman accent.
+### 신화 환도
 
-Examples: Old Talisman → Fire Talisman → Five Elements Talisman → Divine
-Seal
+```text
+검기가 적을 처치하면 새로운 검기를 생성
+```
 
-------------------------------------------------------------------------
+등급 상승 자체가 플레이 방식을 변화시킨다.
 
-## Warrior
+---
 
-Role: - Melee combat - High damage - Defense
+# 6. 전리품 시스템
 
-Allowed categories: - Melee
+몬스터는 일정 확률로 전리품을 떨어뜨린다.
 
-Weapon: - Sword
+전리품은 단순한 돈이 아니라 **현재 판의 빌드를 결정하는 핵심 자원**이다.
 
-Visual: Joseon soldier — jeonrip (military hat with red tassel), navy
-cheollik coat or lamellar chest piece, hwando sword held low, broad stance.
-Palette: navy + crimson + steel highlight. High contrast, never muddy.
+전리품 종류:
 
-------------------------------------------------------------------------
+```text
+일반 재료
+희귀 재료
+괴이 재료
+보스 재료
+지역 전용 재료
+캐릭터 전용 재료
+```
 
-## Archer
+예:
 
-Role: - Long range damage
+| 전리품   | 주요 용도        |
+| ----- | ------------ |
+| 숫돌    | 검/창 공격력 강화   |
+| 질긴 힘줄 | 활 공격속도/장력 강화 |
+| 화약    | 조총/폭발 계열     |
+| 부적지   | 부적 계열        |
+| 주사    | 퇴마/부적 강화     |
+| 귀철    | 저주받은 무기 제작   |
+| 도깨비불  | 화염/영혼 계열     |
+| 원혼 조각 | 영혼/저주 계열     |
+| 요괴의 핵 | 고급 개조        |
+| 영물의 피 | 희귀 진화        |
 
-Allowed categories: - Ranged
+(전리품이 런 내 자원인지 영구 자원인지는 §32에서 확정한다.)
 
-Weapons: - Bow - Korean Bow - Fire Arrow
+---
 
-Visual: mountain hunter — paeraengi (flat straw hat), deep-green hunting
-jacket, tan trousers, red quiver strap across the chest as the accent
-colour, gakgung (composite bow) in hand, quiver visible on the back.
+# 7. 몬스터별 전리품
 
-------------------------------------------------------------------------
+모든 몬스터가 같은 아이템을 떨어뜨리지 않는다.
 
-## Firearm Hunter
+예:
 
-Role: - Slow but powerful attacks
+### 도깨비
 
-Allowed categories: - Ranged
+```text
+도깨비 뿔
+도깨비불
+낡은 방망이 조각
+```
 
-Weapons: - Matchlock - Improved Matchlock
+### 원혼
 
-------------------------------------------------------------------------
+```text
+원혼 조각
+혼백
+찢어진 부적
+```
 
-## Assassin
+### 산짐승 요괴
 
-Role: - Critical damage - Evasion
+```text
+질긴 가죽
+짐승의 이빨
+힘줄
+```
 
-Allowed categories: - Melee - Ranged
+### 타락한 병사
 
-Weapons: - Throwing Knife - Poison Weapon
+```text
+녹슨 철
+부러진 칼날
+갑옷 조각
+```
 
-------------------------------------------------------------------------
+따라서 어떤 몬스터를 적극적으로 사냥할 것인지도 빌드 선택이 된다.
 
-## Mudang (Shaman)
+---
 
-Role: - Spiritual support - Area damage - Spirit summons
+# 8. 지역별 전리품
 
-Allowed categories: - Spiritual
+지역마다 등장하는 몬스터와 전리품이 다르다.
 
-Weapons: - Divination Fan - Spirit Bells
+## 대나무숲
 
-Visual: female shaman in full gut-attire — red skirt with deep-blue
-jeogori jacket, rainbow-striped saekdong ribbons streaming from the arms,
-folding fan in one hand and a cluster of brass bells in the other. The most
-saturated palette in the roster: red + blue + white.
+대표 재료:
 
-------------------------------------------------------------------------
+```text
+대나무
+질긴 섬유
+원혼 조각
+도깨비불
+짐승의 이빨
+```
 
-## Executioner (Mangnani)
+유리한 빌드:
 
-Role: - Heavy melee - Slow swings - High risk, high damage
+```text
+활
+창
+부적
+독
+영혼
+```
 
-Allowed categories: - Melee
+## 공동묘지
 
-Weapons: - Executioner's Blade (daedo)
+대표 재료:
 
-Visual: burly outcast — bare arms in a rough vest, rope belt, cloth
-headwrap, scarred build, an oversized curved daedo blade resting on the
-shoulder. Palette: skin tone + dark red + iron gray.
+```text
+혼백
+원혼 조각
+백골
+저주받은 천
+귀철
+```
 
-------------------------------------------------------------------------
+유리한 빌드:
 
-# 8. Weapon System
+```text
+퇴마
+저주
+영혼
+부적
+흡혈
+```
 
-Categories:
+## 폐허가 된 마을
 
-## Melee
+대표 재료:
 
--   Sword
--   Spear
--   Dual Sword
--   Axe
+```text
+철
+화약
+천
+목재
+부러진 무기
+```
 
-## Ranged
+유리한 빌드:
 
--   Bow
--   Matchlock
--   Throwing Weapons
+```text
+검
+창
+조총
+화포
+```
 
-## Spiritual
+## 설산
 
--   Talisman
--   Magic
--   Summons
+대표 재료:
 
-------------------------------------------------------------------------
+```text
+빙정
+설인 가죽
+영물의 피
+얼어붙은 혼
+```
 
-# 9. Weapon Grade System
+유리한 빌드:
 
-Grades:
+```text
+빙결
+방어
+치명타
+영물
+```
 
-Common → Rare → Epic → Legendary → Mythic
+---
 
-Higher grades provide: - Higher damage - Additional effects - Unique
-visuals - Special abilities
+# 9. 레벨업 시스템
 
-------------------------------------------------------------------------
+전리품과 별도로 경험치를 얻는다.
 
-# 10. Level Up System
+레벨업 시 3개의 선택지가 등장한다.
 
-Each level provides random choices.
+예:
 
-Example:
+```text
+[빠른 손놀림]
+공격 속도 +8%
 
-Level 10:
+[퇴마의 기운]
+괴이에게 피해 +15%
 
-1.  Upgrade Fire Talisman
-2.  Acquire Spirit Flame
-3.  Increase Attack Speed
+[잔혹한 일격]
+치명타 피해 +25%
+```
 
-------------------------------------------------------------------------
+하지만 단순 수치 특성만 등장하지 않는다.
 
-# 11. Passive System
+고급 특성:
 
-Passive abilities: - Attack Damage - Attack Speed - Movement Speed -
-Critical Chance - HP - Experience Gain - Luck - Skill Power
+```text
+[연쇄 참격]
 
-------------------------------------------------------------------------
+치명타 발생 시
+주변 적에게 공격력 40%의 추가 참격 발생
+```
 
-# 12. Weapon Evolution
+또는
 
-Examples:
+```text
+[혼백 흡수]
 
-Fire Talisman + Magic Power = Phoenix Talisman
+적 처치 시 일정 확률로 혼백 생성
 
-Bow + Attack Speed = Divine Bow
+혼백 획득 시
+5초간 공격 속도 증가
+```
 
-Poison Knife + Critical Chance = Hundred Poison Blade
+처럼 빌드 자체를 변화시키는 특성이 존재한다.
 
-------------------------------------------------------------------------
+특성 풀 규칙:
 
-# 13. Base Camp System
+* 선택지는 캐릭터의 무기 계통과 현재 빌드 태그로 필터링된다 —
+  번개 빌드가 진행 중이면 번개 시너지 특성의 등장 가중치가 오른다.
+* 같은 특성은 최대 중첩 횟수를 가진다 (데이터에 명시).
+* 리롤은 기본 판당 1회, 특정 특성/유물로 확장 가능.
 
-Hunter Base
+---
 
-Buildings: - Workshop - Archive - Training Ground - Shrine
+# 10. 빌드 시스템
 
-------------------------------------------------------------------------
+게임의 가장 중요한 목표 중 하나는 **빌드 다양성**이다.
 
-# 14. Stage System
+빌드는 다음 요소들의 조합으로 만들어진다.
 
-Initial areas:
+```text
+캐릭터
+×
+무기
+×
+무기 개조
+×
+전리품
+×
+특성
+×
+액티브 기술
+×
+패시브 기술
+×
+지역
+```
 
-## Bamboo Forest
+따라서 같은 캐릭터라도 플레이 방식이 달라진다.
 
--   Goblins
--   Forest spirits
+---
 
-## Abandoned Temple
+# 11. 빌드 예시 — 도사
 
--   Ghosts
--   Cursed spirits
+## 화염부 도사
 
-Future: - Capital City - Royal Tomb - Spirit World
+```text
+부적 + 화령석 + 도깨비불 + 화상 특성 + 폭발 범위 증가
+```
 
-------------------------------------------------------------------------
+결과:
 
-# 15. Quest and Achievement System
+```text
+부적 적중 → 화염 폭발 → 화상 → 화상 적 사망 → 주변 적에게 화염 전파
+```
 
-Quests: - Daily quests - Story quests
+대규모 몬스터 처리 특화.
 
-Achievements: - First Boss Clear - Monster Collection - Weapon Master
+## 뇌전 도사
 
-------------------------------------------------------------------------
+```text
+부적 + 뇌정석 + 공격속도 + 연쇄 공격
+```
 
-# 16. MVP Scope
+결과:
 
-Characters: - Taoist - Warrior - Archer
+```text
+부적 적중 → 번개 발생 → 주변 적 연쇄 → 연쇄 횟수 증가
+```
 
-Areas: - Bamboo Forest - Abandoned Temple
+빠른 다중 공격 특화.
 
-Content: - 20 Weapons - 15 Monsters - 3 Bosses - 50 Achievements
+## 봉인 도사
 
-------------------------------------------------------------------------
+```text
+법검 + 주사 + 혼백 + 퇴마 특성
+```
 
-# 17. Development Principles
+결과:
 
-1.  Mobile-first design
-2.  10\~15 minute sessions
-3.  High replay value
-4.  Easy content expansion
-5.  Data-driven structure
-6.  Consistent pixel art style
+```text
+공격 → 봉인 표식 → 표식 중첩 → 폭발
+```
+
+보스/정예 몬스터 특화.
+
+---
+
+# 12. 빌드 예시 — 무관
+
+## 검기 빌드
+
+```text
+환도 + 숫돌 + 공격 범위 + 치명타
+```
+
+→ 검기 난사형.
+
+## 출혈 빌드
+
+```text
+환도 + 짐승의 이빨 + 출혈 + 공격 속도
+```
+
+→ 지속 피해형.
+
+## 귀철 빌드
+
+```text
+환도 + 귀철 + 원혼 조각
+```
+
+→ 자신의 체력을 희생해 공격력을 얻는 고위험 빌드.
+
+---
+
+# 13. 빌드 예시 — 궁수
+
+## 속사
+
+```text
+각궁 + 힘줄 + 공격속도 + 추가 투사체
+```
+
+## 관통
+
+```text
+각궁 + 철촉 + 관통 + 직선 피해
+```
+
+## 폭발 화살
+
+```text
+각궁 + 화약 + 도깨비불
+```
+
+화살 적중 시 폭발.
+
+---
+
+# 14. 빌드 예시 — 승려
+
+## 선장 충격파
+
+```text
+선장 + 무거운 철 + 범위 + 넉백
+```
+
+공격 시 충격파 발생.
+
+## 염주
+
+```text
+염주 + 혼백 + 공격속도
+```
+
+염주가 플레이어 주변을 회전하며 적을 공격.
+
+## 금강
+
+```text
+선장 + 방어력 + 체력 + 반격
+```
+
+피격 시 주변에 충격파.
+
+---
+
+# 15. 해금 시스템
+
+게임을 오래 플레이하는 가장 큰 이유 중 하나다.
+
+해금 대상:
+
+```text
+캐릭터
+무기
+무기 개조
+특성
+전리품
+지역
+보스
+유물
+도감
+외형
+업적
+```
+
+---
+
+# 16. 조건형 해금
+
+단순히 돈으로 구매하는 구조를 최소화한다.
+
+예:
+
+```text
+대나무숲 5회 클리어 → 궁수 해금
+한 판에서 도깨비 500마리 처치 → 도깨비 방망이 해금
+부적으로 원혼 1,000마리 처치 → 봉인부 해금
+피격 없이 보스 처치 → 자객 특성 해금
+화승총으로 보스 3종 처치 → 대장군전 제작법 해금
+```
+
+---
+
+# 17. 발견형 해금
+
+일부 콘텐츠는 조건을 플레이어에게 알려주지 않는다.
+
+예:
+
+```text
+귀철 + 원혼 조각 × 5 + 체력 30% 이하
+```
+
+조건을 만족하면
+
+```text
+[귀왕도]
+```
+
+비밀 진화 발생.
+
+첫 발견 이후 도감에 제작법이 등록된다.
+
+이 시스템을 통해 플레이어가 커뮤니티에서 빌드를 공유하도록 유도한다.
+
+---
+
+# 18. 도감
+
+본거지에 **괴이록**을 둔다.
+
+기록 대상:
+
+```text
+몬스터
+보스
+무기
+진화 무기
+전리품
+특성
+캐릭터
+지역
+비밀 조합
+```
+
+미발견 항목은 `???`로 표시하고, 발견하면 정보가 공개된다.
+
+---
+
+# 19. 영구 성장
+
+영구 성장에서 단순 공격력 증가를 과도하게 제공하지 않는다.
+
+좋지 않은 예:
+
+```text
+공격력 +1% / +2% / +3% ...
+```
+
+이런 구조가 중심이 되면 플레이 시간이 곧 캐릭터 성능이 된다.
+
+대신:
+
+```text
+새로운 무기
+새로운 개조법
+새로운 특성
+새로운 전리품
+새로운 캐릭터
+새로운 지역
+```
+
+을 열어준다.
+
+**강해지는 게임이면서 동시에 선택지가 늘어나는 게임**으로 만든다.
+
+---
+
+# 20. 전리품 선택의 딜레마
+
+모든 전리품이 현재 빌드에 필요한 것은 아니다.
+
+예: 도사 / 번개 빌드 진행 중 `귀철` 획득.
+
+선택:
+
+```text
+① 판매/분해
+② 현재 부적에 억지로 결합
+③ 귀철 기반 새로운 빌드로 전환
+```
+
+런 중간에도 빌드 방향을 변경할 수 있게 한다.
+(선택 UI와 타이밍은 §33의 개조 팝업 규칙을 따른다.)
+
+---
+
+# 21. 정예 몬스터
+
+정예 몬스터는 일반 몬스터보다 훨씬 높은 확률로 좋은 전리품을 제공한다.
+
+```text
+일반 몬스터   → 일반 재료
+정예 몬스터   → 희귀 재료
+중간 보스     → 고급 개조 재료
+지역 보스     → 보스 전용 재료
+```
+
+따라서 정예 몬스터는 피해야 하는 장애물이 아니라
+
+**위험을 감수하고 사냥하고 싶은 목표물**이 된다.
+
+리스크 가시화: 정예는 스폰 시 전용 실루엣·이름표와 드랍 아이콘
+미리보기를 보여준다. 플레이어가 "저걸 잡으면 무엇을 얻는지" 알고
+위험을 선택하게 한다.
+
+---
+
+# 22. 보스 전리품
+
+보스마다 고유 전리품이 존재한다.
+
+예:
+
+## 대나무숲 보스 — 타락한 장승
+
+```text
+장승의 심목
+```
+
+가능한 개조:
+
+```text
+선장 → 수호목 선장
+활   → 귀목궁
+부적 → 목령부
+```
+
+같은 보스 재료라도 캐릭터와 무기에 따라 다른 결과가 나온다.
+
+---
+
+# 23. 15분 플레이 구조
+
+```text
+00:00  시작
+03:00  첫 빌드 방향 결정
+05:00  정예 등장
+07:30  첫 주요 무기 개조
+10:00  중간 보스
+12:00  고급 빌드 완성
+14:00  몬스터 대량 공세
+15:00  지역 보스
+```
+
+플레이어는 15분 안에
+
+```text
+약함 → 성장 → 빌드 발견 → 빌드 완성 → 압도적인 화력
+```
+
+을 경험해야 한다. (검증 가능한 수치 프레임은 §34.)
+
+---
+
+# 24. 본거지
+
+출정이 끝나면 본거지로 돌아온다.
+
+본거지 기능:
+
+```text
+캐릭터 선택
+괴이록
+무기 도감
+전리품 도감
+업적
+퀘스트
+해금
+지역 선택
+훈련장
+설정
+```
+
+향후 본거지 자체를 성장시키는 시스템도 추가할 수 있다.
+
+---
+
+# 25. 게임 설계 핵심 원칙
+
+1. **모든 캐릭터가 다르게 플레이되어야 한다.** 단순 스탯 차이 금지.
+2. **같은 캐릭터도 매 판 달라야 한다.** 전리품과 특성이 빌드를 바꾼다.
+3. **좋은 전리품은 플레이 방식을 바꿔야 한다.** 단순 공격력 증가 금지.
+4. **지역마다 플레이 경험이 달라야 한다.** 몬스터와 전리품이 함께 달라진다.
+5. **플레이할수록 선택지가 증가해야 한다.** 영구 성장의 핵심은 새로운 빌드의 해금.
+6. **강력한 조합을 발견하는 재미가 있어야 한다.** "이거랑 이거 조합하면 미친 빌드가 되는데?"
+7. **15분 안에 완성된 빌드를 경험할 수 있어야 한다.** 마지막 3~5분은 완성된 빌드로 쓸어버리는 재미.
+
+---
+
+# 26. JOSEONLIKE의 핵심 정체성
+
+JOSEONLIKE는 단순한 조선 배경 Vampire Survivors가 아니다.
+
+핵심은
+
+**조선의 인물과 무기 × 한국 설화의 괴이와 요괴 × 몬스터 사냥과 전리품
+× 무기 제작과 개조 × 로그라이크 빌드 조합 × 수집과 해금**
+
+이다.
+
+새로운 캐릭터를 해금하는 순간 새로운 게임 방식이 열리고,
+새로운 지역을 해금하는 순간 새로운 전리품과 무기 개조가 열리고,
+새로운 전리품을 발견하는 순간 기존 캐릭터에서도 새로운 빌드가
+가능해지는 구조를 목표로 한다.
+
+---
+
+# 27. 최종 플레이 경험
+
+플레이어가 한 판을 끝내고 다음과 같이 생각하게 만드는 것이 목표다.
+
+> 이번에는 화염부가 완성됐는데 다음 판에는 번개 쪽으로 가볼까?
+> 귀철이 나왔으니까 무관으로 저주검을 만들어볼까?
+> 설산에서 얻은 빙정을 활에 붙이면 어떻게 되지?
+> 저 ??? 무기는 대체 어떻게 만드는 거지?
+> 승려로 저 보스를 잡으면 뭔가 해금될 것 같은데?
+
+**발견 → 실험 → 빌드 완성 → 해금 → 다시 실험**의 반복이
+JOSEONLIKE의 장기적인 플레이 동력이 된다.
+
+---
+---
+
+# 설계 보완 (§28–§36)
+
+§1–§27 컨셉을 구현 가능하게 만들기 위한 보완. 게임의 방향을 바꾸지
+않고, 초안이 비워 둔 규칙을 확정한다.
+
+---
+
+# 28. 첫 실행 경험 (FTUE)
+
+재개발의 출발점. 원칙: **텍스트 튜토리얼 금지, 플레이로 가르친다.**
+
+## 첫 60초 규칙
+
+설치 후 첫 실행에서 60초 안에 플레이어는 몬스터를 잡고 있어야 한다.
+
+```text
+로고 (스킵 가능)
+↓
+타이틀 — [모험 시작] 하나만 강조
+↓
+(세이브 없음) 캐릭터/지역 선택 화면 생략
+↓
+도사 + 대나무숲 고정으로 즉시 출정
+↓
+이동 조작 오버레이 1회 (조이스틱 안내, 3초)
+```
+
+## 첫 판 설계 (스크립트된 축약 런)
+
+첫 판만 5~7분 축약 구성으로 스크립트한다:
+
+* 개시 30초 안에 첫 전리품(숫돌 계열이 아닌 부적지) **보장 드랍**.
+* 첫 전리품 획득 → 첫 개조 3택 팝업. 이 팝업이 게임의 정체성을
+  가르치는 유일한 튜토리얼 순간이다 (1회성 짧은 설명 허용).
+* 첫 레벨업 3택 체험.
+* 5분 전후 약화된 보스 등장 → 처치 → 결과 화면.
+* 사망해도 흐름은 동일하게 본거지로 (기록은 유지, §31).
+
+## 첫 귀환
+
+본거지 최초 진입 시 괴이록·지역 선택 두 곳만 하이라이트.
+2번째 판부터 정식 15분 구조와 캐릭터/지역 선택이 열린다.
+
+성공 기준: **설치 후 첫 10분 안에 "전리품 → 무기가 변했다"를
+한 번 반드시 체험한다.**
+
+---
+
+# 29. 조작과 UX (모바일 퍼스트)
+
+* 540x960 세로, 한 손 조작.
+* 이동: 플로팅 가상 조이스틱 (화면 아무 곳 터치).
+* 공격: 자동. 조준: 자동 (최근접 우선).
+* 액티브 기술 버튼 1개 (우하단, 쿨다운 표시). 그 외 런 중 버튼 없음.
+* 개조/레벨업 팝업은 게임 시간 정지 상태에서 뜬다.
+* 픽업: 자석 반경 자동 흡수. 전리품 등급은 색 + 아이콘 실루엣 병행
+  (일반 백 / 고급 녹 / 희귀 청 / 영웅 자 / 전설 금 / 신화 적) —
+  색만으로 정보를 전달하지 않는다.
+* 일시정지 → 이어하기/설정/포기.
+
+---
+
+# 30. 액티브 기술
+
+캐릭터당 고유 1개, 쿨다운제. §10 빌드 조합의 한 축.
+
+| 캐릭터 | 기술 | 효과 |
+| --- | --- | --- |
+| 도사 | 축지 | 짧은 순간이동 + 1초 무적 |
+| 무관 | 철벽 | 2초 피해 무시 + 반격 |
+| 궁수 | 일제사 | 부채꼴 화살 발사 |
+| 승려 | 사자후 | 전방위 넉백 충격파 |
+| 자객 | 은신 | 3초 은신 + 다음 공격 확정 치명타 |
+| 포수 | 조준 사격 | 관통 대구경 탄 1발 |
+
+레벨업 특성으로 강화 가능 (쿨다운 감소, 효과 확장).
+
+---
+
+# 31. 사망과 보상 (roguelite 규칙)
+
+사망 = 런 종료. 부활 없음(광고 부활은 §35 BM에서 별도 판단).
+
+유지되는 것:
+
+```text
+괴이록 기록 (발견한 몬스터/전리품/조합)
+해금 진행도·업적 카운터
+엽전 (영구 재화, §32)
+```
+
+소멸하는 것:
+
+```text
+런 내 전리품·무기·개조·특성·레벨
+```
+
+사망 결과 화면도 클리어와 같은 형식으로 "이번 판의 발견"을 먼저
+보여준다. 패배를 다음 실험의 재료로 바꾼다.
+
+앱 이탈: 런 스냅샷을 저장하고 재실행 시 이어하기를 1회 제공한다.
+
+---
+
+# 32. 재화 구분
+
+| 재화 | 범위 | 용도 | 획득 |
+| --- | --- | --- | --- |
+| 전리품(재료) | 런 내 | 개조·강화·비밀 조합 | 몬스터 드랍 |
+| 엽전 | 영구 | 보조 해금·외형 | 런 종료 시 미사용 전리품 자동 환전 + 업적 보상 |
+
+전리품은 런이 끝나면 남지 않는다 — 남는 것은 기록(괴이록)과 엽전이다.
+이 규칙이 "매 판 새로운 빌드"(§25-2)를 지킨다. 조건형 해금(§16)이
+주된 해금 경로이고 엽전 구매는 보조로 최소화한다.
+
+---
+
+# 33. 무기 성장 규칙 — 등급(세로) × 개조(가로)
+
+§4와 §5를 하나의 시스템으로 묶는다.
+
+```text
+세로축 = 등급 강화 (일반→고급→희귀→영웅→전설→신화)
+  - 같은 계통 재료 누적 + 레벨업 "무기 강화" 선택으로 상승
+  - 등급마다 §5의 신규 효과가 붙는다
+
+가로축 = 개조 (계통 변화)
+  - 특수 재료가 무기의 정체성을 바꾼다 (환도 → 화염도)
+  - 개조해도 현재 등급은 승계된다
+```
+
+**개조 타이밍 (확정): 전리품 획득 즉시 3택 팝업.**
+
+```text
+특수 재료 획득
+↓ (시간 정지)
+① 지금 개조/강화에 사용
+② 보관 (런 인벤토리, 최대 6칸)
+③ 분해 (엽전 환전)
+```
+
+인벤토리 초과 시 교체 선택. 일반 재료는 팝업 없이 자동 누적된다 —
+팝업은 빌드가 갈리는 특수 재료에서만 뜬다. 런의 흐름을 끊는 별도
+제작 화면은 만들지 않는다.
+
+빌드 완성의 정의: 신화 등급 도달 또는 비밀 진화(§17) 발생.
+완성 시 전용 연출과 괴이록 등록.
+
+---
+
+# 34. 페이싱 수치 프레임
+
+§23 타임라인을 검증 가능하게 만드는 곡선. 수치 자체는
+`data/BALANCE.md`에서 관리하고 GDD는 구조만 정의한다.
+
+* 스폰 밀도: 분당 스폰 수 곡선. 3분 단위로 상승, 14:00 대량 공세 피크.
+* 몬스터 체력: 3분 단위 배수 스케일.
+* DPS 체크: 5:00 정예, 10:00 중간 보스, 14:00 공세가 각각
+  "빌드가 제때 크고 있는가"의 검증 지점.
+* 15:00 보스 이후: 소프트 인레이지 — 클리어 후 잔류 플레이는
+  허용하되 적이 급격히 강해진다.
+* 첫 판(§28)만 축약 테이블을 별도로 가진다.
+
+---
+
+# 35. BM (수익 모델)
+
+v1의 광고 스택(`AdsService`/`AnalyticsService` 스텁)은 유지한다.
+원칙: **빌드의 완결성을 파는 광고는 금지** (전리품 뽑기·확정 드랍
+판매 없음). 허용 후보: 결과 화면 엽전 2배 광고, 이어하기 1회 광고.
+확정은 릴리즈 마일스톤에서.
+
+---
+
+# 36. 데이터 스키마 매핑 (개발용)
+
+컨셉 → `data/` 매핑. 밸런스 수치는 데이터, 코드는 규칙만 (기존 원칙 유지).
+
+| 데이터 | 내용 |
+| --- | --- |
+| `loot.json` | 전리품 정의: id, 이름(ko/en), tier, 용도 태그, 특수 여부 |
+| `drop_tables.json` | 몬스터별·지역별 드랍 테이블 |
+| `weapon_mods.json` | 개조 레시피: 무기 + 재료 → 새 무기 |
+| `weapons.json` 확장 | 등급별 효과 정의 (§5) |
+| `secret_recipes.json` | 발견형 해금 조건 (§17) — 클라이언트에 노출 최소화 |
+| `characters.json` 확장 | weapon_categories, 액티브 기술, 해금 조건 |
+| `traits.json` (구 passives) | 특성 풀, 태그, 가중치, 최대 중첩 |
+| `unlocks.json` | 조건형 해금 정의 (§16) |
+
+기존 `characters/weapons/monsters/stages/achievements`는 확장하고,
+저장 호환은 마이그레이션 규칙을 함께 정의한다.
+
+---
+
+# 부록 A. 비주얼 바이블 (side-view)
+
+프레젠테이션: 2D 사이드뷰 픽셀 아트. 캐릭터·몬스터는 좌/우만 본다 —
+8방향 회전 없음. 이동의 수평 성분이 방향을 정하고, 수직 이동만 있을
+때는 마지막 방향 유지. 좌측은 우측 스프라이트의 엔진 미러.
+걷기는 4프레임 워크 사이클. 스타일 앵커: `new_asset/basic.png`
+(2등신, 큰 머리, 1px 외곽선, 플랫 셀 셰이딩). 생성 파이프라인:
+codex 에셋 워크트리 + Higgsfield, 프레임 일관성 필수
+(프레임별 독립 생성 금지).
+
+| 캐릭터 | 실루엣 | 팔레트 |
+| --- | --- | --- |
+| 도사 | 삿갓 + 석장 + 허리 부적 | 회백 도포 + 청 트림 + 금 부적 |
+| 무관 | 전립(붉은 술) + 환도 | 남색 + 진홍 + 강철 |
+| 궁수 | 패랭이 + 각궁 + 화살통 끈 | 진녹 + 황갈 + 적색 포인트 |
+| 승려 | 삭발/두건 + 선장(고리 지팡이) | 회갈 승복 + 목주 갈색 |
+| 자객 | 복면 + 낮은 자세 + 비수 | 흑 + 회 + 은 |
+| 포수 | 벙거지 + 조총 | 갈 + 흑 + 화약 주황 포인트 |
+| 무당 | 부채 + 방울 + 색동 리본 | 홍 + 남 + 백 (최고 채도) |
+| 망나니 | 거구 + 어깨 대도 + 밧줄 허리띠 | 살빛 + 암적 + 무쇠 |
+
+전리품 등급 색은 §29를 따르고, 아이콘은 등급 테두리 + 재료 실루엣.
