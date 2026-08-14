@@ -3,16 +3,16 @@
     "drops": [
       { "loot_id": "beast_fang", "chance": 0.06 },
       { "loot_id": "bamboo", "chance": 0.05 },
-      { "loot_id": "whetstone", "chance": 0.01 }
+      { "loot_id": "whetstone", "chance": 0.03 }
     ]
   },
   "forest_spirit": {
     "drops": [
       { "loot_id": "wonhon_shard", "chance": 0.08 },
       { "loot_id": "talisman_paper", "chance": 0.06 },
-      { "loot_id": "dokkaebi_flame", "chance": 0.02 },
-      { "loot_id": "thunder_stone", "chance": 0.01 },
-      { "loot_id": "cinnabar", "chance": 0.015 }
+      { "loot_id": "dokkaebi_flame", "chance": 0.07 },
+      { "loot_id": "thunder_stone", "chance": 0.015 },
+      { "loot_id": "cinnabar", "chance": 0.04 }
     ]
   },
   "bamboo_brute": {

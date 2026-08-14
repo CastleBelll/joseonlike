@@ -1406,3 +1406,77 @@ invested weapons); 7000 targets a boss fight in the tens-of-seconds
 range for a mid build rather than an instant melt. This is a projection,
 not a sweep-validated number — the next controlled sweep should re-check
 it, per this document's standing practice.
+
+# N4-2b — The 5-minute rescale (2026-08-14, owner decision)
+
+**The 15-minute curve above was built against a stale run length.** The
+owner decided mid-N4-2 that a mobile run is **5 minutes**; that decision
+is recorded in ROADMAP.md ("런 길이") and this section supersedes the
+"15-minute Bamboo Forest curve" timings above. Everything structural
+from N4-2 stays — the grade ladder, elite derivation, schedule
+invariants, soft enrage — only the time scale and the numbers coupled to
+it change. Later zones stretch to **8–10 minutes** using the same code:
+run length lives in each stage's `duration_sec`, and every consumer
+(spawner, stage timeout, `RunFlow.schedule_issues`, the playtest
+harness) derives from that field — nothing hardcodes 300.
+
+## Timeline (`stages.json`, duration_sec 300)
+
+| Time | Beat |
+|---|---|
+| 0:00–1:00 | quiet opening (goblins only, 5/6 spawns) |
+| 1:00–2:00 | ramp; ranged spirits join; first special material window |
+| 2:00 | first `bamboo_brute_elite` |
+| 3:30 | surge — 57 spawns, the strict spawn-count peak (fps worst case) |
+| 4:00 | boss (`boss_at_sec` 240) + escort 24 |
+| 4:40 | soft enrage (start 280, ramp 20s, same ×3/×2.5/×1.3 mults) |
+| 5:00 | timeout → victory |
+
+Bucket spawn totals: 5 / 6 / 12 / 15 / 17 / 24 / 24 / **57** / 24.
+`live_cap` stays 60; the surge still saturates it by design.
+`RunFlow.schedule_issues` gained one invariant with this pass: any wave
+or boss time past `duration_sec` is a data error (checked per stage, so
+an 8-minute zone validates against its own length).
+
+## XP curve (`progression.json`)
+
+`base_xp` 5 → **6**, `growth` 1.25 → **1.5**:
+`xp_to_next(L) = round(6 × 1.5^(L-1))`. Full-collection orb XP over the
+run is ~976 (goblins 111, spirits 265, brutes 112, elites 288, boss
+200), which crosses the level-11 threshold (681 cumulative) but not
+level 12 (1027) — a ceiling of ~10 level-ups, realistically **8–10**
+after collection losses, so the power-up popup stays a regular beat
+(~one per 30s) instead of the old curve's 16+ pops.
+
+## Drop-rate bias (`drop_tables.json`)
+
+First-run FTUE target: a special material — and therefore the 3-choice
+mod popup — should land inside the first run, realistically in the
+1:00–2:00 ramp. `forest_goblin.whetstone` 0.01 → **0.03**,
+`forest_spirit.dokkaebi_flame` 0.02 → **0.07**, `.cinnabar` 0.015 →
+**0.04**, `.thunder_stone` 0.01 → **0.015**. Expected specials in the
+1:00–2:00 window ≈ 1.0 (≈12 goblin + 6 spirit kills), and the 2:00
+elite (35%/30%/12%/12% special table) backstops any dry first window.
+
+## Grade climb
+
+Unchanged ladder and step factors. With 8–10 level-ups and a pool where
+a single-weapon build sees a grade card offered in ~35–40% of draws, a
+player committing to one line lands **two-plus grade steps**
+(common→uncommon→rare on the starter: damage ×1.357, cooldown ×0.902 —
+~1.5x unit dps), verified by the grade-priority playtest bot.
+
+## Boss retune
+
+`bamboo_spirit_lord.hp` 7000 → **2400**. The 7000 value assumed ~level
+20 plus a possible mythic line; at 4:00 a 5-minute run sits near level
+9–10. Measured, not just projected: two full autoplay runs
+(`tools/playtest.tscn`, grade-priority bot) both ended as 300s timeout
+victories at 60 fps through the surge, with 8 and 9 level-ups, first
+special material at 1:14 / 2:10, and — against an interim 2800 value —
+the bot left the boss at 1335/2800, i.e. ~24 boss-dps across the full
+60s window from a deliberately conservative kiting bot. A mid human
+build lands roughly 1.5–2x that (~40–50 boss dps), so **2400** puts the
+fight at ~48–60s — killable just inside the 4:00–5:00 window, while a
+weak build still resolves as the timeout victory. Re-tune in N4-3 once
+the full weapon set lands.

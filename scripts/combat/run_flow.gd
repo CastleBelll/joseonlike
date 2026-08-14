@@ -47,13 +47,17 @@ static func build_summary(elapsed_sec: float, kills: int, gold: int) -> Dictiona
 
 ## N4-2 wave-schedule invariants for a stage dict. Returns human-readable
 ## violations (empty = valid): wave times monotonic non-decreasing, no wave
-## after the boss, a surge bucket that is the strict spawn-count peak and
-## comes before the boss, and soft enrage never starting before the boss.
-## Shared by tools/validate_data.gd and the unit suite.
+## after the boss, nothing scheduled past duration_sec (N4-2b — run length is
+## data, the whole curve must fit inside it), a surge bucket that is the
+## strict spawn-count peak and comes before the boss, and soft enrage never
+## starting before the boss. Shared by tools/validate_data.gd and the unit suite.
 static func schedule_issues(stage: Dictionary) -> Array[String]:
 	var issues: Array[String] = []
+	var duration: float = float(stage.get("duration_sec", 0.0))
 	var boss_at: float = float(stage.get("boss_at_sec", 0.0))
 	var surge_at: float = float(stage.get("surge_at_sec", 0.0))
+	if duration > 0.0 and boss_at > duration:
+		issues.append("boss_at_sec exceeds duration_sec")
 	var previous: float = 0.0
 	var buckets: Dictionary = {}
 	for wave: Dictionary in stage.get("waves", []):
@@ -63,6 +67,8 @@ static func schedule_issues(stage: Dictionary) -> Array[String]:
 		previous = at
 		if at > boss_at:
 			issues.append("wave at %ss starts after the boss" % at)
+		if duration > 0.0 and at > duration:
+			issues.append("wave at %ss exceeds duration_sec" % at)
 		buckets[at] = int(buckets.get(at, 0)) + int(wave.get("count", 0))
 	if surge_at <= 0.0 or not buckets.has(surge_at):
 		issues.append("surge_at_sec missing or has no wave")

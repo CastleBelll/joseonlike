@@ -7,9 +7,10 @@ const INVULN := 0.8
 const VIEW := Vector2(540.0, 960.0)
 const SPAWN_MARGIN := 48.0
 const RING_SAMPLES := 16
-# Documented curve (data/BALANCE.md): xp_to_next(L) = round(5 * 1.25^(L-1)).
-const XP_BASE := 5.0
-const XP_GROWTH := 1.25
+# Documented curve (data/BALANCE.md, N4-2b 5-minute rescale):
+# xp_to_next(L) = round(6 * 1.5^(L-1)).
+const XP_BASE := 6.0
+const XP_GROWTH := 1.5
 
 
 func test_damage_application_reduces_hp() -> bool:
@@ -113,9 +114,9 @@ func test_projectile_expires_by_despawn_rule() -> bool:
 
 
 func test_xp_to_next_matches_documented_curve() -> bool:
-	var level_1: bool = RunState.xp_to_next(1, XP_BASE, XP_GROWTH) == 5
-	var level_5: bool = RunState.xp_to_next(5, XP_BASE, XP_GROWTH) == 12
-	var level_19: bool = RunState.xp_to_next(19, XP_BASE, XP_GROWTH) == 278
+	var level_1: bool = RunState.xp_to_next(1, XP_BASE, XP_GROWTH) == 6
+	var level_5: bool = RunState.xp_to_next(5, XP_BASE, XP_GROWTH) == 30
+	var level_19: bool = RunState.xp_to_next(19, XP_BASE, XP_GROWTH) == 8867
 	return level_1 and level_5 and level_19
 
 
@@ -126,13 +127,13 @@ func test_apply_xp_below_threshold_keeps_level() -> bool:
 
 func test_apply_xp_single_level_up_carries_remainder() -> bool:
 	var result: Dictionary = RunState.apply_xp(1, 3, 4, XP_BASE, XP_GROWTH)
-	return int(result["level"]) == 2 and int(result["xp"]) == 2
+	return int(result["level"]) == 2 and int(result["xp"]) == 1
 
 
 func test_apply_xp_multiple_levels_from_one_grant() -> bool:
-	# Costs from level 1: 5, 6, 8, 10, 12 → 41 spent, 9 left at level 6.
+	# Costs from level 1: 6, 9, 14, 20 → 49 spent, 1 left at level 5.
 	var result: Dictionary = RunState.apply_xp(1, 0, 50, XP_BASE, XP_GROWTH)
-	return int(result["level"]) == 6 and int(result["xp"]) == 9
+	return int(result["level"]) == 5 and int(result["xp"]) == 1
 
 
 func test_run_state_curve_reads_progression_json() -> bool:

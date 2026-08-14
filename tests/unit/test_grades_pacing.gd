@@ -217,6 +217,21 @@ func test_schedule_flags_surge_missing_or_not_peak() -> bool:
 	)
 
 
+## N4-2b: the whole schedule must fit inside the data-declared run length —
+## a boss or wave time past duration_sec is a data error, per stage.
+func test_schedule_flags_times_beyond_duration() -> bool:
+	var fits: Dictionary = _valid_stage()
+	fits["duration_sec"] = 1080.0
+	var late: Dictionary = _valid_stage()
+	late["duration_sec"] = 890.0  # boss at 900 and waves at 900 both overshoot
+	var beyond: int = 0
+	for issue: String in RunFlow.schedule_issues(late):
+		if issue.contains("exceeds duration_sec"):
+			beyond += 1
+	# One boss overshoot + the single 900s wave = exactly two flags.
+	return RunFlow.schedule_issues(fits).is_empty() and beyond == 2
+
+
 func test_schedule_flags_enrage_before_boss() -> bool:
 	var stage: Dictionary = _valid_stage()
 	stage["soft_enrage"] = {"start_sec": 800.0}

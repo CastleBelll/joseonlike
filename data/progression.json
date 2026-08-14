@@ -1,7 +1,7 @@
 {
   "xp_curve": {
-    "base_xp": 5,
-    "growth": 1.25
+    "base_xp": 6,
+    "growth": 1.5
   },
   "orb": {
     "magnet_radius_px": 90.0,
