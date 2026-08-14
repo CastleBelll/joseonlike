@@ -38,6 +38,12 @@ const XP_ORB := Color("#49e0b5")
 const XP_ORB_CORE := Color("#d8fff2")
 const DAMAGE_TEXT := Color("#ffffff")
 
+# N3-8 hit feedback / N5-1 boss: flash white, spirit-white death puff, and a
+# violet boss silhouette separated from every mob green/white/brown.
+const HIT_FLASH := Color("#ffffff")
+const DEATH_PUFF := ENEMY_SPIRIT
+const ENEMY_BOSS := Color("#8a56c9")
+
 # N3-9 bamboo forest prop placeholders (night-desaturated, above FOREST_GROUND).
 const PROP_BAMBOO := Color("#3d6b33")
 const PROP_ROCK := Color("#5c5f58")

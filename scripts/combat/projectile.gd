@@ -5,7 +5,7 @@ extends Node2D
 ## ponytail: no pierce yet — old_talisman has pierce 0; add when a pierced
 ## weapon becomes obtainable in a run.
 
-signal hit_landed(amount: float, at: Vector2)
+signal hit_landed(amount: float, at: Vector2, boss_hit: bool)
 signal finished(projectile: Projectile)
 
 const PAPER_SIZE := Vector2(6.0, 12.0)
@@ -52,8 +52,9 @@ func _physics_process(delta: float) -> void:
 		# Capture before take_damage: a killing hit releases the enemy to its
 		# pool synchronously, and the number must rise where the hit landed.
 		var hit_at: Vector2 = enemy.global_position
-		enemy.take_damage(_damage)
-		hit_landed.emit(_damage, hit_at)
+		var boss_hit: bool = enemy.is_boss
+		enemy.take_damage(_damage, _velocity.normalized())
+		hit_landed.emit(_damage, hit_at, boss_hit)
 		finished.emit(self)
 		return
 	# Player position approximates the smoothed camera center, same tradeoff

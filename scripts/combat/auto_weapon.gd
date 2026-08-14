@@ -4,7 +4,7 @@ extends Node2D
 ## projectile at the nearest live enemy within the view-radius firing range.
 ## All balance numbers come from data/weapons.json.
 
-signal hit_landed(amount: float, at: Vector2)
+signal hit_landed(amount: float, at: Vector2, boss_hit: bool)
 
 const WEAPONS_PATH := "res://data/weapons.json"
 ## Cooldown can shrink per level and per attack-speed stacks; never let it
@@ -98,7 +98,8 @@ func _try_fire() -> bool:
 func _create_projectile() -> Projectile:
 	var projectile := Projectile.new()
 	projectile.hit_landed.connect(
-		func(amount: float, at: Vector2) -> void: hit_landed.emit(amount, at)
+		func(amount: float, at: Vector2, boss_hit: bool) -> void:
+			hit_landed.emit(amount, at, boss_hit)
 	)
 	projectile.finished.connect(_on_projectile_finished)
 	return projectile

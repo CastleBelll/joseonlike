@@ -1,0 +1,11 @@
+{
+  "hit_feedback": {
+    "enemy_flash_sec": 0.1,
+    "knockback_speed_px_s": 160.0,
+    "knockback_decay_px_s2": 900.0,
+    "boss_knockback_scale": 0.12,
+    "death_puff_sec": 0.3,
+    "death_puff_radius_scale": 1.6,
+    "player_vignette_sec": 0.35
+  }
+}

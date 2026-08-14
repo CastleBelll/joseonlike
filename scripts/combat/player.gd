@@ -36,6 +36,8 @@ var _visual: Node2D
 var _sprite: AnimatedSprite2D
 
 signal died
+## N3-8: fired on every landed hit so the HUD can pulse the damage vignette.
+signal hit_taken
 
 
 static func load_move_speed() -> float:
@@ -109,6 +111,7 @@ func take_hit(damage: float) -> bool:
 		return false
 	_time_since_hit = 0.0
 	hp = CombatMath.apply_damage(hp, damage)
+	hit_taken.emit()
 	if CombatMath.is_dead(hp):
 		died.emit()
 	return true

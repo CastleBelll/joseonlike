@@ -23,6 +23,12 @@ const GLYPH_LINE_WIDTH := 3.0
 const OVERLAY_PANEL_MARGIN_X := 64.0
 const OVERLAY_PANEL_HEIGHT := 260.0
 const OVERLAY_BUTTON_HEIGHT := 56.0
+# N5-1 boss bar: thin strip across the very top, above the timer.
+const BOSS_BAR_TOP := 8.0
+const BOSS_BAR_HEIGHT := 6.0
+# N3-8 player-hit vignette edge thickness and peak opacity.
+const VIGNETTE_THICKNESS := 28.0
+const VIGNETTE_MAX_ALPHA := 0.45
 
 var _elapsed: float = 0.0
 var _timer_label: Label
@@ -32,6 +38,8 @@ var _kill_label: Label
 var _gold_label: Label
 var _pause_overlay: Control
 var _resume_button: Button
+var _boss_bar: ProgressBar
+var _vignette: DamageVignette
 
 
 func _ready() -> void:
@@ -54,11 +62,13 @@ static func format_time(seconds: float) -> String:
 ## HUD without a SceneTree (same pattern as TitleScreen.build_ui).
 func build_ui() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE  # never eat joystick touches
+	_build_vignette()
 	_build_corner_buttons()
 	_build_timer()
 	_build_xp_bar()
 	_build_level_label()
 	_build_counters()
+	_build_boss_bar()
 	_build_pause_overlay()
 
 
@@ -77,6 +87,25 @@ func set_kills(count: int) -> void:
 
 func set_gold(amount: int) -> void:
 	_gold_label.text = str(amount)
+
+
+## N5-1 boss bar: shown only while the boss lives.
+func show_boss_bar() -> void:
+	_boss_bar.visible = true
+
+
+func set_boss_hp(current: float, hp_max: float) -> void:
+	_boss_bar.max_value = maxf(hp_max, 1.0)
+	_boss_bar.value = current
+
+
+func hide_boss_bar() -> void:
+	_boss_bar.visible = false
+
+
+## N3-8 player-hit feedback; duration comes from data/effects.json (stage).
+func pulse_damage(duration: float) -> void:
+	_vignette.pulse(duration)
 
 
 func _build_corner_buttons() -> void:
@@ -165,6 +194,37 @@ func _counter_row(stack: VBoxContainer, row_name: String, icon: Control) -> Labe
 	row.add_child(value)
 	stack.add_child(row)
 	return value
+
+
+func _build_boss_bar() -> void:
+	_boss_bar = ProgressBar.new()
+	_boss_bar.name = "BossBar"
+	_boss_bar.show_percentage = false
+	_boss_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var track := StyleBoxFlat.new()
+	track.bg_color = UiPalette.NIGHT_BROWN
+	track.border_color = UiPalette.WOOD_BORDER
+	track.set_border_width_all(1)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = UiPalette.VERMILION
+	_boss_bar.add_theme_stylebox_override("background", track)
+	_boss_bar.add_theme_stylebox_override("fill", fill)
+	_boss_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_boss_bar.offset_left = BAR_MARGIN_X
+	_boss_bar.offset_right = -BAR_MARGIN_X
+	_boss_bar.offset_top = BOSS_BAR_TOP
+	_boss_bar.offset_bottom = BOSS_BAR_TOP + BOSS_BAR_HEIGHT
+	_boss_bar.visible = false
+	add_child(_boss_bar)
+
+
+func _build_vignette() -> void:
+	_vignette = DamageVignette.new()
+	_vignette.name = "DamageVignette"
+	_vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_vignette.visible = false
+	add_child(_vignette)
 
 
 ## Paper-panel pause overlay (§3 grammar): resume + quit-to-title only.
@@ -261,6 +321,42 @@ func _label(text: String, font_size: int, color: Color) -> Label:
 	label.add_theme_color_override("font_color", color)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
+
+
+## N3-8 screen-edge red pulse on player damage: four vermilion edge bars that
+## fade out. One persistent Control — no per-hit instancing.
+class DamageVignette:
+	extends Control
+
+	var _left: float = 0.0
+	var _duration: float = 0.0
+
+	func pulse(duration: float) -> void:
+		_duration = maxf(duration, 0.01)
+		_left = _duration
+		visible = true
+		queue_redraw()
+
+	func _process(delta: float) -> void:
+		if _left <= 0.0:
+			return
+		_left -= delta
+		if _left <= 0.0:
+			visible = false
+			return
+		queue_redraw()
+
+	func _draw() -> void:
+		var alpha: float = VIGNETTE_MAX_ALPHA * (_left / _duration)
+		var color := Color(UiPalette.VERMILION, alpha)
+		var thickness: float = VIGNETTE_THICKNESS
+		draw_rect(Rect2(0.0, 0.0, size.x, thickness), color)
+		draw_rect(Rect2(0.0, size.y - thickness, size.x, thickness), color)
+		draw_rect(Rect2(0.0, thickness, thickness, size.y - thickness * 2.0), color)
+		draw_rect(
+			Rect2(size.x - thickness, thickness, thickness, size.y - thickness * 2.0),
+			color
+		)
 
 
 ## ‖ pause glyph, drawn because the pixel font has no reliable glyph for it.

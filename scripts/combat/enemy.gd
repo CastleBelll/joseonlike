@@ -25,6 +25,8 @@ var monster_id := ""
 var hp: float = 0.0
 var contact_radius: float = 0.0
 var xp_drop: int = 0
+var gold_drop: int = 0
+var is_boss: bool = false
 
 var _damage: float = 0.0
 var _speed: float = 0.0
@@ -35,6 +37,13 @@ var _body: ColorRect
 var _shape: CollisionShape2D
 var _block_normal := Vector2.ZERO
 var _avoid_sign: float = 1.0
+# N3-8 hit feedback state (numbers from data/effects.json via the spawner).
+var _flash_left: float = 0.0
+var _flash_sec: float = 0.0
+var _knockback := Vector2.ZERO
+var _knockback_speed: float = 0.0
+var _knockback_decay: float = 0.0
+var _boss_knockback_scale: float = 1.0
 
 
 func _ready() -> void:
@@ -54,13 +63,27 @@ func _ready() -> void:
 
 
 ## (Re)arms a pooled instance. Safe to call repeatedly on the same node.
-func setup(id: String, stats: Dictionary, target: Player, contact_cooldown: float) -> void:
+func setup(
+	id: String,
+	stats: Dictionary,
+	target: Player,
+	contact_cooldown: float,
+	feedback: Dictionary = {}
+) -> void:
 	monster_id = id
 	hp = float(stats.get("hp", 1.0))
 	_damage = float(stats.get("damage", 0.0))
 	_speed = float(stats.get("speed", 0.0))
 	contact_radius = float(stats.get("collision_radius", 10.0))
 	xp_drop = int(stats.get("xp_drop", 0))
+	gold_drop = int(stats.get("gold_drop", 0))
+	is_boss = String(stats.get("behaviour", "")) == "boss"
+	_flash_left = 0.0
+	_flash_sec = float(feedback.get("enemy_flash_sec", 0.0))
+	_knockback = Vector2.ZERO
+	_knockback_speed = float(feedback.get("knockback_speed_px_s", 0.0))
+	_knockback_decay = float(feedback.get("knockback_decay_px_s2", 0.0))
+	_boss_knockback_scale = float(feedback.get("boss_knockback_scale", 1.0))
 	_contact_cooldown = contact_cooldown
 	_time_since_contact = contact_cooldown  # first touch may hit immediately
 	_target = target
@@ -76,10 +99,15 @@ func _physics_process(delta: float) -> void:
 	if _target == null:
 		return
 	_time_since_contact += delta
+	_update_flash(delta)
+	_knockback = _knockback.move_toward(Vector2.ZERO, _knockback_decay * delta)
 	var desired: Vector2 = CombatMath.chase_direction(
 		global_position, _target.global_position
 	)
-	velocity = CombatMath.avoid_direction(desired, _block_normal, _avoid_sign) * _speed
+	velocity = (
+		CombatMath.avoid_direction(desired, _block_normal, _avoid_sign) * _speed
+		+ _knockback
+	)
 	move_and_slide()
 	_block_normal = (
 		get_slide_collision(0).get_normal() if get_slide_collision_count() > 0
@@ -88,10 +116,30 @@ func _physics_process(delta: float) -> void:
 	_try_contact_damage()
 
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, hit_direction: Vector2 = Vector2.ZERO) -> void:
 	hp = CombatMath.apply_damage(hp, amount)
 	if CombatMath.is_dead(hp):
 		died.emit(self)
+		return
+	_flash_left = _flash_sec
+	_body.color = UiPalette.HIT_FLASH
+	var scale_factor: float = _boss_knockback_scale if is_boss else 1.0
+	_knockback = hit_direction * _knockback_speed * scale_factor
+
+
+## Flash is a plain color swap on the placeholder rect — no tween, no alloc.
+func _update_flash(delta: float) -> void:
+	if _flash_left <= 0.0:
+		return
+	_flash_left -= delta
+	if _flash_left <= 0.0:
+		_body.color = _base_color()
+
+
+func _base_color() -> Color:
+	if is_boss:
+		return UiPalette.ENEMY_BOSS
+	return PLACEHOLDER_COLORS.get(monster_id, UiPalette.ENEMY_GOBLIN)
 
 
 func _try_contact_damage() -> void:
@@ -106,7 +154,7 @@ func _try_contact_damage() -> void:
 
 func _apply_placeholder_visual() -> void:
 	var size := Vector2(contact_radius * 2.0, contact_radius * VISUAL_HEIGHT_RATIO)
-	_body.color = PLACEHOLDER_COLORS.get(monster_id, UiPalette.ENEMY_GOBLIN)
+	_body.color = _base_color()
 	_body.size = size
 	_body.position = -size / 2.0
 	var eye := _body.get_node("Eye") as ColorRect

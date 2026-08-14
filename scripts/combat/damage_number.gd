@@ -6,6 +6,7 @@ extends Label
 signal finished(number: DamageNumber)
 
 const FONT_SIZE := 12
+const BOSS_FONT_SIZE := 18  # N5-1: boss hits read bigger and gold
 const OUTLINE_SIZE := 2
 const RISE_SPEED := 30.0
 const LIFETIME_SEC := 0.6
@@ -22,7 +23,10 @@ func _ready() -> void:
 	label_settings.outline_color = UiPalette.INK
 
 
-func show_amount(amount: float, at: Vector2) -> void:
+func show_amount(amount: float, at: Vector2, boss_hit: bool = false) -> void:
+	# Pooled instances alternate targets, so restyle on every show.
+	label_settings.font_size = BOSS_FONT_SIZE if boss_hit else FONT_SIZE
+	label_settings.font_color = UiPalette.GOLD if boss_hit else UiPalette.DAMAGE_TEXT
 	text = str(int(round(amount)))
 	_age = 0.0
 	modulate.a = 1.0
