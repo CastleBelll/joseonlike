@@ -1,4 +1,4 @@
-# Side-view character sprites (v3)
+# Side-view character sprites (v4)
 
 ## Runtime format
 
@@ -11,6 +11,74 @@
 - Shared ground line: logical row **29**. Frames retain their full canvases and transparent margins.
 
 The movement direction is screen-right, while the face and torso retain the natural three-quarter view used by `basic.png`. Mirror the same textures in-engine for leftward movement.
+
+## V4 youthful character design bible
+
+V4 removes the beard, heavy jaw, hidden-eye, and bulky-body cues that made the
+previous roster read as three middle-aged men after reduction to 32 x 32. The
+classes and gameplay silhouettes stay intact, but the lineup now reads as three
+young adventurers rather than veteran archetypes.
+
+- **Taoist, youthful wandering mystic:** clean-shaven bright face, visible eyes,
+  satgat tilted upward, slim gray-white dopo with cobalt binding, ringed seokjang,
+  and gold talismans. Palette: gray-white, straw gold, cobalt, dark brown.
+- **Warrior, youthful cadet:** lean athletic build, bright clean face, short dark
+  hair below a navy jeonrip, lively crimson tassel and sash, fitted lamellar, and
+  low-held hwando. Palette: navy, cobalt highlights, crimson, steel, brass.
+- **Archer, youthful mountain scout:** clean-shaven smiling face, visible eyes,
+  short tied hair, paeraengi worn back, cropped forest jacket, tapered tan trousers,
+  red quiver strap, and front-held gakgung. Palette: forest green, tan, straw gold,
+  coral red, dark brown.
+
+The final Higgsfield MCP v4 source sheets are preserved at:
+
+- `asset/character/Taoist/raw/side_sheet_youth_v4_higgsfield.png`
+- `asset/character/Warrior/raw/side_sheet_youth_v4_higgsfield.png`
+- `asset/character/Archer/raw/side_sheet_youth_v4_higgsfield.png`
+
+The processor prefers these final MCP files, then the uploaded v4 conditioning
+references (`side_sheet_youth_v4.png`), and finally the v3
+`side_sheet_higgsfield.png` sources.
+
+### V4 generation prompts
+
+V4 was produced through the Higgsfield MCP with GPT Image 2 at 2K, high quality,
+16:9, one result per character. Each `side_sheet_youth_v4.png` conditioning
+reference was uploaded to the Higgsfield Asset library before generation. Final
+generation job IDs:
+
+- Taoist: `efe0cb67-b2db-4298-8993-6ba4a6270e98`
+- Warrior: `6f15f0b6-d09f-429c-b996-4a7dfd401006`
+- Archer: `c18897e6-51e0-4981-9e8b-90a53cbb55ef`
+
+All three prompts shared these production constraints:
+
+```text
+Redesign the character as a clearly youthful Korean adventurer while preserving
+exactly five separated poses in one horizontal row: idle, contact A, passing A,
+contact B, passing B. Keep one identical scale, face, costume, held item, palette,
+and ground line. Use chunky two-heads-tall 32x32 logical-pixel art, a one-pixel dark
+outline, large clean clusters, flat shading, and 2-3 shades per material. Put the
+figures on perfectly flat #FF00FF. No beard, moustache, stubble, wrinkles, bulky
+body, hidden eyes, antialiasing, gradients, dithering, labels, dividers, shadows,
+scenery, or watermark.
+```
+
+Character-specific prompt blocks were:
+
+```text
+Taoist: clean-shaven man in his early twenties with bright eyes and dark side hair;
+straw satgat tilted upward; slim gray-white dopo with cobalt trim; gold talismans;
+upright ringed seokjang 10-15% taller than the character.
+
+Warrior: clean-shaven male cadet in his late teens or early twenties with a lean
+athletic build and short dark hair; navy round jeonrip and crimson tassel; fitted
+navy lamellar and crimson sash; low-held hwando with brass guard and steel edge.
+
+Archer: lean clean-shaven man around twenty with a small confident smile and tied
+hair; paeraengi worn slightly back; cropped forest-green jacket and tapered tan
+trousers; coral-red quiver strap, visible arrows, and front-held dark wood gakgung.
+```
 
 ## V3 character design bible
 

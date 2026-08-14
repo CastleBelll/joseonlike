@@ -1,0 +1,125 @@
+{
+  "Taoist": {
+    "source": "asset/character/Taoist/raw/side_sheet_youth_v4_higgsfield.png",
+    "source_size": [
+      2688,
+      1520
+    ],
+    "logical_bounds": [
+      [
+        9,
+        3,
+        24,
+        30
+      ],
+      [
+        9,
+        3,
+        24,
+        30
+      ],
+      [
+        9,
+        3,
+        24,
+        30
+      ],
+      [
+        9,
+        3,
+        24,
+        30
+      ],
+      [
+        9,
+        3,
+        24,
+        30
+      ]
+    ],
+    "walk_upper_body_center_spread_px": 0.0,
+    "palette_colors": 16
+  },
+  "Warrior": {
+    "source": "asset/character/Warrior/raw/side_sheet_youth_v4_higgsfield.png",
+    "source_size": [
+      2688,
+      1520
+    ],
+    "logical_bounds": [
+      [
+        10,
+        3,
+        28,
+        30
+      ],
+      [
+        10,
+        3,
+        27,
+        30
+      ],
+      [
+        10,
+        3,
+        27,
+        30
+      ],
+      [
+        10,
+        3,
+        27,
+        30
+      ],
+      [
+        10,
+        3,
+        27,
+        30
+      ]
+    ],
+    "walk_upper_body_center_spread_px": 0.0,
+    "palette_colors": 15
+  },
+  "Archer": {
+    "source": "asset/character/Archer/raw/side_sheet_youth_v4_higgsfield.png",
+    "source_size": [
+      2688,
+      1520
+    ],
+    "logical_bounds": [
+      [
+        8,
+        3,
+        26,
+        30
+      ],
+      [
+        8,
+        3,
+        25,
+        30
+      ],
+      [
+        8,
+        3,
+        25,
+        30
+      ],
+      [
+        8,
+        3,
+        25,
+        30
+      ],
+      [
+        8,
+        3,
+        25,
+        30
+      ]
+    ],
+    "walk_upper_body_center_spread_px": 0.0,
+    "palette_colors": 17
+  }
+}

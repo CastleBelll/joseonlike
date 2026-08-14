@@ -1,4 +1,4 @@
-"""Post-process Higgsfield character sheets into runtime side-view sprites.
+"""Post-process generated character sheets into runtime side-view sprites.
 
 This script never draws character pixels. It extracts the five generated figures,
 removes the chroma background, normalizes them onto a 32x32 logical canvas, and
@@ -80,6 +80,12 @@ CHARACTER_PALETTES: dict[str, tuple[tuple[int, int, int], ...]] = {
     ),
 }
 
+SOURCE_FILENAMES = (
+    "side_sheet_youth_v4_higgsfield.png",
+    "side_sheet_youth_v4.png",
+    "side_sheet_higgsfield.png",
+)
+
 
 def chroma_foreground(rgb: np.ndarray) -> np.ndarray:
     """Return a foreground mask for generated green or magenta chroma sheets."""
@@ -97,8 +103,8 @@ def chroma_foreground(rgb: np.ndarray) -> np.ndarray:
     return ~background
 
 
-def extract_figures(source: Image.Image) -> list[Image.Image]:
-    """Extract the five largest generated connected components, left to right."""
+def extract_figures(source: Image.Image, expected_count: int = 5) -> list[Image.Image]:
+    """Extract the largest generated connected components, left to right."""
     rgb = np.asarray(source.convert("RGB"))
     mask = chroma_foreground(rgb)
     count, labels, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8), 8)
@@ -108,9 +114,13 @@ def extract_figures(source: Image.Image) -> list[Image.Image]:
         x, y, width, height, area = map(int, stats[label])
         if area >= 2_000:
             components.append((x, y, width, height, area, label))
-    components = sorted(components, key=lambda item: item[4], reverse=True)[:5]
-    if len(components) != 5:
-        raise ValueError(f"expected five generated figures, found {len(components)}")
+    components = sorted(components, key=lambda item: item[4], reverse=True)[
+        :expected_count
+    ]
+    if len(components) != expected_count:
+        raise ValueError(
+            f"expected {expected_count} generated figures, found {len(components)}"
+        )
     components.sort(key=lambda item: item[0])
 
     figures: list[Image.Image] = []
@@ -204,7 +214,17 @@ def stabilize_walk_upper_body(frames: list[Image.Image]) -> list[Image.Image]:
 
 
 def export_character(character_root: Path) -> dict[str, object]:
-    source_path = character_root / "raw" / "side_sheet_higgsfield.png"
+    source_path = next(
+        (
+            character_root / "raw" / filename
+            for filename in SOURCE_FILENAMES
+            if (character_root / "raw" / filename).is_file()
+        ),
+        None,
+    )
+    if source_path is None:
+        expected = ", ".join(SOURCE_FILENAMES)
+        raise FileNotFoundError(f"no source sheet for {character_root.name}: {expected}")
     output_root = character_root / "side"
     output_root.mkdir(parents=True, exist_ok=True)
 
