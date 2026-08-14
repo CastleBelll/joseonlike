@@ -1,0 +1,399 @@
+{
+  "assets": [
+    {
+      "path": "asset/drop/loot/bamboo/idle.png",
+      "canvas": [
+        24,
+        24
+      ],
+      "content_bbox": [
+        17,
+        18
+      ],
+      "opaque_pixels": 223,
+      "rgba_colors": 11,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "a27cadae8141a356e2989ba6e8f2f113f9c207127d8dfa323812aabd5e1bdda5"
+    },
+    {
+      "path": "asset/drop/loot/tough_fiber/idle.png",
+      "canvas": [
+        24,
+        24
+      ],
+      "content_bbox": [
+        19,
+        18
+      ],
+      "opaque_pixels": 279,
+      "rgba_colors": 6,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "badd782e3d8b23a793f703cc3a995b097653200ffb76043e38688fd2d197954a"
+    },
+    {
+      "path": "asset/drop/loot/beast_fang/idle.png",
+      "canvas": [
+        24,
+        24
+      ],
+      "content_bbox": [
+        16,
+        18
+      ],
+      "opaque_pixels": 226,
+      "rgba_colors": 7,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "0f0b74cff8a1147b28c2a2b7176875bb6acbc1fb6029ef45ae55c62b54edb195"
+    },
+    {
+      "path": "asset/drop/loot/talisman_paper/idle.png",
+      "canvas": [
+        24,
+        24
+      ],
+      "content_bbox": [
+        14,
+        18
+      ],
+      "opaque_pixels": 243,
+      "rgba_colors": 7,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "f087867cdae062e80742bd809986d6fa592864bba4b2e1ae63f619361ea907b3"
+    },
+    {
+      "path": "asset/drop/loot/wonhon_shard/idle.png",
+      "canvas": [
+        24,
+        24
+      ],
+      "content_bbox": [
+        13,
+        18
+      ],
+      "opaque_pixels": 179,
+      "rgba_colors": 7,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "04f2330e8a7dc92f4790975ce10b08e5c02c0d78043e5aaf0c65383272b817fa"
+    },
+    {
+      "path": "asset/drop/loot/dokkaebi_flame/idle.png",
+      "canvas": [
+        24,
+        24
+      ],
+      "content_bbox": [
+        15,
+        18
+      ],
+      "opaque_pixels": 193,
+      "rgba_colors": 6,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "a51bb48521dca98d4ded3d395b2f1a4d551bdae9a72e6d92ebe9fe44f5b1efb7"
+    },
+    {
+      "path": "asset/drop/loot/whetstone/idle.png",
+      "canvas": [
+        24,
+        24
+      ],
+      "content_bbox": [
+        17,
+        18
+      ],
+      "opaque_pixels": 240,
+      "rgba_colors": 8,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "10ac1e7232c11db16d8e996237209ae4395df35e4f599afb56ecc80f818ff2aa"
+    },
+    {
+      "path": "asset/drop/loot/ghost_iron/idle.png",
+      "canvas": [
+        24,
+        24
+      ],
+      "content_bbox": [
+        17,
+        18
+      ],
+      "opaque_pixels": 238,
+      "rgba_colors": 6,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "93cafed063f666abfbd311e836449ce25c9bc5ba9b1fc2a90fd423149078d917"
+    },
+    {
+      "path": "asset/drop/loot/fire_spirit_stone/idle.png",
+      "canvas": [
+        24,
+        24
+      ],
+      "content_bbox": [
+        16,
+        18
+      ],
+      "opaque_pixels": 226,
+      "rgba_colors": 8,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "10c88359c57ba9bfb41fc66d43e8cf1560f5ccc3b0b799958b60cf13b1a4fde4"
+    },
+    {
+      "path": "asset/drop/loot/thunder_stone/idle.png",
+      "canvas": [
+        24,
+        24
+      ],
+      "content_bbox": [
+        18,
+        18
+      ],
+      "opaque_pixels": 253,
+      "rgba_colors": 6,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "5cde4188fc7e2692579d9b2e58d4eaec7705bdaf7efd7dd5dc961ec66d5c7f98"
+    },
+    {
+      "path": "asset/drop/loot/cinnabar/idle.png",
+      "canvas": [
+        24,
+        24
+      ],
+      "content_bbox": [
+        17,
+        18
+      ],
+      "opaque_pixels": 256,
+      "rgba_colors": 9,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "be2b63561caaee1cfd158af69f18f3433187529a777541ceb71307e84adf183d"
+    },
+    {
+      "path": "asset/weapon/icons/sharp_sword.png",
+      "canvas": [
+        32,
+        32
+      ],
+      "content_bbox": [
+        28,
+        29
+      ],
+      "opaque_pixels": 311,
+      "rgba_colors": 7,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "af76a4b45445fd9f65ded0ccad556c40f54403d29215d4a59f27a40a9b92b051"
+    },
+    {
+      "path": "asset/weapon/icons/ghost_sword.png",
+      "canvas": [
+        32,
+        32
+      ],
+      "content_bbox": [
+        27,
+        29
+      ],
+      "opaque_pixels": 340,
+      "rgba_colors": 7,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "055f7be0d31a4c8bcba1cd4936815a1f27ece357565b8e77d6dddc8c2c229e19"
+    },
+    {
+      "path": "asset/weapon/icons/flame_sword.png",
+      "canvas": [
+        32,
+        32
+      ],
+      "content_bbox": [
+        27,
+        28
+      ],
+      "opaque_pixels": 323,
+      "rgba_colors": 8,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "a9d00306ef0dd9a8b639833660938973fc9381f6a3c078f996dc509293c81a72"
+    },
+    {
+      "path": "asset/weapon/icons/lightning_talisman.png",
+      "canvas": [
+        32,
+        32
+      ],
+      "content_bbox": [
+        21,
+        29
+      ],
+      "opaque_pixels": 525,
+      "rgba_colors": 7,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "1952f36226aaf738f0d24ca4093b4a57e986fb0dacf2f0289757089b42e1ef11"
+    },
+    {
+      "path": "asset/weapon/icons/beopgeom.png",
+      "canvas": [
+        32,
+        32
+      ],
+      "content_bbox": [
+        28,
+        29
+      ],
+      "opaque_pixels": 335,
+      "rgba_colors": 9,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "7914510fc5d54b6dcacd28a9c9246f05a3755cfb0cc29a0a0b44b8bc48b9528c"
+    },
+    {
+      "path": "asset/weapon/travel/lightning_bolt.png",
+      "canvas": [
+        32,
+        32
+      ],
+      "content_bbox": [
+        30,
+        18
+      ],
+      "opaque_pixels": 297,
+      "rgba_colors": 6,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "06b31342c70c158cea3b040633c09c8d91ad743fce90fd4772362635bfd9182d"
+    },
+    {
+      "path": "asset/weapon/travel/beopgeom_bolt.png",
+      "canvas": [
+        32,
+        32
+      ],
+      "content_bbox": [
+        30,
+        12
+      ],
+      "opaque_pixels": 223,
+      "rgba_colors": 7,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "48f57ecd36ca24d92eda0741b45b2b8118c60a07be2435100d8e6f7882629acc"
+    },
+    {
+      "path": "asset/effect/status/burn/strip.png",
+      "canvas": [
+        96,
+        24
+      ],
+      "content_bbox": [
+        89,
+        21
+      ],
+      "opaque_pixels": 938,
+      "rgba_colors": 6,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "6ce27988e5aca49f4cadbfaf8c5b20453c83764a40168a9feef85bdd66c99bc0"
+    },
+    {
+      "path": "asset/effect/status/seal/strip.png",
+      "canvas": [
+        96,
+        24
+      ],
+      "content_bbox": [
+        89,
+        21
+      ],
+      "opaque_pixels": 1046,
+      "rgba_colors": 7,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "69cf43a8faa00e86c3f3e22a5ebe951c39e15d5851d14746070b8dbe57fd4469"
+    },
+    {
+      "path": "asset/ui/hud/damage_digits.png",
+      "canvas": [
+        80,
+        10
+      ],
+      "content_bbox": [
+        79,
+        9
+      ],
+      "opaque_pixels": 548,
+      "rgba_colors": 3,
+      "alpha_values": [
+        0,
+        255
+      ],
+      "sha256": "7aaeafc9a8d0edf05c07f8961e69cade3cac026cbae9fc0215618e98ddd1ee61"
+    }
+  ],
+  "contact_sheet": {
+    "path": "asset/raw/v7_asset_contact_sheet.png",
+    "canvas": [
+      640,
+      1180
+    ],
+    "content_bbox": [
+      640,
+      1180
+    ],
+    "opaque_pixels": 755200,
+    "rgba_colors": 447,
+    "alpha_values": [
+      255
+    ],
+    "sha256": "c466c3563dc39876162c89a9d583854f50c8b9f1d4d053c07b8265b3b10db225"
+  }
+}
