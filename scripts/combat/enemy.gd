@@ -55,6 +55,9 @@ var contact_radius: float = 0.0
 var xp_drop: int = 0
 var gold_drop: int = 0
 var is_boss: bool = false
+## N3-14: written by the spawner every physics frame (already weighted);
+## the boss always keeps ZERO so trash never shoves it around.
+var separation_push := Vector2.ZERO
 
 var _damage: float = 0.0
 var _speed: float = 0.0
@@ -130,6 +133,7 @@ func setup(
 	_boss_knockback_scale = float(feedback.get("boss_knockback_scale", 1.0))
 	_contact_cooldown = contact_cooldown
 	_time_since_contact = contact_cooldown  # first touch may hit immediately
+	separation_push = Vector2.ZERO
 	_target = target
 	(_shape.shape as CircleShape2D).radius = contact_radius
 	_block_normal = Vector2.ZERO
@@ -185,10 +189,8 @@ func _physics_process(delta: float) -> void:
 	var desired: Vector2 = CombatMath.chase_direction(
 		global_position, _target.global_position
 	)
-	velocity = (
-		CombatMath.avoid_direction(desired, _block_normal, _avoid_sign) * _speed
-		+ _knockback
-	)
+	var steer: Vector2 = CombatMath.avoid_direction(desired, _block_normal, _avoid_sign)
+	velocity = Separation.blended_direction(steer, separation_push) * _speed + _knockback
 	move_and_slide()
 	_block_normal = (
 		get_slide_collision(0).get_normal() if get_slide_collision_count() > 0

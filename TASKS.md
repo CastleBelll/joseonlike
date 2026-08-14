@@ -107,7 +107,7 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 
 | # | 작업 | 왜 지금 |
 |---|---|---|
-| 1 | **N3-14 몬스터 겹침 해소** | 지금 몬스터가 플레이어 중앙에 전부 포개진다. 개체 간 분리(separation) 조향으로 뭉개짐 제거 |
+| 1 | ~~**N3-14 몬스터 겹침 해소**~~ ✅ | 완료 — 그리드 기반 분리 조향, 평균 겹침 8.46 → 0.00 (플레이테스트 261/240 샘플) |
 | 2 | **N3-15 조준 범위를 화면 안으로** | 화면 밖 적에게 투사체가 유도탄처럼 날아간다. 보이는 적만 조준, 사거리/시야 데이터화 |
 | 3 | **N4-4 도사 무기 4~5종** | 무기가 부적 하나뿐. 석장 근접, 부적 투척, 뇌부(연쇄), 봉인부(폭발), 도깨비불(선회) — 각각 개조 분기 보유 |
 | 4 | **N4-5 도사 액티브 스킬 + 빌드 분기** | 축지(순간이동) 같은 액티브 1~2종 + 화염/뇌전/봉인 3갈래가 레벨업·개조로 갈리게. 한 런에서 빌드가 달라져야 함 |
@@ -163,4 +163,5 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | 2026-08-14 | N4-2 weapon grades + 15-min pacing: `_grades` ladder/step multipliers in weapons.json, grade-up level-up card + mod grade carry + top-grade gold callout, 15-min bamboo_forest wave curve (elite from 5:00, surge peak 840s, boss 900s, soft enrage 920s+), `bamboo_brute_elite` data-derived elite + rare-material drop table, RunFlow schedule invariants, validate_data grade/elite/pacing cross-checks, boss hp 7000 | — |
 | 2026-08-14 | N4-2b 5-minute run rescale: 300s bamboo_forest curve (elite 2:00, surge peak 57 at 3:30, boss 4:00 hp 2400, enrage 4:40), XP curve 6×1.5^(L-1) for 8–10 level-ups, early special-material drop bias, duration_sec bound invariant in schedule_issues, autoplay verification harness (tools/playtest.tscn) | — |
 | 2026-08-14 | N5-2 autosave/auto-resume + settings popup: SaveProfile pure helpers + SaveService autoload (user://profile.save JSON, temp-rename safe write with crash recovery, schema v1 migration hook, corrupt→warning+fresh), run-end gold banking + lifetime stats, result-screen 보유 엽전 row, paper-panel settings popup (3 volume sliders + 한국어/English toggle, applies live + persists), Master/Music/Effects buses, single-primary-action title | — |
+| 2026-08-14 | N3-14 enemy separation steering: bucketed-grid neighbour lookup (Separation, reused buffers, no per-frame alloc), weighted push blended into chase, boss push-exempt but crowd-blocking, tuning in effects.json, playtest crowd metric avg-stacked 8.46 → 0.00 | — |
 | 2026-08-14 | N4-6 loot auto-collect + mod-as-level-up-card: special-material popup and queueing deleted (DESIGN.md §5.2), every material collects silently via the magnet path (floating cue label for specials), dead materials auto-salvage to gold at pickup, 개조 card in the level-up 3-pick (max one per screen, result grade pill, real numbers, consumes material, carries level+grade), replaced weapons permanently excluded from new/upgrade pools (owner-reported regression, covered by failing-first test), dead-inventory sweep after each mod | — |

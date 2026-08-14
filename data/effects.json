@@ -7,5 +7,10 @@
     "death_puff_sec": 0.3,
     "death_puff_radius_scale": 1.6,
     "player_vignette_sec": 0.35
+  },
+  "separation": {
+    "weight": 2.0,
+    "pad_px": 6.0,
+    "cell_px": 96.0
   }
 }

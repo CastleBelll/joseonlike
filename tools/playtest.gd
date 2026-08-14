@@ -12,6 +12,12 @@ const STAGE_SCENE := "res://scenes/stage.tscn"
 const SURGE_SHOT_PATH := "user://playtest_surge.png"
 const RESULT_SHOT_PATH := "user://playtest_result.png"
 const MOD_SHOT_PATH := "user://playtest_mod_card.png"
+const MIDRUN_SHOT_PATH := "user://playtest_midrun.png"
+const MIDRUN_SHOT_AT_SEC := 75.0
+## N3-14 crowd metric: an enemy counts as "stacked" when another enemy's
+## center sits closer than half the pair's combined contact radii.
+const OVERLAP_SAMPLE_SEC := 1.0
+const OVERLAP_RATIO := 0.5
 const SURGE_SHOT_DELAY_SEC := 10.0
 const PICK_COOLDOWN_SEC := 0.4
 const DANGER_RADIUS := 120.0
@@ -37,6 +43,12 @@ var _grade_picks: int = 0
 var _mod_offers: int = 0
 var _mod_shot_done: bool = false
 var _real_elapsed: float = 0.0
+var _midrun_shot_done: bool = false
+var _fps_min_all: float = 1e9
+var _peak_live: int = 0
+var _overlap_sum: float = 0.0
+var _overlap_samples: int = 0
+var _overlap_timer: float = 0.0
 
 
 func _ready() -> void:
@@ -61,11 +73,18 @@ func _process(delta: float) -> void:
 		get_tree().quit(1)
 		return
 	var elapsed: float = _stage._run_elapsed
-	if not get_tree().paused and elapsed >= _surge_at and elapsed < _boss_at:
-		var fps: float = Engine.get_frames_per_second()
-		_fps_min = minf(_fps_min, fps)
-		_fps_sum += fps
-		_fps_samples += 1
+	if not get_tree().paused:
+		if elapsed >= _surge_at and elapsed < _boss_at:
+			var fps: float = Engine.get_frames_per_second()
+			_fps_min = minf(_fps_min, fps)
+			_fps_sum += fps
+			_fps_samples += 1
+		# Whole-run fps floor; skip the first second while the scene warms up.
+		if _real_elapsed > 1.0:
+			_fps_min_all = minf(_fps_min_all, Engine.get_frames_per_second())
+	if not _midrun_shot_done and elapsed >= MIDRUN_SHOT_AT_SEC:
+		_midrun_shot_done = true
+		_capture(MIDRUN_SHOT_PATH)
 	if not _surge_shot_done and elapsed >= _surge_at + SURGE_SHOT_DELAY_SEC:
 		_surge_shot_done = true
 		_capture(SURGE_SHOT_PATH)
@@ -86,6 +105,11 @@ func _physics_process(delta: float) -> void:
 			_pick_card()
 		return
 	_pick_wait = PICK_COOLDOWN_SEC
+	_peak_live = maxi(_peak_live, _spawner.active_enemies().size())
+	_overlap_timer -= delta
+	if _overlap_timer <= 0.0:
+		_overlap_timer = OVERLAP_SAMPLE_SEC
+		_sample_overlap()
 	_steer()
 
 
@@ -128,6 +152,28 @@ func _steer() -> void:
 		Input.action_press("move_up", -direction.y)
 	else:
 		Input.action_press("move_down", direction.y)
+
+
+## Brute-force is fine here: a once-per-second diagnostic in a tool script,
+## never game code.
+func _sample_overlap() -> void:
+	var enemies: Array[Enemy] = _spawner.active_enemies()
+	var stacked: int = 0
+	for i: int in range(enemies.size()):
+		for j: int in range(enemies.size()):
+			if i == j:
+				continue
+			var limit: float = (
+				(enemies[i].contact_radius + enemies[j].contact_radius) * OVERLAP_RATIO
+			)
+			var distance_squared: float = enemies[i].global_position.distance_squared_to(
+				enemies[j].global_position
+			)
+			if distance_squared < limit * limit:
+				stacked += 1
+				break
+	_overlap_sum += float(stacked)
+	_overlap_samples += 1
 
 
 func _release_moves() -> void:
@@ -205,6 +251,12 @@ func _finish() -> void:
 	])
 	print("PLAYTEST mod cards: offered on %d screens, taken %d at %s" % [
 		_mod_offers, _special_times.size(), str(_special_times)
+	])
+	print("PLAYTEST fps floor (whole run): %.0f" % (
+		_fps_min_all if _fps_min_all < 1e9 else 0.0
+	))
+	print("PLAYTEST crowd: peak live %d, avg stacked %.2f over %d samples" % [
+		_peak_live, _overlap_sum / float(maxi(_overlap_samples, 1)), _overlap_samples
 	])
 	print("PLAYTEST kills: %d gold: %d" % [_stage._kills, _stage._gold])
 	if _stage._boss != null:
