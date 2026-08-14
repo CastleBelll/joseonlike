@@ -13,16 +13,6 @@ offset_bottom = 216.0
 grow_horizontal = 2
 mouse_filter = 2
 
-[node name="Background" type="ColorRect" parent="Root"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.102, 0.0863, 0.0745, 0.72)
-mouse_filter = 2
-
 [node name="Margin" type="MarginContainer" parent="Root"]
 layout_mode = 1
 anchors_preset = 15
@@ -55,7 +45,7 @@ stretch_mode = 5
 [node name="HpBar" type="ProgressBar" parent="Root/Margin/MainBox/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-custom_minimum_size = Vector2(0, 24)
+custom_minimum_size = Vector2(0, 16)
 show_percentage = false
 value = 100.0
 
@@ -104,7 +94,7 @@ stretch_mode = 5
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
-custom_minimum_size = Vector2(0, 14)
+custom_minimum_size = Vector2(0, 8)
 show_percentage = false
 
 [node name="BossRow" type="HBoxContainer" parent="Root/Margin/MainBox"]
@@ -133,6 +123,7 @@ theme_override_constants/separation = 24
 
 [node name="TimerPanel" type="PanelContainer" parent="Root/Margin/MainBox/StatsRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="TimerBox" type="HBoxContainer" parent="Root/Margin/MainBox/StatsRow/TimerPanel"]
 layout_mode = 2

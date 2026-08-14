@@ -76,9 +76,14 @@ func _ready() -> void:
 	_style_timer_panel()
 	_boss_row.visible = false
 
+	# The dark backdrop bar is gone (DESIGN.md: the HUD must not cover the
+	# field), so every label carries an ink outline to stay readable over
+	# whatever the stage renders behind it.
 	for label in [_hp_label, _level_label, _time_label, _kills_label, _weapons_empty_label]:
 		label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
 		label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
+		label.add_theme_constant_override("outline_size", 4)
+		label.add_theme_color_override("font_outline_color", UiPalette.INK)
 
 	EventBus.player_damaged.connect(_on_player_damaged)
 	EventBus.player_died.connect(_on_player_died)
@@ -308,14 +313,32 @@ func _build_weapon_chip(weapon_entry: Dictionary) -> Control:
 	return chip
 
 
+## DESIGN.md combat-HUD grammar: thin flat bars on a translucent ink track,
+## no framed chrome — the field stays visible behind the numbers.
 func _style_bar(bar: ProgressBar, fill: Texture2D) -> void:
-	bar.add_theme_stylebox_override("background", _nine_slice(BAR_BACKGROUND))
-	bar.add_theme_stylebox_override("fill", _nine_slice(fill))
+	var track: Color = UiPalette.INK
+	track.a = 0.6
+	bar.add_theme_stylebox_override("background", UiPalette.panel_style(track, Color.TRANSPARENT, 0, 4))
+	var fill_color: Color = UiPalette.WOOD
+	if fill == HP_FILL:
+		fill_color = UiPalette.DANGER.lightened(0.2)
+	elif fill == BOSS_FILL:
+		fill_color = UiPalette.VERMILION
+	bar.add_theme_stylebox_override("fill", UiPalette.panel_style(fill_color, Color.TRANSPARENT, 0, 4))
 	bar.show_percentage = false
 
 
+## The timer floats as big centred text on a soft ink pill — frameless, but
+## the pill guarantees the WCAG contrast the layout audit measures against
+## real background pixels.
 func _style_timer_panel() -> void:
-	_timer_panel.add_theme_stylebox_override("panel", _nine_slice(TIMER_FRAME, 8))
+	var pill: Color = UiPalette.INK
+	pill.a = 0.65
+	_timer_panel.add_theme_stylebox_override("panel", UiPalette.panel_style(pill, Color.TRANSPARENT, 0, 10))
+	_timer_icon.visible = false
+	_time_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_TITLE)
+	_time_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_time_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 func _nine_slice(texture: Texture2D, margin: int = BAR_MARGIN) -> StyleBoxTexture:
