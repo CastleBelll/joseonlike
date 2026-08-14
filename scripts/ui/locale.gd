@@ -10,6 +10,12 @@ const STRINGS := {
 	"title.start": {"ko": "게임 시작", "en": "Start Game"},
 	"title.select_character": {"ko": "수행자 선택", "en": "Select Cultivator"},
 	"title.settings": {"ko": "설정", "en": "Settings"},
+	"settings.title": {"ko": "설정", "en": "Settings"},
+	"settings.master_volume": {"ko": "전체 음량", "en": "Master Volume"},
+	"settings.music_volume": {"ko": "음악", "en": "Music"},
+	"settings.effects_volume": {"ko": "효과음", "en": "Effects"},
+	"settings.language": {"ko": "언어", "en": "Language"},
+	"settings.close": {"ko": "닫기", "en": "Close"},
 }
 
 static var current_locale: String = DEFAULT_LOCALE

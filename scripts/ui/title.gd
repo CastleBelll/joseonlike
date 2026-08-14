@@ -21,22 +21,44 @@ const UTILITY_BUTTON_SIZE := 48
 const SKY_TOP_DARKEN := 0.4
 const SKY_MID_OFFSET := 0.55
 
+var _settings_popup: SettingsPopup
 
+
+# Owner direction (N5-2): exactly one primary action. No continue button —
+# the profile autosaves and the next launch simply resumes; first boot and
+# returning player press the same start button.
 static func menu_button_defs() -> Array[Dictionary]:
 	return [
 		{"id": "start", "label": UiLocale.text("title.start")},
-		{"id": "select_character", "label": UiLocale.text("title.select_character")},
 	]
 
 
 func _ready() -> void:
 	build_ui()
+	_settings_popup = SettingsPopup.new()
+	_settings_popup.locale_changed.connect(refresh_texts)
+	add_child(_settings_popup)
 	menu_selected.connect(_on_menu_selected)
 
 
 func _on_menu_selected(id: String) -> void:
 	if id == "start":
 		get_tree().change_scene_to_file(STAGE_SCENE)
+	elif id == "settings" and _settings_popup != null:
+		_settings_popup.open()
+
+
+## Re-applies every locale-sensitive text in place; called when the settings
+## popup toggles the language so the change shows immediately.
+func refresh_texts() -> void:
+	(get_node("LogoArea/GameName") as Label).text = UiLocale.text("title.game_name")
+	var settings_button: Button = get_node("CornerUtilities/SettingsButton")
+	settings_button.text = UiLocale.text("title.settings")
+	settings_button.tooltip_text = UiLocale.text("title.settings")
+	var stack: VBoxContainer = get_node("MenuButtons")
+	var defs: Array[Dictionary] = menu_button_defs()
+	for i: int in range(mini(defs.size(), stack.get_child_count())):
+		(stack.get_child(i) as Button).text = String(defs[i]["label"])
 
 
 ## Builds every child node. Public so the headless test can construct the

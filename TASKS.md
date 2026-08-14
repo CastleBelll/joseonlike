@@ -20,7 +20,7 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 
 - [x] N1-1 타이틀 레이아웃 (플레이스홀더 아트, DESIGN.md §4 배치)
 - [ ] N1-2 codex AC-2 아트 통합 (배경 레이어 + 현판 로고)
-- [ ] N1-3 설정 팝업 (음량/언어, 자동 저장)
+- [x] N1-3 설정 팝업 (음량/언어, 자동 저장) — N5-2에서 구현
 
 ## N2 — 수행자 선택
 
@@ -48,6 +48,13 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 - [x] N5-1a 보스 웨이브 — stages.json `boss_at_sec` 시점 단일 보스 스폰,
       상단 얇은 보스 HP바, 처치 = 승리, 타임아웃 = 승리 (GDD §34 소프트
       인레이지는 클리어 후 잔류로 해석)
+- [x] **N5-2 자동 저장·자동 재개 + 설정 팝업** — SaveProfile(순수)/
+      SaveService(autoload) user://profile.save JSON, temp-rename 안전 쓰기 +
+      크래시 복구, schema v1 마이그레이션 훅, 손상 파일 → 경고 + 새 프로필,
+      런 종료 시 엽전 뱅킹(결과 화면 "보유 엽전") + 생애 통계, 설정 팝업
+      (음량 3슬라이더 + 한국어/English 토글, 즉시 적용·자동 저장),
+      Master/Music/Effects 오디오 버스, 타이틀 단일 프라이머리 버튼
+      (이어하기/종료 버튼 없음 — 오너 지시)
 - [x] N5-1b 결과 화면 — 종이 패널 (승리/패배, 생존 시간, 처치, 엽전
       표시 전용) + 타이틀 복귀 CTA. 메타/뱅킹은 후속 페이즈
 
@@ -92,3 +99,4 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | 2026-08-14 | N4-1 loot drops + magnet pickup + special-material 3-choice popup: seeded drop rolls, tier-tinted pooled diamonds via XP-orb magnet path, RunState run inventory, use/keep/salvage cards on the shared paper-panel component, weapon-mod swap carrying level, tinted modded projectiles, loot data cross-checks | — |
 | 2026-08-14 | N3-12 monster/boss sprite wiring: data-driven sprite sets (idle + 4-frame walk, boss idle_breathe), shared SpriteSheet builder with the player, facing mirror + overbright hit flash, footprint-based hurt circles, validate_data sprite-file check | — |
 | 2026-08-14 | N3-11 fix: prop render scale now derived from visible silhouette content (not the padded export canvas) so declared logical heights actually render; ground variants placed as sparse noise-clustered patches with per-tile rotation instead of an even scatter | — |
+| 2026-08-14 | N5-2 autosave/auto-resume + settings popup: SaveProfile pure helpers + SaveService autoload (user://profile.save JSON, temp-rename safe write with crash recovery, schema v1 migration hook, corrupt→warning+fresh), run-end gold banking + lifetime stats, result-screen 보유 엽전 row, paper-panel settings popup (3 volume sliders + 한국어/English toggle, applies live + persists), Master/Music/Effects buses, single-primary-action title | — |

@@ -108,7 +108,7 @@ func _ready() -> void:
 	_popup.picked.connect(_on_choice_picked)
 	_popup.dismissed.connect(_on_popup_dismissed)
 	add_child(_popup)
-	_hud.set_gold(0)  # run gold is display-only until the workshop economy phase
+	_hud.set_gold(0)  # run gold; banked into the profile at run end (N5-2)
 	_refresh_progress_hud()
 
 
@@ -150,7 +150,7 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 	if enemy.is_boss:
 		_boss = null
 		_hud.hide_boss_bar()
-		_end_run(RunFlow.resolve_outcome(false, true, false))
+		_end_run(RunFlow.resolve_outcome(false, true, false), true)
 
 
 func _on_boss_spawned(boss: Enemy) -> void:
@@ -161,12 +161,16 @@ func _on_boss_spawned(boss: Enemy) -> void:
 
 
 ## Single exit point for the three end conditions; the first one wins.
-func _end_run(outcome: String) -> void:
+## N5-2: the run's gold banks into the permanent profile here — the one
+## run-end autosave — and the result screen shows the new total.
+func _end_run(outcome: String, boss_killed: bool = false) -> void:
 	if _outcome != RunFlow.OUTCOME_NONE or outcome == RunFlow.OUTCOME_NONE:
 		return
 	_outcome = outcome
 	get_tree().paused = true
-	_result.open(outcome, RunFlow.build_summary(_run_elapsed, _kills, _gold))
+	var summary: Dictionary = RunFlow.build_summary(_run_elapsed, _kills, _gold)
+	summary["total_gold"] = SaveService.instance.bank_run(_run_elapsed, _kills, _gold, boss_killed)
+	_result.open(outcome, summary)
 
 
 func _on_orb_collected(orb: XpOrb) -> void:

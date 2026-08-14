@@ -1,15 +1,15 @@
 class_name ResultScreen
 extends CanvasLayer
 ## Run result screen (N5-1b): paper panel per DESIGN.md §3 with lattice
-## corners, 승리/패배 title, the run summary rows (time / kills / gold) and a
-## single wood CTA back to the title. Gold is display-only — banking and meta
-## progression are a later phase.
+## corners, 승리/패배 title, the run summary rows (time / kills / gold /
+## banked total) and a single wood CTA back to the title. The run's gold is
+## banked into the permanent profile by Stage._end_run before open() (N5-2).
 
 const TITLE_SCENE := "res://scenes/title.tscn"
 
 const LAYER_ABOVE_POPUP := 12
 const PANEL_MARGIN_X := 48.0
-const PANEL_HEIGHT := 420.0
+const PANEL_HEIGHT := 480.0
 const HEADER_HEIGHT := 72.0
 const ROW_HEIGHT := 44.0
 const BODY_MARGIN := 24.0
@@ -23,6 +23,7 @@ var _title_label: Label
 var _time_value: Label
 var _kills_value: Label
 var _gold_value: Label
+var _total_gold_value: Label
 
 
 func _init() -> void:
@@ -65,6 +66,8 @@ func open(outcome: String, summary: Dictionary) -> void:
 	_time_value.text = String(summary.get("time_text", ""))
 	_kills_value.text = str(int(summary.get("kills", 0)))
 	_gold_value.text = str(int(summary.get("gold", 0)))
+	# N5-2: permanent gold after banking this run (SaveManager.bank_run).
+	_total_gold_value.text = str(int(summary.get("total_gold", 0)))
 	visible = true
 
 
@@ -98,6 +101,7 @@ func _make_body() -> Control:
 	_time_value = _add_row(body, "생존 시간")
 	_kills_value = _add_row(body, "처치")
 	_gold_value = _add_row(body, "엽전")
+	_total_gold_value = _add_row(body, "보유 엽전")
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_child(spacer)

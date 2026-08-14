@@ -1,0 +1,128 @@
+class_name SaveService
+extends Node
+## Persistence autoload (ARCHITECTURE.md §3.4), registered as SaveManager.
+## Callers use the typed SaveService.instance accessor instead of the bare
+## autoload identifier — the headless test runner (custom SceneTree main
+## loop) compiles scripts without autoload globals, and class_name resolves
+## there while `SaveManager` would not.
+## Loads user://profile.save at boot, applies the persisted settings (audio
+## bus volumes + locale) and autosaves on the events that matter — run end,
+## settings change, character selection — never on a frame timer.
+## Writes go through a temp file so a crash mid-write cannot corrupt the
+## save; a rename interrupted between remove and rename is recovered on load.
+## Never log the profile contents.
+
+const SAVE_FILE := "profile.save"
+const TEMP_FILE := "profile.save.tmp"
+const USER_DIR := "user://"
+const SAVE_PATH := USER_DIR + SAVE_FILE
+const TEMP_PATH := USER_DIR + TEMP_FILE
+
+const BUS_MASTER := "Master"
+const BUS_MUSIC := "Music"
+const BUS_EFFECTS := "Effects"
+const BUS_BY_SETTING := {
+	"master_volume": BUS_MASTER,
+	"music_volume": BUS_MUSIC,
+	"effects_volume": BUS_EFFECTS,
+}
+
+## The one live autoload instance; null only in node-free headless tests.
+static var instance: SaveService
+
+var profile: Dictionary = SaveProfile.default_profile()
+
+
+func _init() -> void:
+	instance = self
+
+
+func _ready() -> void:
+	profile = _load_from_disk()
+	apply_settings()
+
+
+## Sets one settings key, applies it immediately, and optionally persists.
+## Sliders pass persist=false per tick and save once on drag end.
+func set_setting(key: String, value: Variant, persist: bool = true) -> void:
+	var settings: Dictionary = profile["settings"]
+	settings[key] = value
+	profile["settings"] = SaveProfile.clamp_settings(settings)
+	apply_settings()
+	if persist:
+		save_profile()
+
+
+func get_setting(key: String) -> Variant:
+	return (profile["settings"] as Dictionary).get(key)
+
+
+func set_selected_character(id: String) -> void:
+	profile["selected_character"] = id
+	save_profile()
+
+
+func selected_character() -> String:
+	return String(profile.get("selected_character", SaveProfile.DEFAULT_CHARACTER))
+
+
+func gold() -> int:
+	return int(profile.get("gold", 0))
+
+
+## Banks a finished run into the permanent profile and saves.
+## Returns the new permanent gold total for the result screen.
+func bank_run(elapsed_sec: float, kills: int, run_gold: int, boss_killed: bool) -> int:
+	profile = SaveProfile.apply_run_result(profile, elapsed_sec, kills, run_gold, boss_killed)
+	save_profile()
+	return gold()
+
+
+func apply_settings() -> void:
+	var settings: Dictionary = profile["settings"]
+	for key: String in BUS_BY_SETTING.keys():
+		_set_bus_volume(String(BUS_BY_SETTING[key]), float(settings[key]))
+	UiLocale.current_locale = String(settings["locale"])
+
+
+func save_profile() -> void:
+	var file: FileAccess = FileAccess.open(TEMP_PATH, FileAccess.WRITE)
+	if file == null:
+		push_error("save_manager: cannot write " + TEMP_PATH)
+		return
+	file.store_string(SaveProfile.serialize(profile))
+	file.close()
+	var dir: DirAccess = DirAccess.open(USER_DIR)
+	if dir == null:
+		push_error("save_manager: cannot open " + USER_DIR)
+		return
+	# Remove-then-rename: if the process dies between the two calls the temp
+	# file still holds a complete payload and _load_from_disk recovers it.
+	if dir.file_exists(SAVE_FILE):
+		dir.remove(SAVE_FILE)
+	var err: Error = dir.rename(TEMP_FILE, SAVE_FILE)
+	if err != OK:
+		push_error("save_manager: rename failed: " + error_string(err))
+
+
+func _load_from_disk() -> Dictionary:
+	var path: String = SAVE_PATH
+	if not FileAccess.file_exists(path):
+		if not FileAccess.file_exists(TEMP_PATH):
+			return SaveProfile.default_profile()
+		path = TEMP_PATH
+	var migrated: Dictionary = SaveProfile.migrate(
+		SaveProfile.deserialize(FileAccess.get_file_as_string(path))
+	)
+	if migrated.is_empty():
+		push_warning("save_manager: unreadable profile, starting fresh")
+		return SaveProfile.default_profile()
+	return migrated
+
+
+func _set_bus_volume(bus_name: String, linear: float) -> void:
+	var index: int = AudioServer.get_bus_index(bus_name)
+	if index < 0:
+		push_error("save_manager: missing audio bus " + bus_name)
+		return
+	AudioServer.set_bus_volume_db(index, linear_to_db(linear))

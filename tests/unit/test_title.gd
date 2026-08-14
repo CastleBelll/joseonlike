@@ -19,8 +19,9 @@ func test_palette_tokens_exist() -> bool:
 
 
 func test_title_builds_menu_from_locale() -> bool:
+	# N5-2 owner direction: exactly one primary action on the title.
 	var defs: Array[Dictionary] = TitleScreen.menu_button_defs()
-	if defs.size() < 2 or defs[0]["label"] != UiLocale.text("title.start"):
+	if defs.size() != 1 or defs[0]["label"] != UiLocale.text("title.start"):
 		push_error("test_title: menu defs not built from locale")
 		return false
 
