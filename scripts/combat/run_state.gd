@@ -66,6 +66,11 @@ func _init() -> void:
 	_growth = float(curve.get("growth", 0.0))
 
 
+## XP cost of the current level's next step — the HUD bar denominator.
+func xp_needed() -> int:
+	return RunState.xp_to_next(level, _base_xp, _growth)
+
+
 func add_xp(amount: int) -> void:
 	var result: Dictionary = RunState.apply_xp(level, xp, amount, _base_xp, _growth)
 	var previous_level: int = level

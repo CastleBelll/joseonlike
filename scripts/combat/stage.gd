@@ -16,6 +16,7 @@ const CHOICES_PER_LEVEL := 3
 @onready var _player: Player = $Player
 @onready var _joystick: TouchJoystick = $Hud/VirtualJoystick
 @onready var _spawner: Spawner = $Spawner
+@onready var _hud: CombatHud = $Hud/CombatHud
 
 var _run_state: RunState
 var _orb_pool: NodePool
@@ -32,6 +33,7 @@ var _weapon_nodes: Dictionary = {}
 var _popup: LevelUpPopup
 var _pending_level_ups: int = 0
 var _choice_rng := RandomNumberGenerator.new()
+var _kills: int = 0
 
 
 func _ready() -> void:
@@ -54,6 +56,9 @@ func _ready() -> void:
 	_popup.picked.connect(_on_choice_picked)
 	_popup.dismissed.connect(_on_popup_dismissed)
 	add_child(_popup)
+	# Gold stays 0 until an earn source exists (workshop economy phase).
+	_hud.set_gold(0)
+	_refresh_progress_hud()
 
 
 func _physics_process(_delta: float) -> void:
@@ -66,13 +71,21 @@ func _on_player_died() -> void:
 
 
 func _on_enemy_killed(at: Vector2, xp: int) -> void:
+	_kills += 1
+	_hud.set_kills(_kills)
 	var orb: XpOrb = _orb_pool.acquire()
 	orb.launch(at, xp, _player, _orb_config)
 
 
 func _on_orb_collected(orb: XpOrb) -> void:
 	_run_state.add_xp(orb.xp_value)
+	_refresh_progress_hud()
 	_orb_pool.release(orb)
+
+
+func _refresh_progress_hud() -> void:
+	_hud.set_level(_run_state.level)
+	_hud.set_xp(_run_state.xp, _run_state.xp_needed())
 
 
 func _on_hit_landed(amount: float, at: Vector2) -> void:
@@ -160,7 +173,9 @@ func _apply_passive_effects(gained_id: String) -> void:
 		var per_stack: float = float(
 			(_passives_data.get("max_hp", {}) as Dictionary).get("per_stack", 0.0)
 		)
-		_player.hp += Player.load_base_hp() * per_stack
+		var grant: float = Player.load_base_hp() * per_stack
+		_player.hp += grant
+		_player.hp_max += grant
 
 
 func _refresh_weapon_scales() -> void:

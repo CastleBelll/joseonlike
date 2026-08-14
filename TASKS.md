@@ -31,12 +31,12 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 ## N3 — 전투 수직 슬라이스 (세션 단위로 분해)
 
 - [x] N3-1 스테이지 씬 + 카메라 + 가상 조이스틱 이동
-- [ ] N3-2 도사 인월드 스프라이트 (AC-1, 2방향 + 4프레임 걷기)
+- [x] N3-2 도사 인월드 스프라이트 (AC-1, 2방향 + 4프레임 걷기)
 - [x] N3-3 자동 공격 무기 1종 (부적 투척)
 - [x] N3-4 몬스터 스폰/추적/접촉 피해/사망
 - [x] N3-5 XP 드랍 → 자석 픽업 → 레벨업
 - [x] N3-6 파워 업 팝업 (행 카드 문법, 실수치 설명)
-- [ ] N3-7 전투 HUD (타이머/XP바/카운터, DESIGN.md §3)
+- [x] N3-7 전투 HUD (타이머/XP바/카운터, DESIGN.md §3)
 - [ ] N3-8 피격 피드백 (데미지 숫자는 N3-3에서 선반영)
 
 ## N4+ — ROADMAP.md 페이즈 진입 시 세분화
@@ -63,3 +63,5 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | 2026-08-14 | N3-4 enemy spawn/chase/contact damage/death: pooled wave spawner, player HP + invuln, data cross-checks | — |
 | 2026-08-14 | N3-3 + N3-5 auto-attack talisman, damage numbers, XP orbs + magnet, RunState leveling (progression.json curve) | — |
 | 2026-08-14 | N3-6 power-up popup: paper panel row cards, real-number descriptions, weapon levels + passive stacks, queued multi-level | — |
+| 2026-08-14 | N3-2 taoist in-world sprite: idle + 4-frame walk (8fps, speed-scaled), facing mirror, 16x NEAREST downscale | — |
+| 2026-08-14 | N3-7 combat HUD: outlined timer, thin XP bar, Lv/kill/gold counters, glyph placeholder icons, paper-panel pause overlay, minimal player HP bar | — |

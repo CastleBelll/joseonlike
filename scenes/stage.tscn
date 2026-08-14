@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/combat/stage.gd" id="1_stage"]
 [ext_resource type="Script" path="res://scripts/combat/player.gd" id="2_player"]
 [ext_resource type="Script" path="res://scripts/combat/virtual_joystick.gd" id="3_joystick"]
 [ext_resource type="Script" path="res://scripts/combat/spawner.gd" id="4_spawner"]
+[ext_resource type="Script" path="res://scripts/ui/combat_hud.gd" id="5_hud"]
 
 [sub_resource type="RectangleShape2D" id="player_shape"]
 size = Vector2(20, 30)
@@ -25,6 +26,12 @@ position_smoothing_speed = 8.0
 script = ExtResource("4_spawner")
 
 [node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="CombatHud" type="Control" parent="Hud"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("5_hud")
 
 [node name="VirtualJoystick" type="Control" parent="Hud"]
 anchors_preset = 2

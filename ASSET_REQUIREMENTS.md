@@ -90,6 +90,14 @@ Used by:   N3-6 power-up popup (scripts/ui/level_up_popup.gd icon wells)
 Fallback:  INK well + first syllable of name_ko as a GOLD glyph
 ```
 
+```
+[MISSING] combat HUD icons (AC-3): pause, info, skull kill counter, coin (yeopjeon)
+Size:      20x20 px counter icons; 44x44 px touch glyphs (pause/info)
+Members:   res://asset/ui/hud/{pause,info,skull,coin}.png
+Used by:   N3-7 combat HUD (scripts/ui/combat_hud.gd)
+Fallback:  code-drawn palette-token glyphs (PauseGlyph/InfoGlyph/SkullIcon/CoinIcon)
+```
+
 ## Anticipated (not yet needed — do not pre-produce)
 
 These become `[MISSING]` entries only when the feature that needs them is actually
