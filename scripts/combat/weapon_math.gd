@@ -19,6 +19,17 @@ static func targets_in_radius(
 	return hits
 
 
+## Explosion damage with edge falloff (N4-3, 화부): full damage at the impact
+## point, linearly down to `damage * edge_falloff` at the blast edge.
+## edge_falloff 1.0 keeps the flat pre-N4-3 splash.
+static func explosion_damage(
+	damage: float, distance: float, radius: float, edge_falloff: float
+) -> float:
+	if radius <= 0.0:
+		return damage
+	return damage * lerpf(1.0, edge_falloff, clampf(distance / radius, 0.0, 1.0))
+
+
 ## Next chain target: nearest candidate to `from` within `max_range` whose
 ## index is not excluded (already struck this chain). -1 ends the chain.
 static func chain_next_index(

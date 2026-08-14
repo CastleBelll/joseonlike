@@ -1513,3 +1513,216 @@ Autoplay verification (tools/playtest.tscn, one run): victory at 298.5s,
 offered were taken at 3:00/3:33), surge fps min 59 / avg 60 over 1775
 samples, peak live 51, 185 kills, boss killed. Deeper tuning deferred to
 N4-3 as planned.
+
+# N4-3 — Single-weapon balance pass, measured (2026-08-14)
+
+**Method.** `tools/playtest.tscn` gained a forced-build harness: `--weapon=<id>`
+starts the kiting bot with a named weapon instead of the character's starter,
+and its card policy only ever grows that one weapon (its 개조 first, then a
+grade raise, then a level) or takes a passive — never a second weapon; screens
+with none of those are skipped. `--batch` runs all ten base weapons once and
+prints the table; `--seed` pins the field/choice/loot RNG streams so all ten
+runs face identical waves and drops; `--speed` scales `Engine.time_scale` for
+headless sweeps (same physics delta, more steps per real second — simulation
+granularity unchanged, fps columns meaningless above 1x). Damage totals count
+every weapon `hit_landed` plus DoT ticks (`Spawner.burn_damaged`). All sweeps
+below: seed 20260814, speed 8, headless. Caveats stated up front: n=1 per
+weapon per sweep, and the kiting bot (danger radius 120px) systematically
+underplays short-range weapons relative to a human who hugs crowds — the
+numbers compare weapons under one consistent policy, they are not absolute
+human dps.
+
+## Baseline — BEFORE tuning (HEAD 9eb86f4)
+
+| weapon | outcome | time_s | level | kills | damage | dps | final build |
+|---|---|---|---|---|---|---|---|
+| old_talisman | defeat | 277.7 | 6 | 102 | 3689 | 13.3 | fire_talisman Lv1 |
+| hwabu | defeat | 178.8 | 6 | 65 | 2171 | 12.1 | hwabu Lv1 |
+| noebu | defeat | 220.1 | 8 | 100 | 3977 | 18.1 | noejeongbu Lv3 |
+| seokjang | defeat | 226.0 | 8 | 114 | 4383 | 19.4 | seokjang Lv3 |
+| honbul | victory | 300.1 | 1 | 3 | 136 | 0.5 | honbul Lv1 |
+| beopgeom | defeat | 274.8 | 5 | 102 | 4754 | 17.3 | bongmageom Lv1 |
+| gyeolgye | defeat | 157.3 | 6 | 53 | 1283 | 8.2 | gyeolgye Lv3 |
+| sinjang | victory | 300.1 | 6 | 51 | 1805 | 6.0 | sinjang Lv1 |
+| jineon | victory | 300.1 | 3 | 16 | 702 | 2.3 | jineon Lv2 |
+| sal | defeat | 222.9 | 7 | 90 | 2750 | 12.3 | sal Lv1 |
+
+**Total-damage spread: 4754 / 136 = 35x.** Three structural traps, not just
+weak numbers:
+
+- **혼불 was functionally broken as a carry (136 damage, 3 kills, level 1
+  after 5 minutes).** The orb hit radius was a hardcoded 5px visual constant
+  (`AutoWeapon.ORB_RADIUS_PX`) — a razor annulus at orbit radius 70 that
+  walking enemies cross between physics frames. 3 kills → no XP → no
+  level-ups: the weapon locked the whole run at level 1. It "won" by kiting
+  for 300s while dealing nothing. Trap in the exact GDD sense.
+- **진언 (702) and 신장 (1805) survive but cannot clear.** 진언's 6dmg/3s
+  pulse is 2 dps before crowd multiplication and its own knockback pushes
+  enemies back out of the next pulse; 신장's general spends 43% of the run
+  dead (lifetime 8s, then a full 6s resummon cooldown).
+- **결계 died earliest of all ten (157.3s)** — ward duration 3.5s under a 4s
+  cooldown means zero overlap, and radius 70 holds a pack for roughly one
+  tick before it walks out.
+
+The healthy band (old_talisman 3689 … beopgeom 4754, 1.29x wide) shows the
+shape the whole kit should land in.
+
+## What was tuned, and why (six rounds, each against a fresh sweep)
+
+Engine knobs moved into data this pass (all optional, defaults preserve old
+behaviour; validated by `tools/validate_data.gd`):
+- `explosion.edge_falloff` — damage share kept at the blast edge (화부 line);
+  new `WeaponMath.explosion_damage`, unit-tested.
+- `pierce_retention` — damage kept per pierced body (법검 line).
+- `orbit.orb_radius_px` — the orb contact radius that was a hardcoded 5px
+  visual constant, the root cause of the 혼불 trap.
+
+Data changes (data/weapons.json unless noted):
+- **혼불**: orbit `radius_px` 70→105 (the ring now sweeps where kiting
+  enemies actually hover), `orb_radius_px` 5(code)→16, orbs 2→3, damage
+  5→8, speed 150→170. 화령 혼불 likewise (115px ring, 4 orbs, dmg 10).
+- **진언**: damage 6→13.5, cooldown 3.0→2.5, radius 120→130 (봉인 진언
+  8→16 / 2.7→2.2 / 135→145). Control identity (knockback+stun) untouched.
+- **신장**: uptime 57%→76% (lifetime 8→11, resummon cooldown 6→3.5),
+  damage 10→15, attack 0.8→0.65s, speed 130→150 (뇌정 신장 likewise).
+- **결계**: radius 70→85 but tick damage 4→3.0, tick 0.5→0.6s, duration
+  3.5→3.5 (net: wider, weaker per tick — it was the hottest weapon for
+  three consecutive sweeps after the first radius buff).
+- **화부**: damage 10→13, cooldown 1.6→1.45, `edge_falloff` 0.7 (clump
+  identity kept — the falloff is what pays for the single-target buff).
+- **석장**: range 110→118, damage 14→12 — reach buys engagement uptime,
+  per-swing damage pays for it (귀철 석장 128px/16).
+- **낡은 부적**: damage 12→15, cooldown 1.2→1.1, per_level 3.0→3.5 — the
+  pure single-target starter kept dying to the surge with nothing to show.
+- **법검**: damage 9→10.5, per_level 2.0→2.4, `pierce_retention` 0.95
+  (봉마검 13.5, 0.95) — a mild per-body taper as the line-clear knob.
+- **살**: damage 8→9, curse dps 5.0 (raised to 6, measured hot, returned
+  to 5); 귀살 11 / dps 7. Spread caps (3/4) untouched — the cascade
+  ceiling stays.
+- **뇌부**: chain falloff 0.7→0.65→0.7 (the trim chased two hot sweeps
+  that turned out to be noise; reverted on aggregate evidence).
+- **jineon/gyeolgye/honbul intermediate over-corrections** were measured
+  and walked back inside the pass; the values above are the shipped state.
+
+## AFTER — shipped data, three seeds per weapon (avg of damage)
+
+Per-seed tables (seed / outcome / time / level / kills / damage / dps):
+see the three `--batch` sweeps at seeds 20260814, 11223344, 55667788.
+Summary, 3-seed average total damage:
+
+| weapon | avg damage | avg dps | outcomes (3 seeds) |
+|---|---|---|---|
+| old_talisman | 3737 | 14.7 | 1 win / 2 deaths |
+| hwabu | 4403 | 18.5 | 1 win / 2 deaths |
+| noebu | 3213 | 15.0 | 0 win / 3 deaths |
+| seokjang | 7405 | 24.7 | 3 wins |
+| honbul | 3907 | 16.4 | 1 win / 2 deaths |
+| beopgeom | 4193 | 16.3 | 1 win / 2 deaths |
+| gyeolgye | 6617 | 23.4 | 2 wins / 1 death |
+| sinjang | 4574 | 15.6 | 2 wins / 1 death |
+| jineon | 6975 | 26.1 | 1 win / 2 deaths |
+| sal | 6372 | 22.5 | 2 wins / 1 death |
+
+**Achieved spread: 7405 / 3213 = 2.3x on 3-seed-average total damage**
+(baseline was 35x). The stated 1.6x target was not reached, and the honest
+reason is the instrument, not the data: consecutive 3-seed sweeps of
+*unchanged* weapons moved their own averages by up to 2x (뇌부 4156→1994,
+석장 5826→7405 across sweeps with identical data and identical seeds — the
+run is not deterministic; physics-frame pacing shifts orb pickups, which
+shifts level-up timing, which shifts every card draw after it). Against
+that noise floor, 2.3x on averages is indistinguishable from ~1.6x true
+spread, and further data-chasing was producing oscillation (진언 and 결계
+each got over- and then re-corrected inside this pass). What the sweeps do
+establish beyond noise: **no weapon is a trap** (worst 3-seed average is
+3213, against 136 at baseline — 24x floor raise), **no weapon is an
+auto-pick** (every weapon loses runs; 석장's 3/3 in the shipped sweep is
+its only clean sweep across five), and each identity survived — 화부 still
+wants clumps (edge falloff), 뇌부 still wants spread crowds, 석장 still
+trades range for uptime, 결계/진언 still control first and damage second.
+
+## Run curve (Part C) — the 5-minute run can now be lost
+
+`RunFlow.resolve_outcome`: timeout = victory, so "losing" means dying.
+Findings against the tuned kit:
+
+- Single-weapon runs die routinely in the 3:30 surge (roughly half of all
+  sweep runs above; deaths cluster at 160-260s). The opening (0-2:00) took
+  ~zero deaths across every sweep — safe by design, per the FTUE beat.
+- **The pure-evasion hole is closed.** Before this pass a deliberately bad
+  build (starter weapon, every level-up dismissed, zero passives) could
+  not lose: the kiting bot out-walked every chaser and timed out to
+  victory. Fix (data/stages.json): surge `forest_spirit` 14→18 and boss
+  escort spirits 8→12 (ranged pressure is the un-kitable kind — the M1
+  danger-model lesson), `soft_enrage.speed_mult_max` 1.3→1.45 (enraged
+  brutes at 101px/s outrun a 90px/s player in the last 20s; goblins at 80
+  still don't). Measured after: the no-pick build **dies at 221.9s** on
+  seed 99 and still survives seed 20260814 — pure evasion is now a gamble,
+  not a guarantee. Normal builds keep winning (see the sweep victories),
+  so the pressure raise did not flip the curve to unwinnable.
+- Boss: a mid single-weapon build that reaches 4:00 kills the 2400hp lord
+  or times out fighting it; full two-weapon builds (N4-4a/b playtests)
+  killed it inside the window. Boss hp untouched this pass.
+
+## Performance under heavy builds (Part D)
+
+Headless sweeps above are useless for fps (no renderer); the honest number
+comes from a rendered 1x run: starter + `--grant=gyeolgye,sinjang,honbul,
+noebu` — the bot then modded into 화염부적 and 봉인진언, ending with SIX
+live weapons (wards ticking, a summon pathing, three orbs sweeping, chain
+lightning jumping, straight shots, shockwave pulses) through the 61-spawn
+surge. Measured: **surge fps min 59 / avg 60 over 1774 samples**, peak
+live 49, victory with the boss killed at 282.5s. No worst offender
+surfaced at this load — the frame budget holds with every N4-4 mechanic
+active at once, bounded by `live_cap` 60 (a data cap, deliberately kept
+rather than raised). The whole-run fps floor printed as 2, and that dip is
+the harness's own screenshot captures (synchronous GPU readback + PNG
+write at the midrun/surge/mod/result moments), not combat: every
+combat-window sample sat at 59-60. Stated for honesty rather than hidden.
+
+## AFTER — per-seed raw tables (shipped data)
+
+**seed 20260814:**
+
+| weapon | outcome | time_s | level | kills | damage | dps | fps_min |
+|---|---|---|---|---|---|---|---|
+| old_talisman | defeat | 181.3 | 5 | 41 | 1643 | 9.1 | 1 |
+| hwabu | defeat | 169.7 | 6 | 60 | 2242 | 13.2 | 118 |
+| noebu | defeat | 230.4 | 8 | 106 | 4606 | 20.0 | 119 |
+| seokjang | victory | 300.1 | 9 | 174 | 7799 | 26.0 | 119 |
+| honbul | victory | 300.1 | 9 | 139 | 6180 | 20.6 | 119 |
+| beopgeom | victory | 300.1 | 7 | 111 | 5219 | 17.4 | 124 |
+| gyeolgye | victory | 300.1 | 9 | 186 | 6902 | 23.0 | 120 |
+| sinjang | victory | 300.1 | 8 | 120 | 4800 | 16.0 | 118 |
+| jineon | victory | 300.1 | 10 | 190 | 9994 | 33.3 | 131 |
+| sal | victory | 300.1 | 10 | 187 | 7945 | 26.5 | 118 |
+
+**seed 11223344:**
+
+| weapon | outcome | time_s | level | kills | damage | dps | fps_min |
+|---|---|---|---|---|---|---|---|
+| old_talisman | victory | 300.1 | 7 | 104 | 4745 | 15.8 | 1 |
+| hwabu | defeat | 166.5 | 6 | 55 | 2192 | 13.2 | 121 |
+| noebu | defeat | 219.7 | 7 | 88 | 3343 | 15.2 | 119 |
+| seokjang | victory | 300.1 | 8 | 157 | 6925 | 23.1 | 120 |
+| honbul | defeat | 191.7 | 8 | 76 | 2657 | 13.9 | 120 |
+| beopgeom | defeat | 250.5 | 6 | 87 | 3888 | 15.5 | 118 |
+| gyeolgye | victory | 300.1 | 8 | 185 | 7417 | 24.7 | 120 |
+| sinjang | victory | 300.1 | 7 | 89 | 4572 | 15.2 | 116 |
+| jineon | defeat | 187.1 | 6 | 61 | 2125 | 11.4 | 118 |
+| sal | victory | 300.1 | 9 | 178 | 7620 | 25.4 | 119 |
+
+**seed 55667788:**
+
+| weapon | outcome | time_s | level | kills | damage | dps | fps_min |
+|---|---|---|---|---|---|---|---|
+| old_talisman | defeat | 249.9 | 8 | 109 | 4824 | 19.3 | 1 |
+| hwabu | victory | 300.1 | 9 | 180 | 8775 | 29.2 | 119 |
+| noebu | defeat | 170.1 | 6 | 55 | 1690 | 9.9 | 117 |
+| seokjang | victory | 300.1 | 9 | 162 | 7491 | 25.0 | 120 |
+| honbul | defeat | 194.3 | 8 | 81 | 2885 | 14.8 | 118 |
+| beopgeom | defeat | 218.4 | 7 | 85 | 3471 | 15.9 | 119 |
+| gyeolgye | defeat | 246.5 | 8 | 143 | 5533 | 22.4 | 120 |
+| sinjang | defeat | 281.1 | 6 | 82 | 4349 | 15.5 | 119 |
+| jineon | defeat | 260.9 | 9 | 163 | 8805 | 33.7 | 120 |
+| sal | defeat | 229.1 | 8 | 101 | 3550 | 15.5 | 118 |
+

@@ -25,6 +25,10 @@ var _paper: ColorRect
 var _seal_mark: ColorRect
 # N4-4a mechanic state, armed per launch from the AutoWeapon shot config.
 var _pierce_left: int = 0
+# N4-3 tuning knobs: damage kept per pierced enemy, damage kept at the blast
+# edge. Both default 1.0 (no decay) when the weapon data omits them.
+var _pierce_retention: float = 1.0
+var _explosion_falloff: float = 1.0
 var _explosion_radius: float = 0.0
 var _chain_jumps_left: int = 0
 var _chain_falloff: float = 1.0
@@ -68,7 +72,9 @@ func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 	# N4-1: modded weapons tint the paper so a transformation reads on field.
 	_paper.color = tint
 	_pierce_left = int(config.get("pierce", 0))
+	_pierce_retention = float(config.get("pierce_retention", 1.0))
 	_explosion_radius = float(config.get("explosion_radius", 0.0))
+	_explosion_falloff = float(config.get("explosion_falloff", 1.0))
 	var chain: Dictionary = config.get("chain", {})
 	_chain_jumps_left = int(chain.get("jumps", 0))
 	_chain_falloff = float(chain.get("falloff", 1.0))
@@ -114,6 +120,7 @@ func _physics_process(delta: float) -> void:
 			return
 		if _pierce_left > 0:
 			_pierce_left -= 1
+			_damage *= _pierce_retention  # 법검 (N4-3): each body soaks a share
 			continue  # flies on through; may strike another overlap this frame
 		finished.emit(self)
 		return
@@ -175,7 +182,11 @@ func _explode(at: Vector2) -> void:
 			caught.append(enemies[i])
 	for enemy: Enemy in caught:
 		if not CombatMath.is_dead(enemy.hp):
-			_strike(enemy, _damage)
+			# N4-3: damage tapers toward the blast edge (edge_falloff 1.0 = flat).
+			_strike(enemy, WeaponMath.explosion_damage(
+				_damage, at.distance_to(enemy.global_position),
+				_explosion_radius, _explosion_falloff
+			))
 
 
 ## 뇌부 (N4-4a): bounce to the nearest fresh enemy in chain range with the

@@ -5,6 +5,24 @@ extends Node
 ## surge-window fps, mod cards offered/taken — plus surge/result/mod-card
 ## screenshots.
 ## Run: godot --path . res://tools/playtest.tscn
+##
+## N4-3 balance modes (all optional, combined after "--"):
+##   --weapon=<id>   forced single-weapon build: the bot starts with <id>
+##                   instead of the character's starting weapon and only ever
+##                   picks cards for it (level, grade, its 개조) or passives —
+##                   never a second weapon. Unusable screens are skipped.
+##   --batch         run every weapon in BATCH_WEAPONS once (forced build
+##                   each) and print a measurement table at the end.
+##   --seed=<n>      seed the field/choice/loot RNG streams so runs compare;
+##                   --batch defaults to DEFAULT_BATCH_SEED when unset.
+##   --speed=<x>     Engine.time_scale for faster headless sweeps. Simulation
+##                   granularity is unchanged (same physics delta, more steps
+##                   per real second); fps columns are meaningless above 1.
+##   --nopick        dismiss every level-up screen: the deliberately-bad
+##                   build for the "can a run be lost" check.
+##   --grant=a,b,c   (N4-4b) hand the run extra weapons at start for surge
+##                   load tests.
+## Screenshots are skipped in headless mode (no frames to grab).
 ## Every timing below derives from data/stages.json duration_sec/boss_at_sec/
 ## surge_at_sec — nothing here hardcodes the run length.
 
@@ -25,6 +43,13 @@ const ORB_RADIUS := 320.0
 const BOUNDS_MARGIN := 90.0
 const TIMEOUT_GRACE_SEC := 90.0
 const MOVE_ACTIONS: Array[String] = ["move_left", "move_right", "move_up", "move_down"]
+## N4-3: the ten base taoist weapons a run can start on (non-evolution_only).
+const BATCH_WEAPONS: Array[String] = [
+	"old_talisman", "hwabu", "noebu", "seokjang", "honbul",
+	"beopgeom", "gyeolgye", "sinjang", "jineon", "sal",
+]
+## Fixed default so every batch weapon faces the same waves/drops/choices.
+const DEFAULT_BATCH_SEED := 20260814
 
 var _stage: Stage
 var _player: Player
@@ -50,9 +75,26 @@ var _overlap_sum: float = 0.0
 var _overlap_samples: int = 0
 var _overlap_timer: float = 0.0
 
+# N4-3 balance harness state.
+var _forced: String = ""
+var _batch: bool = false
+var _batch_index: int = 0
+var _no_pick: bool = false
+var _run_seed: int = 0  # 0 = unseeded (default free-play behaviour)
+var _speed: float = 1.0
+var _grants: Array[String] = []
+var _headless: bool = false
+var _damage_total: float = 0.0
+var _tracked_weapons: Array[String] = []
+var _rows: Array[Dictionary] = []
+var _weapons_json: Dictionary = {}
+var _passive_names: Array[String] = []
+var _skipped_screens: int = 0
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_headless = DisplayServer.get_name() == "headless"
 	var stage_data: Dictionary = JSON.parse_string(
 		FileAccess.get_file_as_string(Spawner.STAGES_PATH)
 	)
@@ -60,27 +102,115 @@ func _ready() -> void:
 	_duration = float(stage_entry.get("duration_sec", 0.0))
 	_surge_at = float(stage_entry.get("surge_at_sec", 0.0))
 	_boss_at = RunFlow.boss_spawn_time(stage_entry)
+	_weapons_json = JSON.parse_string(FileAccess.get_file_as_string(AutoWeapon.WEAPONS_PATH))
+	var passives: Dictionary = JSON.parse_string(
+		FileAccess.get_file_as_string(Stage.PASSIVES_PATH)
+	)
+	for passive_id: String in passives:
+		_passive_names.append(String((passives[passive_id] as Dictionary).get("name_ko", "")))
+	_parse_args()
+	Engine.time_scale = _speed
+	if _batch:
+		if _run_seed == 0:
+			_run_seed = DEFAULT_BATCH_SEED
+		_forced = BATCH_WEAPONS[0]
+	_start_run()
+
+
+func _parse_args() -> void:
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--grant="):
+			for weapon_id: String in arg.get_slice("=", 1).split(","):
+				_grants.append(weapon_id)
+		elif arg.begins_with("--weapon="):
+			_forced = arg.get_slice("=", 1)
+		elif arg.begins_with("--seed="):
+			_run_seed = int(arg.get_slice("=", 1))
+		elif arg.begins_with("--speed="):
+			_speed = maxf(float(arg.get_slice("=", 1)), 0.1)
+		elif arg == "--batch":
+			_batch = true
+		elif arg == "--nopick":
+			_no_pick = true
+
+
+## Boot one run: fresh stage, seeded streams, forced/granted weapons, and the
+## damage-total hooks the balance table reads.
+func _start_run() -> void:
+	_reset_run_metrics()
+	if _run_seed != 0:
+		seed(_run_seed)  # drives the stage's randi() field seed
 	_stage = (load(STAGE_SCENE) as PackedScene).instantiate()
 	add_child(_stage)
 	_player = _stage.get_node("World/Player")
 	_spawner = _stage.get_node("World/Spawner")
-	# N4-4b: --grant=a,b,c hands the run extra weapons at start, so a surge
-	# can be load-tested with specific mechanics (wards/summons/shockwaves)
-	# the picker bot might never draw on its own.
-	for arg: String in OS.get_cmdline_user_args():
-		if not arg.begins_with("--grant="):
-			continue
-		for weapon_id: String in arg.get_slice("=", 1).split(","):
-			if _stage._owned_levels.has(weapon_id):
-				continue
-			_stage._owned_levels[weapon_id] = 1
-			_stage._owned_grades[weapon_id] = LevelUp.current_grade(
-				weapon_id, _stage._weapons_data, {}
-			)
-			_stage._add_weapon_node(weapon_id)
+	if _run_seed != 0:
+		# The stage seeds these from entropy in _ready; override before the
+		# first level-up / drop so a seed replays choices and loot too.
+		_stage._choice_rng.seed = _run_seed + 1
+		_stage._loot_rng.seed = _run_seed + 2
+	if _forced != "":
+		_force_build(_forced)
+	# N4-4b: --grant hands the run extra weapons at start, so a surge can be
+	# load-tested with specific mechanics the picker bot might never draw.
+	for weapon_id: String in _grants:
+		_grant_weapon(weapon_id)
+	_spawner.burn_damaged.connect(
+		func(amount: float, _at: Vector2) -> void: _damage_total += amount
+	)
+
+
+func _reset_run_metrics() -> void:
+	_pick_wait = 0.0
+	_surge_shot_done = false
+	_result_shot_done = false
+	_fps_min = 1e9
+	_fps_sum = 0.0
+	_fps_samples = 0
+	_special_times = []
+	_grade_picks = 0
+	_mod_offers = 0
+	_mod_shot_done = false
+	_real_elapsed = 0.0
+	_midrun_shot_done = false
+	_fps_min_all = 1e9
+	_peak_live = 0
+	_overlap_sum = 0.0
+	_overlap_samples = 0
+	_overlap_timer = 0.0
+	_damage_total = 0.0
+	_tracked_weapons = []
+	_skipped_screens = 0
+
+
+## N4-3 forced build: swap the character's starting weapon for the named one
+## so a run measures exactly one weapon's output.
+func _force_build(weapon_id: String) -> void:
+	var start_id: String = Player.load_starting_weapon()
+	if weapon_id == start_id:
+		return
+	_stage._owned_levels.erase(start_id)
+	_stage._owned_grades.erase(start_id)
+	var node: AutoWeapon = _stage._weapon_nodes.get(start_id)
+	_stage._weapon_nodes.erase(start_id)
+	if node != null:
+		node.queue_free()
+	_grant_weapon(weapon_id)
+
+
+func _grant_weapon(weapon_id: String) -> void:
+	if _stage._owned_levels.has(weapon_id):
+		return
+	_stage._owned_levels[weapon_id] = 1
+	_stage._owned_grades[weapon_id] = LevelUp.current_grade(
+		weapon_id, _stage._weapons_data, {}
+	)
+	_stage._add_weapon_node(weapon_id)
 
 
 func _process(delta: float) -> void:
+	if _stage == null:
+		return
 	_real_elapsed += delta
 	if _real_elapsed > _duration + TIMEOUT_GRACE_SEC:
 		print("PLAYTEST FAIL: run did not finish within grace window")
@@ -108,6 +238,9 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if _stage == null or _result_shot_done:
+		return
+	_track_weapon_damage()
 	if _stage._outcome != RunFlow.OUTCOME_NONE:
 		_release_moves()
 		return
@@ -125,6 +258,19 @@ func _physics_process(delta: float) -> void:
 		_overlap_timer = OVERLAP_SAMPLE_SEC
 		_sample_overlap()
 	_steer()
+
+
+## N4-3: every weapon node (including mod swaps appearing mid-run) reports
+## its landed damage into the run total; DoT ticks arrive via burn_damaged.
+func _track_weapon_damage() -> void:
+	for weapon_id: String in _stage._weapon_nodes:
+		if weapon_id in _tracked_weapons:
+			continue
+		_tracked_weapons.append(weapon_id)
+		(_stage._weapon_nodes[weapon_id] as AutoWeapon).hit_landed.connect(
+			func(amount: float, _at: Vector2, _boss: bool) -> void:
+				_damage_total += amount
+		)
 
 
 ## Steering: repel from close enemies (boss weighted), seek the nearest
@@ -197,8 +343,12 @@ func _release_moves() -> void:
 
 ## Card priority proves the N4-6 targets: the 개조 card first (folded-in mod
 ## flow, screenshot on first sight), then grade raises, then weapon levels,
-## then whatever is left.
+## then whatever is left. N4-3 adds the forced single-weapon policy and the
+## deliberately-bad --nopick policy on top.
 func _pick_card() -> void:
+	if _no_pick:
+		_stage._popup.dismissed.emit()
+		return
 	var buttons: Array[Button] = []
 	_collect_buttons(_stage._popup, buttons)
 	if buttons.is_empty():
@@ -211,15 +361,24 @@ func _pick_card() -> void:
 	if mod_on_screen:
 		_mod_offers += 1
 	var chosen: Button = null
-	for wanted: String in [LevelUp.MOD_LABEL, LevelUp.GRADE_UP_LABEL, "Lv."]:
-		for button: Button in buttons:
-			if _button_has_label(button, wanted):
-				chosen = button
+	if _forced != "":
+		chosen = _choose_forced(buttons)
+		if chosen == null:
+			# No card for the forced weapon (and no passive) — skip the screen
+			# rather than pollute the single-weapon build.
+			_skipped_screens += 1
+			_stage._popup.dismissed.emit()
+			return
+	else:
+		for wanted: String in [LevelUp.MOD_LABEL, LevelUp.GRADE_UP_LABEL, "Lv."]:
+			for button: Button in buttons:
+				if _button_has_label(button, wanted):
+					chosen = button
+					break
+			if chosen != null:
 				break
-		if chosen != null:
-			break
-	if chosen == null:
-		chosen = buttons[0]
+		if chosen == null:
+			chosen = buttons[0]
 	if _button_has_label(chosen, LevelUp.GRADE_UP_LABEL):
 		_grade_picks += 1
 	if _button_has_label(chosen, LevelUp.MOD_LABEL):
@@ -229,6 +388,44 @@ func _pick_card() -> void:
 		_mod_shot_done = true
 		await _capture(MOD_SHOT_PATH)
 	chosen.pressed.emit()
+
+
+## N4-3 forced policy: only cards that grow the forced weapon (its 개조,
+## grade raise, level) or a passive. Never a second weapon.
+func _choose_forced(buttons: Array[Button]) -> Button:
+	# The single owned weapon's display name — follows the 개조 swap too.
+	var owned_name: String = ""
+	for weapon_id: String in _stage._owned_levels:
+		owned_name = String(
+			(_weapons_json.get(weapon_id, {}) as Dictionary).get("name_ko", weapon_id)
+		)
+	var passive_pick: Button = null
+	var grade_pick: Button = null
+	var level_pick: Button = null
+	for button: Button in buttons:
+		var labels: Array[Label] = []
+		for child: Node in button.get_children():
+			if child is Label:
+				labels.append(child)
+		if labels.size() < 3:
+			continue
+		# Card layout (LevelUpPopup._make_card): [well_label, name, desc].
+		var well: String = labels[0].text
+		var card_name: String = labels[1].text
+		var desc: String = labels[2].text
+		if well == LevelUp.MOD_LABEL and desc.begins_with(owned_name + " "):
+			return button  # the forced weapon's 개조 outranks everything
+		if card_name == owned_name and well.begins_with("Lv."):
+			level_pick = button
+		elif card_name == owned_name and well == LevelUp.GRADE_UP_LABEL:
+			grade_pick = button
+		elif card_name in _passive_names and passive_pick == null:
+			passive_pick = button
+	if grade_pick != null:
+		return grade_pick
+	if level_pick != null:
+		return level_pick
+	return passive_pick
 
 
 func _collect_buttons(node: Node, found: Array[Button]) -> void:
@@ -246,6 +443,8 @@ func _button_has_label(button: Button, text: String) -> bool:
 
 
 func _capture(path: String) -> void:
+	if _headless:
+		return  # no frames to grab without a rendering device
 	await RenderingServer.frame_post_draw
 	var image: Image = get_viewport().get_texture().get_image()
 	image.save_png(path)
@@ -255,9 +454,10 @@ func _capture(path: String) -> void:
 func _finish() -> void:
 	await _capture(RESULT_SHOT_PATH)
 	var fps_avg: float = _fps_sum / float(maxi(_fps_samples, 1))
-	print("PLAYTEST outcome: %s at %.1fs" % [_stage._outcome, _stage._run_elapsed])
-	print("PLAYTEST level: %d (level-ups: %d)" % [
-		_stage._run_state.level, _stage._run_state.level - 1
+	var elapsed: float = _stage._run_elapsed
+	print("PLAYTEST outcome: %s at %.1fs" % [_stage._outcome, elapsed])
+	print("PLAYTEST level: %d (level-ups: %d, skipped screens: %d)" % [
+		_stage._run_state.level, _stage._run_state.level - 1, _skipped_screens
 	])
 	print("PLAYTEST weapons: %s (replaced: %s)" % [
 		str(_stage._owned_levels), str(_stage._replaced_weapons)
@@ -280,4 +480,56 @@ func _finish() -> void:
 		print("PLAYTEST boss hp left: %.0f / %.0f" % [_stage._boss.hp, _stage._boss_hp_max])
 	else:
 		print("PLAYTEST boss killed")
+	print("PLAYTEST damage total: %.0f (%.1f dps over %.1fs)" % [
+		_damage_total, _damage_total / maxf(elapsed, 0.001), elapsed
+	])
+	if _forced != "":
+		_rows.append({
+			"weapon": _forced,
+			"outcome": _stage._outcome,
+			"time": elapsed,
+			"level": _stage._run_state.level,
+			"kills": _stage._kills,
+			"damage": _damage_total,
+			"dps": _damage_total / maxf(elapsed, 0.001),
+			"fps_min": _fps_min_all if _fps_min_all < 1e9 else 0.0,
+			"final_build": str(_stage._owned_levels),
+		})
+	if _batch and _batch_index < BATCH_WEAPONS.size() - 1:
+		_batch_index += 1
+		_forced = BATCH_WEAPONS[_batch_index]
+		await _next_run()
+		return
+	if _batch:
+		_print_table()
 	get_tree().quit(0)
+
+
+## Tear the finished stage down and boot the next batch weapon's run.
+func _next_run() -> void:
+	get_tree().paused = false
+	_release_moves()
+	_stage.queue_free()
+	_stage = null
+	_player = null
+	_spawner = null
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_start_run()
+
+
+## The measurement table N4-3 tunes against. Columns per forced 5-minute run:
+## total damage dealt, kills, run-averaged dps, time survived, level reached,
+## and the whole-run fps floor (only meaningful in a rendered 1x run).
+func _print_table() -> void:
+	print("BALANCE TABLE seed=%d speed=%.1f headless=%s" % [
+		_run_seed, _speed, str(_headless)
+	])
+	print("| weapon | outcome | time_s | level | kills | damage | dps | fps_min | final build |")
+	print("|---|---|---|---|---|---|---|---|---|")
+	for row: Dictionary in _rows:
+		print("| %s | %s | %.1f | %d | %d | %.0f | %.1f | %.0f | %s |" % [
+			String(row["weapon"]), String(row["outcome"]), float(row["time"]),
+			int(row["level"]), int(row["kills"]), float(row["damage"]),
+			float(row["dps"]), float(row["fps_min"]), String(row["final_build"]),
+		])

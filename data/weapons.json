@@ -3,7 +3,13 @@
     "view_margin_px": 48.0
   },
   "_grades": {
-    "ladder": ["common", "uncommon", "rare", "epic", "mythic"],
+    "ladder": [
+      "common",
+      "uncommon",
+      "rare",
+      "epic",
+      "mythic"
+    ],
     "steps": {
       "uncommon": {
         "mult": {
@@ -38,8 +44,8 @@
     "category": "spiritual",
     "grade": "common",
     "mechanic": "straight",
-    "damage": 12.0,
-    "cooldown_sec": 1.2,
+    "damage": 15.0,
+    "cooldown_sec": 1.1,
     "projectile_count": 1,
     "pierce": 0,
     "area_scale": 1.2,
@@ -47,7 +53,7 @@
     "range_px": 420.0,
     "max_level": 8,
     "per_level": {
-      "damage": 3.0,
+      "damage": 3.5,
       "cooldown_sec": -0.05
     },
     "evolves_to": "fire_talisman",
@@ -111,7 +117,7 @@
     "category": "spiritual",
     "grade": "common",
     "mechanic": "pierce",
-    "damage": 9.0,
+    "damage": 10.5,
     "cooldown_sec": 1.1,
     "projectile_count": 1,
     "pierce": 99,
@@ -120,11 +126,12 @@
     "range_px": 460.0,
     "max_level": 8,
     "per_level": {
-      "damage": 2.0,
+      "damage": 2.4,
       "cooldown_sec": -0.04
     },
     "evolution_only": false,
-    "sprite": "res://asset/weapon/icons/beopgeom.png"
+    "sprite": "res://asset/weapon/icons/beopgeom.png",
+    "pierce_retention": 0.95
   },
   "bongmageom": {
     "name_ko": "봉마검",
@@ -132,7 +139,7 @@
     "category": "spiritual",
     "grade": "epic",
     "mechanic": "pierce",
-    "damage": 12.0,
+    "damage": 13.5,
     "cooldown_sec": 1.0,
     "projectile_count": 1,
     "pierce": 99,
@@ -148,7 +155,8 @@
     "on_hit_seal": {
       "burst_at": 4,
       "burst_damage_scale": 3.0
-    }
+    },
+    "pierce_retention": 0.95
   },
   "hwabu": {
     "name_ko": "화부",
@@ -156,19 +164,20 @@
     "category": "spiritual",
     "grade": "common",
     "mechanic": "explosion",
-    "damage": 10.0,
-    "cooldown_sec": 1.6,
+    "damage": 13.0,
+    "cooldown_sec": 1.45,
     "projectile_count": 1,
     "pierce": 0,
     "area_scale": 1.0,
     "speed": 240.0,
     "range_px": 420.0,
     "explosion": {
-      "radius_px": 90.0
+      "radius_px": 90.0,
+      "edge_falloff": 0.7
     },
     "max_level": 8,
     "per_level": {
-      "damage": 2.5,
+      "damage": 3.0,
       "cooldown_sec": -0.06
     },
     "evolution_only": false
@@ -179,19 +188,20 @@
     "category": "spiritual",
     "grade": "epic",
     "mechanic": "explosion",
-    "damage": 14.0,
-    "cooldown_sec": 1.5,
+    "damage": 17.0,
+    "cooldown_sec": 1.35,
     "projectile_count": 1,
     "pierce": 0,
     "area_scale": 1.0,
     "speed": 240.0,
     "range_px": 420.0,
     "explosion": {
-      "radius_px": 105.0
+      "radius_px": 105.0,
+      "edge_falloff": 0.7
     },
     "max_level": 8,
     "per_level": {
-      "damage": 3.0,
+      "damage": 3.5,
       "cooldown_sec": -0.05
     },
     "evolution_only": true,
@@ -242,7 +252,7 @@
     "range_px": 450.0,
     "chain": {
       "jumps": 5,
-      "falloff": 0.75,
+      "falloff": 0.7,
       "range_px": 170.0
     },
     "max_level": 8,
@@ -263,20 +273,20 @@
     "category": "spiritual",
     "grade": "common",
     "mechanic": "melee_arc",
-    "damage": 14.0,
+    "damage": 12.0,
     "cooldown_sec": 1.5,
     "projectile_count": 1,
     "pierce": 0,
     "area_scale": 1.0,
     "speed": 0.0,
-    "range_px": 110.0,
+    "range_px": 118.0,
     "arc": {
       "angle_deg": 160.0,
       "knockback_scale": 2.5
     },
     "max_level": 8,
     "per_level": {
-      "damage": 3.0,
+      "damage": 2.8,
       "cooldown_sec": -0.06
     },
     "evolution_only": false
@@ -287,13 +297,13 @@
     "category": "spiritual",
     "grade": "epic",
     "mechanic": "melee_arc",
-    "damage": 18.0,
+    "damage": 16.0,
     "cooldown_sec": 1.4,
     "projectile_count": 1,
     "pierce": 0,
     "area_scale": 1.0,
     "speed": 0.0,
-    "range_px": 115.0,
+    "range_px": 128.0,
     "arc": {
       "angle_deg": 170.0,
       "knockback_scale": 2.8
@@ -312,16 +322,17 @@
     "category": "spiritual",
     "grade": "common",
     "mechanic": "orbit",
-    "damage": 5.0,
+    "damage": 8.0,
     "cooldown_sec": 0.9,
-    "projectile_count": 2,
+    "projectile_count": 3,
     "pierce": 0,
     "area_scale": 1.0,
     "speed": 0.0,
     "range_px": 80.0,
     "orbit": {
-      "radius_px": 70.0,
-      "speed_deg_s": 150.0
+      "radius_px": 105.0,
+      "speed_deg_s": 170.0,
+      "orb_radius_px": 16.0
     },
     "max_level": 8,
     "per_level": {
@@ -341,16 +352,17 @@
     "category": "spiritual",
     "grade": "epic",
     "mechanic": "orbit",
-    "damage": 7.0,
+    "damage": 10.0,
     "cooldown_sec": 0.8,
-    "projectile_count": 3,
+    "projectile_count": 4,
     "pierce": 0,
     "area_scale": 1.0,
     "speed": 0.0,
     "range_px": 90.0,
     "orbit": {
-      "radius_px": 78.0,
-      "speed_deg_s": 170.0
+      "radius_px": 115.0,
+      "speed_deg_s": 190.0,
+      "orb_radius_px": 17.0
     },
     "max_level": 8,
     "per_level": {
@@ -370,7 +382,7 @@
     "category": "spiritual",
     "grade": "common",
     "mechanic": "ward",
-    "damage": 4.0,
+    "damage": 3.0,
     "cooldown_sec": 4.0,
     "projectile_count": 1,
     "pierce": 0,
@@ -378,15 +390,15 @@
     "speed": 0.0,
     "range_px": 260.0,
     "ward": {
-      "radius_px": 70.0,
+      "radius_px": 85.0,
       "duration_sec": 3.5,
-      "tick_sec": 0.5,
+      "tick_sec": 0.6,
       "slow_scale": 0.6
     },
     "max_level": 8,
     "per_level": {
-      "damage": 1.0,
-      "cooldown_sec": -0.15
+      "damage": 0.9,
+      "cooldown_sec": -0.1
     },
     "evolution_only": false
   },
@@ -396,7 +408,7 @@
     "category": "spiritual",
     "grade": "epic",
     "mechanic": "ward",
-    "damage": 5.0,
+    "damage": 4.0,
     "cooldown_sec": 3.6,
     "projectile_count": 1,
     "pierce": 0,
@@ -404,15 +416,15 @@
     "speed": 0.0,
     "range_px": 260.0,
     "ward": {
-      "radius_px": 85.0,
-      "duration_sec": 4.0,
-      "tick_sec": 0.5,
+      "radius_px": 95.0,
+      "duration_sec": 3.9,
+      "tick_sec": 0.6,
       "slow_scale": 0.55
     },
     "max_level": 8,
     "per_level": {
       "damage": 1.2,
-      "cooldown_sec": -0.12
+      "cooldown_sec": -0.08
     },
     "evolution_only": true,
     "on_hit_status": {
@@ -427,23 +439,23 @@
     "category": "spiritual",
     "grade": "common",
     "mechanic": "summon",
-    "damage": 10.0,
-    "cooldown_sec": 6.0,
+    "damage": 15.0,
+    "cooldown_sec": 3.5,
     "projectile_count": 1,
     "pierce": 0,
     "area_scale": 1.0,
     "speed": 0.0,
     "range_px": 460.0,
     "summon": {
-      "lifetime_sec": 8.0,
-      "speed": 130.0,
+      "lifetime_sec": 11.0,
+      "speed": 150.0,
       "leash_px": 320.0,
-      "attack_cooldown_sec": 0.8
+      "attack_cooldown_sec": 0.65
     },
     "max_level": 8,
     "per_level": {
       "damage": 2.0,
-      "cooldown_sec": -0.3
+      "cooldown_sec": -0.2
     },
     "evolution_only": false
   },
@@ -453,23 +465,23 @@
     "category": "spiritual",
     "grade": "epic",
     "mechanic": "summon",
-    "damage": 13.0,
-    "cooldown_sec": 5.0,
+    "damage": 18.0,
+    "cooldown_sec": 3.0,
     "projectile_count": 1,
     "pierce": 0,
     "area_scale": 1.0,
     "speed": 0.0,
     "range_px": 460.0,
     "summon": {
-      "lifetime_sec": 9.0,
-      "speed": 145.0,
+      "lifetime_sec": 12.0,
+      "speed": 160.0,
       "leash_px": 340.0,
-      "attack_cooldown_sec": 0.65
+      "attack_cooldown_sec": 0.55
     },
     "max_level": 8,
     "per_level": {
       "damage": 2.5,
-      "cooldown_sec": -0.25
+      "cooldown_sec": -0.15
     },
     "evolution_only": true,
     "on_hit_status": {
@@ -484,21 +496,21 @@
     "category": "spiritual",
     "grade": "common",
     "mechanic": "shockwave",
-    "damage": 6.0,
-    "cooldown_sec": 3.0,
+    "damage": 13.5,
+    "cooldown_sec": 2.5,
     "projectile_count": 1,
     "pierce": 0,
     "area_scale": 1.0,
     "speed": 0.0,
-    "range_px": 120.0,
+    "range_px": 130.0,
     "shockwave": {
-      "radius_px": 120.0,
+      "radius_px": 130.0,
       "stun_sec": 0.8,
       "knockback_scale": 2.0
     },
     "max_level": 8,
     "per_level": {
-      "damage": 1.5,
+      "damage": 2.2,
       "cooldown_sec": -0.12
     },
     "evolution_only": false
@@ -509,21 +521,21 @@
     "category": "spiritual",
     "grade": "epic",
     "mechanic": "shockwave",
-    "damage": 8.0,
-    "cooldown_sec": 2.7,
+    "damage": 16.0,
+    "cooldown_sec": 2.2,
     "projectile_count": 1,
     "pierce": 0,
     "area_scale": 1.0,
     "speed": 0.0,
-    "range_px": 135.0,
+    "range_px": 145.0,
     "shockwave": {
-      "radius_px": 135.0,
+      "radius_px": 145.0,
       "stun_sec": 1.0,
       "knockback_scale": 2.2
     },
     "max_level": 8,
     "per_level": {
-      "damage": 2.0,
+      "damage": 2.6,
       "cooldown_sec": -0.1
     },
     "evolution_only": true,
@@ -538,7 +550,7 @@
     "category": "spiritual",
     "grade": "common",
     "mechanic": "curse",
-    "damage": 8.0,
+    "damage": 9.0,
     "cooldown_sec": 1.6,
     "projectile_count": 1,
     "pierce": 0,
@@ -565,7 +577,7 @@
     "category": "spiritual",
     "grade": "epic",
     "mechanic": "curse",
-    "damage": 10.0,
+    "damage": 11.0,
     "cooldown_sec": 1.4,
     "projectile_count": 1,
     "pierce": 0,
@@ -580,7 +592,7 @@
     "evolution_only": true,
     "on_hit_status": {
       "id": "curse",
-      "dps": 8.0,
+      "dps": 7.0,
       "duration_sec": 4.5,
       "spread_radius_px": 130.0,
       "spread_count": 4

@@ -288,10 +288,21 @@ func _check_weapon_mechanics(weapons: Dictionary) -> void:
 			"pierce":
 				if int(weapon.get("pierce", 0)) < 1:
 					_fail(label + ".pierce must be at least 1 for the pierce mechanic")
+				# N4-3: optional damage retention per pierced enemy.
+				if weapon.has("pierce_retention"):
+					var retention: float = float(weapon.get("pierce_retention", 0.0))
+					if retention <= 0.0 or retention > 1.0:
+						_fail(label + ".pierce_retention must be in (0, 1]")
 			"explosion":
 				_require_positive_numbers(
 					weapon.get("explosion", {}), ["radius_px"], label + ".explosion"
 				)
+				# N4-3: optional damage share kept at the blast edge.
+				var explosion: Dictionary = weapon.get("explosion", {})
+				if explosion.has("edge_falloff"):
+					var edge: float = float(explosion.get("edge_falloff", 0.0))
+					if edge <= 0.0 or edge > 1.0:
+						_fail(label + ".explosion.edge_falloff must be in (0, 1]")
 			"chain":
 				var chain: Dictionary = weapon.get("chain", {})
 				_require_positive_numbers(chain, ["jumps", "range_px"], label + ".chain")
@@ -308,6 +319,11 @@ func _check_weapon_mechanics(weapons: Dictionary) -> void:
 				_require_positive_numbers(
 					weapon.get("orbit", {}), ["radius_px", "speed_deg_s"], label + ".orbit"
 				)
+				# N4-3: optional orb hit/visual radius (falls back to the code default).
+				if (weapon.get("orbit", {}) as Dictionary).has("orb_radius_px"):
+					_require_positive_numbers(
+						weapon.get("orbit", {}), ["orb_radius_px"], label + ".orbit"
+					)
 				if int(weapon.get("projectile_count", 0)) < 1:
 					_fail(label + ".projectile_count must be at least 1 for orbit")
 			"ward":

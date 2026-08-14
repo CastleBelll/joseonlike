@@ -17,7 +17,8 @@ const MIN_COOLDOWN_SEC := 0.05
 ## N4-4a placeholder feedback timings (visual only; damage is instant).
 const ARC_FLASH_SEC := 0.18
 const EXPLOSION_FLASH_SEC := 0.25
-## Orb visual + hit radius for the orbit mechanic (혼불).
+## Orb visual + hit radius fallback for the orbit mechanic (혼불) when the
+## data omits orbit.orb_radius_px (N4-3: the real value is a data knob).
 const ORB_RADIUS_PX := 5.0
 const MECHANIC_STRAIGHT := "straight"
 const MECHANIC_PIERCE := "pierce"
@@ -78,6 +79,7 @@ var _shot_config: Dictionary = {}
 var _lifesteal: float = 0.0
 var _arc: Dictionary = {}
 var _orbit: Dictionary = {}
+var _orb_radius: float = ORB_RADIUS_PX
 var _orbit_elapsed: float = 0.0
 var _orbs: Array[Node2D] = []
 # Per-enemy orbit re-hit gate: instance id -> next allowed _orbit_elapsed.
@@ -124,6 +126,7 @@ func setup(id: String, player: Player, spawner: Spawner) -> void:
 			add_child(_arc_flash)
 		MECHANIC_ORBIT:
 			_orbit = _stats.get("orbit", {})
+			_orb_radius = float(_orbit.get("orb_radius_px", ORB_RADIUS_PX))
 			_build_orbs(int(_stats.get("projectile_count", 1)))
 		MECHANIC_EXPLOSION:
 			_flash_pool = NodePool.new(self, _create_explosion_flash)
@@ -183,11 +186,12 @@ func _build_shot_config() -> Dictionary:
 			config["pierce"] = int(_stats.get("pierce", 0))
 		MECHANIC_PIERCE:
 			config["pierce"] = int(_stats.get("pierce", 0))
+			config["pierce_retention"] = float(_stats.get("pierce_retention", 1.0))
 			config["size"] = Projectile.BLADE_SIZE
 		MECHANIC_EXPLOSION:
-			config["explosion_radius"] = float(
-				(_stats.get("explosion", {}) as Dictionary).get("radius_px", 0.0)
-			)
+			var explosion: Dictionary = _stats.get("explosion", {})
+			config["explosion_radius"] = float(explosion.get("radius_px", 0.0))
+			config["explosion_falloff"] = float(explosion.get("edge_falloff", 1.0))
 		MECHANIC_CHAIN:
 			config["chain"] = _stats.get("chain", {})
 	return config
@@ -289,7 +293,7 @@ func _process_orbit(delta: float) -> void:
 	for enemy: Enemy in _spawner.active_enemies():
 		if float(_orb_recent.get(enemy.get_instance_id(), 0.0)) > _orbit_elapsed:
 			continue
-		var reach: float = enemy.contact_radius + ORB_RADIUS_PX
+		var reach: float = enemy.contact_radius + _orb_radius
 		for orb: Node2D in _orbs:
 			if orb.global_position.distance_squared_to(enemy.global_position) <= reach * reach:
 				_caught.append(enemy)
@@ -397,6 +401,7 @@ func _build_orbs(count: int) -> void:
 	for i: int in range(maxi(count, 1)):
 		var orb := OrbVisual.new()
 		orb.color = _tint()
+		orb.radius = _orb_radius
 		add_child(orb)
 		_orbs.append(orb)
 
@@ -473,10 +478,11 @@ class OrbVisual:
 	extends Node2D
 
 	var color: Color = UiPalette.WEAPON_SOUL
+	var radius: float = AutoWeapon.ORB_RADIUS_PX
 
 	func _draw() -> void:
-		draw_circle(Vector2.ZERO, AutoWeapon.ORB_RADIUS_PX, color)
-		draw_circle(Vector2.ZERO, AutoWeapon.ORB_RADIUS_PX * 0.45, UiPalette.LOOT_CORE)
+		draw_circle(Vector2.ZERO, radius, color)
+		draw_circle(Vector2.ZERO, radius * 0.45, UiPalette.LOOT_CORE)
 
 
 ## 석장 swing placeholder: a double arc stroke that fades over the flash time.

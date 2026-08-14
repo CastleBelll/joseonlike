@@ -304,3 +304,22 @@ func test_extended_kit_descriptions_carry_numbers() -> bool:
 		and LevelUp.mechanic_text(curse).contains("전염")
 		and LevelUp.mechanic_text(curse).contains("3")
 	)
+
+
+func test_explosion_damage_full_at_center_falls_to_edge_share() -> bool:
+	var center: float = WeaponMath.explosion_damage(10.0, 0.0, 90.0, 0.6)
+	var midway: float = WeaponMath.explosion_damage(10.0, 45.0, 90.0, 0.6)
+	var edge: float = WeaponMath.explosion_damage(10.0, 90.0, 90.0, 0.6)
+	return (
+		absf(center - 10.0) < EPSILON
+		and absf(midway - 8.0) < EPSILON
+		and absf(edge - 6.0) < EPSILON
+	)
+
+
+func test_explosion_damage_falloff_one_stays_flat() -> bool:
+	return (
+		absf(WeaponMath.explosion_damage(10.0, 89.0, 90.0, 1.0) - 10.0) < EPSILON
+		and absf(WeaponMath.explosion_damage(10.0, 500.0, 90.0, 0.5) - 5.0) < EPSILON
+		and absf(WeaponMath.explosion_damage(10.0, 5.0, 0.0, 0.5) - 10.0) < EPSILON
+	)
