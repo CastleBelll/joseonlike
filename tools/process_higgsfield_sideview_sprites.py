@@ -21,16 +21,79 @@ LOGICAL_SIZE = 32
 EXPORT_SCALE = 16
 GROUND_Y = 29
 TARGET_HEIGHT = 27
-PALETTE_COLORS = 16
 STABLE_UPPER_ROWS = 23
+
+CHARACTER_PALETTES: dict[str, tuple[tuple[int, int, int], ...]] = {
+    "Taoist": (
+        (31, 27, 28),
+        (62, 43, 30),
+        (99, 68, 36),
+        (180, 122, 81),
+        (235, 181, 139),
+        (147, 158, 168),
+        (221, 222, 214),
+        (239, 235, 222),
+        (35, 73, 120),
+        (54, 105, 165),
+        (151, 105, 43),
+        (210, 164, 82),
+        (239, 198, 113),
+        (184, 130, 0),
+        (242, 194, 40),
+        (174, 183, 189),
+    ),
+    "Warrior": (
+        (18, 24, 34),
+        (22, 43, 85),
+        (43, 79, 136),
+        (65, 105, 166),
+        (128, 31, 41),
+        (185, 47, 58),
+        (225, 74, 79),
+        (95, 118, 132),
+        (181, 199, 207),
+        (229, 236, 238),
+        (151, 98, 25),
+        (219, 158, 48),
+        (158, 102, 67),
+        (228, 169, 125),
+        (70, 44, 30),
+        (58, 48, 39),
+    ),
+    "Archer": (
+        (23, 35, 30),
+        (66, 44, 30),
+        (22, 78, 59),
+        (47, 116, 84),
+        (77, 142, 100),
+        (137, 91, 39),
+        (199, 152, 82),
+        (226, 184, 107),
+        (159, 113, 49),
+        (213, 172, 99),
+        (240, 205, 132),
+        (139, 38, 37),
+        (224, 75, 67),
+        (172, 112, 74),
+        (230, 174, 132),
+        (232, 228, 192),
+    ),
+}
 
 
 def chroma_foreground(rgb: np.ndarray) -> np.ndarray:
-    """Return a binary foreground mask for the generated green-screen sheet."""
+    """Return a foreground mask for generated green or magenta chroma sheets."""
     red = rgb[:, :, 0].astype(np.float32)
     green = rgb[:, :, 1].astype(np.float32)
     blue = rgb[:, :, 2].astype(np.float32)
-    background = (green > 140) & (green > red * 1.25) & (green > blue * 1.25)
+    green_key = (green > 140) & (green > red * 1.25) & (green > blue * 1.25)
+    magenta_key = (
+        (red > 140)
+        & (blue > 140)
+        & (red > green * 1.25)
+        & (blue > green * 1.25)
+    )
+    background = green_key | magenta_key
     return ~background
 
 
@@ -100,22 +163,28 @@ def resize_and_align(figures: list[Image.Image]) -> list[Image.Image]:
     return logical_frames
 
 
-def apply_shared_palette(frames: list[Image.Image]) -> list[Image.Image]:
-    """Quantize all five frames together so colors cannot drift frame to frame."""
+def apply_shared_palette(frames: list[Image.Image], character: str) -> list[Image.Image]:
+    """Map all frames to one authored palette so materials remain distinct."""
     sheet = Image.new("RGBA", (LOGICAL_SIZE * len(frames), LOGICAL_SIZE), (0, 0, 0, 0))
     for index, frame in enumerate(frames):
         sheet.alpha_composite(frame, (index * LOGICAL_SIZE, 0))
 
-    quantized = sheet.quantize(
-        colors=PALETTE_COLORS,
-        method=Image.Quantize.FASTOCTREE,
-        dither=Image.Dither.NONE,
-    ).convert("RGBA")
-    source_alpha = np.asarray(sheet)[:, :, 3]
-    quantized_array = np.asarray(quantized).copy()
-    quantized_array[:, :, 3] = np.where(source_alpha >= 128, 255, 0)
-    quantized_array[quantized_array[:, :, 3] == 0, :3] = 0
-    quantized = Image.fromarray(quantized_array, "RGBA")
+    source = np.asarray(sheet).copy()
+    opaque = source[:, :, 3] >= 128
+    palette = np.asarray(CHARACTER_PALETTES[character], dtype=np.uint8)
+    source_lab = cv2.cvtColor(source[:, :, :3], cv2.COLOR_RGB2LAB).astype(np.float32)
+    palette_lab = cv2.cvtColor(palette.reshape(1, -1, 3), cv2.COLOR_RGB2LAB)[0].astype(
+        np.float32
+    )
+    distances = np.square(source_lab[:, :, None, :] - palette_lab[None, None, :, :]).sum(
+        axis=3
+    )
+    nearest = distances.argmin(axis=2)
+    mapped = np.zeros_like(source)
+    mapped[:, :, :3] = palette[nearest]
+    mapped[:, :, 3] = np.where(opaque, 255, 0)
+    mapped[~opaque, :3] = 0
+    quantized = Image.fromarray(mapped, "RGBA")
 
     return [
         quantized.crop((index * LOGICAL_SIZE, 0, (index + 1) * LOGICAL_SIZE, LOGICAL_SIZE))
@@ -141,7 +210,7 @@ def export_character(character_root: Path) -> dict[str, object]:
 
     source = Image.open(source_path).convert("RGBA")
     frames = resize_and_align(extract_figures(source))
-    frames = apply_shared_palette(stabilize_walk_upper_body(frames))
+    frames = apply_shared_palette(stabilize_walk_upper_body(frames), character_root.name)
     exported = [
         frame.resize(
             (LOGICAL_SIZE * EXPORT_SCALE, LOGICAL_SIZE * EXPORT_SCALE),
