@@ -1,0 +1,97 @@
+{
+  "contract": "v9",
+  "layers": {
+    "sky": {
+      "size": [
+        540,
+        960
+      ],
+      "mode": "RGBA"
+    },
+    "moon_glow": {
+      "size": [
+        540,
+        960
+      ],
+      "mode": "RGBA"
+    },
+    "palace": {
+      "size": [
+        540,
+        960
+      ],
+      "mode": "RGBA"
+    },
+    "bamboo_far": {
+      "size": [
+        540,
+        960
+      ],
+      "mode": "RGBA"
+    },
+    "bamboo_near": {
+      "size": [
+        540,
+        960
+      ],
+      "mode": "RGBA"
+    },
+    "ground": {
+      "size": [
+        540,
+        960
+      ],
+      "mode": "RGBA"
+    }
+  },
+  "chrome": {
+    "wood_button_normal_9slice": {
+      "size": [
+        48,
+        48
+      ],
+      "mode": "RGBA",
+      "slice_margin": 12
+    },
+    "wood_button_hover_9slice": {
+      "size": [
+        48,
+        48
+      ],
+      "mode": "RGBA",
+      "slice_margin": 12
+    },
+    "wood_button_pressed_9slice": {
+      "size": [
+        48,
+        48
+      ],
+      "mode": "RGBA",
+      "slice_margin": 12
+    },
+    "paper_panel_9slice": {
+      "size": [
+        48,
+        48
+      ],
+      "mode": "RGBA",
+      "slice_margin": 12
+    }
+  },
+  "checks": {
+    "fog": {
+      "size": [
+        1080,
+        320
+      ],
+      "seamless_x": true
+    },
+    "logo": {
+      "size": [
+        480,
+        144
+      ],
+      "transparent_corners": true
+    }
+  }
+}
