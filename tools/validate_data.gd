@@ -258,6 +258,18 @@ static func _validate_weapons(weapons: Dictionary, evolutions: Dictionary, weapo
 		elif not FileAccess.file_exists(sprite):
 			errors.append("%s: '%s'.sprite '%s' does not exist" % [file, id, sprite])
 
+		if w.has("on_hit_chain"):
+			var chain: Variant = w.get("on_hit_chain")
+			if not (chain is Dictionary):
+				errors.append("%s: '%s'.on_hit_chain must be an object" % [file, id])
+			else:
+				if _num(chain, "targets") <= 0.0:
+					errors.append("%s: '%s'.on_hit_chain.targets must be > 0" % [file, id])
+				if _num(chain, "damage_scale") <= 0.0:
+					errors.append("%s: '%s'.on_hit_chain.damage_scale must be > 0" % [file, id])
+				if _num(chain, "range_px") <= 0.0:
+					errors.append("%s: '%s'.on_hit_chain.range_px must be > 0" % [file, id])
+
 		if w.has("on_hit_status"):
 			var status: Variant = w.get("on_hit_status")
 			if not (status is Dictionary):

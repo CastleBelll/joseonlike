@@ -85,6 +85,17 @@
     "special": true,
     "salvage_gold": 15
   },
+  "thunder_stone": {
+    "name_ko": "뇌정석",
+    "name_en": "Thunder Stone",
+    "tier": "epic",
+    "tags": [
+      "lightning",
+      "spiritual"
+    ],
+    "special": true,
+    "salvage_gold": 15
+  },
   "fire_spirit_stone": {
     "name_ko": "화령석",
     "name_en": "Fire Spirit Stone",

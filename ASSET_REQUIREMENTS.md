@@ -36,6 +36,16 @@ Fallback:  PlaceholderArt swatch tinted by tier (LootDrops.TIER_TINTS)
 ```
 
 ```
+[MISSING] lightning_talisman weapon icon + travel art + thunder_stone loot icon
+Size:      same as existing weapon icons / travel sprites / 24x24 loot idle
+Members:   res://asset/weapon/icons/lightning_talisman.png,
+           res://asset/weapon/travel/(lightning bolt).png,
+           res://asset/drop/loot/thunder_stone/idle.png
+Used by:   lightning talisman mod line (taoist lightning build)
+Fallback:  old_talisman icon / spirit_bolt travel art / tier-tinted swatch
+```
+
+```
 [MISSING] mod weapon icons (3): sharp_sword, ghost_sword, flame_sword
 Size:      same as existing weapon icons
 Members:   res://asset/weapon/icons/<weapon_id>.png

@@ -19,6 +19,11 @@
     "loot_id": "fire_spirit_stone",
     "result_weapon": "fire_talisman"
   },
+  "lightning_talisman_mod": {
+    "weapon_id": "old_talisman",
+    "loot_id": "thunder_stone",
+    "result_weapon": "lightning_talisman"
+  },
   "fire_talisman_flame_mod": {
     "weapon_id": "old_talisman",
     "loot_id": "dokkaebi_flame",

@@ -51,6 +51,23 @@
     "on_hit_status": { "id": "burn", "dps": 7.0, "duration_sec": 3.0 },
     "sprite": "res://asset/weapon/icons/phoenix_talisman.png"
   },
+  "lightning_talisman": {
+    "name_ko": "뇌전 부적",
+    "name_en": "Lightning Talisman",
+    "category": "spiritual",
+    "grade": "epic",
+    "damage": 16.0,
+    "cooldown_sec": 1.0,
+    "projectile_count": 1,
+    "pierce": 1,
+    "area_scale": 1.2,
+    "speed": 280.0,
+    "max_level": 8,
+    "per_level": { "damage": 3.0, "cooldown_sec": -0.04 },
+    "evolution_only": true,
+    "on_hit_chain": { "targets": 3, "damage_scale": 0.6, "range_px": 140.0 },
+    "sprite": "res://asset/weapon/icons/old_talisman.png"
+  },
   "sword": {
     "name_ko": "환도",
     "name_en": "Sword",

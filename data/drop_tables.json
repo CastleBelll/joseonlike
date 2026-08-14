@@ -23,6 +23,7 @@
   "bamboo_spirit_lord": {
     "drops": [
       { "loot_id": "fire_spirit_stone", "chance": 1.0 },
+      { "loot_id": "thunder_stone", "chance": 0.5 },
       { "loot_id": "ghost_iron", "chance": 0.5 }
     ]
   }

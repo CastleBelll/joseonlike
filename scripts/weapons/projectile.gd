@@ -37,6 +37,11 @@ var target_group: StringName = &"enemy"
 ## Empty for weapons and enemy shots that apply nothing.
 var on_hit_status: Dictionary = {}
 
+## Optional weapons.json on_hit_chain payload
+## ({"targets","damage_scale","range_px"}): every hit arcs scaled damage to
+## the nearest other enemies in range. Empty = no chain.
+var on_hit_chain: Dictionary = {}
+
 var _age_sec: float = 0.0
 var _hit_ids: Array[int] = []
 
@@ -88,6 +93,7 @@ func _on_body_entered(body: Node2D) -> void:
 	EffectPool.play(impact_effect, body.global_position)
 	body.take_damage(damage, is_crit)
 	_apply_on_hit_status(body)
+	_apply_on_hit_chain(body)
 	if pierce_left <= 0:
 		_despawn()
 		return
@@ -102,6 +108,39 @@ func _apply_on_hit_status(body: Node2D) -> void:
 			float(on_hit_status.get("dps", 0.0)),
 			float(on_hit_status.get("duration_sec", 0.0))
 		)
+
+
+## Instant local arcs from the impact point — no extra projectiles, so the
+## chain reads as lightning rather than as more shots.
+func _apply_on_hit_chain(hit_body: Node2D) -> void:
+	if on_hit_chain.is_empty():
+		return
+	var scaled_damage: float = damage * float(on_hit_chain.get("damage_scale", 0.0))
+	if scaled_damage <= 0.0:
+		return
+
+	var candidates: Array[Node] = get_tree().get_nodes_in_group(target_group)
+	var positions := PackedVector2Array()
+	var exclude_index: int = -1
+	for index in candidates.size():
+		var node2d: Node2D = candidates[index] as Node2D
+		positions.append(node2d.global_position if node2d != null else Vector2.INF)
+		if candidates[index] == hit_body:
+			exclude_index = index
+
+	var picked: PackedInt32Array = CombatMath.chain_target_indices(
+		hit_body.global_position,
+		positions,
+		exclude_index,
+		int(on_hit_chain.get("targets", 0)),
+		float(on_hit_chain.get("range_px", 0.0))
+	)
+	for index in picked:
+		var target: Node2D = candidates[index] as Node2D
+		if target == null or not target.has_method(&"take_damage"):
+			continue
+		EffectPool.play(impact_effect, target.global_position)
+		target.take_damage(scaled_damage, false)
 
 
 func _ensure_shape() -> void:

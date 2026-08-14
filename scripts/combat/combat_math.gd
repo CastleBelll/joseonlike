@@ -154,6 +154,37 @@ static func nearest_index_in_bounds(origin: Vector2, positions: PackedVector2Arr
 	return best_index
 
 
+## Up to `max_targets` indices within `range_px` of `origin`, nearest first,
+## skipping `exclude_index` (the enemy that was just hit). Chain lightning
+## jumps locally from the impact, so unlike acquisition there is no viewport
+## bound — the range is the bound.
+static func chain_target_indices(
+	origin: Vector2,
+	positions: PackedVector2Array,
+	exclude_index: int,
+	max_targets: int,
+	range_px: float
+) -> PackedInt32Array:
+	var picked := PackedInt32Array()
+	if max_targets <= 0 or range_px <= 0.0:
+		return picked
+
+	var candidates: Array[Vector2i] = []  # x = integer distance-squared key, y = index
+	var range_sq: float = range_px * range_px
+	for index in positions.size():
+		if index == exclude_index:
+			continue
+		var distance_sq: float = origin.distance_squared_to(positions[index])
+		if distance_sq > range_sq:
+			continue
+		candidates.append(Vector2i(int(distance_sq), index))
+
+	candidates.sort()
+	for entry in candidates.slice(0, max_targets):
+		picked.append(entry.y)
+	return picked
+
+
 ## Index of the closest position, or -1 when there is nothing to shoot at.
 static func nearest_index(origin: Vector2, positions: PackedVector2Array) -> int:
 	var best_index: int = -1

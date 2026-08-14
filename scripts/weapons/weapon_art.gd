@@ -27,6 +27,9 @@ const WEAPON_TRAVEL: Dictionary = {
 	"old_talisman": &"spinning_talisman",
 	"fire_talisman": &"fireball",
 	"phoenix_talisman": &"spirit_bolt",
+	# Lightning mod reuses the spirit bolt travel/impact pair until its own
+	# art lands (asset/ASSET_REQUIREMENTS.md).
+	"lightning_talisman": &"spirit_bolt",
 	"bow": &"arrow",
 	"divine_bow": &"arrow",
 }
