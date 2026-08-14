@@ -1,14 +1,20 @@
 extends SceneTree
-## Minimal data validator: every data/*.json must parse as valid JSON.
-## Cross-reference rules return together with the systems that consume the data.
+## Minimal data validator: every data/*.json must parse as valid JSON, and the
+## cross-references the combat systems consume (N3-4) must resolve.
 ## Contract (see docs/CI.md): godot --headless --path . --script tools/validate_data.gd
 
 const DATA_DIR := "res://data"
+const SPAWNING_FIELDS: Array[String] = [
+	"live_cap", "spawn_margin_px", "despawn_margin_px", "contact_cooldown_sec"
+]
+const CHARACTER_FIELDS: Array[String] = ["base_hp", "base_speed", "hit_invuln_sec"]
+const MONSTER_FIELDS: Array[String] = ["hp", "damage", "speed", "collision_radius"]
+
+var _errors: int = 0
 
 
 func _init() -> void:
 	var checked: int = 0
-	var invalid: int = 0
 	var dir: DirAccess = DirAccess.open(DATA_DIR)
 	if dir == null:
 		push_error("validate_data: cannot open " + DATA_DIR)
@@ -20,11 +26,52 @@ func _init() -> void:
 		checked += 1
 		var text: String = FileAccess.get_file_as_string(DATA_DIR + "/" + file_name)
 		if JSON.parse_string(text) == null:
-			push_error("validate_data: invalid JSON in " + file_name)
-			invalid += 1
-	if invalid > 0:
-		print("FAIL %d/%d data files invalid" % [invalid, checked])
+			_fail("invalid JSON in " + file_name)
+	_check_combat_cross_references()
+	if _errors > 0:
+		print("FAIL %d data validation error(s) across %d json files" % [_errors, checked])
 		quit(1)
 		return
 	print("PASS data validation: %d json files ok" % checked)
 	quit(0)
+
+
+func _check_combat_cross_references() -> void:
+	var monsters: Dictionary = _load(DATA_DIR + "/monsters.json")
+	var stages: Dictionary = _load(DATA_DIR + "/stages.json")
+	var characters: Dictionary = _load(DATA_DIR + "/characters.json")
+	for monster_id: String in monsters:
+		_require_positive_numbers(monsters[monster_id], MONSTER_FIELDS, "monsters." + monster_id)
+	for stage_id: String in stages:
+		var stage: Dictionary = stages[stage_id]
+		if not monsters.has(stage.get("boss_id", "")):
+			_fail("stages.%s.boss_id not in monsters.json" % stage_id)
+		_require_positive_numbers(
+			stage.get("spawning", {}), SPAWNING_FIELDS, "stages.%s.spawning" % stage_id
+		)
+		for wave: Dictionary in stage.get("waves", []):
+			if not monsters.has(wave.get("monster_id", "")):
+				_fail("stages.%s wave monster_id '%s' not in monsters.json" % [
+					stage_id, wave.get("monster_id", "")
+				])
+	for character_id: String in characters:
+		_require_positive_numbers(
+			characters[character_id], CHARACTER_FIELDS, "characters." + character_id
+		)
+
+
+func _require_positive_numbers(entry: Dictionary, fields: Array[String], label: String) -> void:
+	for field: String in fields:
+		var value: Variant = entry.get(field)
+		if (value is not float and value is not int) or float(value) <= 0.0:
+			_fail("%s.%s missing or not a positive number" % [label, field])
+
+
+func _fail(message: String) -> void:
+	push_error("validate_data: " + message)
+	_errors += 1
+
+
+func _load(path: String) -> Dictionary:
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	return data if data is Dictionary else {}

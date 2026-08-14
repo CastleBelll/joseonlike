@@ -5,6 +5,7 @@
     "role": "magic_aoe",
     "base_hp": 120,
     "base_speed": 90.0,
+    "hit_invuln_sec": 0.8,
     "starting_weapon": "old_talisman",
     "unlock": { "type": "default" },
     "active": {
@@ -22,6 +23,7 @@
     "role": "melee_bruiser",
     "base_hp": 140,
     "base_speed": 80.0,
+    "hit_invuln_sec": 0.8,
     "starting_weapon": "sword",
     "unlock": { "type": "achievement", "achievement_id": "goblin_hunter" }
   },
@@ -31,6 +33,7 @@
     "role": "ranged_dps",
     "base_hp": 80,
     "base_speed": 100.0,
+    "hit_invuln_sec": 0.8,
     "starting_weapon": "bow",
     "unlock": { "type": "gold", "cost": 500 }
   }
