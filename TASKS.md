@@ -157,3 +157,8 @@ GDD §4, §6, §7, §20, §33.
 | 2026-08-14 | R2-3 special-loot 3-choice popup (use/keep/salvage, taoist talisman recipes, salvage_gold data, tests 26/26) | see git log |
 | 2026-08-14 | Talisman rework on owner feedback: orbit+homing removed, straight throw at nearest visible enemy; projectile homing/orbit code deleted | see git log |
 | 2026-08-14 | Burn status (R2-5 taoist line): BurnStatus DoT, on_hit_status data on fire/phoenix talisman, projectile carrier, tests 27/27 | `a2a9c12` |
+| 2026-08-14 | A-1 side-sprites v5 merged to main (assets only) | `d468c24` |
+| 2026-08-14 | A-2/A-3 side-view player rendering: facing_sign, walk strip via hframes, 16x logical downscale, legacy fallback | `b0cc871` |
+| 2026-08-14 | Taoist lightning line: thunder_stone, lightning_talisman, on_hit_chain + CombatMath.chain_target_indices, tests 29/29 | `39007ef` |
+| 2026-08-14 | Taoist active skill chukji: data-driven active, HUD bottom-right button via EventBus, ui_accept, tests 29/29 | `e72a8b9` |
+| 2026-08-14 | Taoist sealing line: cinnabar, beopgeom, on_hit_seal + SealStatus, tests 30/30 | `b27f42f` |
