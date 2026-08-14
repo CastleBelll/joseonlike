@@ -15,3 +15,9 @@ Every asset under `asset/` must have a row here before it ships. No row, no comm
   release (ROADMAP M4).
 - Anything whose license cannot be established does not enter the repository.
 - Owner-supplied assets are recorded as `Owner-supplied` with the delivery date.
+
+## Fonts
+
+| Asset | Source | License | Notes |
+|---|---|---|---|
+| `asset/font/neodgm.ttf` (Neo둥근모) | https://github.com/neodgm/neodgm v1.530 | SIL OFL 1.1 | Global UI pixel font via `asset/ui/theme.tres`; OFL text ships with the font repo. Credit in-game before release (M4/RZ). |

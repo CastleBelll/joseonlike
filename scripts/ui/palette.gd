@@ -6,6 +6,15 @@ extends RefCounted
 
 const INK: Color = Color(0.1020, 0.0863, 0.0745)          # #1a1613
 const PAPER: Color = Color(0.9294, 0.8784, 0.7686)         # #ede0c4 background
+
+## Tailbound-benchmark grammar (DESIGN.md, owner direction 2026-08-14):
+## warm wood buttons with dark text on a night-dark world.
+const NIGHT: Color = Color(0.0863, 0.0667, 0.0510)          # #16110d dark screens
+const WOOD: Color = Color(0.8863, 0.6275, 0.3412)           # #e2a057 button base
+const WOOD_HOVER: Color = Color(0.9294, 0.6980, 0.4235)     # #edb26c
+const WOOD_PRESSED: Color = Color(0.7529, 0.5216, 0.2667)   # #c08544
+const WOOD_BORDER: Color = Color(0.4314, 0.2627, 0.1333)    # #6e4322
+const WOOD_TEXT: Color = Color(0.2902, 0.1804, 0.0784)      # #4a2e14
 const PAPER_DARK: Color = Color(0.8392, 0.7725, 0.6314)    # #d6c5a1 panel
 const VERMILION: Color = Color(0.7490, 0.2510, 0.1647)     # #bf402a -- general-purpose accent (focus ring, etc), independent of button chrome art
 const VERMILION_HOVER: Color = Color(0.8039, 0.3176, 0.2157) # #cd5137
@@ -76,27 +85,31 @@ static func panel_style(bg: Color, border: Color = Color.TRANSPARENT, border_wid
 	return style
 
 
-## Nine-slice panel chrome (dialogs, HUD chips) at the report's 6px margin.
-static func nine_slice_panel() -> StyleBoxTexture:
-	return _nine_slice(CHROME_PANEL, PANEL_MARGIN, PANEL_MARGIN)
+## Paper panel (dialogs, cards): PAPER fill with the wood border, per
+## DESIGN.md's paper-panel grammar. Kept under the old name so every screen
+## restyles without call-site churn; the nine-slice chrome textures remain
+## available for bespoke uses.
+static func nine_slice_panel() -> StyleBox:
+	var style := panel_style(PAPER, WOOD_BORDER, 3, 12)
+	style.set_content_margin_all(PANEL_MARGIN * 2)
+	return style
 
 
-## Applies the nine-slice button chrome (normal/hover/pressed) plus a flat
-## focus ring, and enforces the 44x44 minimum touch target. Text is always
-## TEXT_ON_DARK since the chrome only ships one (vermilion-family) button
-## look -- see the AA contrast note on VERMILION_HOVER below.
+## Wood-plank button (DESIGN.md): warm wood fill, thick dark border, dark
+## text — the Tailbound-benchmark grammar. Disabled chrome is deliberately
+## absent from the design system (hide, never disable); the flat fallback
+## here only guards legacy callers.
 static func apply_button_style(button: Button) -> void:
-	button.add_theme_stylebox_override("normal", _nine_slice(CHROME_BUTTON_NORMAL, BUTTON_MARGIN_H, BUTTON_MARGIN_V))
-	button.add_theme_stylebox_override("hover", _nine_slice(CHROME_BUTTON_HOVER, BUTTON_MARGIN_H, BUTTON_MARGIN_V))
-	button.add_theme_stylebox_override("pressed", _nine_slice(CHROME_BUTTON_PRESSED, BUTTON_MARGIN_H, BUTTON_MARGIN_V))
+	button.add_theme_stylebox_override("normal", panel_style(WOOD, WOOD_BORDER, 3, 10))
+	button.add_theme_stylebox_override("hover", panel_style(WOOD_HOVER, WOOD_BORDER, 3, 10))
+	button.add_theme_stylebox_override("pressed", panel_style(WOOD_PRESSED, WOOD_BORDER, 3, 10))
+	button.add_theme_stylebox_override("disabled", panel_style(WOOD.darkened(0.35), WOOD_BORDER, 3, 10))
+	button.add_theme_stylebox_override("focus", panel_style(Color.TRANSPARENT, GOLD, 3, 10))
 
-	button.add_theme_stylebox_override("disabled", _nine_slice(CHROME_BUTTON_DISABLED, BUTTON_MARGIN_H, BUTTON_MARGIN_V))
-	button.add_theme_stylebox_override("focus", panel_style(Color.TRANSPARENT, VERMILION, 3, 6))
-
-	button.add_theme_color_override("font_color", TEXT_ON_DARK)
-	button.add_theme_color_override("font_hover_color", TEXT_ON_DARK)
-	button.add_theme_color_override("font_pressed_color", TEXT_ON_DARK)
-	button.add_theme_color_override("font_disabled_color", TEXT_ON_DARK.darkened(0.35))
+	button.add_theme_color_override("font_color", WOOD_TEXT)
+	button.add_theme_color_override("font_hover_color", WOOD_TEXT)
+	button.add_theme_color_override("font_pressed_color", WOOD_TEXT)
+	button.add_theme_color_override("font_disabled_color", WOOD_TEXT.lightened(0.2))
 	button.add_theme_font_size_override("font_size", FONT_SIZE_BODY)
 	button.custom_minimum_size.y = max(button.custom_minimum_size.y, TOUCH_TARGET_MIN)
 	button.custom_minimum_size.x = max(button.custom_minimum_size.x, TOUCH_TARGET_MIN)

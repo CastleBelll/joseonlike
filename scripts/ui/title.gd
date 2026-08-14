@@ -174,40 +174,19 @@ func _ready() -> void:
 	_start_button.grab_focus()
 
 
-## Icon (left) + label (right) inside the existing button chrome, matching
-## the pattern already used for camp buildings/character cards. Icon and font
-## size are parameters so secondary actions can visibly weigh less.
+## DESIGN.md button grammar: wood panel, text only — no icons inside
+## buttons. The icon/size parameters survive so call sites need no churn
+## and the icon assets stay available for corner utilities later.
 func _configure_action(
 	button: Button,
-	icon_texture: Texture2D,
+	_icon_texture: Texture2D,
 	label_key: String,
-	icon_px: float = PRIMARY_ICON_PX,
+	_icon_px: float = PRIMARY_ICON_PX,
 	font_size: int = UiPalette.FONT_SIZE_BODY
 ) -> void:
 	UiPalette.apply_button_style(button)
-	button.custom_minimum_size.y = max(button.custom_minimum_size.y, 44.0)
-
-	var row := HBoxContainer.new()
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.set_anchors_preset(Control.PRESET_FULL_RECT)
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", UiPalette.SPACING_SM)
-	button.add_child(row)
-
-	var icon := TextureRect.new()
-	icon.texture = icon_texture
-	icon.custom_minimum_size = Vector2(icon_px, icon_px)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(icon)
-
-	var label := Label.new()
-	label.text = LocaleText.ui(label_key)
-	label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
-	label.add_theme_font_size_override("font_size", font_size)
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(label)
+	button.text = LocaleText.ui(label_key)
+	button.add_theme_font_size_override("font_size", font_size)
 
 
 ## A still hunter on the path. Static on purpose — the backdrop already
