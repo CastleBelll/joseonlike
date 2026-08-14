@@ -1,8 +1,0 @@
-{
-  "forest_goblin": {
-    "drops": [
-      { "loot_id": "beast_fang", "chance": 0.5 },
-      { "loot_id": "whetstone", "chance": 0.1 }
-    ]
-  }
-}

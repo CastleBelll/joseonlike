@@ -12,20 +12,9 @@ config_version=5
 
 config/name="JOSEONLIKE"
 config/description="Joseon-inspired pixel roguelike survival action RPG"
-run/main_scene="res://scenes/boot/boot.tscn"
+run/main_scene="res://scenes/title.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
-
-[autoload]
-
-EventBus="*res://scripts/core/event_bus.gd"
-GameData="*res://scripts/core/game_data.gd"
-SaveManager="*res://scripts/core/save_manager.gd"
-RunState="*res://scripts/core/run_state.gd"
-SceneRouter="*res://scripts/core/scene_router.gd"
-MusicDirector="*res://scripts/services/music_director.gd"
-AchievementTracker="*res://scripts/meta/achievements.gd"
-QuestTracker="*res://scripts/meta/quests.gd"
 
 [display]
 
@@ -35,20 +24,8 @@ window/stretch/mode="viewport"
 window/stretch/aspect="expand"
 window/handheld/orientation=1
 
-[layer_names]
-
-2d_physics/layer_1="player"
-2d_physics/layer_2="enemy"
-2d_physics/layer_3="player_projectile"
-2d_physics/layer_4="enemy_projectile"
-2d_physics/layer_5="pickup"
-
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
-
-[gui]
-
-theme/custom="res://asset/ui/theme.tres"

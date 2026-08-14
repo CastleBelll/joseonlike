@@ -1,9 +1,0 @@
-{
-  "first_boss": {
-    "name_ko": "첫 보스 처치",
-    "name_en": "First Boss Clear",
-    "counter_key": "boss_defeated",
-    "target": 1,
-    "reward": { "type": "gold", "amount": 100 }
-  }
-}

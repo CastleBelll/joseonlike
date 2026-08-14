@@ -4,7 +4,7 @@ Every asset under `asset/` must have a row here before it ships. No row, no comm
 
 | Path | Source | License | Attribution required | Added |
 |---|---|---|---|---|
-| `asset/**` (all current art and audio) | Produced for this project (generated, then processed with `tools/asset/*`) | Project-owned | No | up to 2026-08-13 |
+| `asset/font/neodgm.ttf` (Neo둥근모) | https://github.com/neodgm/neodgm v1.530 | SIL OFL 1.1 | Credit in-game before release (RZ) | 2026-08-14 (relocated) |
 
 ## Rules
 
@@ -12,12 +12,6 @@ Every asset under `asset/` must have a row here before it ships. No row, no comm
   license (CC0 / CC-BY / OFL / commercial) in its own row, and keep the license text in
   the pack's own folder.
 - CC-BY and similar attribution licenses must also appear in the in-game credits before
-  release (ROADMAP M4).
+  release (ROADMAP RZ).
 - Anything whose license cannot be established does not enter the repository.
 - Owner-supplied assets are recorded as `Owner-supplied` with the delivery date.
-
-## Fonts
-
-| Asset | Source | License | Notes |
-|---|---|---|---|
-| `asset/font/neodgm.ttf` (Neo둥근모) | https://github.com/neodgm/neodgm v1.530 | SIL OFL 1.1 | Global UI pixel font via `asset/ui/theme.tres`; OFL text ships with the font repo. Credit in-game before release (M4/RZ). |
