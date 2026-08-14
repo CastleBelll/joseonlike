@@ -62,13 +62,26 @@ Fallback:  PlaceholderArt swatch tinted by tier (LootDrops.TIER_TINTS)
 ```
 
 ```
-[MISSING] lightning_talisman weapon icon + travel art + thunder_stone loot icon
-Size:      same as existing weapon icons / travel sprites / 24x24 loot idle
-Members:   res://asset/weapon/icons/lightning_talisman.png,
-           res://asset/weapon/travel/(lightning bolt).png,
-           res://asset/drop/loot/thunder_stone/idle.png
-Used by:   lightning talisman mod line (taoist lightning build)
-Fallback:  old_talisman icon / spirit_bolt travel art / tier-tinted swatch
+[MISSING] thunder_stone loot icon
+Size:      24x24 loot idle
+Members:   res://asset/drop/loot/thunder_stone/idle.png
+Used by:   noejeongbu mod line (taoist lightning build, N4-4a)
+Fallback:  tier-tinted swatch
+```
+
+```
+[MISSING] taoist archetype weapons (N4-4a): icons + field art for the five new
+          cores and their mod results — hwabu, noebu, seokjang, honbul,
+          beopgeom, hwaryeongbu, noejeongbu, bongmageom, ghost_staff,
+          flame_honbul
+Size:      icons like existing weapon icons; field art: charm travel sprites
+           ~8x14, sword-qi blade ~6x26, staff swing arc sheet, soul-flame orb
+           ~10x10 (2-frame flicker), explosion burst sheet ~3 frames
+Used by:   N4-4a weapon mechanics (scripts/combat/auto_weapon.gd,
+           projectile.gd), level-up cards (scripts/ui/level_up_popup.gd)
+Fallback:  palette-token placeholders per weapon — tinted paper/blade rects
+           (WEAPON_FIRE/LIGHTNING/SEAL), WOOD/WEAPON_GHOST arc strokes,
+           WEAPON_SOUL orbs, WEAPON_FIRE ring flash
 ```
 
 ```

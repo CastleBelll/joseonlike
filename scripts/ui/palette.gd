@@ -83,6 +83,10 @@ const LOOT_CORE := Color("#ffffff")
 const WEAPON_FIRE := Color("#ff8a3c")
 const WEAPON_LIGHTNING := Color("#8ad2ff")
 const WEAPON_SEAL := GOLD
+# N4-4a taoist archetype placeholders: pale soul-flame orbs (혼불) and the
+# violet ghost-iron staff arc, separated from lightning blue and boss violet.
+const WEAPON_SOUL := Color("#cfd6ff")
+const WEAPON_GHOST := Color("#b07ee0")
 
 # Spacing scale (4/8pt grid).
 const SPACE_XS := 4

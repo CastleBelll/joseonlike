@@ -245,6 +245,9 @@ func _finish() -> void:
 	print("PLAYTEST level: %d (level-ups: %d)" % [
 		_stage._run_state.level, _stage._run_state.level - 1
 	])
+	print("PLAYTEST weapons: %s (replaced: %s)" % [
+		str(_stage._owned_levels), str(_stage._replaced_weapons)
+	])
 	print("PLAYTEST grades: %s (grade picks: %d)" % [str(_stage._owned_grades), _grade_picks])
 	print("PLAYTEST surge fps: min %.0f avg %.0f over %d samples" % [
 		_fps_min if _fps_samples > 0 else 0.0, fps_avg, _fps_samples

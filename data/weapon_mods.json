@@ -19,19 +19,34 @@
     "loot_id": "fire_spirit_stone",
     "result_weapon": "fire_talisman"
   },
-  "beopgeom_mod": {
-    "weapon_id": "old_talisman",
-    "loot_id": "cinnabar",
-    "result_weapon": "beopgeom"
-  },
-  "lightning_talisman_mod": {
-    "weapon_id": "old_talisman",
-    "loot_id": "thunder_stone",
-    "result_weapon": "lightning_talisman"
-  },
   "fire_talisman_flame_mod": {
     "weapon_id": "old_talisman",
     "loot_id": "dokkaebi_flame",
     "result_weapon": "fire_talisman"
+  },
+  "hwaryeongbu_mod": {
+    "weapon_id": "hwabu",
+    "loot_id": "fire_spirit_stone",
+    "result_weapon": "hwaryeongbu"
+  },
+  "noejeongbu_mod": {
+    "weapon_id": "noebu",
+    "loot_id": "thunder_stone",
+    "result_weapon": "noejeongbu"
+  },
+  "bongmageom_mod": {
+    "weapon_id": "beopgeom",
+    "loot_id": "cinnabar",
+    "result_weapon": "bongmageom"
+  },
+  "ghost_staff_mod": {
+    "weapon_id": "seokjang",
+    "loot_id": "ghost_iron",
+    "result_weapon": "ghost_staff"
+  },
+  "flame_honbul_mod": {
+    "weapon_id": "honbul",
+    "loot_id": "fire_spirit_stone",
+    "result_weapon": "flame_honbul"
   }
 }

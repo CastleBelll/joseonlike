@@ -10,6 +10,8 @@ extends Node2D
 signal enemy_killed(enemy: Enemy)
 ## N5-1: the single stage boss just entered the field.
 signal boss_spawned(boss: Enemy)
+## N4-4a: a burn tick landed on some enemy — the stage floats the number.
+signal burn_damaged(amount: float, at: Vector2)
 
 const STAGES_PATH := "res://data/stages.json"
 const MONSTERS_PATH := "res://data/monsters.json"
@@ -178,6 +180,8 @@ func _spawn_one(monster_id: String) -> Enemy:
 	var enemy: Enemy = _pool.acquire()
 	if not enemy.died.is_connected(_on_enemy_died):
 		enemy.died.connect(_on_enemy_died)
+	if not enemy.burn_ticked.is_connected(_on_enemy_burn_ticked):
+		enemy.burn_ticked.connect(_on_enemy_burn_ticked)
 	# N4-2 soft enrage: monsters spawned after the ramp start arrive scaled,
 	# so a stalled post-boss field turns lethal instead of dragging (GDD §34).
 	# The boss spawns at boss_at_sec, before the ramp, and is never scaled.
@@ -218,8 +222,26 @@ func _despawn_far_enemies() -> void:
 
 
 func _on_enemy_died(enemy: Enemy) -> void:
+	if enemy.is_burning() and enemy.burn_spread_px > 0.0:
+		_spread_burn(enemy)
 	enemy_killed.emit(enemy)
 	_release(enemy)
+
+
+func _on_enemy_burn_ticked(amount: float, at: Vector2) -> void:
+	burn_damaged.emit(amount, at)
+
+
+## 화령석 branch (N4-4a): a burning enemy's death passes the burn to every
+## neighbour in the spread radius — spread carries, so packs fall like dominoes.
+func _spread_burn(source: Enemy) -> void:
+	var radius: float = source.burn_spread_px
+	for enemy: Enemy in _active:
+		if enemy == source:
+			continue
+		if source.global_position.distance_squared_to(enemy.global_position) > radius * radius:
+			continue
+		enemy.apply_burn(source.burn_dps, source.burn_duration, radius)
 
 
 func _release(enemy: Enemy) -> void:

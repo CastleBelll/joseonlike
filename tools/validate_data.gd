@@ -47,6 +47,8 @@ const ELITE_MULT_FIELDS: Array[String] = [
 const SOFT_ENRAGE_FIELDS: Array[String] = [
 	"start_sec", "ramp_sec", "hp_mult_max", "damage_mult_max", "speed_mult_max"
 ]
+# N4-4a weapon mechanic contract (weapons.json "mechanic" + its blocks).
+const STATUS_IDS: Array[String] = ["burn", "shock"]
 
 var _errors: int = 0
 
@@ -111,6 +113,7 @@ func _check_combat_cross_references() -> void:
 	var weapons: Dictionary = _load(DATA_DIR + "/weapons.json")
 	_check_weapon_grades(weapons)
 	_check_weapon_targeting(weapons)
+	_check_weapon_mechanics(weapons)
 	var achievements: Dictionary = _load(DATA_DIR + "/achievements.json")
 	for character_id: String in characters:
 		_require_positive_numbers(
@@ -221,6 +224,84 @@ func _check_weapon_grades(weapons: Dictionary) -> void:
 		var grade: String = String((weapons[weapon_id] as Dictionary).get("grade", ""))
 		if grade not in rungs:
 			_fail("weapons.%s.grade '%s' not on the _grades ladder" % [weapon_id, grade])
+
+
+## N4-4a mechanic contract: every weapon's mechanic must be one the runtime
+## implements, its mechanic block must carry sane numbers, and the optional
+## status/seal/lifesteal branches must be well-formed.
+func _check_weapon_mechanics(weapons: Dictionary) -> void:
+	for weapon_id: String in weapons:
+		if weapon_id.begins_with("_"):
+			continue
+		var weapon: Dictionary = weapons[weapon_id]
+		var label: String = "weapons." + weapon_id
+		var mechanic: String = String(weapon.get("mechanic", "straight"))
+		if mechanic not in LevelUp.SUPPORTED_MECHANICS:
+			_fail("%s.mechanic '%s' not implemented by the runtime" % [label, mechanic])
+			continue
+		# Only entries that declare a mechanic promise the runtime can fire
+		# them; legacy speed-0 melee data (환도 family) stays exempt until its
+		# character ships.
+		if weapon.has("mechanic") and mechanic in LevelUp.PROJECTILE_MECHANICS \
+				and float(weapon.get("speed", 0.0)) <= 0.0:
+			_fail(label + " projectile mechanic needs a positive speed")
+		match mechanic:
+			"pierce":
+				if int(weapon.get("pierce", 0)) < 1:
+					_fail(label + ".pierce must be at least 1 for the pierce mechanic")
+			"explosion":
+				_require_positive_numbers(
+					weapon.get("explosion", {}), ["radius_px"], label + ".explosion"
+				)
+			"chain":
+				var chain: Dictionary = weapon.get("chain", {})
+				_require_positive_numbers(chain, ["jumps", "range_px"], label + ".chain")
+				var falloff: float = float(chain.get("falloff", 0.0))
+				if falloff <= 0.0 or falloff > 1.0:
+					_fail(label + ".chain.falloff must be in (0, 1]")
+			"melee_arc":
+				var arc: Dictionary = weapon.get("arc", {})
+				_require_positive_numbers(arc, ["knockback_scale"], label + ".arc")
+				var angle: float = float(arc.get("angle_deg", 0.0))
+				if angle <= 0.0 or angle > 360.0:
+					_fail(label + ".arc.angle_deg must be in (0, 360]")
+			"orbit":
+				_require_positive_numbers(
+					weapon.get("orbit", {}), ["radius_px", "speed_deg_s"], label + ".orbit"
+				)
+				if int(weapon.get("projectile_count", 0)) < 1:
+					_fail(label + ".projectile_count must be at least 1 for orbit")
+		_check_weapon_status(weapon, label)
+		if weapon.has("on_hit_seal"):
+			var seal: Dictionary = weapon.get("on_hit_seal", {})
+			_require_positive_numbers(seal, ["burst_damage_scale"], label + ".on_hit_seal")
+			if int(seal.get("burst_at", 0)) < 2:
+				_fail(label + ".on_hit_seal.burst_at must be at least 2")
+		if weapon.has("lifesteal"):
+			var lifesteal: float = float(weapon.get("lifesteal", 0.0))
+			if lifesteal <= 0.0 or lifesteal > 1.0:
+				_fail(label + ".lifesteal must be in (0, 1]")
+
+
+func _check_weapon_status(weapon: Dictionary, label: String) -> void:
+	if not weapon.has("on_hit_status"):
+		return
+	var status: Dictionary = weapon.get("on_hit_status", {})
+	var status_id: String = String(status.get("id", ""))
+	if status_id not in STATUS_IDS:
+		_fail(label + ".on_hit_status.id must be one of " + str(STATUS_IDS))
+		return
+	_require_positive_numbers(status, ["duration_sec"], label + ".on_hit_status")
+	if status_id == "burn":
+		_require_positive_numbers(status, ["dps"], label + ".on_hit_status")
+		if status.has("spread_radius_px"):
+			_require_positive_numbers(
+				status, ["spread_radius_px"], label + ".on_hit_status"
+			)
+	if status_id == "shock":
+		var slow: float = float(status.get("slow_scale", 0.0))
+		if slow <= 0.0 or slow >= 1.0:
+			_fail(label + ".on_hit_status.slow_scale must be in (0, 1)")
 
 
 ## N3-15 targeting contract: a shared positive view margin and a positive

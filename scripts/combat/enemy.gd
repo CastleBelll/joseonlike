@@ -7,6 +7,9 @@ extends CharacterBody2D
 ## ranged/charger AI is a later feature.
 
 signal died(enemy: Enemy)
+## N4-4a: one burn tick landed — relayed by the spawner so the stage can float
+## a damage number without every enemy holding a stage reference.
+signal burn_ticked(amount: float, at: Vector2)
 
 const VISUAL_HEIGHT_RATIO := 2.4  # slightly taller than wide, like the player
 const EYE_RATIO := 0.18
@@ -18,6 +21,9 @@ const BREATHE_FILE := "idle_breathe.png"
 ## the proximity check below, never physics. Layer 2 keeps them off the
 ## player's default layer 1 so nothing pushes anything.
 const COLLISION_LAYER_ENEMY := 2
+## N4-4a burn cadence: damage lands in half-second ticks so the DoT reads as
+## repeated small hits rather than a smooth drain.
+const BURN_TICK_SEC := 0.5
 
 ## forest_spirit reads white, forest_goblin green, per DESIGN.md §5.1
 ## silhouette separation. Unknown ids fall back to the goblin green.
@@ -80,6 +86,17 @@ var _knockback := Vector2.ZERO
 var _knockback_speed: float = 0.0
 var _knockback_decay: float = 0.0
 var _boss_knockback_scale: float = 1.0
+# N4-4a status state (GDD §11.1 branches). Burn ticks damage over time and may
+# spread on death (spawner reads the public fields); shock slows the chase;
+# seal stacks detonate — the striking projectile applies the burst damage.
+var burn_dps: float = 0.0
+var burn_duration: float = 0.0
+var burn_spread_px: float = 0.0
+var _burn_left: float = 0.0
+var _burn_tick: float = 0.0
+var _shock_scale: float = 1.0
+var _shock_left: float = 0.0
+var _seal_stacks: int = 0
 
 
 func _ready() -> void:
@@ -131,6 +148,14 @@ func setup(
 	_knockback_speed = float(feedback.get("knockback_speed_px_s", 0.0))
 	_knockback_decay = float(feedback.get("knockback_decay_px_s2", 0.0))
 	_boss_knockback_scale = float(feedback.get("boss_knockback_scale", 1.0))
+	burn_dps = 0.0
+	burn_duration = 0.0
+	burn_spread_px = 0.0
+	_burn_left = 0.0
+	_burn_tick = 0.0
+	_shock_scale = 1.0
+	_shock_left = 0.0
+	_seal_stacks = 0
 	_contact_cooldown = contact_cooldown
 	_time_since_contact = contact_cooldown  # first touch may hit immediately
 	separation_push = Vector2.ZERO
@@ -185,12 +210,17 @@ func _physics_process(delta: float) -> void:
 		return
 	_time_since_contact += delta
 	_update_flash(delta)
+	_update_burn(delta)
+	if CombatMath.is_dead(hp):
+		return  # the burn tick killed this enemy; it is already released
+	_shock_left = maxf(_shock_left - delta, 0.0)
 	_knockback = _knockback.move_toward(Vector2.ZERO, _knockback_decay * delta)
 	var desired: Vector2 = CombatMath.chase_direction(
 		global_position, _target.global_position
 	)
 	var steer: Vector2 = CombatMath.avoid_direction(desired, _block_normal, _avoid_sign)
-	velocity = Separation.blended_direction(steer, separation_push) * _speed + _knockback
+	var speed: float = _speed * (_shock_scale if _shock_left > 0.0 else 1.0)
+	velocity = Separation.blended_direction(steer, separation_push) * speed + _knockback
 	move_and_slide()
 	_block_normal = (
 		get_slide_collision(0).get_normal() if get_slide_collision_count() > 0
@@ -200,7 +230,11 @@ func _physics_process(delta: float) -> void:
 	_try_contact_damage()
 
 
-func take_damage(amount: float, hit_direction: Vector2 = Vector2.ZERO) -> void:
+## `knockback_scale` lets heavy hits (석장 arc swing, N4-4a) shove harder than
+## the shared data/effects.json baseline; the boss damping still applies on top.
+func take_damage(
+	amount: float, hit_direction: Vector2 = Vector2.ZERO, knockback_scale: float = 1.0
+) -> void:
 	hp = CombatMath.apply_damage(hp, amount)
 	if CombatMath.is_dead(hp):
 		died.emit(self)
@@ -211,7 +245,54 @@ func take_damage(amount: float, hit_direction: Vector2 = Vector2.ZERO) -> void:
 	else:
 		_body.color = UiPalette.HIT_FLASH
 	var scale_factor: float = _boss_knockback_scale if is_boss else 1.0
-	_knockback = hit_direction * _knockback_speed * scale_factor
+	_knockback = hit_direction * _knockback_speed * scale_factor * knockback_scale
+
+
+## Strongest burn wins — reapplying a weaker burn never downgrades the DoT,
+## but any reapply refreshes the clock. Spread radius carries so a spreading
+## burn keeps spreading (화령석 domino, GDD §11.1).
+func apply_burn(dps: float, duration: float, spread_px: float = 0.0) -> void:
+	if dps >= burn_dps:
+		burn_dps = dps
+		burn_duration = duration
+	burn_spread_px = maxf(burn_spread_px, spread_px)
+	_burn_left = maxf(_burn_left, duration)
+
+
+func is_burning() -> bool:
+	return _burn_left > 0.0
+
+
+func apply_shock(slow_scale: float, duration: float) -> void:
+	_shock_scale = minf(_shock_scale, slow_scale)
+	_shock_left = maxf(_shock_left, duration)
+
+
+## One seal stack (법검+주사, N4-4a). Returns true when this stack reaches the
+## burst threshold; the caller deals the burst damage so the damage number
+## flows through the normal hit pipeline.
+func apply_seal(burst_at: int) -> bool:
+	_seal_stacks += 1
+	if _seal_stacks < burst_at:
+		return false
+	_seal_stacks = 0
+	return true
+
+
+func _update_burn(delta: float) -> void:
+	if _burn_left <= 0.0:
+		return
+	_burn_left -= delta
+	_burn_tick += delta
+	if _burn_tick < BURN_TICK_SEC:
+		return
+	_burn_tick -= BURN_TICK_SEC
+	var amount: float = burn_dps * BURN_TICK_SEC
+	var at: Vector2 = global_position
+	# A killing tick releases this enemy synchronously via died; emitting the
+	# tick after keeps the number at the corpse position.
+	take_damage(amount)
+	burn_ticked.emit(amount, at)
 
 
 ## Flash is a plain color/modulate swap — no tween, no alloc.

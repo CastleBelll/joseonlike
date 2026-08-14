@@ -290,6 +290,19 @@ level-up pick, and evolution stops being a goal. `evolves_to` must name a weapon
 rule in `evolutions.json` actually produces; a pointer with no matching rule is a dead end
 and the validator rejects it.
 
+N4-4a adds the taoist archetypes (GDD §11.1): every weapon may declare
+`mechanic` ∈ `straight | pierce | explosion | chain | melee_arc | orbit`
+(absent = `straight`), plus its mechanic block — `explosion: {radius_px}`,
+`chain: {jumps, falloff, range_px}`, `arc: {angle_deg, knockback_scale}`,
+`orbit: {radius_px, speed_deg_s}` (orb count = `projectile_count`, per-enemy
+re-hit window = `cooldown_sec`), and the `pierce` count (99+ reads as
+"everything on the line"). Branch fields: `on_hit_status`
+(`{id: burn, dps, duration_sec, spread_radius_px?}` or
+`{id: shock, slow_scale, duration_sec}`), `on_hit_seal`
+(`{burst_at, burst_damage_scale}`), `lifesteal` (0–1 fraction of damage
+healed). `tools/validate_data.gd` cross-checks all of them; LevelUp only
+offers weapons whose mechanic the runtime implements.
+
 ### `data/passives.json`
 ```json
 {

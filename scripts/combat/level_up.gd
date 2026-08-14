@@ -30,6 +30,16 @@ const OFFERABLE_PASSIVES: Array[String] = [
 	"attack_damage", "attack_speed", "move_speed", "max_hp", "magnet_radius"
 ]
 
+## Mechanics the AutoWeapon runtime implements (N4-4a); a data entry with an
+## unknown mechanic must never become a card.
+const SUPPORTED_MECHANICS: Array[String] = [
+	"straight", "pierce", "explosion", "chain", "melee_arc", "orbit"
+]
+## Mechanics that fly a Projectile and therefore need a positive speed.
+const PROJECTILE_MECHANICS: Array[String] = ["straight", "pierce", "explosion", "chain"]
+## At or past this pierce count the card reads "everything on the line".
+const PIERCE_ALL := 99
+
 
 ## Every legal choice given the current run: owned weapons below max level,
 ## unowned non-evolution weapons the AutoWeapon runtime can fire (speed > 0),
@@ -63,7 +73,7 @@ static func candidates(
 			var current: String = current_grade(weapon_id, weapons, owned_grades)
 			if not rungs.is_empty() and not WeaponGrade.is_top(rungs, current):
 				pool.append({"kind": KIND_GRADE_UP, "id": weapon_id})
-		elif not bool(stats.get("evolution_only", false)) and float(stats.get("speed", 0.0)) > 0.0:
+		elif not bool(stats.get("evolution_only", false)) and runtime_can_fire(stats):
 			pool.append({"kind": KIND_NEW_WEAPON, "id": weapon_id})
 	for passive_id: String in passives:
 		if not OFFERABLE_PASSIVES.has(passive_id):
@@ -145,6 +155,74 @@ static func apply_choice(
 		_:
 			push_error("level_up: unknown choice kind in " + str(choice))
 	return {"owned_levels": owned, "passive_stacks": stacks}
+
+
+## True when the AutoWeapon runtime can actually drive this data entry
+## (N4-4a): the mechanic must be implemented, and projectile mechanics also
+## need a positive speed — the old speed-only gate kept for them.
+static func runtime_can_fire(stats: Dictionary) -> bool:
+	var mechanic: String = String(stats.get("mechanic", "straight"))
+	if mechanic not in SUPPORTED_MECHANICS:
+		return false
+	if mechanic in PROJECTILE_MECHANICS:
+		return float(stats.get("speed", 0.0)) > 0.0
+	return true
+
+
+## Mechanic fragment for cards (N4-4a), real numbers from data — how this
+## weapon hits, plus any status/seal branch. Empty for a plain straight throw.
+static func mechanic_text(stats: Dictionary) -> String:
+	var parts: Array[String] = []
+	match String(stats.get("mechanic", "straight")):
+		"explosion":
+			parts.append("폭발 반경 %spx" % _fmt(
+				float((stats.get("explosion", {}) as Dictionary).get("radius_px", 0.0))
+			))
+		"chain":
+			var chain: Dictionary = stats.get("chain", {})
+			parts.append("연쇄 %d회 · 도약당 피해 %d%%" % [
+				int(chain.get("jumps", 0)),
+				int(round(float(chain.get("falloff", 1.0)) * 100.0)),
+			])
+		"melee_arc":
+			var arc: Dictionary = stats.get("arc", {})
+			parts.append("%s° 원호 · 넉백 %s배" % [
+				_fmt(float(arc.get("angle_deg", 0.0))),
+				_fmt(float(arc.get("knockback_scale", 1.0))),
+			])
+		"orbit":
+			var orbit: Dictionary = stats.get("orbit", {})
+			parts.append("선회 구슬 %d개 · 반경 %spx" % [
+				int(stats.get("projectile_count", 1)),
+				_fmt(float(orbit.get("radius_px", 0.0))),
+			])
+		"pierce":
+			var pierce: int = int(stats.get("pierce", 0))
+			parts.append("직선 전원 관통" if pierce >= PIERCE_ALL else "관통 %d" % pierce)
+	var status: Dictionary = stats.get("on_hit_status", {})
+	match String(status.get("id", "")):
+		"burn":
+			var burn: String = "화상 초당 %s (%s초)" % [
+				_fmt(float(status.get("dps", 0.0))),
+				_fmt(float(status.get("duration_sec", 0.0))),
+			]
+			if float(status.get("spread_radius_px", 0.0)) > 0.0:
+				burn += " · 사망 시 전파"
+			parts.append(burn)
+		"shock":
+			parts.append("감전 이동 %d%% (%s초)" % [
+				int(round(float(status.get("slow_scale", 1.0)) * 100.0)),
+				_fmt(float(status.get("duration_sec", 0.0))),
+			])
+	var seal: Dictionary = stats.get("on_hit_seal", {})
+	if not seal.is_empty():
+		parts.append("봉인 %d중첩 시 %s배 폭발" % [
+			int(seal.get("burst_at", 0)),
+			_fmt(float(seal.get("burst_damage_scale", 0.0))),
+		])
+	if float(stats.get("lifesteal", 0.0)) > 0.0:
+		parts.append("피해의 %d%% 흡혈" % int(round(float(stats.get("lifesteal", 0.0)) * 100.0)))
+	return " · ".join(parts)
 
 
 ## A weapon's run grade: the tracked raise if any, else its data base grade.
@@ -270,7 +348,7 @@ static func describe(
 			var result_id: String = String(mod.get("result_weapon", ""))
 			var level: int = int(owned_levels.get(base_id, 1))
 			var carried: String = mod_carried_grade(mod, weapons, owned_grades, grades)
-			return "%s → %s · 피해 %s→%s (레벨 유지)" % [
+			var line: String = "%s → %s · 피해 %s→%s (레벨 유지)" % [
 				String((weapons.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
 				String((weapons.get(result_id, {}) as Dictionary).get("name_ko", result_id)),
 				_fmt(WeaponGrade.stat_at(
@@ -281,12 +359,18 @@ static func describe(
 					weapons.get(result_id, {}) as Dictionary, "damage", level, carried, grades
 				)),
 			]
+			# The branch the mod buys (burn spread, shock, seal…) is the point
+			# of the card (N4-4a) — spell it out with the result's numbers.
+			var extra: String = mechanic_text(weapons.get(result_id, {}) as Dictionary)
+			return line if extra.is_empty() else "%s · %s" % [line, extra]
 		KIND_NEW_WEAPON:
 			var stats: Dictionary = weapons.get(id, {})
-			return "새 무기 — 피해 %s · 쿨다운 %s초" % [
+			var line: String = "새 무기 — 피해 %s · 쿨다운 %s초" % [
 				_fmt(float(stats.get("damage", 0.0))),
 				_fmt(float(stats.get("cooldown_sec", 0.0))),
 			]
+			var extra: String = mechanic_text(stats)
+			return line if extra.is_empty() else "%s · %s" % [line, extra]
 		KIND_PASSIVE:
 			var passive: Dictionary = passives.get(id, {})
 			var per_stack: float = float(passive.get("per_stack", 0.0))

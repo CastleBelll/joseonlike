@@ -1480,3 +1480,36 @@ build lands roughly 1.5–2x that (~40–50 boss dps), so **2400** puts the
 fight at ~48–60s — killable just inside the 4:00–5:00 window, while a
 weak build still resolves as the timeout victory. Re-tune in N4-3 once
 the full weapon set lands.
+
+# N4-4a — The six taoist core weapons (2026-08-14, GDD §11.1)
+
+Numbers for the five new cores are sized against the starter
+(`old_talisman` 12 dmg / 1.2s = 10 unit dps) so that no new-weapon card
+dominates on raw dps — each buys a *shape*, not a bigger number:
+
+- `hwabu` 10/1.6s (6.25 sps) — explosion `radius_px 90` pays off only on
+  clumps; on a lone target it is strictly worse than the starter.
+- `noebu` 11/1.4s (7.9 sps) — chain `jumps 3, falloff 0.7`: full value
+  (11+7.7+5.4+3.8 ≈ 27.9/shot ≈ 20 dps) needs a spread crowd within 150px.
+- `seokjang` 14/1.5s at `range_px 110` — zero reach, `knockback 2.5x`
+  buys survival, not dps.
+- `honbul` 5 contact + burn 3/s×2s, per-enemy re-hit = `cooldown_sec`
+  0.9 — accumulates while moving, no burst.
+- `beopgeom` 9/1.1s, pierce-all — scales linearly with how many enemies
+  queue on its line; on a flank it is the weakest card in the pool.
+
+Mod results (`hwaryeongbu`, `noejeongbu`, `bongmageom`, `ghost_staff`,
+`flame_honbul`) sit ~25–40% above their base plus the branch effect
+(burn-spread / shock / seal burst / lifesteal / stronger burn), all epic
+grade so the N4-6 carry rule keeps run grade progress.
+
+Old `beopgeom` (epic, `old_talisman`+cinnabar seal result) became the
+common pierce core per GDD §11.1 ("봉인은 관통 무기의 개조 분기다");
+`lightning_talisman` and its recipe were deleted — chain is now `noebu`'s
+base mechanic and 뇌정석 belongs to `noebu`→`noejeongbu`.
+
+Autoplay verification (tools/playtest.tscn, one run): victory at 298.5s,
+10 level-ups, weapons taken hwabu→Lv2 + beopgeom→봉마검 (both mods
+offered were taken at 3:00/3:33), surge fps min 59 / avg 60 over 1775
+samples, peak live 51, 185 kills, boss killed. Deeper tuning deferred to
+N4-3 as planned.

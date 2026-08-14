@@ -85,6 +85,10 @@ func _ready() -> void:
 	_spawner.setup(_player)
 	_spawner.enemy_killed.connect(_on_enemy_killed)
 	_spawner.boss_spawned.connect(_on_boss_spawned)
+	# N4-4a: burn ticks float through the same damage-number pool as hits.
+	_spawner.burn_damaged.connect(
+		func(amount: float, at: Vector2) -> void: _on_hit_landed(amount, at, false)
+	)
 	_feedback = _load_json(Spawner.EFFECTS_PATH).get("hit_feedback", {})
 	_duration_sec = float(
 		(_load_json(Spawner.STAGES_PATH).get(Spawner.STAGE_ID, {}) as Dictionary)

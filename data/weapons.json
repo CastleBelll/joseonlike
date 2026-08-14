@@ -37,6 +37,7 @@
     "name_en": "Old Talisman",
     "category": "spiritual",
     "grade": "common",
+    "mechanic": "straight",
     "damage": 12.0,
     "cooldown_sec": 1.2,
     "projectile_count": 1,
@@ -108,14 +109,36 @@
     "name_ko": "법검",
     "name_en": "Ritual Sword",
     "category": "spiritual",
-    "grade": "epic",
-    "damage": 14.0,
-    "cooldown_sec": 0.7,
+    "grade": "common",
+    "mechanic": "pierce",
+    "damage": 9.0,
+    "cooldown_sec": 1.1,
     "projectile_count": 1,
-    "pierce": 0,
+    "pierce": 99,
     "area_scale": 1.0,
-    "speed": 320.0,
+    "speed": 340.0,
     "range_px": 460.0,
+    "max_level": 8,
+    "per_level": {
+      "damage": 2.0,
+      "cooldown_sec": -0.04
+    },
+    "evolution_only": false,
+    "sprite": "res://asset/weapon/icons/beopgeom.png"
+  },
+  "bongmageom": {
+    "name_ko": "봉마검",
+    "name_en": "Sealing Sword",
+    "category": "spiritual",
+    "grade": "epic",
+    "mechanic": "pierce",
+    "damage": 12.0,
+    "cooldown_sec": 1.0,
+    "projectile_count": 1,
+    "pierce": 99,
+    "area_scale": 1.0,
+    "speed": 360.0,
+    "range_px": 470.0,
     "max_level": 8,
     "per_level": {
       "damage": 2.5,
@@ -125,33 +148,221 @@
     "on_hit_seal": {
       "burst_at": 4,
       "burst_damage_scale": 3.0
-    },
-    "sprite": "res://asset/weapon/icons/beopgeom.png"
+    }
   },
-  "lightning_talisman": {
-    "name_ko": "뇌전 부적",
-    "name_en": "Lightning Talisman",
+  "hwabu": {
+    "name_ko": "화부",
+    "name_en": "Fire Charm",
+    "category": "spiritual",
+    "grade": "common",
+    "mechanic": "explosion",
+    "damage": 10.0,
+    "cooldown_sec": 1.6,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 240.0,
+    "range_px": 420.0,
+    "explosion": {
+      "radius_px": 90.0
+    },
+    "max_level": 8,
+    "per_level": {
+      "damage": 2.5,
+      "cooldown_sec": -0.06
+    },
+    "evolution_only": false
+  },
+  "hwaryeongbu": {
+    "name_ko": "화령부",
+    "name_en": "Fire Spirit Charm",
     "category": "spiritual",
     "grade": "epic",
-    "damage": 16.0,
-    "cooldown_sec": 1.0,
+    "mechanic": "explosion",
+    "damage": 14.0,
+    "cooldown_sec": 1.5,
     "projectile_count": 1,
-    "pierce": 1,
-    "area_scale": 1.2,
-    "speed": 280.0,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 240.0,
+    "range_px": 420.0,
+    "explosion": {
+      "radius_px": 105.0
+    },
+    "max_level": 8,
+    "per_level": {
+      "damage": 3.0,
+      "cooldown_sec": -0.05
+    },
+    "evolution_only": true,
+    "on_hit_status": {
+      "id": "burn",
+      "dps": 5.0,
+      "duration_sec": 3.0,
+      "spread_radius_px": 90.0
+    }
+  },
+  "noebu": {
+    "name_ko": "뇌부",
+    "name_en": "Thunder Charm",
+    "category": "spiritual",
+    "grade": "common",
+    "mechanic": "chain",
+    "damage": 11.0,
+    "cooldown_sec": 1.4,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 300.0,
+    "range_px": 440.0,
+    "chain": {
+      "jumps": 3,
+      "falloff": 0.7,
+      "range_px": 150.0
+    },
+    "max_level": 8,
+    "per_level": {
+      "damage": 2.5,
+      "cooldown_sec": -0.05
+    },
+    "evolution_only": false
+  },
+  "noejeongbu": {
+    "name_ko": "뇌정부",
+    "name_en": "Thunderbolt Charm",
+    "category": "spiritual",
+    "grade": "epic",
+    "mechanic": "chain",
+    "damage": 13.0,
+    "cooldown_sec": 1.3,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 320.0,
     "range_px": 450.0,
+    "chain": {
+      "jumps": 5,
+      "falloff": 0.75,
+      "range_px": 170.0
+    },
     "max_level": 8,
     "per_level": {
       "damage": 3.0,
       "cooldown_sec": -0.04
     },
     "evolution_only": true,
-    "on_hit_chain": {
-      "targets": 3,
-      "damage_scale": 0.6,
-      "range_px": 140.0
+    "on_hit_status": {
+      "id": "shock",
+      "slow_scale": 0.55,
+      "duration_sec": 1.5
+    }
+  },
+  "seokjang": {
+    "name_ko": "석장",
+    "name_en": "Ringed Staff",
+    "category": "spiritual",
+    "grade": "common",
+    "mechanic": "melee_arc",
+    "damage": 14.0,
+    "cooldown_sec": 1.5,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 0.0,
+    "range_px": 110.0,
+    "arc": {
+      "angle_deg": 160.0,
+      "knockback_scale": 2.5
     },
-    "sprite": "res://asset/weapon/icons/lightning_talisman.png"
+    "max_level": 8,
+    "per_level": {
+      "damage": 3.0,
+      "cooldown_sec": -0.06
+    },
+    "evolution_only": false
+  },
+  "ghost_staff": {
+    "name_ko": "귀철 석장",
+    "name_en": "Ghost Iron Staff",
+    "category": "spiritual",
+    "grade": "epic",
+    "mechanic": "melee_arc",
+    "damage": 18.0,
+    "cooldown_sec": 1.4,
+    "projectile_count": 1,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 0.0,
+    "range_px": 115.0,
+    "arc": {
+      "angle_deg": 170.0,
+      "knockback_scale": 2.8
+    },
+    "max_level": 8,
+    "per_level": {
+      "damage": 3.5,
+      "cooldown_sec": -0.05
+    },
+    "evolution_only": true,
+    "lifesteal": 0.12
+  },
+  "honbul": {
+    "name_ko": "혼불",
+    "name_en": "Soul Flame",
+    "category": "spiritual",
+    "grade": "common",
+    "mechanic": "orbit",
+    "damage": 5.0,
+    "cooldown_sec": 0.9,
+    "projectile_count": 2,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 0.0,
+    "range_px": 80.0,
+    "orbit": {
+      "radius_px": 70.0,
+      "speed_deg_s": 150.0
+    },
+    "max_level": 8,
+    "per_level": {
+      "damage": 1.5,
+      "cooldown_sec": -0.05
+    },
+    "evolution_only": false,
+    "on_hit_status": {
+      "id": "burn",
+      "dps": 3.0,
+      "duration_sec": 2.0
+    }
+  },
+  "flame_honbul": {
+    "name_ko": "화령 혼불",
+    "name_en": "Flame Soul",
+    "category": "spiritual",
+    "grade": "epic",
+    "mechanic": "orbit",
+    "damage": 7.0,
+    "cooldown_sec": 0.8,
+    "projectile_count": 3,
+    "pierce": 0,
+    "area_scale": 1.0,
+    "speed": 0.0,
+    "range_px": 90.0,
+    "orbit": {
+      "radius_px": 78.0,
+      "speed_deg_s": 170.0
+    },
+    "max_level": 8,
+    "per_level": {
+      "damage": 2.0,
+      "cooldown_sec": -0.04
+    },
+    "evolution_only": true,
+    "on_hit_status": {
+      "id": "burn",
+      "dps": 7.0,
+      "duration_sec": 3.0
+    }
   },
   "sword": {
     "name_ko": "환도",
