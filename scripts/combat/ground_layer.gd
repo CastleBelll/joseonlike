@@ -5,6 +5,13 @@ extends Node2D
 ## field, so a run's ground and props are both reproducible from one seed.
 ## The tile grid is built once in build(); _draw() replays a static command
 ## list (no per-frame allocation, no queue_redraw() after the first).
+##
+## N3-11: variants are placed as sparse, soft-edged noise patches (not an
+## even per-tile scatter, which read as an obvious checkerboard) and every
+## tile gets a seeded 90-degree-step rotation so identical stamps don't line
+## up. The rotation edge mismatch on this mirror-built tile art is a few
+## color levels at most (verified against the source PNGs) — invisible on
+## the low-contrast night palette, so it stays seam-free in practice.
 
 const TILE_PATH := "res://asset/stages/bamboo_forest/ground_tile.png"
 const VARIANT_PATHS: Array[String] = [
@@ -13,7 +20,17 @@ const VARIANT_PATHS: Array[String] = [
 	"res://asset/stages/bamboo_forest/ground_variants/moss.png",
 ]
 const TILE_SIZE_PX := 32.0
-const VARIANT_CHANCE := 0.12
+
+## Density noise: high frequency relative to the field so patches span a
+## handful of tiles ("large soft patches"), not single scattered cells.
+const DENSITY_FREQUENCY := 0.09
+## Calibrated so ~10-20% of tiles clear the density threshold (see
+## tests/unit/test_ground_layer.gd for the measured bound).
+const DENSITY_THRESHOLD := 0.27
+## Much lower frequency so one patch reads as one variant flavor, not a
+## jumble of three.
+const TYPE_FREQUENCY := 0.015
+const ROTATIONS: Array[float] = [0.0, PI / 2.0, PI, PI * 1.5]
 
 var _tiles: Array[Dictionary] = []
 var _base_texture: Texture2D
@@ -21,11 +38,19 @@ var _variant_textures: Array[Texture2D] = []
 var _fallback_size := Vector2.ZERO
 
 
-## Pure per-tile layout: position plus a variant index (-1 = base tile), so
-## the seeded reproducibility can be unit-tested without loading textures.
+## Pure per-tile layout: position, a variant index (-1 = base tile), and a
+## 90-degree rotation step, so the seeded reproducibility and the target
+## variant density can be unit-tested without loading textures.
 static func generate_layout(field: Dictionary, field_seed: int) -> Array[Dictionary]:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = field_seed
+	var density_noise := FastNoiseLite.new()
+	density_noise.seed = field_seed
+	density_noise.frequency = DENSITY_FREQUENCY
+	var type_noise := FastNoiseLite.new()
+	type_noise.seed = field_seed + 1
+	type_noise.frequency = TYPE_FREQUENCY
+
 	var width: float = float(field.get("width_px", 0.0))
 	var height: float = float(field.get("height_px", 0.0))
 	var half := Vector2(width, height) / 2.0
@@ -38,9 +63,11 @@ static func generate_layout(field: Dictionary, field_seed: int) -> Array[Diction
 				-half.x + float(col) * TILE_SIZE_PX, -half.y + float(row) * TILE_SIZE_PX
 			)
 			var variant: int = -1
-			if rng.randf() < VARIANT_CHANCE:
-				variant = rng.randi_range(0, VARIANT_PATHS.size() - 1)
-			layout.append({"position": pos, "variant": variant})
+			if density_noise.get_noise_2d(float(col), float(row)) > DENSITY_THRESHOLD:
+				var type_value: float = (type_noise.get_noise_2d(float(col), float(row)) + 1.0) / 2.0
+				variant = clampi(int(type_value * VARIANT_PATHS.size()), 0, VARIANT_PATHS.size() - 1)
+			var rotation: float = ROTATIONS[rng.randi_range(0, ROTATIONS.size() - 1)]
+			layout.append({"position": pos, "variant": variant, "rotation": rotation})
 	return layout
 
 
@@ -72,4 +99,7 @@ func _draw() -> void:
 		var texture: Texture2D = _base_texture
 		if variant >= 0 and _variant_textures[variant] != null:
 			texture = _variant_textures[variant]
-		draw_texture_rect(texture, Rect2(tile["position"], tile_size), false)
+		var center: Vector2 = (tile["position"] as Vector2) + tile_size / 2.0
+		draw_set_transform(center, float(tile["rotation"]), Vector2.ONE)
+		draw_texture_rect(texture, Rect2(-tile_size / 2.0, tile_size), false)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

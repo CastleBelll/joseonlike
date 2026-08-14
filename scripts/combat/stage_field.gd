@@ -175,6 +175,19 @@ func _make_solid(prop: Dictionary) -> StaticBody2D:
 	return body
 
 
+## Content-bbox cache (N3-11): atlas-cell fitting during art export can leave
+## transparent margin baked into the export canvas on one axis, so scaling
+## from the raw canvas under-sizes the visible silhouette. Cached per texture
+## path since many prop instances share the same handful of textures.
+static var _content_rect_cache: Dictionary = {}
+
+
+static func _content_rect(texture: Texture2D, texture_path: String) -> Rect2i:
+	if not _content_rect_cache.has(texture_path):
+		_content_rect_cache[texture_path] = texture.get_image().get_used_rect()
+	return _content_rect_cache[texture_path]
+
+
 ## Uses the real texture when the AC-4 art exists at the declared path;
 ## otherwise a palette-token placeholder shape of the same logical size, so
 ## the art lands later with zero code change.
@@ -183,12 +196,20 @@ func _make_visual(prop: Dictionary) -> Node2D:
 	var logical_size := Vector2(float(size_field[0]), float(size_field[1]))
 	var texture_path: String = String(prop.get("texture", ""))
 	if ResourceLoader.exists(texture_path, "Texture2D"):
+		var texture: Texture2D = load(texture_path)
+		var content: Rect2i = _content_rect(texture, texture_path)
+		var atlas := AtlasTexture.new()
+		atlas.atlas = texture
+		atlas.region = Rect2(content)
 		var sprite := Sprite2D.new()
-		sprite.texture = load(texture_path)
+		sprite.texture = atlas
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		# Uniform (undistorted) scale from the visible silhouette height to
+		# the declared logical height — the true render-size fix.
+		var content_scale: float = logical_size.y / float(content.size.y)
+		sprite.scale = Vector2(content_scale, content_scale)
 		# Bottom-center at the node origin so Y-sort reads the prop's base.
-		sprite.offset = Vector2(0.0, -sprite.texture.get_size().y / 2.0)
-		sprite.scale = logical_size / sprite.texture.get_size()
+		sprite.offset = Vector2(0.0, -float(content.size.y) / 2.0)
 		return sprite
 	var visual := PropVisual.new()
 	visual.color = PLACEHOLDER_COLORS.get(String(prop.get("placeholder", "")), UiPalette.INK)
