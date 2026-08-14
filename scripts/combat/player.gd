@@ -70,6 +70,8 @@ static func _load_character_number(field: String) -> float:
 
 
 func _ready() -> void:
+	# Solid stage props (N3-9) block the player on top of the default layer.
+	collision_mask |= StageField.LAYER_OBSTACLE
 	_speed = load_move_speed()
 	hp = load_base_hp()
 	hp_max = hp

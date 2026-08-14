@@ -38,6 +38,15 @@ const XP_ORB := Color("#49e0b5")
 const XP_ORB_CORE := Color("#d8fff2")
 const DAMAGE_TEXT := Color("#ffffff")
 
+# N3-9 bamboo forest prop placeholders (night-desaturated, above FOREST_GROUND).
+const PROP_BAMBOO := Color("#3d6b33")
+const PROP_ROCK := Color("#5c5f58")
+const PROP_LOG := Color("#5a3d24")
+const PROP_WATER := Color("#28424e")
+const DECOR_GRASS := Color("#2e4026")
+const DECOR_FERN := Color("#375030")
+const DECOR_PEBBLE := Color("#464a40")
+
 # Spacing scale (4/8pt grid).
 const SPACE_XS := 4
 const SPACE_SM := 8

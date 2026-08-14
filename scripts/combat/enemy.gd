@@ -33,11 +33,14 @@ var _time_since_contact: float = 0.0
 var _target: Player
 var _body: ColorRect
 var _shape: CollisionShape2D
+var _block_normal := Vector2.ZERO
+var _avoid_sign: float = 1.0
 
 
 func _ready() -> void:
 	collision_layer = COLLISION_LAYER_ENEMY
-	collision_mask = 0
+	# Solid stage props (N3-9) are the only thing an enemy collides with.
+	collision_mask = StageField.LAYER_OBSTACLE
 	_shape = CollisionShape2D.new()
 	_shape.shape = CircleShape2D.new()
 	add_child(_shape)
@@ -62,6 +65,10 @@ func setup(id: String, stats: Dictionary, target: Player, contact_cooldown: floa
 	_time_since_contact = contact_cooldown  # first touch may hit immediately
 	_target = target
 	(_shape.shape as CircleShape2D).radius = contact_radius
+	_block_normal = Vector2.ZERO
+	# Fixed per-instance detour side keeps two blocked enemies from mirroring
+	# each other forever on the same wall face.
+	_avoid_sign = 1.0 if (get_instance_id() & 1) == 0 else -1.0
 	_apply_placeholder_visual()
 
 
@@ -69,8 +76,15 @@ func _physics_process(delta: float) -> void:
 	if _target == null:
 		return
 	_time_since_contact += delta
-	velocity = CombatMath.chase_direction(global_position, _target.global_position) * _speed
+	var desired: Vector2 = CombatMath.chase_direction(
+		global_position, _target.global_position
+	)
+	velocity = CombatMath.avoid_direction(desired, _block_normal, _avoid_sign) * _speed
 	move_and_slide()
+	_block_normal = (
+		get_slide_collision(0).get_normal() if get_slide_collision_count() > 0
+		else Vector2.ZERO
+	)
 	_try_contact_damage()
 
 

@@ -3,7 +3,6 @@ extends Node2D
 ## Combat stage root (N3-1). The ground is a code-drawn dark-forest placeholder
 ## in the DESIGN.md §5 palette until the AC-4 tiles land.
 
-const GROUND_SIZE := Vector2(2048.0, 2048.0)
 const PATCH_COUNT := 60
 const PATCH_RADIUS_MIN := 40.0
 const PATCH_RADIUS_MAX := 140.0
@@ -13,10 +12,12 @@ const WEAPONS_PATH := "res://data/weapons.json"
 const PASSIVES_PATH := "res://data/passives.json"
 const CHOICES_PER_LEVEL := 3
 
-@onready var _player: Player = $Player
+@onready var _player: Player = $World/Player
 @onready var _joystick: TouchJoystick = $Hud/VirtualJoystick
-@onready var _spawner: Spawner = $Spawner
+@onready var _spawner: Spawner = $World/Spawner
 @onready var _hud: CombatHud = $Hud/CombatHud
+@onready var _field: StageField = $World/StageField
+@onready var _decor_layer: Node2D = $DecorLayer
 
 var _run_state: RunState
 var _orb_pool: NodePool
@@ -34,10 +35,22 @@ var _popup: LevelUpPopup
 var _pending_level_ups: int = 0
 var _choice_rng := RandomNumberGenerator.new()
 var _kills: int = 0
+var _ground_size := Vector2.ZERO  # from data/props.json "field" block
 
 
 func _ready() -> void:
-	_player.bounds = Rect2(-GROUND_SIZE / 2.0, GROUND_SIZE)
+	var props_config: Dictionary = StageField.load_config()
+	var field_config: Dictionary = props_config.get("field", {})
+	_ground_size = Vector2(
+		float(field_config.get("width_px", 0.0)),
+		float(field_config.get("height_px", 0.0))
+	)
+	_player.bounds = Rect2(-_ground_size / 2.0, _ground_size)
+	# randi() is auto-seeded per process start, so every run scatters a fresh
+	# field layout; tests drive StageField.generate with fixed seeds instead.
+	_field.build(
+		props_config.get("props", {}) as Dictionary, field_config, _decor_layer, randi()
+	)
 	_player.died.connect(_on_player_died)
 	_spawner.setup(_player)
 	_spawner.enemy_killed.connect(_on_enemy_killed)
@@ -206,7 +219,9 @@ func _create_damage_number() -> DamageNumber:
 
 
 func _draw() -> void:
-	var ground := Rect2(-GROUND_SIZE / 2.0, GROUND_SIZE)
+	if _ground_size == Vector2.ZERO:
+		return
+	var ground := Rect2(-_ground_size / 2.0, _ground_size)
 	draw_rect(ground, UiPalette.FOREST_GROUND)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = PATCH_SEED

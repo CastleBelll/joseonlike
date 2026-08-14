@@ -23,6 +23,25 @@ static func chase_direction(from: Vector2, to: Vector2) -> Vector2:
 	return (to - from).normalized() if from != to else Vector2.ZERO
 
 
+## Below this squared slide length a block counts as head-on.
+const HEAD_ON_EPSILON := 0.01
+
+
+## Obstacle steering for the chase (N3-9): keep the component that slides
+## along the blocking wall, and when the block is head-on (slide ~ zero) walk
+## the wall tangent in the enemy's fixed avoid direction, so a blocked enemy
+## always makes progress around a solid prop instead of grinding into it.
+static func avoid_direction(
+	desired: Vector2, block_normal: Vector2, avoid_sign: float
+) -> Vector2:
+	if block_normal == Vector2.ZERO or desired == Vector2.ZERO:
+		return desired
+	var along_wall: Vector2 = desired.slide(block_normal)
+	if along_wall.length_squared() > HEAD_ON_EPSILON:
+		return along_wall.normalized()
+	return Vector2(block_normal.y, -block_normal.x) * avoid_sign
+
+
 ## Point on a ring guaranteed outside the camera rect: the ring radius is the
 ## rect half-diagonal plus a margin, so every angle clears every rect corner.
 static func spawn_position(
