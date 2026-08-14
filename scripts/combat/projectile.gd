@@ -15,25 +15,26 @@ var _velocity := Vector2.ZERO
 var _damage: float = 0.0
 var _spawner: Spawner
 var _player: Player
+var _paper: ColorRect
 
 
 func _ready() -> void:
-	var paper := ColorRect.new()
-	paper.name = "Paper"
-	paper.color = UiPalette.PAPER
-	paper.size = PAPER_SIZE
-	paper.position = -PAPER_SIZE / 2.0
-	add_child(paper)
+	_paper = ColorRect.new()
+	_paper.name = "Paper"
+	_paper.color = UiPalette.PAPER
+	_paper.size = PAPER_SIZE
+	_paper.position = -PAPER_SIZE / 2.0
+	add_child(_paper)
 	var seal := ColorRect.new()
 	seal.name = "Seal"
 	seal.color = UiPalette.VERMILION
 	seal.size = PAPER_SIZE / 3.0
 	seal.position = -PAPER_SIZE / 6.0
-	paper.add_child(seal)
+	_paper.add_child(seal)
 
 
 func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
-		spawner: Spawner, player: Player) -> void:
+		spawner: Spawner, player: Player, tint: Color = UiPalette.PAPER) -> void:
 	global_position = from
 	_velocity = direction * speed
 	# The talisman's long side leads the flight direction.
@@ -41,6 +42,8 @@ func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 	_damage = damage
 	_spawner = spawner
 	_player = player
+	# N4-1: modded weapons tint the paper so a transformation reads on field.
+	_paper.color = tint
 
 
 func _physics_process(delta: float) -> void:

@@ -160,6 +160,25 @@ static func describe(
 	return ""
 
 
+## Display dict for the shared paper-panel card component (LevelUpPopup.open):
+## {"name", "desc", "well_label", "grade", "payload"} — payload is the raw
+## choice routed back through the popup's picked signal.
+static func as_card(
+	choice: Dictionary,
+	weapons: Dictionary,
+	passives: Dictionary,
+	owned_levels: Dictionary,
+	passive_stacks: Dictionary
+) -> Dictionary:
+	return {
+		"name": display_name(choice, weapons, passives),
+		"desc": describe(choice, weapons, passives, owned_levels, passive_stacks),
+		"well_label": well_label(choice, owned_levels, passive_stacks),
+		"grade": grade_text(choice, weapons),
+		"payload": choice,
+	}
+
+
 ## Trim trailing zeros so "12.0" reads as 12 but "1.15" stays exact.
 static func _fmt(value: float) -> String:
 	if is_equal_approx(value, round(value)):

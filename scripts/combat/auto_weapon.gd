@@ -10,6 +10,14 @@ const WEAPONS_PATH := "res://data/weapons.json"
 ## Cooldown can shrink per level and per attack-speed stacks; never let it
 ## reach zero or the weapon would fire every frame.
 const MIN_COOLDOWN_SEC := 0.05
+## N4-1: modded weapons tint their projectile so the transformation is
+## visible on the field; anything unlisted keeps the plain talisman paper.
+const TINTS: Dictionary = {
+	"fire_talisman": UiPalette.WEAPON_FIRE,
+	"phoenix_talisman": UiPalette.WEAPON_FIRE,
+	"lightning_talisman": UiPalette.WEAPON_LIGHTNING,
+	"beopgeom": UiPalette.WEAPON_SEAL,
+}
 
 var weapon_id: String = ""
 
@@ -90,7 +98,8 @@ func _try_fire() -> bool:
 		direction = Vector2.RIGHT  # enemy exactly on the player; any heading hits
 	var projectile: Projectile = _pool.acquire()
 	projectile.launch(
-		_player.global_position, direction, _speed, _damage, _spawner, _player
+		_player.global_position, direction, _speed, _damage, _spawner, _player,
+		TINTS.get(weapon_id, UiPalette.PAPER)
 	)
 	return true
 

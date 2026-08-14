@@ -56,6 +56,19 @@ const PROP_LANTERN := Color("#50737f")
 const PROP_SHRINE := Color("#415250")
 const DECOR_FOG := Color("#293c47")
 
+# N4-1 loot drop tier tints (in-field diamonds; the popup carries the words).
+const LOOT_COMMON := Color("#cfc8b8")
+const LOOT_UNCOMMON := Color("#7fc25e")
+const LOOT_RARE := Color("#5aa2e0")
+const LOOT_EPIC := Color("#a86fd6")
+const LOOT_MYTHIC := GOLD
+const LOOT_CORE := Color("#ffffff")
+
+# N4-1 modded-weapon projectile tints so a transformation reads on the field.
+const WEAPON_FIRE := Color("#ff8a3c")
+const WEAPON_LIGHTNING := Color("#8ad2ff")
+const WEAPON_SEAL := GOLD
+
 # Spacing scale (4/8pt grid).
 const SPACE_XS := 4
 const SPACE_SM := 8

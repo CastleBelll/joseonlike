@@ -1,12 +1,17 @@
 class_name LevelUpPopup
 extends CanvasLayer
-## Power-up choice popup (N3-6), capture _07 grammar: paper panel with lattice
-## corners and a header band, full-width row cards stacked vertically, and the
-## owned-weapon strip outside the panel. All colors are UiPalette tokens; the
-## icon wells show a glyph placeholder until weapon icon art lands (AC-3).
+## Paper-panel choice popup, capture _07 grammar: lattice corners, header band,
+## full-width row cards stacked vertically, and the owned-weapon strip outside
+## the panel. Serves both the level-up choices (N3-6) and the special-loot
+## choices (N4-1) — callers pass pre-built display cards (LevelUp.as_card /
+## Loot.as_card) so this stays one card component. All colors are UiPalette
+## tokens; the icon wells show a glyph placeholder until icon art lands (AC-3).
 
-signal picked(choice: Dictionary)
+signal picked(payload: Dictionary)
 signal dismissed
+
+const NEW_LABEL := "신규!"
+const TRANSFORM_LABEL := "변신!"
 
 const LAYER_ABOVE_HUD := 10
 const PANEL_MARGIN_X := 24.0
@@ -36,6 +41,7 @@ var _root: Control
 var _panel: PanelContainer
 var _body: Control
 var _owned_row: HBoxContainer
+var _title: Label
 
 
 func _init() -> void:
@@ -81,19 +87,20 @@ func _ready() -> void:
 	visible = false
 
 
-## Build and show the popup. The stage owns pausing; this only renders and
-## routes the pick. 0 choices degrade to a close button (no crash, no dead end).
+## Build and show the popup from pre-built display cards. The stage owns
+## pausing; this only renders and routes the pick (card "payload" back through
+## picked). 0 cards degrade to a close button (no crash, no dead end).
 func open(
-	choices: Array[Dictionary],
-	weapons: Dictionary,
-	passives: Dictionary,
+	header_text: String,
+	display_cards: Array[Dictionary],
 	owned_levels: Dictionary,
-	passive_stacks: Dictionary
+	weapons: Dictionary
 ) -> void:
 	for child: Node in _body.get_children():
 		child.queue_free()
 	for child: Node in _owned_row.get_children():
 		child.queue_free()
+	_title.text = header_text
 	var cards := VBoxContainer.new()
 	cards.name = "Cards"
 	cards.add_theme_constant_override("separation", int(CARD_GAP))
@@ -102,9 +109,9 @@ func open(
 	cards.offset_right = -BODY_MARGIN
 	cards.offset_top = BODY_MARGIN
 	_body.add_child(cards)
-	for choice: Dictionary in choices:
-		cards.add_child(_make_card(choice, weapons, passives, owned_levels, passive_stacks))
-	if choices.is_empty():
+	for card: Dictionary in display_cards:
+		cards.add_child(_make_card(card))
+	if display_cards.is_empty():
 		cards.add_child(_make_close_button())
 	_build_owned_row(owned_levels, weapons)
 	visible = true
@@ -116,13 +123,7 @@ func close() -> void:
 	visible = false
 
 
-func _make_card(
-	choice: Dictionary,
-	weapons: Dictionary,
-	passives: Dictionary,
-	owned_levels: Dictionary,
-	passive_stacks: Dictionary
-) -> Button:
+func _make_card(display: Dictionary) -> Button:
 	var card := Button.new()
 	card.custom_minimum_size = Vector2(0.0, CARD_HEIGHT)
 	card.focus_mode = Control.FOCUS_ALL
@@ -130,13 +131,14 @@ func _make_card(
 	card.add_theme_stylebox_override("hover", _card_style(UiPalette.PAPER_INSET))
 	card.add_theme_stylebox_override("pressed", _card_style(UiPalette.PAPER_INSET))
 	card.add_theme_stylebox_override("focus", _focus_ring())
-	card.pressed.connect(func() -> void: picked.emit(choice))
-	var name_text: String = LevelUp.display_name(choice, weapons, passives)
+	var payload: Dictionary = display.get("payload", {})
+	card.pressed.connect(func() -> void: picked.emit(payload))
+	var name_text: String = String(display.get("name", ""))
 	card.add_child(_make_icon_well(name_text))
-	var label_text: String = LevelUp.well_label(choice, owned_levels, passive_stacks)
+	var label_text: String = String(display.get("well_label", ""))
 	var well_label := _label(
 		label_text, UiPalette.FONT_SIZE_LABEL,
-		UiPalette.VERMILION if label_text == "신규!" else UiPalette.INK
+		UiPalette.VERMILION if label_text in [NEW_LABEL, TRANSFORM_LABEL] else UiPalette.INK
 	)
 	well_label.position = Vector2(WELL_MARGIN, WELL_MARGIN + WELL_SIZE + 4.0)
 	well_label.size = Vector2(WELL_SIZE, 20.0)
@@ -149,7 +151,7 @@ func _make_card(
 	name_label.offset_right = -(PILL_SIZE.x + PILL_MARGIN * 2.0)
 	card.add_child(name_label)
 	var desc_label := _label(
-		LevelUp.describe(choice, weapons, passives, owned_levels, passive_stacks),
+		String(display.get("desc", "")),
 		UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
 	)
 	desc_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
@@ -158,7 +160,7 @@ func _make_card(
 	desc_label.offset_right = -WELL_MARGIN
 	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	card.add_child(desc_label)
-	card.add_child(_make_grade_pill(LevelUp.grade_text(choice, weapons)))
+	card.add_child(_make_grade_pill(String(display.get("grade", ""))))
 	return card
 
 
@@ -243,11 +245,11 @@ func _make_header() -> Control:
 	header.name = "Header"
 	header.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	header.offset_bottom = HEADER_HEIGHT
-	var title := _label("파워 업!", UiPalette.FONT_SIZE_TITLE, UiPalette.VERMILION)
-	title.set_anchors_preset(Control.PRESET_FULL_RECT)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	header.add_child(title)
+	_title = _label("", UiPalette.FONT_SIZE_TITLE, UiPalette.VERMILION)
+	_title.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	header.add_child(_title)
 	return header
 
 

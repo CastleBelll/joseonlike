@@ -29,6 +29,8 @@ const PROP_ALLOWED_KEYS: Array[String] = [
 	"size", "collision", "solid", "weight", "shape", "texture", "placeholder"
 ]
 const PROP_SHAPES: Array[String] = ["rect", "round"]
+# N4-1 loot contract (data/loot.json, drop_tables.json, weapon_mods.json).
+const LOOT_TIERS: Array[String] = ["common", "uncommon", "rare", "epic", "mythic"]
 
 var _errors: int = 0
 
@@ -114,6 +116,46 @@ func _check_combat_cross_references() -> void:
 		effects.get("hit_feedback", {}), HIT_FEEDBACK_FIELDS, "effects.hit_feedback"
 	)
 	_check_props()
+	_check_loot(monsters, weapons)
+
+
+## N4-1 loot chain: every drop table points at a real monster and real loot,
+## every mod recipe joins real weapons to real loot, chances stay in (0, 1].
+func _check_loot(monsters: Dictionary, weapons: Dictionary) -> void:
+	var loot: Dictionary = _load(DATA_DIR + "/loot.json")
+	if loot.is_empty():
+		_fail("loot.json missing or empty")
+	for loot_id: String in loot:
+		var entry: Dictionary = loot[loot_id]
+		var label: String = "loot." + loot_id
+		if String(entry.get("name_ko", "")).is_empty():
+			_fail(label + ".name_ko missing or empty")
+		if String(entry.get("tier", "")) not in LOOT_TIERS:
+			_fail(label + ".tier must be one of " + str(LOOT_TIERS))
+		if entry.get("special") is not bool:
+			_fail(label + ".special missing or not a bool")
+		_require_positive_numbers(entry, ["salvage_gold"], label)
+	var drop_tables: Dictionary = _load(DATA_DIR + "/drop_tables.json")
+	for monster_id: String in drop_tables:
+		if not monsters.has(monster_id):
+			_fail("drop_tables.%s not in monsters.json" % monster_id)
+		for drop: Dictionary in (drop_tables[monster_id] as Dictionary).get("drops", []):
+			var drop_label: String = "drop_tables.%s.%s" % [monster_id, drop.get("loot_id", "?")]
+			if not loot.has(drop.get("loot_id", "")):
+				_fail(drop_label + " loot_id not in loot.json")
+			var chance: float = float(drop.get("chance", 0.0))
+			if chance <= 0.0 or chance > 1.0:
+				_fail(drop_label + ".chance must be in (0, 1]")
+	var mods: Dictionary = _load(DATA_DIR + "/weapon_mods.json")
+	for mod_id: String in mods:
+		var mod: Dictionary = mods[mod_id]
+		var mod_label: String = "weapon_mods." + mod_id
+		if not weapons.has(mod.get("weapon_id", "")):
+			_fail(mod_label + ".weapon_id not in weapons.json")
+		if not weapons.has(mod.get("result_weapon", "")):
+			_fail(mod_label + ".result_weapon not in weapons.json")
+		if not loot.has(mod.get("loot_id", "")):
+			_fail(mod_label + ".loot_id not in loot.json")
 
 
 ## N3-9 prop catalogue: sizes positive, collision boxes inside sprite bounds,

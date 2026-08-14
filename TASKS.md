@@ -51,6 +51,13 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 - [x] N5-1b 결과 화면 — 종이 패널 (승리/패배, 생존 시간, 처치, 엽전
       표시 전용) + 타이틀 복귀 CTA. 메타/뱅킹은 후속 페이즈
 
+## N4 — 전리품 & 무기 개조
+
+- [x] **N4-1 전리품 드랍 + 자석 픽업 + 특수 재료 3택 팝업** — drop_tables
+      기반 시드 롤, 티어 tint 다이아몬드 풀링 드랍, XP 오브 자석 경로 재사용,
+      RunState 런 인벤토리, 특수 재료 사용(무기 변신·레벨 유지)/보관/분해
+      팝업 (행 카드 컴포넌트 공유, 큐잉으로 패널 중첩 금지)
+
 ## N4+ — ROADMAP.md 페이즈 진입 시 세분화
 
 ## AC-트랙 — 에셋 (codex, 별도 커밋)
@@ -82,3 +89,4 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | 2026-08-14 | N5-1a boss wave: data-driven boss_at_sec spawn, no-despawn/no-cap boss, top thin HP bar, gold boss damage numbers | — |
 | 2026-08-14 | N5-1b run result screen: RunFlow outcome arbiter (death > boss kill > timeout-as-victory), paper-panel 승리/패배 + time/kills/gold, CTA to title | — |
 | 2026-08-14 | N3-10 bamboo forest art integration: real tile/prop/decor textures, seeded ground-variant tiling (GroundLayer), base-footprint collision boxes rebuilt from delivered art | — |
+| 2026-08-14 | N4-1 loot drops + magnet pickup + special-material 3-choice popup: seeded drop rolls, tier-tinted pooled diamonds via XP-orb magnet path, RunState run inventory, use/keep/salvage cards on the shared paper-panel component, weapon-mod swap carrying level, tinted modded projectiles, loot data cross-checks | — |

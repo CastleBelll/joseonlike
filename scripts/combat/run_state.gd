@@ -12,6 +12,9 @@ const FIRST_LEVEL := 1
 
 var level: int = FIRST_LEVEL
 var xp: int = 0
+## N4-1 run inventory: material counts per loot id, for UI and recipe checks.
+## Transitions go through the pure Loot.add / Loot.spend helpers.
+var inventory: Dictionary = {}
 
 var _base_xp: float = 0.0
 var _growth: float = 0.0

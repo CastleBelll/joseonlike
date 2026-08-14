@@ -6,7 +6,12 @@ extends Node2D
 
 const WEAPONS_PATH := "res://data/weapons.json"
 const PASSIVES_PATH := "res://data/passives.json"
+const LOOT_PATH := "res://data/loot.json"
+const DROP_TABLES_PATH := "res://data/drop_tables.json"
+const WEAPON_MODS_PATH := "res://data/weapon_mods.json"
 const CHOICES_PER_LEVEL := 3
+const POWER_UP_HEADER := "파워 업!"
+const LOOT_SCATTER_PX := 14.0
 
 @onready var _player: Player = $World/Player
 @onready var _joystick: TouchJoystick = $Hud/VirtualJoystick
@@ -33,6 +38,14 @@ var _pending_level_ups: int = 0
 var _choice_rng := RandomNumberGenerator.new()
 var _kills: int = 0
 var _ground_size := Vector2.ZERO  # from data/props.json "field" block
+
+# N4-1 loot state: data tables, pooled drops, run-seeded RNG, special queue.
+var _loot_data: Dictionary = {}
+var _drop_tables: Dictionary = {}
+var _mods_data: Dictionary = {}
+var _loot_pool: NodePool
+var _loot_rng := RandomNumberGenerator.new()
+var _special_queue: Array[String] = []
 
 # N3-8 feedback + N5-1 run flow state.
 var _feedback: Dictionary = {}
@@ -83,6 +96,11 @@ func _ready() -> void:
 	_number_pool = NodePool.new(self, _create_damage_number)
 	_weapons_data = _load_json(WEAPONS_PATH)
 	_passives_data = _load_json(PASSIVES_PATH)
+	_loot_data = _load_json(LOOT_PATH)
+	_drop_tables = _load_json(DROP_TABLES_PATH)
+	_mods_data = _load_json(WEAPON_MODS_PATH)
+	_loot_pool = NodePool.new(self, _create_loot_drop)
+	_loot_rng.randomize()  # the run RNG: one seed replays a run's drops
 	var starting_weapon: String = Player.load_starting_weapon()
 	_owned_levels[starting_weapon] = 1
 	_add_weapon_node(starting_weapon)
@@ -128,6 +146,7 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 	)
 	var orb: XpOrb = _orb_pool.acquire()
 	orb.launch(enemy.global_position, enemy.xp_drop, _player, _orb_config)
+	_spawn_loot(enemy)
 	if enemy.is_boss:
 		_boss = null
 		_hud.hide_boss_bar()
@@ -170,12 +189,13 @@ func _on_number_finished(number: DamageNumber) -> void:
 	_number_pool.release(number)
 
 
-## One grant can cross several levels; each one earns a choice screen, shown
-## one after another while the tree stays paused.
+## One grant can cross several levels; each one earns a choice screen. Level-up
+## screens and special-loot screens share one popup and one queue discipline:
+## a single panel at a time, level-ups first, then pending special materials.
 func _on_level_reached(_new_level: int) -> void:
 	_pending_level_ups += 1
-	if _pending_level_ups == 1:
-		_show_next_level_up()
+	if not _popup.visible:
+		_advance_popup_queue()
 
 
 func _show_next_level_up() -> void:
@@ -184,10 +204,43 @@ func _show_next_level_up() -> void:
 		_weapons_data, _passives_data, _owned_levels, _passive_stacks
 	)
 	var choices: Array[Dictionary] = LevelUp.pick(pool, CHOICES_PER_LEVEL, _choice_rng)
-	_popup.open(choices, _weapons_data, _passives_data, _owned_levels, _passive_stacks)
+	var cards: Array[Dictionary] = []
+	for choice: Dictionary in choices:
+		cards.append(LevelUp.as_card(
+			choice, _weapons_data, _passives_data, _owned_levels, _passive_stacks
+		))
+	_popup.open(POWER_UP_HEADER, cards, _owned_levels, _weapons_data)
 
 
-func _on_choice_picked(choice: Dictionary) -> void:
+## The special-material 3-choice screen (N4-1): built at show time so a queued
+## material sees the weapon state left by the previous choice.
+func _show_next_special() -> void:
+	get_tree().paused = true
+	var loot_id: String = _special_queue[0]
+	var choices: Array[Dictionary] = Loot.build_choices(loot_id, _mods_data, _owned_levels)
+	var cards: Array[Dictionary] = []
+	for choice: Dictionary in choices:
+		cards.append(Loot.as_card(choice, _loot_data, _weapons_data, _run_state.inventory))
+	var header: String = "%s 획득!" % String(
+		(_loot_data.get(loot_id, {}) as Dictionary).get("name_ko", loot_id)
+	)
+	_popup.open(header, cards, _owned_levels, _weapons_data)
+
+
+func _on_choice_picked(payload: Dictionary) -> void:
+	match String(payload.get("kind", "")):
+		LevelUp.KIND_NEW_WEAPON, LevelUp.KIND_WEAPON_UP, LevelUp.KIND_PASSIVE:
+			_apply_level_up_choice(payload)
+			_pending_level_ups -= 1
+		Loot.KIND_USE, Loot.KIND_KEEP, Loot.KIND_SALVAGE:
+			_apply_loot_choice(payload)
+			_special_queue.pop_front()
+		_:
+			push_error("stage: unknown popup payload " + str(payload))
+	_advance_popup_queue()
+
+
+func _apply_level_up_choice(choice: Dictionary) -> void:
 	var result: Dictionary = LevelUp.apply_choice(choice, _owned_levels, _passive_stacks)
 	_owned_levels = result["owned_levels"]
 	_passive_stacks = result["passive_stacks"]
@@ -199,17 +252,46 @@ func _on_choice_picked(choice: Dictionary) -> void:
 			(_weapon_nodes[id] as AutoWeapon).set_level(int(_owned_levels[id]))
 		LevelUp.KIND_PASSIVE:
 			_apply_passive_effects(id)
-	_close_or_show_next()
+
+
+func _apply_loot_choice(choice: Dictionary) -> void:
+	var loot_id: String = String(choice.get("loot_id", ""))
+	match String(choice.get("kind", "")):
+		Loot.KIND_USE:
+			_apply_weapon_mod(choice.get("mod", {}) as Dictionary)
+		Loot.KIND_KEEP:
+			_run_state.inventory = Loot.add(_run_state.inventory, loot_id)
+		Loot.KIND_SALVAGE:
+			_gold += Loot.salvage_gold(_loot_data, loot_id)
+			_hud.set_gold(_gold)
+
+
+## Swap the owned base weapon node for the recipe result, carrying its level.
+func _apply_weapon_mod(mod: Dictionary) -> void:
+	var base_id: String = String(mod.get("weapon_id", ""))
+	var result_id: String = String(mod.get("result_weapon", ""))
+	var old_node: AutoWeapon = _weapon_nodes.get(base_id)
+	if old_node == null:
+		push_error("stage: weapon mod base '%s' has no node" % base_id)
+		return
+	_owned_levels = Loot.apply_mod(_owned_levels, mod)
+	_weapon_nodes.erase(base_id)
+	old_node.queue_free()
+	_add_weapon_node(result_id)
+	(_weapon_nodes[result_id] as AutoWeapon).set_level(int(_owned_levels[result_id]))
 
 
 func _on_popup_dismissed() -> void:
-	_close_or_show_next()
-
-
-func _close_or_show_next() -> void:
 	_pending_level_ups -= 1
+	_advance_popup_queue()
+
+
+func _advance_popup_queue() -> void:
 	if _pending_level_ups > 0:
 		_show_next_level_up()
+		return
+	if not _special_queue.is_empty():
+		_show_next_special()
 		return
 	_popup.close()
 	get_tree().paused = false
@@ -264,6 +346,40 @@ func _load_json(path: String) -> Dictionary:
 		push_error("stage: cannot parse " + path)
 		return {}
 	return data
+
+
+## Roll the dead monster's drop table and scatter tier-tinted drops around
+## the corpse so they never hide under the XP orb.
+func _spawn_loot(enemy: Enemy) -> void:
+	var table: Dictionary = _drop_tables.get(enemy.monster_id, {})
+	for loot_id: String in Loot.roll_drops(table, _loot_rng):
+		var drop: LootDrop = _loot_pool.acquire()
+		var scatter := Vector2(
+			_loot_rng.randf_range(-LOOT_SCATTER_PX, LOOT_SCATTER_PX),
+			_loot_rng.randf_range(-LOOT_SCATTER_PX, LOOT_SCATTER_PX)
+		)
+		drop.launch_loot(
+			enemy.global_position + scatter, loot_id,
+			Loot.tier_color(_loot_data, loot_id), _player, _orb_config
+		)
+
+
+## Ordinary materials bank silently; special ones queue the 3-choice screen.
+func _on_loot_collected(orb: XpOrb) -> void:
+	var loot_id: String = (orb as LootDrop).loot_id
+	_loot_pool.release(orb)
+	if bool((_loot_data.get(loot_id, {}) as Dictionary).get("special", false)):
+		_special_queue.append(loot_id)
+		if not _popup.visible:
+			_advance_popup_queue()
+		return
+	_run_state.inventory = Loot.add(_run_state.inventory, loot_id)
+
+
+func _create_loot_drop() -> LootDrop:
+	var drop := LootDrop.new()
+	drop.collected.connect(_on_loot_collected)
+	return drop
 
 
 func _create_orb() -> XpOrb:
