@@ -160,6 +160,20 @@ static func _validate_characters(characters: Dictionary, weapons: Dictionary, ac
 		if not weapons.has(starting_weapon):
 			errors.append("%s: '%s'.starting_weapon '%s' does not exist in weapons.json" % [file, id, starting_weapon])
 
+		if c.has("active"):
+			var active: Variant = c.get("active")
+			if not (active is Dictionary):
+				errors.append("%s: '%s'.active must be an object" % [file, id])
+			else:
+				var active_dict: Dictionary = active
+				if String(active_dict.get("id", "")).is_empty():
+					errors.append("%s: '%s'.active.id must be a non-empty string" % [file, id])
+				for name_key in ["name_ko", "name_en"]:
+					if String(active_dict.get(name_key, "")).is_empty():
+						errors.append("%s: '%s'.active.%s must be a non-empty string" % [file, id, name_key])
+				if _num(active_dict, "cooldown_sec") <= 0.0:
+					errors.append("%s: '%s'.active.cooldown_sec must be > 0" % [file, id])
+
 		var unlock: Variant = c.get("unlock")
 		if not (unlock is Dictionary):
 			errors.append("%s: '%s'.unlock must be an object" % [file, id])

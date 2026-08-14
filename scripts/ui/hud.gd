@@ -49,6 +49,16 @@ var _max_hp: float = 0.0
 var _current_hp: float = 0.0
 var _boss_active: bool = false
 
+## Active skill button (GDD v2 sections 29-30). Built in code because it only
+## exists for characters whose data declares an active; the HUD talks to the
+## player exclusively through EventBus, per this file's contract.
+var _active_button: Button = null
+var _active_name: String = ""
+var _active_cooldown_left: float = 0.0
+
+const ACTIVE_BUTTON_SIZE := Vector2(96, 72)
+const ACTIVE_BUTTON_MARGIN: float = 16.0
+
 
 func _ready() -> void:
 	layer = 10
@@ -81,6 +91,8 @@ func _ready() -> void:
 	EventBus.boss_defeated.connect(_on_boss_defeated)
 
 	_setup_pause_overlay()
+	_setup_active_button()
+	EventBus.active_skill_used.connect(_on_active_skill_used)
 
 	_refresh_max_hp()
 	_current_hp = _max_hp
@@ -93,6 +105,50 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_update_stats_row()
+	_tick_active_button(_delta)
+
+
+func _setup_active_button() -> void:
+	if RunState.character_id.is_empty():
+		return
+	var active: Variant = GameData.character(RunState.character_id).get("active")
+	if not (active is Dictionary):
+		return
+	_active_name = LocaleText.field(active as Dictionary, "name")
+	_active_button = Button.new()
+	_active_button.text = _active_name
+	_active_button.custom_minimum_size = ACTIVE_BUTTON_SIZE
+	_active_button.focus_mode = Control.FOCUS_NONE
+	UiPalette.apply_button_style(_active_button)
+	_active_button.pressed.connect(_on_active_button_pressed)
+	# Direct CanvasLayer child, not under $Root: Root is only the 216 px top
+	# bar, and this button anchors to the viewport's bottom-right corner.
+	add_child(_active_button)
+	_active_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_active_button.offset_left = -ACTIVE_BUTTON_SIZE.x - ACTIVE_BUTTON_MARGIN
+	_active_button.offset_top = -ACTIVE_BUTTON_SIZE.y - ACTIVE_BUTTON_MARGIN
+	_active_button.offset_right = -ACTIVE_BUTTON_MARGIN
+	_active_button.offset_bottom = -ACTIVE_BUTTON_MARGIN
+
+
+func _on_active_button_pressed() -> void:
+	UiSound.play_click(self)
+	EventBus.active_skill_pressed.emit()
+
+
+func _on_active_skill_used(cooldown_sec: float) -> void:
+	_active_cooldown_left = cooldown_sec
+
+
+## The HUD counts the display down locally: the player only announces the use,
+## so no per-frame cross-node traffic is needed for a cosmetic timer.
+func _tick_active_button(delta: float) -> void:
+	if _active_button == null:
+		return
+	_active_cooldown_left = maxf(_active_cooldown_left - delta, 0.0)
+	var ready: bool = _active_cooldown_left <= 0.0
+	_active_button.disabled = not ready
+	_active_button.text = _active_name if ready else "%s\n%d" % [_active_name, ceili(_active_cooldown_left)]
 
 
 func _icon(id: String) -> Texture2D:

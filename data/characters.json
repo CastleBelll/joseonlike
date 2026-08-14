@@ -6,7 +6,15 @@
     "base_hp": 120,
     "base_speed": 90.0,
     "starting_weapon": "old_talisman",
-    "unlock": { "type": "default" }
+    "unlock": { "type": "default" },
+    "active": {
+      "id": "chukji",
+      "name_ko": "축지",
+      "name_en": "Chukji",
+      "cooldown_sec": 8.0,
+      "distance_px": 120.0,
+      "invulnerable_sec": 1.0
+    }
   },
   "warrior": {
     "name_ko": "무사",

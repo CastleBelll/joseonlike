@@ -91,6 +91,9 @@ var _rotation_cache: Dictionary = {}
 var _facing_sign: int = CharacterMotion.FACING_RIGHT
 var _side_idle: Texture2D = null
 var _side_walk: Texture2D = null
+## Active skill (GDD v2 section 30), data-driven from characters.json.
+var _active_data: Dictionary = {}
+var _active_cooldown_left: float = 0.0
 
 @onready var _sprite: Sprite2D = $Sprite2D
 @onready var _hurt_box: Area2D = $HurtBox
@@ -115,10 +118,15 @@ func _ready() -> void:
 	# A mod rewrites the RunState entry directly, so resyncing the nodes is the
 	# whole job; same deferred path as an upgrade pick.
 	EventBus.weapon_modified.connect(_on_weapon_modified)
+	_active_data = _character_data.get("active", {}) if _character_data.get("active") is Dictionary else {}
+	EventBus.active_skill_pressed.connect(try_active_skill)
 
 
 func _physics_process(delta: float) -> void:
 	_tick_invulnerability(delta)
+	_active_cooldown_left = maxf(_active_cooldown_left - delta, 0.0)
+	if combat_enabled and Input.is_action_just_pressed(&"ui_accept"):
+		try_active_skill()
 	var direction: Vector2 = _read_input()
 	if direction.length_squared() > 0.0:
 		facing = direction.normalized()
@@ -126,6 +134,34 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_apply_contact_damage()
 	_advance_motion(direction, delta)
+
+
+## Fires the character's data-declared active skill if one exists and is off
+## cooldown. Skills dispatch on their data id; only chukji exists today.
+func try_active_skill() -> void:
+	if _active_data.is_empty() or _active_cooldown_left > 0.0:
+		return
+	if not combat_enabled or not is_alive():
+		return
+
+	match String(_active_data.get("id", "")):
+		"chukji":
+			_cast_chukji()
+		var unknown_id:
+			push_warning("Player: unknown active skill id \"%s\"" % unknown_id)
+			return
+
+	_active_cooldown_left = float(_active_data.get("cooldown_sec", 0.0))
+	EventBus.active_skill_used.emit(_active_cooldown_left)
+
+
+## Chukji: a short blink along the facing with a grace window (GDD section 30).
+func _cast_chukji() -> void:
+	var distance: float = float(_active_data.get("distance_px", 0.0))
+	var blink: Vector2 = facing.normalized() * distance
+	global_position += blink
+	_invulnerable_left = maxf(_invulnerable_left, float(_active_data.get("invulnerable_sec", 0.0)))
+	EffectPool.play(EffectPool.LEVEL_UP, global_position)
 
 
 func is_alive() -> bool:
