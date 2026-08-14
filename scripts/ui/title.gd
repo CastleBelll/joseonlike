@@ -2,10 +2,12 @@ class_name TitleScreen
 extends Control
 ## Title screen layout (N1-1), DESIGN.md §4. The gradient background and the
 ## logo plaque are placeholders; N1-2 swaps LogoArea and the background bands
-## for the AC-2 art. Target scenes do not exist yet, so presses only emit
-## menu_selected.
+## for the AC-2 art. "start" routes to the stage scene (N3-1); other targets
+## do not exist yet, so their presses only emit menu_selected.
 
 signal menu_selected(id: String)
+
+const STAGE_SCENE := "res://scenes/stage.tscn"
 
 const MENU_WIDTH_RATIO := 0.85
 const MENU_BUTTON_HEIGHT := 64
@@ -29,6 +31,12 @@ static func menu_button_defs() -> Array[Dictionary]:
 
 func _ready() -> void:
 	build_ui()
+	menu_selected.connect(_on_menu_selected)
+
+
+func _on_menu_selected(id: String) -> void:
+	if id == "start":
+		get_tree().change_scene_to_file(STAGE_SCENE)
 
 
 ## Builds every child node. Public so the headless test can construct the

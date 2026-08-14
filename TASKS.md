@@ -30,7 +30,7 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 
 ## N3 — 전투 수직 슬라이스 (세션 단위로 분해)
 
-- [ ] N3-1 스테이지 씬 + 카메라 + 가상 조이스틱 이동
+- [x] N3-1 스테이지 씬 + 카메라 + 가상 조이스틱 이동
 - [ ] N3-2 도사 인월드 스프라이트 (AC-1, 2방향 + 4프레임 걷기)
 - [ ] N3-3 자동 공격 무기 1종 (부적 투척)
 - [ ] N3-4 몬스터 스폰/추적/접촉 피해/사망
@@ -59,3 +59,4 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 | 2026-08-14 | N0-1 repo reset (old code/assets removed, font kept) | 7042085 |
 | 2026-08-14 | N0-2 minimal boot: title stub + test runner + data validator | — |
 | 2026-08-14 | N1-1 design tokens (UiPalette/UiLocale/WoodButton, global theme) + title layout | — |
+| 2026-08-14 | N3-1 stage scene: camera-follow player, touch joystick + WASD, title routing | — |

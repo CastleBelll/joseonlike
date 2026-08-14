@@ -18,6 +18,11 @@ const VERMILION := Color("#bf402a")
 const SUCCESS := Color("#58d858")
 const TEXT_ON_DARK := Color("#f0e6d2")
 
+# In-game world tokens (DESIGN.md §5 dark forest look).
+const FOREST_GROUND := Color("#232b1e")
+const FOREST_SHADOW := Color("#1a2117")
+const ACCENT_TAOIST := Color("#4a7fd6")
+
 # Spacing scale (4/8pt grid).
 const SPACE_XS := 4
 const SPACE_SM := 8
