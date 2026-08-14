@@ -82,6 +82,49 @@ static func orbit_position(
 	return center + Vector2.from_angle(angle) * radius
 
 
+## Summon target (N4-4b, 신장): nearest candidate to the SUMMON among those
+## inside the leash radius around the PLAYER — the general fights near its
+## master, never chases across the map. -1 sends the summon back to heel.
+static func summon_target_index(
+	summon_pos: Vector2, player_pos: Vector2, positions: Array[Vector2], leash_px: float
+) -> int:
+	var best: int = -1
+	var best_distance_squared: float = INF
+	var leash_squared: float = leash_px * leash_px
+	for i: int in range(positions.size()):
+		if player_pos.distance_squared_to(positions[i]) > leash_squared:
+			continue
+		var distance_squared: float = summon_pos.distance_squared_to(positions[i])
+		if distance_squared < best_distance_squared:
+			best = i
+			best_distance_squared = distance_squared
+	return best
+
+
+## Curse propagation on death (N4-4b, 살): up to `max_count` nearest-first
+## candidates within `radius` of the corpse that are NOT already cursed — a
+## curse never revisits a carrier, so a chain sweeps a crowd exactly once.
+static func curse_spread_targets(
+	from: Vector2,
+	positions: Array[Vector2],
+	cursed: Array[bool],
+	radius: float,
+	max_count: int
+) -> Array[int]:
+	var candidates: Array[Vector2] = []  # (distance squared, candidate index)
+	for i: int in range(positions.size()):
+		if cursed[i]:
+			continue
+		var distance_squared: float = from.distance_squared_to(positions[i])
+		if distance_squared <= radius * radius:
+			candidates.append(Vector2(distance_squared, float(i)))
+	candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+	var targets: Array[int] = []
+	for pair: Vector2 in candidates.slice(0, max_count):
+		targets.append(int(pair.y))
+	return targets
+
+
 ## Pierce reference model: indices hit by a projectile flying from `origin`
 ## along `direction`, ordered by distance along the line. A candidate is on
 ## the line when its perpendicular distance is within hit_radius + its own
