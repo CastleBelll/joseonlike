@@ -30,8 +30,27 @@ render on a flat chroma-green background.
 | `portrait.png` | 48×48 | 768×768 | Full hat and head fit inside the canvas |
 | `preview.gif` | 40×40 | 640×640 | Four-frame loop at an exact 8 fps average |
 | `contact-sheet.png` | n/a | 2880×1024 | Dark-green `#1c2416` silhouette/readability check |
+| `hand-finish-verification.png` | 200×46 source | 1600×368 | Idle plus all four logical frames at 8× NEAREST |
 
-All PNGs have binary alpha (`0` or `255`) and exact 16× nearest-neighbor blocks. The 40×40 exception was selected because the owner's high-resolution AI raster has no clean integer pixel grid: at 32×32 the AREA result lost the eye whites and no longer read as a face. At 40×40 the 38 px figure retains both eye highlights, cheek color, the separated straw brim, and robe hue bands. Walk frames use the authored lower-body poses from sheet frames 1–4; the frame-one upper body is locked across the strip and every frame shares the same bottom ground row.
+All PNGs have binary alpha (`0` or `255`) and exact 16× nearest-neighbor blocks. The 40×40 exception was selected because the owner's high-resolution AI raster has no clean integer pixel grid: at 32×32 the AREA result lost the eye whites and no longer read as a face. At 40×40 the 38 px figure retains both eye highlights, cheek color, the separated straw brim, and robe hue bands. Walk frames retain the source palette and locked head block, but the target-resolution lower body is deliberately re-authored: contact frames 1/3 have a 4+ pixel gap and opposite planted feet, while passing frames 2/4 close the legs and raise the robe hem exactly one logical row. The free arm/staff charm swings 1–2 logical pixels by phase and every frame shares the same bottom ground row.
+
+## Hand-finished target-resolution patch
+
+The source eye lines are thinner than one target pixel and disappear during the
+required AREA/BOX reduction, so `build_assets.py` applies the explicit
+`HAND_FACE_PATCH` table after palette quantization. At logical coordinates
+`(20,16)` and `(24,16)` it places the two dark irises; `(19,16)` and `(23,16)`
+are the light eye pixels; `(20,18)` and `(24,18)` are blush; `(22,20)` is the
+single mouth pixel. The same patch is applied to idle and copied into the
+identical 22-row head block of every walk frame.
+
+The lower-body authoring functions are deterministic coordinate/polygon patches
+in the build script, rather than a second generated source. Numerical
+adjacent-frame differences below the waist (rows 27–39, including the loop
+edge) are `[177, 165, 171, 177]` pixels, all well above the 12-pixel minimum.
+`hand-finish-verification.png` is the mandatory visual check: idle and walk
+frames are each shown at 1x logical resolution enlarged 8x NEAREST so the eyes,
+contact gap, passing pose, and one-row bob can be inspected without smoothing.
 
 ## Proportion measurement
 
@@ -54,6 +73,6 @@ The in-world sprites share one compact 32-color palette plus transparency. The p
 1. Keep the two source sheets at the paths listed above.
 2. Install Pillow if needed: `python -m pip install Pillow`.
 3. Run `python asset/characters/taoist/build_assets.py` from the repository root.
-4. The script keys chroma green at full resolution with halo despill, isolates and rebalances each source figure, BOX-filters premultiplied RGB and alpha to the logical grid, re-thresholds alpha at 128, builds a shared 32-color source palette, locks the walk upper body, verifies that no green fringe remains, and exports at 16× nearest-neighbor scale.
+4. The script keys chroma green at full resolution with halo despill, isolates and rebalances each source figure, BOX-filters premultiplied RGB and alpha to the logical grid, re-thresholds alpha at 128, builds a shared 32-color source palette, locks the 22-row head block, applies the explicit face and stride patches, verifies that no green fringe remains, and exports at 16× nearest-neighbor scale. It also emits `hand-finish-verification.png` for the required 8× nearest visual check.
 
 Final visual review rendered the exact 40×40 idle at 1× and 8× NEAREST beside the owner full-resolution figure. Both eye highlights and the cheek tone remain visible, the straw hat stays distinct from the crimson hair, and the navy/teal robe matches the source; the approved portrait remained byte-identical.

@@ -16,6 +16,34 @@ PALETTE_SIZE = 32
 SCALE = 16
 GROUND = (28, 36, 22, 255)
 
+# These are deliberate 1x logical pixels, not source-resolution guesses.  The
+# source eyes are sub-pixel lines and disappear in the BOX reduction, so the
+# final face receives two explicit dark irises, two light eye pixels, two blush
+# pixels, and one tiny mouth.  All values are already present in the shared
+# source-derived palette.
+HAND_FACE_PATCH = (
+    (19, 16, (242, 220, 217, 255)),
+    (20, 16, (13, 14, 19, 255)),
+    (23, 16, (246, 214, 197, 255)),
+    (24, 16, (13, 14, 19, 255)),
+    (20, 18, (227, 154, 94, 255)),
+    (24, 18, (227, 154, 94, 255)),
+    (22, 20, (75, 6, 36, 255)),
+)
+HEAD_LOCK_ROWS = 22
+WAIST_ROW = 27
+
+# Existing palette colors used for the deliberately chunky stride patches.
+LEG_OUTLINE = (25, 15, 21, 255)
+ROBE_MID = (75, 66, 112, 255)
+ROBE_DARK = (52, 66, 97, 255)
+ROBE_TEAL = (76, 97, 96, 255)
+PANTS = (91, 53, 43, 255)
+PANTS_LIGHT = (132, 97, 66, 255)
+SKIN = (230, 173, 120, 255)
+SHOE = (13, 14, 19, 255)
+STAFF_GOLD = (227, 154, 94, 255)
+
 
 def remove_green(image: Image.Image) -> Image.Image:
     """Hard-key chroma green at source resolution and despill retained edges."""
@@ -263,6 +291,126 @@ def assemble_walk(source_frames: list[Image.Image]) -> list[Image.Image]:
     return result
 
 
+def apply_face_patch(image: Image.Image) -> Image.Image:
+    """Apply the exact eye/blush pixels at target resolution."""
+    result = image.copy()
+    for x, y, color in HAND_FACE_PATCH:
+        result.putpixel((x, y), color)
+    return result
+
+
+def clear_box(image: Image.Image, box: tuple[int, int, int, int]) -> None:
+    """Clear a logical region before drawing an intentionally chunky pose."""
+    for y in range(box[1], box[3]):
+        for x in range(box[0], box[2]):
+            image.putpixel((x, y), (0, 0, 0, 0))
+
+
+def draw_contact_legs(image: Image.Image, *, forward: bool) -> None:
+    """Plant two feet 4+ pixels apart; contact frames 1 and 3 use this."""
+    draw = ImageDraw.Draw(image)
+    clear_box(image, (13, WAIST_ROW, 33, LOGICAL_SIZE[1]))
+    # Robe hem and split panels remain above the legs.
+    draw.polygon(
+        [(15, 25), (28, 25), (29, 29), (27, 32), (15, 32), (14, 29)],
+        fill=ROBE_DARK,
+    )
+    draw.rectangle((17, 27, 20, 31), fill=ROBE_MID)
+    draw.rectangle((24, 27, 27, 31), fill=ROBE_TEAL)
+    if forward:
+        left, right = (15, 19), (24, 28)
+        left_foot, right_foot = (13, 19), (27, 31)
+    else:
+        left, right = (16, 20), (24, 28)
+        left_foot, right_foot = (14, 20), (25, 29)
+    # Left leg.
+    draw.rectangle((left[0], 30, left[1], 36), fill=LEG_OUTLINE)
+    draw.rectangle((left[0] + 1, 30, left[1] - 1, 35), fill=PANTS)
+    draw.rectangle((left[0] + 1, 35, left[1] - 1, 36), fill=PANTS_LIGHT)
+    draw.rectangle((left_foot[0], 37, left_foot[1], 39), fill=LEG_OUTLINE)
+    draw.rectangle((left_foot[0] + 1, 37, left_foot[1] - 1, 38), fill=SHOE)
+    # Right leg, with a different foot angle from the left.
+    draw.rectangle((right[0], 30, right[1], 36), fill=LEG_OUTLINE)
+    draw.rectangle((right[0] + 1, 30, right[1] - 1, 35), fill=PANTS)
+    draw.rectangle((right[0] + 1, 35, right[1] - 1, 36), fill=PANTS_LIGHT)
+    draw.rectangle((right_foot[0], 37, right_foot[1], 39), fill=LEG_OUTLINE)
+    draw.rectangle((right_foot[0] + 1, 37, right_foot[1] - 1, 38), fill=SHOE)
+
+
+def draw_passing_legs(image: Image.Image, *, forward: bool) -> None:
+    """Raise the hem one row and close the legs for passing frames 2 and 4."""
+    draw = ImageDraw.Draw(image)
+    clear_box(image, (13, WAIST_ROW - 1, 33, LOGICAL_SIZE[1]))
+    # One-row-raised hem is the visible bob; the locked head remains unchanged.
+    draw.polygon(
+        [(16, 24), (28, 24), (28, 28), (26, 31), (16, 31), (15, 28)],
+        fill=ROBE_DARK,
+    )
+    draw.rectangle((18, 26, 21, 30), fill=ROBE_MID)
+    draw.rectangle((23, 26, 26, 30), fill=ROBE_TEAL)
+    if forward:
+        left_foot, right_foot = (18, 22), (22, 26)
+    else:
+        left_foot, right_foot = (19, 23), (21, 25)
+    # Together at the passing pose: no 3px transparent gap remains.
+    draw.rectangle((19, 29, 22, 36), fill=LEG_OUTLINE)
+    draw.rectangle((20, 29, 21, 35), fill=PANTS)
+    draw.rectangle((20, 35, 21, 36), fill=PANTS_LIGHT)
+    draw.rectangle((23, 29, 25, 36), fill=LEG_OUTLINE)
+    draw.rectangle((23, 29, 24, 35), fill=PANTS)
+    draw.rectangle((23, 35, 24, 36), fill=PANTS_LIGHT)
+    draw.rectangle((left_foot[0], 37, left_foot[1], 39), fill=LEG_OUTLINE)
+    draw.rectangle((left_foot[0] + 1, 37, left_foot[1] - 1, 38), fill=SHOE)
+    draw.rectangle((right_foot[0], 37, right_foot[1], 39), fill=LEG_OUTLINE)
+    draw.rectangle((right_foot[0] + 1, 37, right_foot[1] - 1, 38), fill=SHOE)
+
+
+def draw_arm_swing(image: Image.Image, *, passing: bool, forward: bool) -> None:
+    """Move the free hand/staff charm by 1-2 logical pixels per phase."""
+    draw = ImageDraw.Draw(image)
+    if passing:
+        # Raised passing arm, one pixel toward screen-right.
+        draw.line((27, 22, 30 if forward else 31, 26), fill=ROBE_MID, width=2)
+        draw.rectangle((29 if forward else 30, 26, 31, 28), fill=SKIN)
+        draw.point((30 if forward else 31, 25), fill=STAFF_GOLD)
+    else:
+        # Low contact arm and a lower glint on the staff charm.
+        draw.line((27, 24, 29 if forward else 28, 29), fill=ROBE_DARK, width=2)
+        draw.rectangle((28 if forward else 27, 28, 30 if forward else 29, 30), fill=SKIN)
+        draw.point((10 if forward else 11, 30), fill=STAFF_GOLD)
+
+
+def author_walk_cycle(idle: Image.Image, source_frames: list[Image.Image]) -> list[Image.Image]:
+    """Replace subtle source strides with a readable four-frame target pose."""
+    result: list[Image.Image] = []
+    for index, authored in enumerate(source_frames):
+        frame = authored.copy()
+        # Head and face are copied from one idle block, byte-identical in every
+        # frame. The robe/legs below the waist are intentionally authored.
+        frame.paste(idle.crop((0, 0, LOGICAL_SIZE[0], HEAD_LOCK_ROWS)), (0, 0))
+        if index % 2 == 0:
+            draw_contact_legs(frame, forward=index == 0)
+            draw_arm_swing(frame, passing=False, forward=index == 0)
+        else:
+            draw_passing_legs(frame, forward=index == 1)
+            draw_arm_swing(frame, passing=True, forward=index == 1)
+        result.append(apply_face_patch(frame))
+    return result
+
+
+def lower_body_difference_counts(frames: list[Image.Image]) -> list[int]:
+    """Count adjacent differences from the waist row downward."""
+    counts = []
+    for left, right in zip(frames, frames[1:] + frames[:1]):
+        count = 0
+        for y in range(WAIST_ROW, LOGICAL_SIZE[1]):
+            for x in range(LOGICAL_SIZE[0]):
+                if left.getpixel((x, y)) != right.getpixel((x, y)):
+                    count += 1
+        counts.append(count)
+    return counts
+
+
 def assert_no_green_fringe(images: list[Image.Image]) -> None:
     for image in images:
         for r, g, b, alpha in image.get_flattened_data():
@@ -272,6 +420,10 @@ def assert_no_green_fringe(images: list[Image.Image]) -> None:
 
 def upscale(image: Image.Image) -> Image.Image:
     return image.resize((image.width * SCALE, image.height * SCALE), Image.Resampling.NEAREST)
+
+
+def upscale_by(image: Image.Image, scale: int) -> Image.Image:
+    return image.resize((image.width * scale, image.height * scale), Image.Resampling.NEAREST)
 
 
 def save_outputs(idle: Image.Image, walk_logical: list[Image.Image], ratio: float) -> None:
@@ -318,6 +470,19 @@ def save_outputs(idle: Image.Image, walk_logical: list[Image.Image], ratio: floa
     )
     sheet.convert("RGB").save(OUT / "contact-sheet.png", optimize=True)
 
+    # Explicit 1x-logical visual QA: idle and each walk frame are enlarged 8x
+    # with no interpolation so the two eye pixels and stride gap can be judged
+    # at the same authored resolution as the game sprite.
+    zoom = Image.new("RGB", (5 * LOGICAL_SIZE[0] * 8, 46 * 8), GROUND[:3])
+    zoom_draw = ImageDraw.Draw(zoom)
+    zoom_draw.text((8, 8), "IDLE", fill=(245, 224, 174, 255))
+    zoom.paste(upscale_by(idle, 8).convert("RGB"), (0, 6 * 8))
+    for index, frame in enumerate(walk_logical):
+        x = (index + 1) * LOGICAL_SIZE[0] * 8
+        zoom_draw.text((x + 8, 8), f"WALK {index + 1}", fill=(173, 209, 160, 255))
+        zoom.paste(upscale_by(frame, 8).convert("RGB"), (x, 6 * 8))
+    zoom.save(OUT / "hand-finish-verification.png", optimize=True)
+
 
 def main() -> None:
     source = remove_green(Image.open(SOURCE))
@@ -336,7 +501,8 @@ def main() -> None:
     palette = palette_from_images([idle, *authored_walk], PALETTE_SIZE)
     idle = apply_palette(idle, palette)
     authored_walk = [apply_palette(frame, palette) for frame in authored_walk]
-    walk_logical = assemble_walk(authored_walk)
+    idle = apply_face_patch(idle)
+    walk_logical = author_walk_cycle(idle, assemble_walk(authored_walk))
     assert_no_green_fringe([idle, *walk_logical])
 
     hair_top, chin, total_height, ratio = measure_head_ratio(idle)
@@ -346,10 +512,17 @@ def main() -> None:
         raise ValueError(f"head ratio {ratio:.6f} is outside the 0.42-0.55 contract")
     if any(frame.getchannel("A").getbbox()[3] != LOGICAL_SIZE[1] for frame in walk_logical):
         raise ValueError("every walk frame must place its feet on the bottom row")
+    lower_diffs = lower_body_difference_counts(walk_logical)
+    if any(count < 12 for count in lower_diffs):
+        raise ValueError(f"walk stride is too subtle: lower-body differences {lower_diffs}")
+    head_block = idle.crop((0, 0, LOGICAL_SIZE[0], HEAD_LOCK_ROWS))
+    if any(frame.crop((0, 0, LOGICAL_SIZE[0], HEAD_LOCK_ROWS)).tobytes() != head_block.tobytes() for frame in walk_logical):
+        raise ValueError("walk head block is not pixel-identical")
 
     save_outputs(idle, walk_logical, ratio)
     print(f"palette colors: {len(palette)}")
     print(f"head ratio: ({chin} - {hair_top} + 1) / {total_height} = {ratio:.6f}")
+    print(f"lower-body adjacent differences: {lower_diffs}")
 
 
 if __name__ == "__main__":
