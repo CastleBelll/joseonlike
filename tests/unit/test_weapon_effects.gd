@@ -22,6 +22,22 @@ func test_config_has_every_field() -> bool:
 	return passed and not config.is_empty()
 
 
+func test_sprite_effects_resolve() -> bool:
+	# N3-17 art integration: the three shipped sheets must resolve through the
+	# same gate the runtime uses, with playable numbers.
+	var passed: bool = true
+	for effect_id: String in ["explosion", "strike_flash", "blink_puff"]:
+		var config: Dictionary = WeaponEffects.sprite_config(effect_id)
+		if not EffectSprite.available(effect_id):
+			push_error("test_weapon_effects: sprite effect unavailable: " + effect_id)
+			passed = false
+			continue
+		if float(config.get("fps", 0.0)) <= 0.0 or float(config.get("logical_px", 0.0)) <= 0.0:
+			push_error("test_weapon_effects: bad sprite numbers for " + effect_id)
+			passed = false
+	return passed
+
+
 func test_bolt_points_anchor_endpoints() -> bool:
 	var from := Vector2(10.0, 20.0)
 	var to := Vector2(110.0, 20.0)

@@ -88,6 +88,8 @@ var _flash_pool: NodePool
 # N3-17 effect state: chain-jump bolts and the shockwave camera thump.
 var _bolt_pool: NodePool
 var _nudge_left: float = 0.0
+# N3-17 art integration: pooled sprite explosions when the sheet shipped.
+var _fx_pool: NodePool
 var _caught: Array[Enemy] = []  # per-frame scratch, reused without alloc
 # N4-4b mechanic state: pooled wards, one live summon, shockwave numbers.
 var _ward: Dictionary = {}
@@ -130,6 +132,8 @@ func setup(id: String, player: Player, spawner: Spawner) -> void:
 			_build_orbs(int(_stats.get("projectile_count", 1)))
 		MECHANIC_EXPLOSION:
 			_flash_pool = NodePool.new(self, _create_blast_ring)
+			if EffectSprite.available("explosion"):
+				_fx_pool = NodePool.new(self, _create_effect_sprite)
 		MECHANIC_CHAIN:
 			_bolt_pool = NodePool.new(self, _create_chain_bolt)
 		MECHANIC_WARD:
@@ -421,6 +425,15 @@ func _tint() -> Color:
 	return TINTS.get(weapon_id, UiPalette.PAPER)
 
 
+## Sprite-sheet effects carry their own colors, so they play untinted (WHITE)
+## — except a mythic "tinted" grade, which still modulates to the tier color
+## so the raise reads on field like every other visual (N3-17).
+func _sprite_tint() -> Color:
+	if WeaponGrade.has_flag(_grades, String(_stats.get("grade", "")), _grade, "tinted"):
+		return Loot.TIER_COLORS.get(_grade, Color.WHITE)
+	return Color.WHITE
+
+
 func _create_projectile() -> Projectile:
 	var projectile := Projectile.new()
 	projectile.hit_landed.connect(
@@ -435,6 +448,12 @@ func _create_projectile() -> Projectile:
 
 
 func _on_projectile_exploded(at: Vector2, radius: float) -> void:
+	# Art-integrated blast (N3-17): the sheet animation scaled to the true
+	# blast diameter; the code-drawn ring stays as the missing-sheet fallback.
+	if _fx_pool != null:
+		var sprite: EffectSprite = _fx_pool.acquire()
+		sprite.play_effect("explosion", at, radius * 2.0, _sprite_tint())
+		return
 	if _flash_pool == null:
 		return
 	var flash: BlastRing = _flash_pool.acquire()
@@ -529,6 +548,14 @@ func _create_chain_bolt() -> ChainBolt:
 		func(done: ChainBolt) -> void: _bolt_pool.release(done)
 	)
 	return bolt
+
+
+func _create_effect_sprite() -> EffectSprite:
+	var sprite := EffectSprite.new()
+	sprite.finished_effect.connect(
+		func(done: EffectSprite) -> void: _fx_pool.release(done)
+	)
+	return sprite
 
 
 func _on_projectile_finished(projectile: Projectile) -> void:

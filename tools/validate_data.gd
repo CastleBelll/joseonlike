@@ -172,6 +172,7 @@ func _check_combat_cross_references() -> void:
 	_require_positive_numbers(
 		effects.get("weapon_effects", {}), WEAPON_EFFECTS_FIELDS, "effects.weapon_effects"
 	)
+	_check_sprite_effects(effects.get("sprite_effects", {}) as Dictionary)
 	_check_props()
 	_check_loot(monsters, weapons, stages)
 
@@ -551,6 +552,19 @@ func _check_monster_sprites(monster: Dictionary, label: String) -> void:
 	for file_name: String in MONSTER_SPRITE_FILES:
 		if not FileAccess.file_exists(sprite_dir.path_join(file_name)):
 			_fail("%s.sprite file missing: %s" % [label, sprite_dir.path_join(file_name)])
+
+
+# N3-17 art integration: every sprite_effects entry must point at a real
+# sheet with positive playback numbers, or the effect silently never shows.
+func _check_sprite_effects(sprites: Dictionary) -> void:
+	for effect_id: String in sprites:
+		var entry: Dictionary = sprites[effect_id]
+		_require_positive_numbers(
+			entry, ["fps", "logical_px"], "effects.sprite_effects." + effect_id
+		)
+		var file: String = String(entry.get("file", ""))
+		if not FileAccess.file_exists(file):
+			_fail("effects.sprite_effects.%s file missing: %s" % [effect_id, file])
 
 
 func _require_positive_numbers(entry: Dictionary, fields: Array[String], label: String) -> void:

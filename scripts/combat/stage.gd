@@ -55,6 +55,8 @@ var _replaced_weapons: Array[String] = []
 # N3-8 feedback + N5-1 run flow state.
 var _feedback: Dictionary = {}
 var _puff_pool: NodePool
+# N3-17 art integration: pooled sprite puffs for 축지 when the sheet shipped.
+var _fx_pool: NodePool
 var _gold: int = 0
 var _run_elapsed: float = 0.0
 var _duration_sec: float = 0.0
@@ -104,6 +106,8 @@ func _ready() -> void:
 	var stage_entry: Dictionary = _load_json(Spawner.STAGES_PATH).get(Spawner.STAGE_ID, {})
 	_duration_sec = float(stage_entry.get("duration_sec", 0.0))
 	_puff_pool = NodePool.new(self, _create_puff)
+	if EffectSprite.available("blink_puff"):
+		_fx_pool = NodePool.new(self, _create_effect_sprite)
 	_result = ResultScreen.new()
 	add_child(_result)
 	_run_state = RunState.new()
@@ -286,15 +290,11 @@ func _execute_blink(active: Dictionary) -> void:
 		from, direction, distance, blocked_at, _player.bounds
 	)
 	_player.grant_invulnerability(float(active.get("invulnerable_sec", 0.0)))
-	# N3-17: a puff at BOTH ends so the departure and the arrival read.
-	var puff_sec: float = WeaponEffects.value("blink_puff_sec")
-	var departure: DeathPuff = _puff_pool.acquire()
-	departure.puff(from, Player.CONTACT_RADIUS * 2.0, puff_sec, UiPalette.ACCENT_TAOIST)
-	var arrival: DeathPuff = _puff_pool.acquire()
-	arrival.puff(
-		_player.global_position, Player.CONTACT_RADIUS * 2.0, puff_sec,
-		UiPalette.ACCENT_TAOIST
-	)
+	# N3-17: a puff at BOTH ends so the departure and the arrival read. The
+	# desaturated smoke sheet plays tinted to the taoist accent when shipped;
+	# the code-drawn ring puff is the fallback.
+	_blink_puff(from)
+	_blink_puff(_player.global_position)
 
 
 ## 벽사진: the emergency button — heavy damage to everything in a large ring
@@ -600,6 +600,26 @@ func _create_damage_number() -> DamageNumber:
 	var number := DamageNumber.new()
 	number.finished.connect(_on_number_finished)
 	return number
+
+
+func _blink_puff(at: Vector2) -> void:
+	if _fx_pool != null:
+		var sprite: EffectSprite = _fx_pool.acquire()
+		sprite.play_effect("blink_puff", at, 0.0, UiPalette.ACCENT_TAOIST)
+		return
+	var puff: DeathPuff = _puff_pool.acquire()
+	puff.puff(
+		at, Player.CONTACT_RADIUS * 2.0,
+		WeaponEffects.value("blink_puff_sec"), UiPalette.ACCENT_TAOIST
+	)
+
+
+func _create_effect_sprite() -> EffectSprite:
+	var sprite := EffectSprite.new()
+	sprite.finished_effect.connect(
+		func(done: EffectSprite) -> void: _fx_pool.release(done)
+	)
+	return sprite
 
 
 func _create_puff() -> DeathPuff:

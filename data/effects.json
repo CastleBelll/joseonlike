@@ -29,5 +29,22 @@
     "status_flicker_hz": 6.0,
     "blink_puff_sec": 0.3,
     "screen_flash_sec": 0.4
+  },
+  "sprite_effects": {
+    "explosion": {
+      "file": "res://asset/effect/explosion.png",
+      "fps": 18.0,
+      "logical_px": 180.0
+    },
+    "strike_flash": {
+      "file": "res://asset/effect/strike_flash.png",
+      "fps": 30.0,
+      "logical_px": 28.0
+    },
+    "blink_puff": {
+      "file": "res://asset/effect/blink_puff.png",
+      "fps": 24.0,
+      "logical_px": 48.0
+    }
   }
 }

@@ -28,6 +28,7 @@ var _status: Dictionary = {}
 var _color: Color = UiPalette.ACCENT_TAOIST
 var _visual: Node2D
 var _strike_flash: StrikeFlash
+var _strike_sprite: EffectSprite
 var _facing: int = PlayerMotion.FACING_RIGHT
 var _positions: Array[Vector2] = []  # per-frame scratch, reused without alloc
 
@@ -43,9 +44,17 @@ func _ready() -> void:
 	_visual = SummonVisual.new()
 	add_child(_visual)
 	# One flash is ever alive per summon (attack cooldown >> flash time), so a
-	# single reused child replaces a pool (N3-17).
-	_strike_flash = StrikeFlash.new()
-	add_child(_strike_flash)
+	# single reused child replaces a pool (N3-17). With the impact sheet
+	# shipped, the desaturated sprite plays tinted by the weapon color; the
+	# code-drawn X-slash stays as the missing-sheet fallback.
+	if EffectSprite.available("strike_flash"):
+		_strike_sprite = EffectSprite.new()
+		_strike_sprite.top_level = true
+		_strike_sprite.visible = false
+		add_child(_strike_sprite)
+	else:
+		_strike_flash = StrikeFlash.new()
+		add_child(_strike_flash)
 
 
 ## (Re)arms a pooled instance next to the player.
@@ -117,7 +126,10 @@ func _try_strike(enemy: Enemy) -> void:
 			float(_status.get("duration_sec", 0.0))
 		)
 	enemy.take_damage(_damage, CombatMath.chase_direction(global_position, at))
-	_strike_flash.flash(at, _color, WeaponEffects.value("summon_strike_sec"))
+	if _strike_sprite != null:
+		_strike_sprite.play_effect("strike_flash", at, 0.0, _color)
+	else:
+		_strike_flash.flash(at, _color, WeaponEffects.value("summon_strike_sec"))
 	struck.emit(_damage, at, boss_hit)
 
 
