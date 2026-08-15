@@ -24,6 +24,10 @@ var _life_left: float = 0.0
 var _tick_timer: float = 0.0
 var _status: Dictionary = {}
 var _color: Color = UiPalette.PAPER
+## N3-17: seconds since the last damage tick, drawn as an expanding pulse ring
+## so the ward visibly "works" on every bite. Past the pulse window nothing
+## redraws.
+var _pulse_age: float = INF
 var _caught: Array[Enemy] = []  # per-tick scratch, reused without alloc
 var _positions: Array[Vector2] = []
 
@@ -48,6 +52,7 @@ func arm(
 	_status = status
 	_color = color
 	_tick_timer = 0.0
+	_pulse_age = INF
 	queue_redraw()
 
 
@@ -56,6 +61,10 @@ func _physics_process(delta: float) -> void:
 	if _life_left <= 0.0:
 		finished.emit(self)
 		return
+	var pulse_sec: float = WeaponEffects.value("ward_pulse_sec")
+	if _pulse_age < pulse_sec:
+		_pulse_age += delta
+		queue_redraw()
 	_tick_timer -= delta
 	if _tick_timer > 0.0:
 		return
@@ -72,6 +81,8 @@ func _tick() -> void:
 	_caught.clear()
 	for i: int in WeaponMath.targets_in_radius(global_position, _positions, _radius):
 		_caught.append(enemies[i])
+	if not _caught.is_empty():
+		_pulse_age = 0.0  # N3-17: a landed tick fires the visible pulse
 	for enemy: Enemy in _caught:
 		if CombatMath.is_dead(enemy.hp):
 			continue
@@ -89,7 +100,17 @@ func _tick() -> void:
 
 
 ## Placeholder art: translucent tinted disc with a solid ring (palette token
-## via the weapon tint; real art registered in ASSET_REQUIREMENTS.md).
+## via the weapon tint; real art registered in ASSET_REQUIREMENTS.md), plus
+## the N3-17 tick pulse — a ring expanding from the center to the edge and
+## fading over ward_pulse_sec after every landed damage tick.
 func _draw() -> void:
 	draw_circle(Vector2.ZERO, _radius, Color(_color, FILL_ALPHA))
 	draw_arc(Vector2.ZERO, _radius, 0.0, TAU, RING_POINTS, _color, RING_WIDTH)
+	var pulse_sec: float = WeaponEffects.value("ward_pulse_sec")
+	if _pulse_age >= pulse_sec or pulse_sec <= 0.0:
+		return
+	var progress: float = clampf(_pulse_age / pulse_sec, 0.0, 1.0)
+	draw_arc(
+		Vector2.ZERO, _radius * progress, 0.0, TAU, RING_POINTS,
+		Color(_color, 1.0 - progress), RING_WIDTH * 1.5
+	)

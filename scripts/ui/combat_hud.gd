@@ -52,6 +52,7 @@ var _pause_overlay: Control
 var _resume_button: Button
 var _boss_bar: ProgressBar
 var _vignette: DamageVignette
+var _screen_flash: ScreenFlash
 var _active_buttons: Dictionary = {}  # active id -> ActiveButton
 
 
@@ -76,6 +77,7 @@ static func format_time(seconds: float) -> String:
 func build_ui() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE  # never eat joystick touches
 	_build_vignette()
+	_build_screen_flash()
 	_build_corner_buttons()
 	_build_timer()
 	_build_xp_bar()
@@ -119,6 +121,12 @@ func hide_boss_bar() -> void:
 ## N3-8 player-hit feedback; duration comes from data/effects.json (stage).
 func pulse_damage(duration: float) -> void:
 	_vignette.pulse(duration)
+
+
+## N3-17 벽사진: one full-screen tinted flash that fades out — the emergency
+## burst reads across the whole view. Duration from data (weapon_effects).
+func flash_screen(color: Color, duration: float) -> void:
+	_screen_flash.flash(color, duration)
 
 
 ## N4-4b: one round button per character active, newest to the left so the
@@ -274,6 +282,15 @@ func _build_vignette() -> void:
 	add_child(_vignette)
 
 
+func _build_screen_flash() -> void:
+	_screen_flash = ScreenFlash.new()
+	_screen_flash.name = "ScreenFlash"
+	_screen_flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_screen_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_screen_flash.visible = false
+	add_child(_screen_flash)
+
+
 ## Paper-panel pause overlay (§3 grammar): resume + quit-to-title only.
 func _build_pause_overlay() -> void:
 	_pause_overlay = Control.new()
@@ -364,6 +381,39 @@ func _label(text: String, font_size: int, color: Color) -> Label:
 	label.add_theme_color_override("font_color", color)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
+
+
+## N3-17 full-screen active flash (벽사진): one persistent Control drawing a
+## translucent tinted rect that fades out. No per-cast instancing.
+class ScreenFlash:
+	extends Control
+
+	const ALPHA_MAX := 0.28
+
+	var _left: float = 0.0
+	var _duration: float = 0.0
+	var _color: Color = UiPalette.GOLD
+
+	func flash(color: Color, duration: float) -> void:
+		_color = color
+		_duration = maxf(duration, 0.01)
+		_left = _duration
+		visible = true
+		queue_redraw()
+
+	func _process(delta: float) -> void:
+		if not visible:
+			return
+		_left -= delta
+		if _left <= 0.0:
+			visible = false
+			return
+		queue_redraw()
+
+	func _draw() -> void:
+		draw_rect(
+			Rect2(Vector2.ZERO, size), Color(_color, ALPHA_MAX * _left / _duration)
+		)
 
 
 ## N3-8 screen-edge red pulse on player damage: four vermilion edge bars that

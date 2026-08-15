@@ -9,6 +9,8 @@ extends Node2D
 signal hit_landed(amount: float, at: Vector2, boss_hit: bool)
 ## N4-4a: the impact splash happened — AutoWeapon shows the pooled ring flash.
 signal exploded(at: Vector2, radius: float)
+## N3-17: a chain shot connected two enemies — AutoWeapon draws the bolt.
+signal chained(from: Vector2, to: Vector2)
 signal finished(projectile: Projectile)
 
 const PAPER_SIZE := Vector2(6.0, 12.0)
@@ -34,8 +36,11 @@ var _chain_jumps_left: int = 0
 var _chain_falloff: float = 1.0
 var _chain_range: float = 0.0
 var _chain_target: Enemy
+## N3-17: previous chain hit position — the next hit draws a bolt from here.
+var _chain_prev := Vector2.INF
 var _status: Dictionary = {}
 var _seal: Dictionary = {}
+var _trail: TrailVisual
 # Enemies this shot already struck (instance id -> true) so pierce and chain
 # never hit twice. A pooled instance re-armed mid-flight would be wrongly
 # excluded, but flights last well under a second — accepted.
@@ -52,6 +57,9 @@ func _ready() -> void:
 	_seal_mark.name = "Seal"
 	_seal_mark.color = UiPalette.VERMILION
 	_paper.add_child(_seal_mark)
+	_trail = TrailVisual.new()
+	_trail.name = "Trail"
+	add_child(_trail)
 	_apply_shape(PAPER_SIZE)
 
 
@@ -80,9 +88,11 @@ func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 	_chain_falloff = float(chain.get("falloff", 1.0))
 	_chain_range = float(chain.get("range_px", 0.0))
 	_chain_target = null
+	_chain_prev = Vector2.INF
 	_status = config.get("status", {})
 	_seal = config.get("seal", {})
 	_struck.clear()
+	_trail.arm(bool(config.get("trail", false)), tint)
 	_apply_shape(config.get("size", PAPER_SIZE))
 
 
@@ -97,6 +107,7 @@ func _physics_process(delta: float) -> void:
 			_velocity = direction * _velocity.length()
 			rotation = direction.angle() + PI / 2.0
 	global_position += _velocity * delta
+	_trail.record(global_position, delta)
 	# Collect overlaps first: striking mutates the spawner's active list, so
 	# never kill while iterating it.
 	_touched.clear()
@@ -140,6 +151,11 @@ func _strike(enemy: Enemy, damage: float) -> void:
 	var hit_at: Vector2 = enemy.global_position
 	var boss_hit: bool = enemy.is_boss
 	_struck[enemy.get_instance_id()] = true
+	# N3-17: a chain shot draws its lightning leg between consecutive hits.
+	if _chain_range > 0.0:
+		if _chain_prev != Vector2.INF:
+			chained.emit(_chain_prev, hit_at)
+		_chain_prev = hit_at
 	match String(_status.get("id", "")):
 		"burn":
 			enemy.apply_burn(
@@ -218,3 +234,65 @@ func _apply_shape(size: Vector2) -> void:
 	_paper.position = -size / 2.0
 	_seal_mark.size = size / 3.0
 	_seal_mark.position = size / 2.0 - size / 6.0
+
+
+## 법검 after-trail (N3-17): a fixed ring buffer of recent flight positions
+## drawn as a tapering, fading streak behind the blade. top_level, so points
+## are recorded and drawn in global space while the blade flies on. Buffers
+## are pre-sized once — recording never allocates. Fade time comes from
+## data/effects.json (weapon_effects.blade_trail_sec).
+class TrailVisual:
+	extends Node2D
+
+	const CAPACITY := 12
+	const WIDTH_HEAD := 5.0
+	const WIDTH_TAIL := 1.0
+	const ALPHA_HEAD := 0.55
+
+	var _enabled: bool = false
+	var _color: Color = UiPalette.WEAPON_SEAL
+	var _fade_sec: float = 0.0
+	var _points := PackedVector2Array()
+	var _ages := PackedFloat32Array()
+	var _head: int = -1
+	var _count: int = 0
+
+	func _init() -> void:
+		top_level = true
+		position = Vector2.ZERO
+		_points.resize(CAPACITY)
+		_ages.resize(CAPACITY)
+
+	func arm(enabled: bool, color: Color) -> void:
+		_enabled = enabled
+		_color = color
+		_fade_sec = WeaponEffects.value("blade_trail_sec")
+		_head = -1
+		_count = 0
+		queue_redraw()
+
+	func record(at: Vector2, delta: float) -> void:
+		if not _enabled or _fade_sec <= 0.0:
+			return
+		for i: int in range(CAPACITY):
+			_ages[i] += delta
+		_head = (_head + 1) % CAPACITY
+		_count = mini(_count + 1, CAPACITY)
+		_points[_head] = at
+		_ages[_head] = 0.0
+		queue_redraw()
+
+	func _draw() -> void:
+		if not _enabled or _count < 2:
+			return
+		for step: int in range(_count - 1):
+			var index: int = (_head - step + CAPACITY) % CAPACITY
+			var previous: int = (index - 1 + CAPACITY) % CAPACITY
+			var fade: float = 1.0 - clampf(_ages[index] / _fade_sec, 0.0, 1.0)
+			if fade <= 0.0:
+				break  # entries only get older down the buffer
+			var t: float = float(step) / float(CAPACITY - 1)
+			draw_line(
+				to_local(_points[index]), to_local(_points[previous]),
+				Color(_color, ALPHA_HEAD * fade), lerpf(WIDTH_HEAD, WIDTH_TAIL, t)
+			)

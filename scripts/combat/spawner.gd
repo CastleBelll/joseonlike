@@ -42,11 +42,14 @@ var _sep_radii: Array[float] = []
 var _sep_neighbours: Array[int] = []
 var _sep_neighbour_positions: Array[Vector2] = []
 var _sep_neighbour_radii: Array[float] = []
+# N3-17: pooled curse-jump bolts — one per infected neighbour on a cursed death.
+var _bolt_pool: NodePool
 
 
 func setup(player: Player) -> void:
 	_player = player
 	_pool = EnemyPool.new(self)
+	_bolt_pool = NodePool.new(self, _create_curse_bolt)
 	_rng.randomize()
 	var stage_data: Dictionary = _load_json(STAGES_PATH)
 	_monsters = _load_json(MONSTERS_PATH)
@@ -264,6 +267,21 @@ func _spread_curse(source: Enemy) -> void:
 			source.curse_dps, source.curse_duration,
 			source.curse_spread_px, source.curse_spread_count
 		)
+		# N3-17: the jump itself is drawn, so the spread reads as an event.
+		var bolt: ChainBolt = _bolt_pool.acquire()
+		bolt.show_bolt(
+			source.global_position, _active[i].global_position,
+			UiPalette.WEAPON_CURSE, WeaponEffects.value("curse_jump_sec"),
+			WeaponEffects.value("chain_bolt_jitter_px")
+		)
+
+
+func _create_curse_bolt() -> ChainBolt:
+	var bolt := ChainBolt.new()
+	bolt.finished.connect(
+		func(done: ChainBolt) -> void: _bolt_pool.release(done)
+	)
+	return bolt
 
 
 func _release(enemy: Enemy) -> void:

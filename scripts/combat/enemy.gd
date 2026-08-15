@@ -73,6 +73,7 @@ var _time_since_contact: float = 0.0
 var _target: Player
 var _body: ColorRect
 var _visual: Node2D
+var _status_overlay: StatusOverlay
 var _sprite: AnimatedSprite2D
 var _has_art := false
 var _size_scale: float = 1.0  # N4-2: elite variants render bigger
@@ -134,6 +135,12 @@ func _ready() -> void:
 	eye.name = "Eye"
 	eye.color = UiPalette.INK
 	_body.add_child(eye)
+	# N3-17 status overlay: burn flame ticks and the curse mark, drawn above
+	# the silhouette. Outside the flipped Visual wrapper so it never mirrors.
+	_status_overlay = StatusOverlay.new()
+	_status_overlay.name = "StatusOverlay"
+	_status_overlay.enemy = self
+	add_child(_status_overlay)
 
 
 ## (Re)arms a pooled instance. Safe to call repeatedly on the same node.
@@ -409,3 +416,49 @@ func _apply_placeholder_visual() -> void:
 	var eye_side: float = size.x * EYE_RATIO
 	eye.size = Vector2(eye_side, eye_side)
 	eye.position = Vector2(size.x * 0.55, size.y * 0.2)
+
+
+## N3-17 status visual: a flickering soul-flame above a burning enemy and a
+## crossed hex mark above a cursed one, so both DoTs read at a glance on a
+## crowded field. Draw-call only — no nodes, no allocation; redraws run only
+## while a status is active (plus one clearing redraw when it ends). Flicker
+## rate from data (weapon_effects.status_flicker_hz).
+class StatusOverlay:
+	extends Node2D
+
+	const FLAME_RADIUS := 4.0
+	const MARK_HALF := 5.0
+	const MARK_WIDTH := 2.0
+	const RISE_PX := 6.0
+
+	var enemy: Enemy
+	var _phase: float = 0.0
+	var _was_active: bool = false
+
+	func _physics_process(delta: float) -> void:
+		var active: bool = enemy.is_burning() or enemy.is_cursed()
+		if active:
+			_phase += delta * WeaponEffects.value("status_flicker_hz")
+			queue_redraw()
+		elif _was_active:
+			queue_redraw()  # one clearing pass after the last status expires
+		_was_active = active
+
+	func _draw() -> void:
+		var top: float = -(enemy.contact_radius * Enemy.VISUAL_HEIGHT_RATIO * 0.5 + RISE_PX)
+		var flicker: float = 0.5 + 0.5 * sin(_phase * TAU)
+		if enemy.is_burning():
+			var at := Vector2(-MARK_HALF - 1.0 if enemy.is_cursed() else 0.0, top)
+			var wobble := Vector2(flicker * 2.0 - 1.0, -flicker * 2.0)
+			draw_circle(at + wobble, FLAME_RADIUS, UiPalette.WEAPON_FIRE)
+			draw_circle(at + wobble * 1.4, FLAME_RADIUS * 0.5, UiPalette.GOLD)
+		if enemy.is_cursed():
+			var at := Vector2(MARK_HALF + 1.0 if enemy.is_burning() else 0.0, top)
+			var bob := Vector2(0.0, (flicker - 0.5) * 2.0)
+			var arm := Vector2(MARK_HALF, MARK_HALF)
+			var flip := Vector2(MARK_HALF, -MARK_HALF)
+			draw_line(at + bob - arm, at + bob + arm, UiPalette.WEAPON_CURSE, MARK_WIDTH)
+			draw_line(at + bob - flip, at + bob + flip, UiPalette.WEAPON_CURSE, MARK_WIDTH)
+			draw_arc(
+				at + bob, MARK_HALF + 2.0, 0.0, TAU, 12, UiPalette.WEAPON_CURSE, 1.0
+			)

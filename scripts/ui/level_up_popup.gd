@@ -138,11 +138,13 @@ func open(
 	# is derived from the fixed portrait layout, so the wrap measurement in
 	# card_height_for equals what the Label renders.
 	var card_width: float = _card_width()
+	var font: Font = card_font()
+	var line_spacing: int = _title.get_theme_constant("line_spacing")
 	var heights: Array[float] = []
 	for card: Dictionary in display_cards:
 		var height: float = card_height_for(
-			String(card.get("desc", "")), card_font(), card_width - TEXT_LEFT - WELL_MARGIN,
-			_title.get_theme_constant("line_spacing")
+			String(card.get("desc", "")), font, card_width - TEXT_LEFT - WELL_MARGIN,
+			line_spacing
 		)
 		heights.append(height)
 		cards.add_child(_make_card(card, card_width, height))

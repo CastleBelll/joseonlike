@@ -12,8 +12,6 @@ const WEAPON_MODS_PATH := "res://data/weapon_mods.json"
 const CHOICES_PER_LEVEL := 3
 const POWER_UP_HEADER := "파워 업!"
 const LOOT_SCATTER_PX := 14.0
-## N4-4b actives: 벽사진 flash time (visual only, damage is instant).
-const ACTIVE_BURST_FLASH_SEC := 0.4
 
 @onready var _player: Player = $World/Player
 @onready var _joystick: TouchJoystick = $Hud/VirtualJoystick
@@ -234,6 +232,11 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 	if _outcome != RunFlow.OUTCOME_NONE or outcome == RunFlow.OUTCOME_NONE:
 		return
 	_outcome = outcome
+	# A run ending mid shockwave-punch would freeze the camera slightly zoomed
+	# for the whole result screen (physics stops while paused) — reset first.
+	var camera: Camera2D = get_viewport().get_camera_2d()
+	if camera != null:
+		camera.zoom = Vector2.ONE
 	get_tree().paused = true
 	var summary: Dictionary = RunFlow.build_summary(_run_elapsed, _kills, _gold)
 	summary["total_gold"] = SaveService.instance.bank_run(_run_elapsed, _kills, _gold, boss_killed)
@@ -283,8 +286,15 @@ func _execute_blink(active: Dictionary) -> void:
 		from, direction, distance, blocked_at, _player.bounds
 	)
 	_player.grant_invulnerability(float(active.get("invulnerable_sec", 0.0)))
-	var puff: DeathPuff = _puff_pool.acquire()
-	puff.puff(from, Player.CONTACT_RADIUS * 2.0, ACTIVE_BURST_FLASH_SEC, UiPalette.ACCENT_TAOIST)
+	# N3-17: a puff at BOTH ends so the departure and the arrival read.
+	var puff_sec: float = WeaponEffects.value("blink_puff_sec")
+	var departure: DeathPuff = _puff_pool.acquire()
+	departure.puff(from, Player.CONTACT_RADIUS * 2.0, puff_sec, UiPalette.ACCENT_TAOIST)
+	var arrival: DeathPuff = _puff_pool.acquire()
+	arrival.puff(
+		_player.global_position, Player.CONTACT_RADIUS * 2.0, puff_sec,
+		UiPalette.ACCENT_TAOIST
+	)
 
 
 ## 벽사진: the emergency button — heavy damage to everything in a large ring
@@ -294,7 +304,9 @@ func _execute_burst(active: Dictionary) -> void:
 	var radius: float = float(active.get("radius_px", 0.0))
 	var damage: float = float(active.get("damage", 0.0))
 	var puff: DeathPuff = _puff_pool.acquire()
-	puff.puff(origin, radius, ACTIVE_BURST_FLASH_SEC, UiPalette.GOLD)
+	puff.puff(origin, radius, WeaponEffects.value("screen_flash_sec"), UiPalette.GOLD)
+	# N3-17: the emergency button reads across the whole screen, not just a ring.
+	_hud.flash_screen(UiPalette.GOLD, WeaponEffects.value("screen_flash_sec"))
 	var enemies: Array[Enemy] = _spawner.active_enemies()
 	var positions: Array[Vector2] = []
 	for enemy: Enemy in enemies:

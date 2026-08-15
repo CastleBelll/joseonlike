@@ -28,6 +28,15 @@ const HIT_FEEDBACK_FIELDS: Array[String] = [
 	"boss_knockback_scale", "death_puff_sec", "death_puff_radius_scale",
 	"player_vignette_sec"
 ]
+# N3-17 weapon effect contract (data/effects.json weapon_effects): every
+# timing/distance the code-side weapon visuals consume.
+const WEAPON_EFFECTS_FIELDS: Array[String] = [
+	"explosion_ring_sec", "chain_bolt_sec", "chain_bolt_jitter_px",
+	"arc_sweep_sec", "blade_trail_sec", "orbit_trail_sec", "ward_pulse_sec",
+	"summon_strike_sec", "shockwave_ring_sec", "shockwave_nudge_px",
+	"shockwave_nudge_sec", "curse_jump_sec", "status_flicker_hz",
+	"blink_puff_sec", "screen_flash_sec"
+]
 # N3-9 prop field contract (data/props.json).
 const PROP_FIELD_FIELDS: Array[String] = [
 	"width_px", "height_px", "edge_margin_px", "solid_count", "decor_count",
@@ -159,6 +168,9 @@ func _check_combat_cross_references() -> void:
 	var effects: Dictionary = _load(DATA_DIR + "/effects.json")
 	_require_positive_numbers(
 		effects.get("hit_feedback", {}), HIT_FEEDBACK_FIELDS, "effects.hit_feedback"
+	)
+	_require_positive_numbers(
+		effects.get("weapon_effects", {}), WEAPON_EFFECTS_FIELDS, "effects.weapon_effects"
 	)
 	_check_props()
 	_check_loot(monsters, weapons, stages)

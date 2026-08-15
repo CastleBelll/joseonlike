@@ -14,9 +14,6 @@ const WEAPONS_PATH := "res://data/weapons.json"
 ## Cooldown can shrink per level and per attack-speed stacks; never let it
 ## reach zero or the weapon would fire every frame.
 const MIN_COOLDOWN_SEC := 0.05
-## N4-4a placeholder feedback timings (visual only; damage is instant).
-const ARC_FLASH_SEC := 0.18
-const EXPLOSION_FLASH_SEC := 0.25
 ## Orb visual + hit radius fallback for the orbit mechanic (혼불) when the
 ## data omits orbit.orb_radius_px (N4-3: the real value is a data knob).
 const ORB_RADIUS_PX := 5.0
@@ -88,6 +85,9 @@ var _orbs: Array[Node2D] = []
 var _orb_recent: Dictionary = {}
 var _arc_flash: ArcFlash
 var _flash_pool: NodePool
+# N3-17 effect state: chain-jump bolts and the shockwave camera thump.
+var _bolt_pool: NodePool
+var _nudge_left: float = 0.0
 var _caught: Array[Enemy] = []  # per-frame scratch, reused without alloc
 # N4-4b mechanic state: pooled wards, one live summon, shockwave numbers.
 var _ward: Dictionary = {}
@@ -129,7 +129,9 @@ func setup(id: String, player: Player, spawner: Spawner) -> void:
 			_orb_radius = float(_orbit.get("orb_radius_px", ORB_RADIUS_PX))
 			_build_orbs(int(_stats.get("projectile_count", 1)))
 		MECHANIC_EXPLOSION:
-			_flash_pool = NodePool.new(self, _create_explosion_flash)
+			_flash_pool = NodePool.new(self, _create_blast_ring)
+		MECHANIC_CHAIN:
+			_bolt_pool = NodePool.new(self, _create_chain_bolt)
 		MECHANIC_WARD:
 			_ward = _stats.get("ward", {})
 			_ward_pool = NodePool.new(self, _create_ward)
@@ -138,7 +140,7 @@ func setup(id: String, player: Player, spawner: Spawner) -> void:
 			_summon_pool = NodePool.new(self, _create_summon)
 		MECHANIC_SHOCKWAVE:
 			_shockwave = _stats.get("shockwave", {})
-			_flash_pool = NodePool.new(self, _create_explosion_flash)
+			_flash_pool = NodePool.new(self, _create_blast_ring)
 	_recompute()
 
 
@@ -188,6 +190,7 @@ func _build_shot_config() -> Dictionary:
 			config["pierce"] = int(_stats.get("pierce", 0))
 			config["pierce_retention"] = float(_stats.get("pierce_retention", 1.0))
 			config["size"] = Projectile.BLADE_SIZE
+			config["trail"] = true  # 법검 blade streak (N3-17)
 		MECHANIC_EXPLOSION:
 			var explosion: Dictionary = _stats.get("explosion", {})
 			config["explosion_radius"] = float(explosion.get("radius_px", 0.0))
@@ -200,6 +203,7 @@ func _build_shot_config() -> Dictionary:
 func _physics_process(delta: float) -> void:
 	if _player == null:
 		return
+	_decay_nudge(delta)
 	if _mechanic == MECHANIC_ORBIT:
 		_process_orbit(delta)
 		return
@@ -275,7 +279,9 @@ func _fire_arc(enemies: Array[Enemy], positions: Array[Vector2], index: int) -> 
 		enemy.take_damage(_damage, CombatMath.chase_direction(origin, hit_at), knockback)
 		_after_hit(_damage)
 		hit_landed.emit(_damage, hit_at, boss_hit)
-	_arc_flash.flash(origin, aim, arc_rad, _range, _tint(), ARC_FLASH_SEC)
+	_arc_flash.flash(
+		origin, aim, arc_rad, _range, _tint(), WeaponEffects.value("arc_sweep_sec")
+	)
 	return true
 
 
@@ -349,8 +355,9 @@ func _pulse_shockwave() -> void:
 	var stun_sec: float = float(_shockwave.get("stun_sec", 0.0))
 	var knockback: float = float(_shockwave.get("knockback_scale", 1.0))
 	var seal: Dictionary = _stats.get("on_hit_seal", {})
-	var flash: DeathPuff = _flash_pool.acquire()
-	flash.puff(origin, radius, EXPLOSION_FLASH_SEC, _tint())
+	var flash: BlastRing = _flash_pool.acquire()
+	flash.burst(origin, radius, WeaponEffects.value("shockwave_ring_sec"), _tint())
+	_start_nudge()
 	var enemies: Array[Enemy] = _spawner.active_enemies()
 	_positions.clear()
 	for enemy: Enemy in enemies:
@@ -422,6 +429,7 @@ func _create_projectile() -> Projectile:
 			hit_landed.emit(amount, at, boss_hit)
 	)
 	projectile.exploded.connect(_on_projectile_exploded)
+	projectile.chained.connect(_on_projectile_chained)
 	projectile.finished.connect(_on_projectile_finished)
 	return projectile
 
@@ -429,8 +437,54 @@ func _create_projectile() -> Projectile:
 func _on_projectile_exploded(at: Vector2, radius: float) -> void:
 	if _flash_pool == null:
 		return
-	var flash: DeathPuff = _flash_pool.acquire()
-	flash.puff(at, radius, EXPLOSION_FLASH_SEC, UiPalette.WEAPON_FIRE)
+	var flash: BlastRing = _flash_pool.acquire()
+	flash.burst(at, radius, WeaponEffects.value("explosion_ring_sec"), _tint())
+
+
+## 뇌부 (N3-17): the jump leg between two chained enemies gets its lightning.
+func _on_projectile_chained(from: Vector2, to: Vector2) -> void:
+	if _bolt_pool == null:
+		return
+	var bolt: ChainBolt = _bolt_pool.acquire()
+	bolt.show_bolt(
+		from, to, _tint(), WeaponEffects.value("chain_bolt_sec"),
+		WeaponEffects.value("chain_bolt_jitter_px")
+	)
+
+
+## 진언 (N3-17): a brief screen thump matching the knockback beat — a zoom
+## punch that pulls the view edges in by shockwave_nudge_px and recovers over
+## shockwave_nudge_sec. Zoom-in only: a camera OFFSET would expose the strip
+## beyond GroundLayer's tile window at the screen edge.
+## ponytail: two live shockwave weapons would share camera.zoom; last writer
+## wins for a frame — visually indistinguishable, per-weapon blend if it ever
+## reads wrong.
+func _start_nudge() -> void:
+	_nudge_left = WeaponEffects.value("shockwave_nudge_sec")
+
+
+## A mod swap can queue_free this weapon mid-punch; never leave the camera
+## stuck off 1.0 zoom.
+func _exit_tree() -> void:
+	if _nudge_left <= 0.0:
+		return
+	var camera: Camera2D = get_viewport().get_camera_2d()
+	if camera != null:
+		camera.zoom = Vector2.ONE
+
+
+func _decay_nudge(delta: float) -> void:
+	if _nudge_left <= 0.0:
+		return
+	_nudge_left = maxf(_nudge_left - delta, 0.0)
+	var camera: Camera2D = get_viewport().get_camera_2d()
+	if camera == null:
+		return
+	var nudge_sec: float = maxf(WeaponEffects.value("shockwave_nudge_sec"), 0.01)
+	var punch: float = (
+		WeaponEffects.value("shockwave_nudge_px") / maxf(get_viewport_rect().size.y, 1.0)
+	)
+	camera.zoom = Vector2.ONE * (1.0 + punch * (_nudge_left / nudge_sec))
 
 
 func _create_ward() -> Ward:
@@ -461,41 +515,95 @@ func _create_summon() -> Summon:
 	return summon
 
 
-func _create_explosion_flash() -> DeathPuff:
-	var flash := DeathPuff.new()
+func _create_blast_ring() -> BlastRing:
+	var flash := BlastRing.new()
 	flash.finished.connect(
-		func(done: DeathPuff) -> void: _flash_pool.release(done)
+		func(done: BlastRing) -> void: _flash_pool.release(done)
 	)
 	return flash
+
+
+func _create_chain_bolt() -> ChainBolt:
+	var bolt := ChainBolt.new()
+	bolt.finished.connect(
+		func(done: ChainBolt) -> void: _bolt_pool.release(done)
+	)
+	return bolt
 
 
 func _on_projectile_finished(projectile: Projectile) -> void:
 	_pool.release(projectile)
 
 
-## 혼불 orb placeholder: soul-flame disc with a white core (N4-4a).
+## 혼불 orb (N4-4a, glow + trail N3-17): soul-flame disc with a soft glow halo
+## and a fading trail of its recent orbit positions. The trail ring buffer is
+## pre-sized once; recording never allocates. Fade time from data
+## (weapon_effects.orbit_trail_sec).
 class OrbVisual:
 	extends Node2D
+
+	const TRAIL_CAPACITY := 10
+	const GLOW_RADIUS_SCALE := 2.1
+	const GLOW_ALPHA := 0.16
+	const TRAIL_ALPHA := 0.4
+	const TRAIL_RADIUS_SCALE := 0.7
 
 	var color: Color = UiPalette.WEAPON_SOUL
 	var radius: float = AutoWeapon.ORB_RADIUS_PX
 
+	var _trail := PackedVector2Array()
+	var _ages := PackedFloat32Array()
+	var _head: int = -1
+	var _count: int = 0
+
+	func _init() -> void:
+		_trail.resize(TRAIL_CAPACITY)
+		_ages.resize(TRAIL_CAPACITY)
+
+	## Parent AutoWeapon moves the orb in ITS _physics_process (parents run
+	## before children), so recording here always sees this frame's position.
+	func _physics_process(delta: float) -> void:
+		for i: int in range(TRAIL_CAPACITY):
+			_ages[i] += delta
+		_head = (_head + 1) % TRAIL_CAPACITY
+		_count = mini(_count + 1, TRAIL_CAPACITY)
+		_trail[_head] = global_position
+		_ages[_head] = 0.0
+		queue_redraw()
+
 	func _draw() -> void:
+		var fade_sec: float = maxf(WeaponEffects.value("orbit_trail_sec"), 0.01)
+		for step: int in range(1, _count):
+			var index: int = (_head - step + TRAIL_CAPACITY) % TRAIL_CAPACITY
+			var fade: float = 1.0 - clampf(_ages[index] / fade_sec, 0.0, 1.0)
+			if fade <= 0.0:
+				break  # entries only get older down the buffer
+			draw_circle(
+				to_local(_trail[index]),
+				radius * TRAIL_RADIUS_SCALE * fade,
+				Color(color, TRAIL_ALPHA * fade)
+			)
+		draw_circle(Vector2.ZERO, radius * GLOW_RADIUS_SCALE, Color(color, GLOW_ALPHA))
 		draw_circle(Vector2.ZERO, radius, color)
 		draw_circle(Vector2.ZERO, radius * 0.45, UiPalette.LOOT_CORE)
 
 
-## 석장 swing placeholder: a double arc stroke that fades over the flash time.
-## One swing is ever alive per weapon (cooldown >> flash), so a single reused
-## instance replaces a pool.
+## 석장 swing (N3-17): an animated sweep — the leading edge travels across the
+## swing arc over the flash time, dragging a fading wedge trail behind it, so
+## the swing reads as motion instead of a static stamp. One swing is ever
+## alive per weapon (cooldown >> flash), so a single reused instance replaces
+## a pool. Sweep time comes from data (weapon_effects.arc_sweep_sec).
 class ArcFlash:
 	extends Node2D
 
 	const OUTER_RATIO := 0.9
-	const INNER_RATIO := 0.6
-	const OUTER_WIDTH := 5.0
-	const INNER_WIDTH := 3.0
+	const INNER_RATIO := 0.55
+	const EDGE_WIDTH := 6.0
+	const TRAIL_WIDTH := 4.0
 	const POINTS := 20
+	const TRAIL_ALPHA := 0.45
+	## The bright leading blade covers this slice of the full arc.
+	const EDGE_SLICE := 0.22
 
 	var _aim: float = 0.0
 	var _arc_rad: float = 0.0
@@ -519,7 +627,6 @@ class ArcFlash:
 		_duration = maxf(duration, 0.01)
 		_age = 0.0
 		visible = true
-		modulate.a = 1.0
 		queue_redraw()
 
 	func _process(delta: float) -> void:
@@ -529,11 +636,32 @@ class ArcFlash:
 		if _age >= _duration:
 			visible = false
 			return
-		modulate.a = 1.0 - _age / _duration
 		queue_redraw()
 
 	func _draw() -> void:
-		var from: float = _aim - _arc_rad / 2.0
-		var to: float = _aim + _arc_rad / 2.0
-		draw_arc(Vector2.ZERO, _radius * OUTER_RATIO, from, to, POINTS, _color, OUTER_WIDTH)
-		draw_arc(Vector2.ZERO, _radius * INNER_RATIO, from, to, POINTS, _color, INNER_WIDTH)
+		var progress: float = clampf(_age / _duration, 0.0, 1.0)
+		var start: float = _aim - _arc_rad / 2.0
+		# Ease-out sweep: the blade whips through most of the arc early.
+		var eased: float = 1.0 - (1.0 - progress) * (1.0 - progress)
+		var edge: float = start + _arc_rad * eased
+		var fade: float = 1.0 - progress
+		# Trail wedge: everything already swept, fading as a whole.
+		if edge > start:
+			draw_arc(
+				Vector2.ZERO, _radius * OUTER_RATIO, start, edge, POINTS,
+				Color(_color, TRAIL_ALPHA * fade), TRAIL_WIDTH
+			)
+			draw_arc(
+				Vector2.ZERO, _radius * INNER_RATIO, start, edge, POINTS,
+				Color(_color, TRAIL_ALPHA * 0.6 * fade), TRAIL_WIDTH * 0.6
+			)
+		# Leading blade: a short, bright slice with a white-hot core.
+		var blade_from: float = maxf(edge - _arc_rad * EDGE_SLICE, start)
+		draw_arc(
+			Vector2.ZERO, _radius * OUTER_RATIO, blade_from, edge, POINTS,
+			Color(_color, fade), EDGE_WIDTH
+		)
+		draw_arc(
+			Vector2.ZERO, _radius * OUTER_RATIO, blade_from, edge, POINTS,
+			Color(UiPalette.LOOT_CORE, 0.7 * fade), EDGE_WIDTH * 0.4
+		)

@@ -12,5 +12,22 @@
     "weight": 2.0,
     "pad_px": 6.0,
     "cell_px": 96.0
+  },
+  "weapon_effects": {
+    "explosion_ring_sec": 0.35,
+    "chain_bolt_sec": 0.22,
+    "chain_bolt_jitter_px": 8.0,
+    "arc_sweep_sec": 0.22,
+    "blade_trail_sec": 0.16,
+    "orbit_trail_sec": 0.24,
+    "ward_pulse_sec": 0.35,
+    "summon_strike_sec": 0.16,
+    "shockwave_ring_sec": 0.35,
+    "shockwave_nudge_px": 8.0,
+    "shockwave_nudge_sec": 0.18,
+    "curse_jump_sec": 0.3,
+    "status_flicker_hz": 6.0,
+    "blink_puff_sec": 0.3,
+    "screen_flash_sec": 0.4
   }
 }
