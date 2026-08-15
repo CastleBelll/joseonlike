@@ -19,6 +19,20 @@ const STRINGS := {
 	"settings.effects_volume": {"ko": "효과음", "en": "Effects"},
 	"settings.language": {"ko": "언어", "en": "Language"},
 	"settings.close": {"ko": "닫기", "en": "Close"},
+	"meta.title": {"ko": "명부수", "en": "Myeongbusu"},
+	"meta.locked": {"ko": "잠김", "en": "Locked"},
+	"meta.max": {"ko": "최대", "en": "MAX"},
+	"meta.available": {"ko": "구매 가능", "en": "Available"},
+	"meta.cost_fmt": {"ko": "%d냥", "en": "%d coins"},
+	"meta.buy_fmt": {"ko": "강화 — %d냥", "en": "Upgrade — %d"},
+	"meta.short_fmt": {"ko": "엽전 부족 — %d냥", "en": "Need %d coins"},
+	"meta.hint": {"ko": "노드를 선택하세요", "en": "Select a node"},
+	"meta.requires_fmt": {"ko": "%s 필요", "en": "Requires %s"},
+	"meta.bought": {"ko": "강화 완료", "en": "Upgraded"},
+	"meta.no_gold": {"ko": "엽전이 부족합니다", "en": "Not enough coins"},
+	"meta.maxed_fmt": {"ko": "최대 강화 완료 · %s +%d%%", "en": "Fully upgraded · %s +%d%%"},
+	"meta.next_fmt": {"ko": "%s +%d%% (%d/%d 단계)", "en": "%s +%d%% (rank %d/%d)"},
+	"meta.permanent": {"ko": "영구 적용 · 다음 출정부터", "en": "Permanent · from the next run"},
 }
 
 static var current_locale: String = DEFAULT_LOCALE

@@ -176,6 +176,9 @@ func _on_select_pressed() -> void:
 func _on_building_pressed(building: Dictionary) -> void:
 	var notice: String = Camp.building_notice(building)
 	if notice.is_empty():
+		var scene: String = Camp.building_scene(building)
+		if not scene.is_empty():
+			get_tree().change_scene_to_file(scene)
 		return
 	_notice_label.text = String(building["label"]) + " — " + notice
 	_notice_label.modulate = Color.WHITE

@@ -47,20 +47,30 @@ func test_summary_tolerates_missing_sections() -> bool:
 		and String(summary["best_time_text"]) == "0:00"
 
 
-func test_buildings_present_but_not_ready() -> bool:
+func test_buildings_roster_and_meta_routing() -> bool:
 	var buildings: Array[Dictionary] = Camp.buildings()
-	if buildings.size() != 4:
-		push_error("test_camp: expected 4 GDD building spots")
+	if buildings.size() != 5:
+		push_error("test_camp: expected 5 GDD building spots (incl. 명부수)")
 		return false
 	for building: Dictionary in buildings:
-		if String(building["label"]).is_empty() or bool(building["ready"]):
-			push_error("test_camp: building must be labelled and not ready yet")
+		if String(building["label"]).is_empty():
+			push_error("test_camp: building must be labelled")
 			return false
-		if Camp.building_notice(building) != Camp.NOT_READY_NOTICE:
-			push_error("test_camp: not-ready building must answer 준비 중")
+		if String(building["id"]) == "meta":
+			# N7-1: the 명부수 spot routes to its scene instead of talking.
+			if Camp.building_notice(building) != "" \
+					or Camp.building_scene(building) != "res://scenes/meta_tree.tscn":
+				push_error("test_camp: meta building must route to the tree scene")
+				return false
+			continue
+		if bool(building["ready"]) \
+				or Camp.building_notice(building) != Camp.NOT_READY_NOTICE:
+			push_error("test_camp: placeholder building must answer 준비 중")
 			return false
-	# A ready building stops talking and will route instead.
-	return Camp.building_notice({"id": "x", "label": "x", "ready": true}) == ""
+		if not Camp.building_scene(building).is_empty():
+			push_error("test_camp: placeholder building must not route")
+			return false
+	return true
 
 
 func test_camp_screen_builds() -> bool:

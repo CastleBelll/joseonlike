@@ -10,8 +10,10 @@ const DEST_CAMP := "camp"
 const DEST_TITLE := "title"
 
 ## GDD §24 names. `ready` gates the 준비 중 notice — flips per building as
-## its screen lands (괴이록 N5-4, 명부수형 N7-1, ...).
+## its screen lands (명부수 N7-1 done, 괴이록 N5-4, ...). A ready building
+## carries the scene it routes to.
 const BUILDINGS: Array[Dictionary] = [
+	{"id": "meta", "label": "명부수", "ready": true, "scene": "res://scenes/meta_tree.tscn"},
 	{"id": "bestiary", "label": "괴이록", "ready": false},
 	{"id": "weapon_codex", "label": "무기 도감", "ready": false},
 	{"id": "training", "label": "훈련장", "ready": false},
@@ -61,3 +63,10 @@ static func building_notice(building: Dictionary) -> String:
 	if bool(building.get("ready", false)):
 		return ""
 	return NOT_READY_NOTICE
+
+
+## Scene a ready building routes to; "" for a placeholder spot.
+static func building_scene(building: Dictionary) -> String:
+	if not bool(building.get("ready", false)):
+		return ""
+	return String(building.get("scene", ""))

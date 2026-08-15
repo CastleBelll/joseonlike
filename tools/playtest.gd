@@ -22,6 +22,9 @@ extends Node
 ##                   build for the "can a run be lost" check.
 ##   --grant=a,b,c   (N4-4b) hand the run extra weapons at start for surge
 ##                   load tests.
+##   --meta=max      (N7-1) run with every 명부수 node at max rank, injected
+##                   in memory only — the profile save is locked so the dev
+##                   profile on disk is never polluted.
 ## Screenshots are skipped in headless mode (no frames to grab).
 ## Every timing below derives from data/stages.json duration_sec/boss_at_sec/
 ## surge_at_sec — nothing here hardcodes the run length.
@@ -88,6 +91,7 @@ var _no_pick: bool = false
 var _run_seed: int = 0  # 0 = unseeded (default free-play behaviour)
 var _speed: float = 1.0
 var _grants: Array[String] = []
+var _meta_max: bool = false
 var _headless: bool = false
 var _damage_total: float = 0.0
 var _tracked_weapons: Array[String] = []
@@ -149,12 +153,20 @@ func _parse_args() -> void:
 			_batch = true
 		elif arg == "--nopick":
 			_no_pick = true
+		elif arg == "--meta=max":
+			_meta_max = true
 
 
 ## Boot one run: fresh stage, seeded streams, forced/granted weapons, and the
 ## damage-total hooks the balance table reads.
 func _start_run() -> void:
 	_reset_run_metrics()
+	if _meta_max and SaveService.instance != null:
+		# In-memory maxed tree; the write lock keeps it off the dev's disk.
+		SaveService.instance.profile["meta_tree"] = MetaTree.maxed_state(
+			MetaTree.load_tree()
+		)
+		SaveService.instance._write_locked = true
 	if _run_seed != 0:
 		seed(_run_seed)  # drives the stage's randi() field seed
 	_stage = (load(STAGE_SCENE) as PackedScene).instantiate()
@@ -178,6 +190,12 @@ func _start_run() -> void:
 	# N6-1: hold the bot still until the hint shot lands (no hint = no hold).
 	_hint_shown = _stage._move_hint != null
 	_hint_shot_done = not _hint_shown
+	if not _stage._meta_effects.is_empty():
+		# N7-1 evidence line: an owned tree must be visible in the run's
+		# actual starting stats, not just in the profile.
+		print("META applied: hp_max=%.1f effects=%s" % [
+			_player.hp_max, str(_stage._meta_effects)
+		])
 
 
 func _reset_run_metrics() -> void:

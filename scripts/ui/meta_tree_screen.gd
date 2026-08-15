@@ -1,0 +1,532 @@
+class_name MetaTreeScreen
+extends Control
+## 명부수 permanent-upgrade screen (N7-1, DESIGN.md §4 capture `_02`):
+## NIGHT_BROWN meta grammar — back arrow + GOLD title top-left, currency pill
+## top-right, a scrollable node graph over a trunk in the middle, and the
+## selected node's detail card + one full-width wood CTA at the bottom.
+## All purchase rules live in MetaTree; this screen only renders and routes.
+
+const CAMP_SCENE := "res://scenes/camp.tscn"
+const PASSIVES_PATH := "res://data/passives.json"
+
+const MARGIN_SIDE := 24
+const MARGIN_TOP := 24
+const MARGIN_BOTTOM := 32
+const NODE_SIZE := 72.0
+const NODE_ICON_SIZE := 40.0
+const NODE_LABEL_WIDTH := 150.0
+const ROW_HEIGHT := 165.0
+const CANVAS_TOP_PAD := 28.0
+const CANVAS_BOTTOM_PAD := 72.0
+const NODE_BORDER_WIDTH := 3
+const EDGE_WIDTH := 3.0
+const TRUNK_WIDTH := 10.0
+const PILL_CORNER_RADIUS := 18
+const PILL_PADDING_X := 14
+const PILL_PADDING_Y := 6
+const CARD_CORNER_RADIUS := 12
+const CARD_PADDING := 14
+const CARD_ICON_WELL := 64.0
+const COIN_ICON_SIZE := 28.0
+const BACK_SIZE := 44.0
+const CTA_HEIGHT := 60
+const DETAIL_MIN_HEIGHT := 96.0
+const NOTICE_FADE_SEC := 1.4
+const PERCENT_SCALE := 100.0
+## Locked node icons dim by alpha only — no raw color values outside palette.
+const LOCKED_ICON_ALPHA := 0.35
+
+var _tree: Dictionary = {}
+var _passives: Dictionary = {}
+var _selected_id: String = ""
+## Test/tool fallback profile when the SaveManager autoload is absent; with
+## SaveService live this mirrors its profile and purchases go through it.
+var _profile: Dictionary = SaveProfile.default_profile()
+
+var _canvas: Control
+var _scroll: ScrollContainer
+var _gold_label: Label
+var _detail_name: Label
+var _detail_info: Label
+var _detail_effect: Label
+var _detail_icon: TextureRect
+var _cta: Button
+var _notice_label: Label
+var _notice_tween: Tween
+var _node_buttons: Dictionary = {}
+var _node_labels: Dictionary = {}
+
+
+func _ready() -> void:
+	build_ui()
+
+
+## Builds every child node. Public so the headless test can construct the
+## screen without a running SceneTree (same contract as CampScreen).
+func build_ui() -> void:
+	_tree = MetaTree.load_tree()
+	_passives = _load_json(PASSIVES_PATH)
+	_profile = _live_profile()
+	# Corrupt or stale tree state heals once, up front — the whole screen
+	# then renders from clean state only.
+	var clean: Dictionary = MetaTree.sanitize_state(
+		_tree, _profile.get("meta_tree", {}) as Dictionary
+	)
+	if int(clean["dropped"]) > 0:
+		push_warning(
+			"meta_tree_screen: dropped %d invalid tree entries" % int(clean["dropped"])
+		)
+	_profile["meta_tree"] = clean["state"]
+
+	var background := ColorRect.new()
+	background.name = "Background"
+	background.color = UiPalette.NIGHT_BROWN
+	background.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(background)
+
+	var margin := MarginContainer.new()
+	margin.name = "Layout"
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", MARGIN_SIDE)
+	margin.add_theme_constant_override("margin_right", MARGIN_SIDE)
+	margin.add_theme_constant_override("margin_top", MARGIN_TOP)
+	margin.add_theme_constant_override("margin_bottom", MARGIN_BOTTOM)
+	add_child(margin)
+
+	var column := VBoxContainer.new()
+	column.name = "Column"
+	column.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+	margin.add_child(column)
+
+	column.add_child(_build_header())
+	column.add_child(_build_graph())
+	column.add_child(_build_detail_card())
+
+	_notice_label = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.GOLD)
+	_notice_label.name = "Notice"
+	_notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(_notice_label)
+
+	_cta = Button.new()
+	_cta.name = "CtaButton"
+	_cta.custom_minimum_size = Vector2(0.0, CTA_HEIGHT)
+	WoodButton.apply(_cta)
+	_cta.pressed.connect(_on_cta_pressed)
+	column.add_child(_cta)
+
+	_refresh()
+
+
+func _build_header() -> Control:
+	var header := HBoxContainer.new()
+	header.name = "Header"
+	header.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+
+	var back := Button.new()
+	back.name = "BackButton"
+	back.text = "‹"
+	back.flat = true
+	back.custom_minimum_size = Vector2(BACK_SIZE, BACK_SIZE)
+	back.add_theme_color_override("font_color", UiPalette.GOLD)
+	back.add_theme_color_override("font_hover_color", UiPalette.GOLD)
+	back.add_theme_color_override("font_pressed_color", UiPalette.GOLD_BORDER)
+	back.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_TITLE)
+	back.pressed.connect(_on_back_pressed)
+	header.add_child(back)
+
+	var title := _label(UiLocale.text("meta.title"), UiPalette.FONT_SIZE_TITLE, UiPalette.GOLD)
+	title.name = "Title"
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(title)
+
+	var pill := PanelContainer.new()
+	pill.name = "GoldPill"
+	var pill_box := StyleBoxFlat.new()
+	pill_box.bg_color = UiPalette.CARD_BG
+	pill_box.border_color = UiPalette.CARD_BORDER_DIM
+	pill_box.set_border_width_all(NODE_BORDER_WIDTH)
+	pill_box.set_corner_radius_all(PILL_CORNER_RADIUS)
+	pill_box.content_margin_left = PILL_PADDING_X
+	pill_box.content_margin_right = PILL_PADDING_X
+	pill_box.content_margin_top = PILL_PADDING_Y
+	pill_box.content_margin_bottom = PILL_PADDING_Y
+	pill.add_theme_stylebox_override("panel", pill_box)
+	var pill_row := HBoxContainer.new()
+	pill_row.name = "PillRow"
+	pill_row.add_theme_constant_override("separation", UiPalette.SPACE_XS)
+	pill_row.add_child(UiIcons.icon_rect(UiIcons.hud_icon("coin"), COIN_ICON_SIZE))
+	_gold_label = _label("0", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_ON_DARK)
+	_gold_label.name = "GoldValue"
+	pill_row.add_child(_gold_label)
+	pill.add_child(pill_row)
+	header.add_child(pill)
+	return header
+
+
+func _build_graph() -> Control:
+	_scroll = ScrollContainer.new()
+	_scroll.name = "Scroll"
+	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+
+	_canvas = Control.new()
+	_canvas.name = "Canvas"
+	_canvas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var max_row: float = 0.0
+	for entry: Dictionary in MetaTree.nodes(_tree):
+		max_row = maxf(max_row, float((entry.get("pos", []) as Array)[1]))
+	_canvas.custom_minimum_size = Vector2(
+		0.0, CANVAS_TOP_PAD + (max_row + 1.0) * ROW_HEIGHT + CANVAS_BOTTOM_PAD
+	)
+	# Tapping the empty canvas deselects; node buttons swallow their own taps.
+	_canvas.gui_input.connect(_on_canvas_input)
+	_canvas.draw.connect(_draw_graph)
+	_canvas.resized.connect(_layout_nodes)
+	_scroll.add_child(_canvas)
+
+	for entry: Dictionary in MetaTree.nodes(_tree):
+		var node_id: String = String(entry["id"])
+		var button := Button.new()
+		button.name = "Node_" + node_id
+		button.custom_minimum_size = Vector2(NODE_SIZE, NODE_SIZE)
+		button.size = Vector2(NODE_SIZE, NODE_SIZE)
+		button.pressed.connect(_on_node_pressed.bind(node_id))
+		var icon: TextureRect = UiIcons.icon_rect(
+			UiIcons.loot_icon(String(entry.get("icon", ""))), NODE_ICON_SIZE
+		)
+		icon.name = "Icon"
+		# Center inside the circle: PRESET_CENTER alone anchors the icon's
+		# top-left, so pin the offsets to the icon's half size explicitly.
+		icon.set_anchors_preset(Control.PRESET_CENTER)
+		icon.offset_left = -NODE_ICON_SIZE / 2.0
+		icon.offset_top = -NODE_ICON_SIZE / 2.0
+		icon.offset_right = NODE_ICON_SIZE / 2.0
+		icon.offset_bottom = NODE_ICON_SIZE / 2.0
+		button.add_child(icon)
+		_canvas.add_child(button)
+		_node_buttons[node_id] = button
+
+		var caption := _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_ON_DARK)
+		caption.name = "Caption_" + node_id
+		caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		caption.custom_minimum_size = Vector2(NODE_LABEL_WIDTH, 0.0)
+		caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_canvas.add_child(caption)
+		_node_labels[node_id] = caption
+	return _scroll
+
+
+func _build_detail_card() -> Control:
+	var card := PanelContainer.new()
+	card.name = "DetailCard"
+	card.custom_minimum_size = Vector2(0.0, DETAIL_MIN_HEIGHT)
+	var box := StyleBoxFlat.new()
+	box.bg_color = UiPalette.CARD_BG
+	box.border_color = UiPalette.CARD_BORDER_DIM
+	box.set_border_width_all(NODE_BORDER_WIDTH)
+	box.set_corner_radius_all(CARD_CORNER_RADIUS)
+	box.set_content_margin_all(CARD_PADDING)
+	card.add_theme_stylebox_override("panel", box)
+
+	var row := HBoxContainer.new()
+	row.name = "DetailRow"
+	row.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+	card.add_child(row)
+
+	var well := PanelContainer.new()
+	well.name = "IconWell"
+	well.custom_minimum_size = Vector2(CARD_ICON_WELL, CARD_ICON_WELL)
+	var well_box := StyleBoxFlat.new()
+	well_box.bg_color = UiPalette.CARD_WELL
+	well_box.set_corner_radius_all(CARD_CORNER_RADIUS)
+	well.add_theme_stylebox_override("panel", well_box)
+	_detail_icon = UiIcons.icon_rect(null, NODE_ICON_SIZE)
+	_detail_icon.name = "DetailIcon"
+	well.add_child(_detail_icon)
+	row.add_child(well)
+
+	var lines := VBoxContainer.new()
+	lines.name = "DetailLines"
+	lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lines.add_theme_constant_override("separation", UiPalette.SPACE_XS)
+	_detail_name = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
+	_detail_name.name = "DetailName"
+	lines.add_child(_detail_name)
+	_detail_effect = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_ON_DARK)
+	_detail_effect.name = "DetailEffect"
+	lines.add_child(_detail_effect)
+	_detail_info = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_DARK)
+	_detail_info.name = "DetailInfo"
+	lines.add_child(_detail_info)
+	row.add_child(lines)
+	return card
+
+
+## --- selection / purchase -------------------------------------------------
+
+
+func select_node(node_id: String) -> void:
+	_selected_id = node_id
+	_refresh()
+	var button: Button = _node_buttons.get(node_id)
+	if button != null and is_inside_tree():
+		_scroll.ensure_control_visible(button)
+
+
+func _on_node_pressed(node_id: String) -> void:
+	select_node(node_id)
+
+
+func _on_canvas_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
+		_selected_id = ""
+		_refresh()
+
+
+func _on_back_pressed() -> void:
+	get_tree().change_scene_to_file(CAMP_SCENE)
+
+
+## The CTA acts on the CURRENT selection only and every refusal is feedback,
+## never a silent dead button. State changes only through the single profile
+## fold in MetaTree.purchase (via SaveService when it is alive).
+func _on_cta_pressed() -> void:
+	if _selected_id.is_empty():
+		return
+	var reason: String
+	if SaveService.instance != null:
+		reason = SaveService.instance.purchase_meta_node(_tree, _selected_id)
+		_profile = SaveService.instance.profile
+	else:
+		var result: Dictionary = MetaTree.purchase(_profile, _tree, _selected_id)
+		reason = String(result["reason"])
+		_profile = result["profile"]
+	match reason:
+		MetaTree.REASON_OK:
+			_flash_notice(UiLocale.text("meta.bought"))
+		MetaTree.REASON_GOLD:
+			_flash_notice(UiLocale.text("meta.no_gold"))
+		_:
+			# locked/maxed/unknown never expose a CTA; reaching here means a
+			# stale click raced a state change — just re-render.
+			pass
+	_refresh()
+
+
+## --- rendering ------------------------------------------------------------
+
+
+func _refresh() -> void:
+	_gold_label.text = str(maxi(int(_profile.get("gold", 0)), 0))
+	var state: Dictionary = _profile.get("meta_tree", {})
+	var gold: int = int(_profile.get("gold", 0))
+	for entry: Dictionary in MetaTree.nodes(_tree):
+		var node_id: String = String(entry["id"])
+		_style_node(entry, node_id, state, gold)
+	_refresh_detail(state, gold)
+	if _canvas != null:
+		_layout_nodes()
+		_canvas.queue_redraw()
+
+
+func _style_node(
+	entry: Dictionary, node_id: String, state: Dictionary, gold: int
+) -> void:
+	var button: Button = _node_buttons[node_id]
+	var caption: Label = _node_labels[node_id]
+	var rank: int = MetaTree.rank_of(state, node_id)
+	var unlocked: bool = MetaTree.is_unlocked(_tree, state, node_id)
+	var cost: int = MetaTree.next_cost(entry, rank)
+	var name_text: String = MetaTree.display_name(entry, UiLocale.current_locale)
+	var selected: bool = node_id == _selected_id
+
+	var border: Color = UiPalette.CARD_BORDER_DIM
+	var fill: Color = UiPalette.CARD_BG
+	var status: String
+	var icon: TextureRect = button.get_node("Icon")
+	icon.modulate.a = 1.0
+	if rank > 0:
+		border = UiPalette.GOLD_BORDER
+		fill = UiPalette.CARD_BG_SELECTED
+		if cost == MetaTree.NO_NEXT_COST:
+			status = UiLocale.text("meta.max")
+		else:
+			status = "%d/%d · " % [rank, MetaTree.max_rank(entry)] \
+				+ UiLocale.text("meta.cost_fmt") % cost
+	elif not unlocked:
+		icon.modulate.a = LOCKED_ICON_ALPHA
+		status = UiLocale.text("meta.locked") + " · " \
+			+ UiLocale.text("meta.cost_fmt") % cost
+	elif cost > 0 and gold >= cost:
+		# The next affordable step must be findable without color alone: the
+		# words 구매 가능 carry the cue, the WOOD border doubles it.
+		border = UiPalette.WOOD
+		status = UiLocale.text("meta.available") + " · " \
+			+ UiLocale.text("meta.cost_fmt") % cost
+	else:
+		status = UiLocale.text("meta.cost_fmt") % cost
+	if selected:
+		border = UiPalette.GOLD
+
+	for state_name: String in ["normal", "hover", "pressed"]:
+		button.add_theme_stylebox_override(state_name, _node_plate(fill, border))
+	button.add_theme_stylebox_override("focus", _node_plate(fill, UiPalette.GOLD))
+	caption.text = name_text + "\n" + status
+	caption.add_theme_color_override(
+		"font_color",
+		UiPalette.TEXT_ON_DARK if unlocked or rank > 0 else UiPalette.TEXT_MUTED_ON_DARK
+	)
+
+
+func _refresh_detail(state: Dictionary, gold: int) -> void:
+	if _selected_id.is_empty():
+		_detail_icon.texture = null
+		_detail_name.text = UiLocale.text("meta.hint")
+		_detail_effect.text = ""
+		_detail_info.text = ""
+		_cta.visible = false
+		return
+	var entry: Dictionary = MetaTree.node(_tree, _selected_id)
+	var rank: int = MetaTree.rank_of(state, _selected_id)
+	var cost: int = MetaTree.next_cost(entry, rank)
+	var stat: String = String((entry.get("effect", {}) as Dictionary).get("stat", ""))
+	var per_rank: float = float((entry.get("effect", {}) as Dictionary).get("per_rank", 0.0))
+	_detail_icon.texture = UiIcons.loot_icon(String(entry.get("icon", "")))
+	_detail_name.text = MetaTree.display_name(entry, UiLocale.current_locale)
+
+	if not MetaTree.is_unlocked(_tree, state, _selected_id):
+		# The lock names its requirement instead of just refusing (edge #2).
+		var names: Array[String] = MetaTree.locked_names(
+			_tree, state, _selected_id, UiLocale.current_locale
+		)
+		_detail_effect.text = UiLocale.text("meta.requires_fmt") % ", ".join(names)
+		_detail_info.text = UiLocale.text("meta.locked")
+		_cta.visible = false
+		return
+	if cost == MetaTree.NO_NEXT_COST:
+		# Maxed: the CTA disappears rather than sit greyed-out (DESIGN.md §6).
+		# per_rank * rank is honest only while each stat's node maxima sum to
+		# its stat_caps entry (they do — see data/BALANCE.md N7-1 table);
+		# re-balance the caps if a node is ever added onto an existing stat.
+		_detail_effect.text = UiLocale.text("meta.maxed_fmt") % [
+			_stat_name(stat), roundi(per_rank * rank * PERCENT_SCALE)
+		]
+		_detail_info.text = UiLocale.text("meta.permanent")
+		_cta.visible = false
+		return
+	# The card always describes the NEXT rank, not rank 1 (edge #4).
+	_detail_effect.text = UiLocale.text("meta.next_fmt") % [
+		_stat_name(stat), roundi(per_rank * PERCENT_SCALE),
+		rank + 1, MetaTree.max_rank(entry)
+	]
+	_detail_info.text = UiLocale.text("meta.permanent")
+	_cta.visible = true
+	_cta.text = (
+		UiLocale.text("meta.buy_fmt") % cost if gold >= cost
+		else UiLocale.text("meta.short_fmt") % cost
+	)
+
+
+## Positions every node/caption from its data pos; runs on canvas resize so
+## the fractional x coordinates track the actual width.
+func _layout_nodes() -> void:
+	var width: float = _canvas.size.x
+	if width <= 0.0:
+		return
+	for entry: Dictionary in MetaTree.nodes(_tree):
+		var node_id: String = String(entry["id"])
+		var center: Vector2 = _node_center(entry, width)
+		var button: Button = _node_buttons[node_id]
+		button.position = center - Vector2(NODE_SIZE / 2.0, NODE_SIZE / 2.0)
+		var caption: Label = _node_labels[node_id]
+		caption.position = Vector2(
+			center.x - NODE_LABEL_WIDTH / 2.0, center.y + NODE_SIZE / 2.0
+		)
+
+
+func _node_center(entry: Dictionary, width: float) -> Vector2:
+	var pos: Array = entry.get("pos", [0.5, 0.0])
+	var usable: float = width - NODE_LABEL_WIDTH
+	return Vector2(
+		NODE_LABEL_WIDTH / 2.0 + float(pos[0]) * maxf(usable, 0.0),
+		CANVAS_TOP_PAD + float(pos[1]) * ROW_HEIGHT + NODE_SIZE / 2.0
+	)
+
+
+## The 신목 trunk plus prerequisite edges, drawn under the node buttons.
+## Satisfied edges warm to GOLD_BORDER so progress reads on the tree itself.
+func _draw_graph() -> void:
+	var width: float = _canvas.size.x
+	var height: float = _canvas.custom_minimum_size.y
+	_canvas.draw_line(
+		Vector2(width / 2.0, 0.0), Vector2(width / 2.0, height),
+		UiPalette.WOOD_BORDER, TRUNK_WIDTH
+	)
+	var state: Dictionary = _profile.get("meta_tree", {})
+	for entry: Dictionary in MetaTree.nodes(_tree):
+		var to_center: Vector2 = _node_center(entry, width)
+		for required: Variant in entry.get("requires", []):
+			var from_entry: Dictionary = MetaTree.node(_tree, String(required))
+			if from_entry.is_empty():
+				continue
+			var satisfied: bool = MetaTree.rank_of(state, String(required)) >= 1
+			_canvas.draw_line(
+				_node_center(from_entry, width), to_center,
+				UiPalette.GOLD_BORDER if satisfied else UiPalette.CARD_BORDER_DIM,
+				EDGE_WIDTH
+			)
+
+
+## --- helpers --------------------------------------------------------------
+
+
+func _stat_name(stat: String) -> String:
+	var passive: Dictionary = _passives.get(stat, {})
+	var key: String = "name_en" if UiLocale.current_locale == "en" else "name_ko"
+	return String(passive.get(key, stat))
+
+
+func _node_plate(fill: Color, border: Color) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = fill
+	box.border_color = border
+	box.set_border_width_all(NODE_BORDER_WIDTH)
+	box.set_corner_radius_all(int(NODE_SIZE / 2.0))
+	return box
+
+
+func _flash_notice(text_value: String) -> void:
+	_notice_label.text = text_value
+	_notice_label.modulate = Color.WHITE
+	if not is_inside_tree():
+		return
+	if _notice_tween != null:
+		_notice_tween.kill()
+	_notice_tween = create_tween()
+	_notice_tween.tween_interval(NOTICE_FADE_SEC)
+	_notice_tween.tween_property(
+		_notice_label, "modulate", Color.TRANSPARENT, NOTICE_FADE_SEC
+	)
+
+
+func _live_profile() -> Dictionary:
+	if SaveService.instance != null:
+		return SaveService.instance.profile
+	return SaveProfile.default_profile()
+
+
+func _label(text_value: String, font_size: int, color: Color) -> Label:
+	var label := Label.new()
+	label.text = text_value
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return label
+
+
+func _load_json(path: String) -> Dictionary:
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if data is not Dictionary:
+		push_error("meta_tree_screen: cannot parse " + path)
+		return {}
+	return data

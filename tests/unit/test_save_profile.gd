@@ -66,6 +66,37 @@ func test_bank_gold_adds_and_ignores_negatives() -> bool:
 		and SaveProfile.bank_gold(-3, 5) == 5
 
 
+func test_bank_gold_clamps_at_max_instead_of_wrapping() -> bool:
+	# N7-1 edge: repeated banking must saturate at MAX_GOLD, never overflow.
+	return SaveProfile.bank_gold(SaveProfile.MAX_GOLD, 100) == SaveProfile.MAX_GOLD \
+		and SaveProfile.bank_gold(SaveProfile.MAX_GOLD - 10, 100) == SaveProfile.MAX_GOLD
+
+
+func test_migrate_v1_profile_gains_empty_meta_tree_and_keeps_gold() -> bool:
+	# A pre-N7-1 save: schema 1, no meta_tree block anywhere.
+	var migrated: Dictionary = SaveProfile.migrate({"schema": 1, "gold": 875})
+	return int(migrated["gold"]) == 875 \
+		and migrated["meta_tree"] is Dictionary \
+		and (migrated["meta_tree"] as Dictionary).is_empty() \
+		and int(migrated["schema"]) == SaveProfile.SCHEMA_VERSION
+
+
+func test_migrate_keeps_meta_tree_ranks() -> bool:
+	var profile: Dictionary = SaveProfile.default_profile()
+	profile["meta_tree"] = {"iron_bones": 2.0}  # JSON numbers arrive as float
+	var migrated: Dictionary = SaveProfile.migrate(profile)
+	return (migrated["meta_tree"] as Dictionary)["iron_bones"] == 2
+
+
+func test_future_schema_detected_and_never_migrated() -> bool:
+	# Fail safe (N7-1 edge #6): a newer build's profile is recognized so the
+	# manager can keep the file untouched instead of downgrading it.
+	var future: Dictionary = {"schema": SaveProfile.SCHEMA_VERSION + 1, "gold": 999}
+	return SaveProfile.is_future_schema(future) \
+		and SaveProfile.migrate(future).is_empty() \
+		and not SaveProfile.is_future_schema(SaveProfile.default_profile())
+
+
 func test_apply_run_result_banks_and_bumps_stats() -> bool:
 	var profile: Dictionary = SaveProfile.default_profile()
 	var after: Dictionary = SaveProfile.apply_run_result(profile, 120.0, 30, 40, true)

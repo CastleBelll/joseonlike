@@ -175,6 +175,22 @@ func _check_combat_cross_references() -> void:
 	_check_sprite_effects(effects.get("sprite_effects", {}) as Dictionary)
 	_check_props()
 	_check_loot(monsters, weapons, stages)
+	_check_meta_tree()
+
+
+## N7-1 명부수 tree: the full MetaTree data contract (stat vocabulary, costs,
+## prerequisites, cycles/reachability, duplicate ids, caps) plus icon binding
+## — every node icon must exist in the loot icon set until dedicated art ships.
+func _check_meta_tree() -> void:
+	var tree: Dictionary = _load(DATA_DIR + "/meta_tree.json")
+	for issue: String in MetaTree.data_issues(tree):
+		_fail("meta_tree " + issue)
+	for entry: Dictionary in MetaTree.nodes(tree):
+		var icon: String = String(entry.get("icon", ""))
+		if not FileAccess.file_exists(LOOT_ICON_DIR.path_join(icon + ".png")):
+			_fail("meta_tree node '%s' icon '%s' not in %s" % [
+				entry.get("id", "?"), icon, LOOT_ICON_DIR
+			])
 
 
 ## N2-1 select-card contract: full card copy, an accent the screen can

@@ -134,6 +134,30 @@ Fallback:  NIGHT background + NIGHT_BROWN stats card + CARD_BG building spot
            buttons (palette tokens only)
 ```
 
+```
+[MISSING] meta_tree_backdrop (N7-1)
+Size:      540 wide, ~750+ tall scrollable strip (2x export)
+Members:   신목 (sacred tree) illustration behind the 명부수 node graph —
+           trunk, branches, canopy glow like 설화 capture `_02`; optional
+           root/soil footer under the deepest row
+Used by:   scenes/meta_tree.tscn (scripts/ui/meta_tree_screen.gd Canvas)
+Fallback:  code-drawn WOOD_BORDER trunk line + prerequisite edge lines
+           (palette tokens only)
+```
+
+```
+[MISSING] meta_node_icons (N7-1)
+Size:      16px logical (32px 2x NEAREST), one per data/meta_tree.json node
+Members:   iron_bones / wind_steps / sharp_talisman / soul_pull /
+           quick_hands / ox_vigor / talisman_edge / spirit_haste; plus a
+           small lock badge overlay
+Used by:   meta tree node circles + detail card icon well
+Fallback:  loot icons borrowed per node via the "icon" data field
+           (tough_fiber, beast_fang, talisman_paper, wonhon_shard,
+           whetstone, bamboo, cinnabar, thunder_stone); lock reads as the
+           word 잠김 + dimmed icon
+```
+
 ## Anticipated (not yet needed — do not pre-produce)
 
 These become `[MISSING]` entries only when the feature that needs them is actually

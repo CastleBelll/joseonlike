@@ -1,0 +1,93 @@
+{
+  "config": {
+    "stat_caps": {
+      "max_hp": 0.15,
+      "move_speed": 0.06,
+      "attack_damage": 0.12,
+      "attack_speed": 0.12,
+      "magnet_radius": 0.3
+    }
+  },
+  "nodes": [
+    {
+      "id": "iron_bones",
+      "name_ko": "철골",
+      "name_en": "Iron Bones",
+      "icon": "tough_fiber",
+      "effect": { "stat": "max_hp", "per_rank": 0.05 },
+      "costs": [30, 60],
+      "requires": [],
+      "pos": [0.28, 0]
+    },
+    {
+      "id": "wind_steps",
+      "name_ko": "질풍보",
+      "name_en": "Wind Steps",
+      "icon": "beast_fang",
+      "effect": { "stat": "move_speed", "per_rank": 0.03 },
+      "costs": [40, 90],
+      "requires": [],
+      "pos": [0.72, 0]
+    },
+    {
+      "id": "sharp_talisman",
+      "name_ko": "부적 연마",
+      "name_en": "Talisman Honing",
+      "icon": "talisman_paper",
+      "effect": { "stat": "attack_damage", "per_rank": 0.04 },
+      "costs": [50, 110],
+      "requires": ["iron_bones"],
+      "pos": [0.25, 1]
+    },
+    {
+      "id": "soul_pull",
+      "name_ko": "혼백 인력",
+      "name_en": "Soul Pull",
+      "icon": "wonhon_shard",
+      "effect": { "stat": "magnet_radius", "per_rank": 0.15 },
+      "costs": [40, 80],
+      "requires": ["wind_steps"],
+      "pos": [0.75, 1]
+    },
+    {
+      "id": "quick_hands",
+      "name_ko": "빠른 결인",
+      "name_en": "Quick Mudra",
+      "icon": "whetstone",
+      "effect": { "stat": "attack_speed", "per_rank": 0.04 },
+      "costs": [60, 140],
+      "requires": ["sharp_talisman"],
+      "pos": [0.3, 2]
+    },
+    {
+      "id": "ox_vigor",
+      "name_ko": "태산 기골",
+      "name_en": "Mountain Vigor",
+      "icon": "bamboo",
+      "effect": { "stat": "max_hp", "per_rank": 0.05 },
+      "costs": [150],
+      "requires": ["soul_pull"],
+      "pos": [0.7, 2]
+    },
+    {
+      "id": "talisman_edge",
+      "name_ko": "필살 부적",
+      "name_en": "Lethal Talisman",
+      "icon": "cinnabar",
+      "effect": { "stat": "attack_damage", "per_rank": 0.04 },
+      "costs": [220],
+      "requires": ["quick_hands"],
+      "pos": [0.25, 3]
+    },
+    {
+      "id": "spirit_haste",
+      "name_ko": "신속 주문",
+      "name_en": "Spirit Haste",
+      "icon": "thunder_stone",
+      "effect": { "stat": "attack_speed", "per_rank": 0.04 },
+      "costs": [260],
+      "requires": ["quick_hands", "ox_vigor"],
+      "pos": [0.62, 3]
+    }
+  ]
+}

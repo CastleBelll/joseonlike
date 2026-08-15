@@ -1726,3 +1726,44 @@ combat-window sample sat at 59-60. Stated for honesty rather than hidden.
 | jineon | defeat | 260.9 | 9 | 163 | 8805 | 33.7 | 120 |
 | sal | defeat | 229.1 | 8 | 101 | 3550 | 15.5 | 118 |
 
+
+## N7-1 명부수 meta tree — aggregate caps and the maxed-profile guard
+
+Permanent upgrades reuse the five stats the run already applies
+(`LevelUp.OFFERABLE_PASSIVES`); anything else is rejected by validate_data,
+so a dead stat cannot ship. Total spend to max the tree: **1,330냥**
+(roughly 3-5 victorious runs at the measured 125-465 gold per run above),
+so the full tree is a multi-session goal, not a first-evening buyout.
+
+Aggregate caps (`data/meta_tree.json` config.stat_caps) equal the exact
+designed maxima, so a later data edit cannot silently push past them:
+
+| stat | cap | reached by |
+|---|---|---|
+| max_hp | +15% | 철골 2 + 태산 기골 1 |
+| attack_damage | +12% | 부적 연마 2 + 필살 부적 1 |
+| attack_speed | +12% | 빠른 결인 2 + 신속 주문 1 |
+| move_speed | +6% | 질풍보 2 |
+| magnet_radius | +30% | 혼백 인력 2 |
+
+Reasoning: GDD §19 forbids raw-power creep as the core of meta progression.
++12% damage and +12% attack speed compound to ~+25% DPS — about one weapon
+grade step, far below the 2.3x loadout spread measured in N4-3 — and +15%
+HP is ~one extra enemy contact. The tree softens the early minutes; it does
+not decide the run.
+
+Maxed-profile playtest (2026-08-15, `--meta=max`, 10x speed):
+
+| setup | seed | outcome |
+|---|---|---|
+| maxed, normal bot | 7 | **defeat at 224.0s** (boss killed, overwhelmed after) |
+| maxed, --nopick | 99 | victory 300.2s |
+| maxed, --nopick | 1 | victory 300.2s |
+| maxed, --nopick | 42 | victory 300.2s |
+| maxed, --nopick | 123 | **defeat at 200.3s** |
+
+A fully maxed profile still loses runs — with a normal build (seed 7) and
+even in the deliberate no-pick evasion build (seed 123). The caps hold; the
+run is not trivialised. Watch item: nopick survival went from ~1/1 death
+(pre-meta seed 99) to 2/4 deaths — if future tree growth pushes nopick
+survival to 4/4, cut caps before adding nodes.

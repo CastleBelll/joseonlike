@@ -5,9 +5,12 @@ extends RefCounted
 ## SaveManager (autoload) owns the disk IO; this class stays fully testable
 ## from the headless suite (tests/unit/test_save_profile.gd).
 
-const SCHEMA_VERSION := 1
+const SCHEMA_VERSION := 2
 const SUPPORTED_LOCALES: Array[String] = ["ko", "en"]
 const DEFAULT_CHARACTER := "taoist"
+## N7-1: gold is clamped here on every bank so repeated runs can never wrap
+## the counter; costs above this are unreachable by design.
+const MAX_GOLD := 999999999
 
 const VOLUME_KEYS: Array[String] = ["master_volume", "music_volume", "effects_volume"]
 
@@ -30,6 +33,7 @@ static func default_profile() -> Dictionary:
 			"bosses_killed": 0,
 		},
 		"ftue": Ftue.default_flags(),
+		"meta_tree": {},
 	}
 
 
@@ -46,9 +50,16 @@ static func deserialize(text: String) -> Dictionary:
 	return data
 
 
-## Version dispatch hook. v1 is identity plus filling missing keys from the
-## default shape, so a future v2 adds a migration step here instead of wiping
-## profiles. Unknown or newer schema returns {} — the caller starts fresh.
+## True for a profile written by a NEWER build than this one. The caller must
+## fail safe: keep the file untouched instead of silently downgrading it.
+static func is_future_schema(profile: Dictionary) -> bool:
+	return int(profile.get("schema", 0)) > SCHEMA_VERSION
+
+
+## Version dispatch hook. v1→v2 (N7-1) only adds the empty "meta_tree" block,
+## which the default-shape fill below already provides — gold and everything
+## else carry over intact. Unknown or newer schema returns {} — the caller
+## decides (fresh profile for garbage, read-only session for future schema).
 static func migrate(profile: Dictionary) -> Dictionary:
 	var version: int = int(profile.get("schema", 0))
 	if version < 1 or version > SCHEMA_VERSION:
@@ -72,6 +83,15 @@ static func migrate(profile: Dictionary) -> Dictionary:
 	merged["settings"] = clamp_settings(merged["settings"])
 	merged["stats"] = _normalized_stats(merged["stats"])
 	merged["ftue"] = _normalized_ftue(merged["ftue"])
+	# meta_tree carries dynamic node-id keys, so the default-shape sub-key
+	# merge above (which walks DEFAULT keys) cannot copy it — take it whole.
+	# Per-node validation against the tree data happens at the consumers
+	# (MetaTree.sanitize_state), not here.
+	if profile.get("meta_tree") is Dictionary:
+		var state: Dictionary = {}
+		for key: Variant in (profile["meta_tree"] as Dictionary).keys():
+			state[String(key)] = int((profile["meta_tree"] as Dictionary)[key])
+		merged["meta_tree"] = state
 	return merged
 
 
@@ -105,9 +125,10 @@ static func clamp_settings(settings: Dictionary) -> Dictionary:
 	return result
 
 
-## Run gold folds into permanent gold; negative inputs never drain the bank.
+## Run gold folds into permanent gold; negative inputs never drain the bank
+## and the total clamps at MAX_GOLD so repeated banking can never wrap.
 static func bank_gold(banked: int, earned: int) -> int:
-	return maxi(banked, 0) + maxi(earned, 0)
+	return mini(maxi(banked, 0) + maxi(earned, 0), MAX_GOLD)
 
 
 ## Pure run-end fold: bank the run's gold and bump lifetime stats.

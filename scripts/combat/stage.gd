@@ -32,6 +32,9 @@ var _weapons_data: Dictionary = {}
 var _passives_data: Dictionary = {}
 var _owned_levels: Dictionary = {}
 var _passive_stacks: Dictionary = {}
+# N7-1: the capped permanent 명부수 bonus, computed ONCE in _ready — the only
+# meta input the run ever reads, so tree effects cannot double-apply.
+var _meta_effects: Dictionary = {}
 var _weapon_nodes: Dictionary = {}
 # N4-2 grade axis: per-weapon run grade plus the data ladder/steps config.
 var _owned_grades: Dictionary = {}
@@ -114,6 +117,15 @@ func _ready() -> void:
 	_run_state.level_reached.connect(_on_level_reached)
 	_orb_config_base = RunState.load_orb_config()
 	_orb_config = _orb_config_base.duplicate()
+	var meta_data: Dictionary = MetaTree.load_tree()
+	var meta_clean: Dictionary = MetaTree.sanitize_state(
+		meta_data, _profile().get("meta_tree", {}) as Dictionary
+	)
+	if int(meta_clean["dropped"]) > 0:
+		push_warning(
+			"stage: dropped %d invalid meta_tree entries" % int(meta_clean["dropped"])
+		)
+	_meta_effects = MetaTree.aggregate_effects(meta_data, meta_clean["state"] as Dictionary)
 	_orb_pool = NodePool.new(self, _create_orb)
 	_number_pool = NodePool.new(self, _create_damage_number)
 	_weapons_data = _load_json(WEAPONS_PATH)
@@ -129,6 +141,12 @@ func _ready() -> void:
 	_owned_levels[starting_weapon] = 1
 	_owned_grades[starting_weapon] = LevelUp.current_grade(starting_weapon, _weapons_data, {})
 	_add_weapon_node(starting_weapon)
+	# N7-1 one-shot meta application: scalars fold into the shared refresh
+	# below; the flat HP grant lands here exactly once per run.
+	_refresh_run_scalars()
+	var meta_hp_grant: float = Player.load_base_hp() * _meta_bonus("max_hp")
+	_player.hp += meta_hp_grant
+	_player.hp_max += meta_hp_grant
 	_popup = LevelUpPopup.new()
 	_popup.picked.connect(_on_choice_picked)
 	_popup.dismissed.connect(_on_popup_dismissed)
@@ -507,16 +525,14 @@ func _passive_bonus(passive_id: String) -> float:
 	return per_stack * float(_passive_stacks.get(passive_id, 0))
 
 
+func _meta_bonus(stat: String) -> float:
+	return float(_meta_effects.get(stat, 0.0))
+
+
 ## Recompute every run-wide passive effect from the stack counts, then apply
 ## the one-shot effects for the stack that was just gained.
 func _apply_passive_effects(gained_id: String) -> void:
-	_refresh_weapon_scales()
-	_player.set_speed_scale(1.0 + _passive_bonus("move_speed"))
-	_orb_config = _orb_config_base.duplicate()
-	_orb_config["magnet_radius_px"] = (
-		float(_orb_config_base.get("magnet_radius_px", 0.0))
-		* (1.0 + _passive_bonus("magnet_radius"))
-	)
+	_refresh_run_scalars()
 	# Max HP has no separate cap yet; each stack grants its slice of base HP.
 	if gained_id == "max_hp":
 		var per_stack: float = float(
@@ -527,9 +543,25 @@ func _apply_passive_effects(gained_id: String) -> void:
 		_player.hp_max += grant
 
 
+## Every run-wide scalar recomputed from its data base, so neither passive
+## stacks nor the meta bonus can ever compound with themselves.
+func _refresh_run_scalars() -> void:
+	_refresh_weapon_scales()
+	_player.set_speed_scale(
+		1.0 + _passive_bonus("move_speed") + _meta_bonus("move_speed")
+	)
+	_orb_config = _orb_config_base.duplicate()
+	_orb_config["magnet_radius_px"] = (
+		float(_orb_config_base.get("magnet_radius_px", 0.0))
+		* (1.0 + _passive_bonus("magnet_radius") + _meta_bonus("magnet_radius"))
+	)
+
+
 func _refresh_weapon_scales() -> void:
-	var damage_scale: float = 1.0 + _passive_bonus("attack_damage")
-	var cooldown_scale: float = 1.0 / (1.0 + _passive_bonus("attack_speed"))
+	var damage_scale: float = 1.0 + _passive_bonus("attack_damage") + _meta_bonus("attack_damage")
+	var cooldown_scale: float = 1.0 / (
+		1.0 + _passive_bonus("attack_speed") + _meta_bonus("attack_speed")
+	)
 	for weapon: AutoWeapon in _weapon_nodes.values():
 		weapon.set_scales(damage_scale, cooldown_scale)
 

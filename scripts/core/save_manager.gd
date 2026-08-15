@@ -32,6 +32,10 @@ static var instance: SaveService
 
 var profile: Dictionary = SaveProfile.default_profile()
 
+## N7-1 fail-safe: a profile written by a NEWER build is never loaded and
+## never overwritten — the session runs on an in-memory default instead.
+var _write_locked: bool = false
+
 
 func _init() -> void:
 	instance = self
@@ -91,6 +95,17 @@ func bank_run(elapsed_sec: float, kills: int, run_gold: int, boss_killed: bool) 
 	return gold()
 
 
+## N7-1 명부수 purchase: one pure fold produces the new profile (gold and rank
+## together), then one atomic write persists it — a crash in between leaves
+## the old state fully intact. Returns the MetaTree.REASON_* outcome.
+func purchase_meta_node(tree: Dictionary, node_id: String) -> String:
+	var result: Dictionary = MetaTree.purchase(profile, tree, node_id)
+	if bool(result["ok"]):
+		profile = result["profile"]
+		save_profile()
+	return String(result["reason"])
+
+
 func apply_settings() -> void:
 	var settings: Dictionary = profile["settings"]
 	for key: String in BUS_BY_SETTING.keys():
@@ -99,6 +114,9 @@ func apply_settings() -> void:
 
 
 func save_profile() -> void:
+	if _write_locked:
+		push_warning("save_manager: profile from a newer build — not overwriting")
+		return
 	var file: FileAccess = FileAccess.open(TEMP_PATH, FileAccess.WRITE)
 	if file == null:
 		push_error("save_manager: cannot write " + TEMP_PATH)
@@ -124,9 +142,13 @@ func _load_from_disk() -> Dictionary:
 		if not FileAccess.file_exists(TEMP_PATH):
 			return SaveProfile.default_profile()
 		path = TEMP_PATH
-	var migrated: Dictionary = SaveProfile.migrate(
-		SaveProfile.deserialize(FileAccess.get_file_as_string(path))
-	)
+	var raw: Dictionary = SaveProfile.deserialize(FileAccess.get_file_as_string(path))
+	if SaveProfile.is_future_schema(raw):
+		push_warning("save_manager: profile schema is newer than this build; " +
+			"running read-only on a default profile")
+		_write_locked = true
+		return SaveProfile.default_profile()
+	var migrated: Dictionary = SaveProfile.migrate(raw)
 	if migrated.is_empty():
 		push_warning("save_manager: unreadable profile, starting fresh")
 		return SaveProfile.default_profile()
