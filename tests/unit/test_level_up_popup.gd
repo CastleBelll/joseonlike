@@ -125,6 +125,38 @@ func test_fixed_card_elements_fit_min_height() -> bool:
 	return passed
 
 
+## N4-7: the owned-weapon strip must fit the screen at the maximum number of
+## weapons a run can own — every offerable weapon at once (mods swap 1:1, so
+## they never raise the count). The strip wraps inside the panel margins and
+## the wrapped height must stay inside the panel's bottom reserve.
+func test_owned_strip_fits_at_max_owned_count() -> bool:
+	var weapons: Dictionary = _load(WEAPONS_PATH)
+	var max_owned: int = 0
+	for weapon_id: String in weapons:
+		if weapon_id.begins_with("_"):
+			continue
+		var stats: Dictionary = weapons[weapon_id]
+		if not bool(stats.get("evolution_only", false)) and LevelUp.runtime_can_fire(stats):
+			max_owned += 1
+	if max_owned < 9:
+		push_error("test_level_up_popup: offerable weapon count fixture assumption broke")
+		return false
+	var root_width: float = float(
+		ProjectSettings.get_setting("display/window/size/viewport_width", 540)
+	)
+	var strip_width: float = root_width - LevelUpPopup.PANEL_MARGIN_X * 2.0
+	var height: float = LevelUpPopup.owned_strip_height(max_owned, strip_width)
+	var passed: bool = (
+		UiPalette.SPACE_MD + height <= LevelUpPopup.OWNED_STRIP_RESERVE
+	)
+	if not passed:
+		push_error(
+			"test_level_up_popup: %d owned weapons wrap to %.0fpx, over the %.0fpx reserve"
+			% [max_owned, height, LevelUpPopup.OWNED_STRIP_RESERVE]
+		)
+	return passed
+
+
 func test_panel_fits_portrait_screen() -> bool:
 	var font: Font = LevelUpPopup.card_font()
 	var wrap_width: float = _card_width() - LevelUpPopup.TEXT_LEFT - LevelUpPopup.WELL_MARGIN

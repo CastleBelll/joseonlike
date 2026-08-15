@@ -46,19 +46,25 @@ const DESC_BREAK_FLAGS := (
 	TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE
 )
 ## Screen space kept clear below the panel for the owned-weapon strip; past
-## this the card list scrolls instead of growing (N3-17).
+## this the card list scrolls instead of growing (N3-17). Covers the strip
+## wrapped to two rows — every offerable weapon owned at once (N4-7).
 const OWNED_STRIP_RESERVE := 120.0
 const PILL_SIZE := Vector2(64.0, 30.0)
 const PILL_MARGIN := 12.0
 const OWNED_WELL_SIZE := 48.0
 const OWNED_ROW_GAP := 12.0
+## Vertical gap between wrapped strip rows (N4-7) — tight, so two rows still
+## fit the panel's bottom reserve.
+const OWNED_WRAP_GAP := 4.0
+const OWNED_BADGE_HEIGHT := 18.0
+const OWNED_BADGE_OUTLINE := 4
 const CLOSE_BUTTON_SIZE := Vector2(200.0, 64.0)
 
 var _root: Control
 var _panel: PanelContainer
 var _body: Control
 var _scroll: ScrollContainer
-var _owned_row: HBoxContainer
+var _owned_row: HFlowContainer
 var _title: Label
 
 
@@ -108,9 +114,12 @@ func _ready() -> void:
 	_scroll.offset_top = BODY_MARGIN
 	_scroll.offset_bottom = -BODY_MARGIN
 	_body.add_child(_scroll)
-	_owned_row = HBoxContainer.new()
+	# A flow container wraps the strip once a run owns more weapons than one
+	# row fits (N4-7) — the strip must never run off the 540px screen edge.
+	_owned_row = HFlowContainer.new()
 	_owned_row.name = "OwnedRow"
-	_owned_row.add_theme_constant_override("separation", int(OWNED_ROW_GAP))
+	_owned_row.add_theme_constant_override("h_separation", int(OWNED_ROW_GAP))
+	_owned_row.add_theme_constant_override("v_separation", int(OWNED_WRAP_GAP))
 	_owned_row.position = Vector2(PANEL_MARGIN_X, PANEL_TOP + CARD_HEIGHT_MIN)
 	_root.add_child(_owned_row)
 	visible = false
@@ -158,6 +167,10 @@ func open(
 	_panel.offset_bottom = PANEL_TOP + panel_height
 	_owned_row.position = Vector2(
 		PANEL_MARGIN_X, PANEL_TOP + panel_height + UiPalette.SPACE_MD
+	)
+	# The strip's rect width is what the flow container wraps against.
+	_owned_row.size = Vector2(
+		_root_size().x - PANEL_MARGIN_X * 2.0, OWNED_STRIP_RESERVE - UiPalette.SPACE_MD
 	)
 	_build_owned_row(owned_levels, weapons)
 	visible = true
@@ -259,6 +272,21 @@ static func panel_height_for(card_heights: Array[float], style_margins_y: float)
 	return style_margins_y + HEADER_HEIGHT + BODY_MARGIN * 5.0 + cards_total
 
 
+## Owned-strip wrap math (N4-7), static so the layout test can prove the
+## strip fits the reserve at the data's maximum owned-weapon count. Entries
+## are OWNED_WELL_SIZE wide — the level label under the well is narrower.
+static func owned_strip_rows(count: int, strip_width: float) -> int:
+	var per_row: int = maxi(
+		int((strip_width + OWNED_ROW_GAP) / (OWNED_WELL_SIZE + OWNED_ROW_GAP)), 1
+	)
+	return int(ceilf(float(count) / float(per_row)))
+
+
+static func owned_strip_height(count: int, strip_width: float) -> float:
+	var rows: int = owned_strip_rows(count, strip_width)
+	return float(rows) * OWNED_WELL_SIZE + float(maxi(rows - 1, 0)) * OWNED_WRAP_GAP
+
+
 func _card_width() -> float:
 	var style: StyleBox = _panel.get_theme_stylebox("panel")
 	return (
@@ -348,7 +376,6 @@ func _make_close_button() -> Button:
 
 func _build_owned_row(owned_levels: Dictionary, weapons: Dictionary) -> void:
 	for weapon_id: String in owned_levels:
-		var entry := VBoxContainer.new()
 		var well := Panel.new()
 		well.custom_minimum_size = Vector2(OWNED_WELL_SIZE, OWNED_WELL_SIZE)
 		var style := StyleBoxFlat.new()
@@ -371,14 +398,19 @@ func _build_owned_row(owned_levels: Dictionary, weapons: Dictionary) -> void:
 			glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			well.add_child(glyph)
-		entry.add_child(well)
+		# The level rides ON the well as a badge (N4-7): a label row under the
+		# wells made two wrapped strip rows outgrow the panel's bottom reserve.
 		var level_label := _label(
 			"Lv.%d" % int(owned_levels[weapon_id]),
 			UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_ON_DARK
 		)
+		level_label.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		level_label.offset_top = -OWNED_BADGE_HEIGHT
 		level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		entry.add_child(level_label)
-		_owned_row.add_child(entry)
+		level_label.add_theme_color_override("font_outline_color", UiPalette.INK)
+		level_label.add_theme_constant_override("outline_size", OWNED_BADGE_OUTLINE)
+		well.add_child(level_label)
+		_owned_row.add_child(well)
 
 
 func _make_header() -> Control:
