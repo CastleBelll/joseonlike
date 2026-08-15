@@ -330,3 +330,27 @@ func test_well_label_next_level_and_new() -> bool:
 		and LevelUp.well_label(passive, {}, {}) == "신규!"
 		and LevelUp.well_label(passive, {}, {"attack_damage": 1}) == "Lv.2"
 	)
+
+
+func test_card_icon_ids_bind_by_kind() -> bool:
+	# N3-13: weapon kinds bind their own id, the mod card binds the result
+	# weapon plus its consumed material, passives bind nothing (letter glyph).
+	var weapon_card: Dictionary = LevelUp.as_card(
+		{"kind": LevelUp.KIND_WEAPON_UP, "id": "talisman"}, WEAPONS, PASSIVES,
+		{"talisman": 1}, {}
+	)
+	var passive_card: Dictionary = LevelUp.as_card(
+		{"kind": LevelUp.KIND_PASSIVE, "id": "attack_damage"}, WEAPONS, PASSIVES, {}, {}
+	)
+	var mod_card: Dictionary = LevelUp.as_card(
+		{"kind": LevelUp.KIND_MOD, "id": "fire_mod", "mod": MODS["fire_mod"]},
+		MOD_WEAPONS, {}, {"talisman": 1}, {}
+	)
+	var passed: bool = String(weapon_card["icon_weapon_id"]) == "talisman"
+	passed = passed and String(weapon_card["icon_loot_id"]) == ""
+	passed = passed and String(passive_card["icon_weapon_id"]) == ""
+	passed = passed and String(mod_card["icon_weapon_id"]) == "fire_talisman"
+	passed = passed and String(mod_card["icon_loot_id"]) == "fire_stone"
+	if not passed:
+		push_error("test_level_up: card icon ids broken")
+	return passed

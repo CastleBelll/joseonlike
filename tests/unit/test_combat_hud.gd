@@ -52,3 +52,24 @@ func test_run_state_xp_needed() -> bool:
 	if not passed:
 		push_error("test_combat_hud: xp_needed does not match the curve")
 	return passed
+
+
+func test_counter_and_corner_icons_use_real_textures() -> bool:
+	# N3-13: the skull/coin counters and pause/info corner buttons bind the
+	# asset/ui/hud textures — no drawn placeholder glyphs left.
+	var hud := CombatHud.new()
+	hud.build_ui()
+	var passed: bool = true
+	for row_name: String in ["Kills", "Gold"]:
+		var icon: TextureRect = hud.get_node("Counters/" + row_name).get_child(0) as TextureRect
+		passed = passed and icon != null and icon.texture != null
+		passed = passed and icon.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST
+	for button_name: String in ["PauseButton", "InfoButton"]:
+		var corner: TextureRect = (
+			hud.get_node("CornerButtons/" + button_name).get_child(0) as TextureRect
+		)
+		passed = passed and corner != null and corner.texture != null
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: HUD icons are not the asset/ui textures")
+	return passed

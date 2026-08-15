@@ -1,7 +1,7 @@
 class_name SettingsPopup
 extends CanvasLayer
-## Title-screen settings popup (N5-2): paper panel per DESIGN.md §3 with
-## lattice corners, three volume sliders (master/music/effects) and a
+## Title-screen settings popup (N5-2): chrome paper panel (lattice corners
+## baked in, N3-13), three volume sliders (master/music/effects) and a
 ## 한국어/English toggle. Every change applies immediately through the
 ## SaveManager autoload; sliders persist on drag end, the toggle right away.
 ## One wood CTA closes it — no quit button anywhere (mobile).
@@ -40,7 +40,7 @@ func _ready() -> void:
 	add_child(_root)
 	var panel := PanelContainer.new()
 	panel.name = "PaperPanel"
-	panel.add_theme_stylebox_override("panel", _paper_style())
+	panel.add_theme_stylebox_override("panel", UiIcons.paper_panel())
 	panel.anchor_left = 0.0
 	panel.anchor_right = 1.0
 	panel.anchor_top = 0.5
@@ -53,7 +53,6 @@ func _ready() -> void:
 	var layout := Control.new()
 	layout.name = "Layout"
 	panel.add_child(layout)
-	layout.add_child(_make_lattice())
 	layout.add_child(_make_header())
 	layout.add_child(_make_body())
 	_refresh_texts()
@@ -175,14 +174,6 @@ func _make_language_row() -> Control:
 	return row
 
 
-func _make_lattice() -> Control:
-	var lattice := ResultScreen.LatticeCorners.new()
-	lattice.name = "Lattice"
-	lattice.set_anchors_preset(Control.PRESET_FULL_RECT)
-	lattice.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return lattice
-
-
 func _label(text: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.text = text
@@ -199,13 +190,4 @@ func _track_style(fill: Color) -> StyleBoxFlat:
 	# Keeps the visible track slim inside the 44px touch target.
 	style.content_margin_top = TRACK_MARGIN
 	style.content_margin_bottom = TRACK_MARGIN
-	return style
-
-
-func _paper_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = UiPalette.PAPER
-	style.border_color = UiPalette.WOOD_BORDER
-	style.set_border_width_all(WoodButton.BORDER_WIDTH)
-	style.set_corner_radius_all(WoodButton.CORNER_RADIUS)
 	return style

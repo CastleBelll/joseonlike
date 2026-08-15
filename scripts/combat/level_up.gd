@@ -415,9 +415,31 @@ static func describe(
 	return ""
 
 
+## Weapon id whose icon the card's well shows (N3-13): the weapon itself for
+## every weapon kind, the RESULT weapon for a mod (the card sells the
+## transformation), and none for passives — they keep the letter glyph until
+## passive icons exist.
+static func icon_weapon_id(choice: Dictionary) -> String:
+	match String(choice.get("kind", "")):
+		KIND_PASSIVE:
+			return ""
+		KIND_MOD:
+			return String((choice.get("mod", {}) as Dictionary).get("result_weapon", ""))
+	return String(choice.get("id", ""))
+
+
+## Loot id whose icon the card shows (N3-13): only the mod card shows a
+## material — the one the recipe consumes.
+static func icon_loot_id(choice: Dictionary) -> String:
+	if String(choice.get("kind", "")) != KIND_MOD:
+		return ""
+	return String((choice.get("mod", {}) as Dictionary).get("loot_id", ""))
+
+
 ## Display dict for the shared paper-panel card component (LevelUpPopup.open):
-## {"name", "desc", "well_label", "grade", "payload"} — payload is the raw
-## choice routed back through the popup's picked signal.
+## {"name", "desc", "well_label", "grade", "icon_weapon_id", "icon_loot_id",
+## "payload"} — payload is the raw choice routed back through the popup's
+## picked signal.
 static func as_card(
 	choice: Dictionary,
 	weapons: Dictionary,
@@ -434,6 +456,8 @@ static func as_card(
 		),
 		"well_label": well_label(choice, owned_levels, passive_stacks),
 		"grade": grade_text(choice, weapons, owned_grades, grades),
+		"icon_weapon_id": icon_weapon_id(choice),
+		"icon_loot_id": icon_loot_id(choice),
 		"payload": choice,
 	}
 

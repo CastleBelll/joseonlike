@@ -4,8 +4,10 @@ extends CanvasLayer
 ## full-width row cards stacked vertically, and the owned-weapon strip outside
 ## the panel. Serves the level-up choices (N3-6) — including the 개조 card
 ## (N4-6) — from pre-built display cards (LevelUp.as_card), so this stays one
-## card component. All colors are UiPalette tokens; the icon wells show a
-## glyph placeholder until icon art lands (AC-3).
+## card component. All colors are UiPalette tokens; the icon wells bind
+## asset/ui icons by id (N3-13) with a letter-glyph fallback for ids without
+## art (passives). The paper panel is the chrome 9-slice — lattice corners
+## are baked into its margins.
 
 signal picked(payload: Dictionary)
 signal dismissed
@@ -27,14 +29,17 @@ const FOCUS_RING_WIDTH := 4
 const WELL_SIZE := 72.0
 const WELL_CORNER := 8
 const WELL_MARGIN := 16.0
+# Weapon icons show at integer multiples of their 32px logical size and the
+# loot badge at its native 24px, so NEAREST sampling stays lossless
+# (asset/ui/README.md).
+const WELL_ICON_SIZE := 64.0
+const OWNED_ICON_SIZE := 32.0
+const LOOT_BADGE_SIZE := 24.0
 const TEXT_LEFT := 104.0
 const PILL_SIZE := Vector2(64.0, 30.0)
 const PILL_MARGIN := 12.0
 const OWNED_WELL_SIZE := 48.0
 const OWNED_ROW_GAP := 12.0
-const LATTICE_CELL := 36.0
-const LATTICE_INSET := 14.0
-const LATTICE_LINE_WIDTH := 2.0
 const CLOSE_BUTTON_SIZE := Vector2(200.0, 64.0)
 
 var _root: Control
@@ -58,7 +63,7 @@ func _ready() -> void:
 	add_child(_root)
 	_panel = PanelContainer.new()
 	_panel.name = "PaperPanel"
-	_panel.add_theme_stylebox_override("panel", _paper_style())
+	_panel.add_theme_stylebox_override("panel", UiIcons.paper_panel())
 	_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_panel.offset_left = PANEL_MARGIN_X
 	_panel.offset_right = -PANEL_MARGIN_X
@@ -68,7 +73,6 @@ func _ready() -> void:
 	var layout := Control.new()
 	layout.name = "Layout"
 	_panel.add_child(layout)
-	layout.add_child(_make_lattice())
 	layout.add_child(_make_header())
 	_body = Panel.new()
 	_body.name = "Body"
@@ -134,7 +138,11 @@ func _make_card(display: Dictionary) -> Button:
 	var payload: Dictionary = display.get("payload", {})
 	card.pressed.connect(func() -> void: picked.emit(payload))
 	var name_text: String = String(display.get("name", ""))
-	card.add_child(_make_icon_well(name_text))
+	card.add_child(_make_icon_well(
+		name_text,
+		String(display.get("icon_weapon_id", "")),
+		String(display.get("icon_loot_id", ""))
+	))
 	var label_text: String = String(display.get("well_label", ""))
 	var well_label := _label(
 		label_text, UiPalette.FONT_SIZE_LABEL,
@@ -164,7 +172,7 @@ func _make_card(display: Dictionary) -> Button:
 	return card
 
 
-func _make_icon_well(name_text: String) -> Panel:
+func _make_icon_well(name_text: String, weapon_icon_id: String, loot_icon_id: String) -> Panel:
 	var well := Panel.new()
 	well.position = Vector2(WELL_MARGIN, WELL_MARGIN)
 	well.size = Vector2(WELL_SIZE, WELL_SIZE)
@@ -173,12 +181,26 @@ func _make_icon_well(name_text: String) -> Panel:
 	style.bg_color = UiPalette.INK
 	style.set_corner_radius_all(WELL_CORNER)
 	well.add_theme_stylebox_override("panel", style)
-	# Placeholder glyph until AC-3 icons: first syllable of the name in gold.
-	var glyph := _label(name_text.left(1), UiPalette.FONT_SIZE_TITLE, UiPalette.GOLD)
-	glyph.set_anchors_preset(Control.PRESET_FULL_RECT)
-	glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	well.add_child(glyph)
+	var icon: Texture2D = UiIcons.weapon_icon(weapon_icon_id)
+	if icon != null:
+		var rect: TextureRect = UiIcons.icon_rect(icon, WELL_ICON_SIZE)
+		rect.position = Vector2.ONE * ((WELL_SIZE - WELL_ICON_SIZE) / 2.0)
+		rect.size = Vector2(WELL_ICON_SIZE, WELL_ICON_SIZE)
+		well.add_child(rect)
+	else:
+		# Missing-icon fallback: first syllable of the name in gold.
+		var glyph := _label(name_text.left(1), UiPalette.FONT_SIZE_TITLE, UiPalette.GOLD)
+		glyph.set_anchors_preset(Control.PRESET_FULL_RECT)
+		glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		well.add_child(glyph)
+	# The mod card shows the consumed material as a corner badge (N3-13).
+	var loot: Texture2D = UiIcons.loot_icon(loot_icon_id)
+	if loot != null:
+		var badge: TextureRect = UiIcons.icon_rect(loot, LOOT_BADGE_SIZE)
+		badge.position = Vector2.ONE * (WELL_SIZE - LOOT_BADGE_SIZE + 4.0)
+		badge.size = Vector2(LOOT_BADGE_SIZE, LOOT_BADGE_SIZE)
+		well.add_child(badge)
 	return well
 
 
@@ -222,14 +244,21 @@ func _build_owned_row(owned_levels: Dictionary, weapons: Dictionary) -> void:
 		style.set_corner_radius_all(WELL_CORNER)
 		well.add_theme_stylebox_override("panel", style)
 		var stats: Dictionary = weapons.get(weapon_id, {})
-		var glyph := _label(
-			String(stats.get("name_ko", weapon_id)).left(1),
-			UiPalette.FONT_SIZE_BODY, UiPalette.GOLD
-		)
-		glyph.set_anchors_preset(Control.PRESET_FULL_RECT)
-		glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		well.add_child(glyph)
+		var icon: Texture2D = UiIcons.weapon_icon(weapon_id)
+		if icon != null:
+			var rect: TextureRect = UiIcons.icon_rect(icon, OWNED_ICON_SIZE)
+			rect.set_anchors_preset(Control.PRESET_CENTER)
+			well.add_child(rect)
+		else:
+			# Missing-icon fallback, same rule as the card wells.
+			var glyph := _label(
+				String(stats.get("name_ko", weapon_id)).left(1),
+				UiPalette.FONT_SIZE_BODY, UiPalette.GOLD
+			)
+			glyph.set_anchors_preset(Control.PRESET_FULL_RECT)
+			glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			well.add_child(glyph)
 		entry.add_child(well)
 		var level_label := _label(
 			"Lv.%d" % int(owned_levels[weapon_id]),
@@ -253,14 +282,6 @@ func _make_header() -> Control:
 	return header
 
 
-func _make_lattice() -> Control:
-	var lattice := LatticeCorners.new()
-	lattice.name = "Lattice"
-	lattice.set_anchors_preset(Control.PRESET_FULL_RECT)
-	lattice.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return lattice
-
-
 func _label(text: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.text = text
@@ -268,15 +289,6 @@ func _label(text: String, font_size: int, color: Color) -> Label:
 	label.add_theme_color_override("font_color", color)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
-
-
-func _paper_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = UiPalette.PAPER
-	style.border_color = UiPalette.WOOD_BORDER
-	style.set_border_width_all(3)
-	style.set_corner_radius_all(12)
-	return style
 
 
 func _inset_style() -> StyleBoxFlat:
@@ -302,28 +314,3 @@ func _focus_ring() -> StyleBoxFlat:
 	ring.set_border_width_all(FOCUS_RING_WIDTH)
 	ring.set_corner_radius_all(CARD_CORNER)
 	return ring
-
-
-## Four-corner lattice ornament (capture _07): two nested open squares per
-## corner in a muted grey-brown line, mirrored into each corner.
-class LatticeCorners:
-	extends Control
-
-	func _draw() -> void:
-		var cell: float = LATTICE_CELL
-		var inset: float = LATTICE_INSET
-		var corners: Array[Vector2] = [
-			Vector2(inset, inset),
-			Vector2(size.x - inset - cell, inset),
-			Vector2(inset, size.y - inset - cell),
-			Vector2(size.x - inset - cell, size.y - inset - cell),
-		]
-		for origin: Vector2 in corners:
-			draw_rect(
-				Rect2(origin, Vector2(cell, cell)), UiPalette.LATTICE,
-				false, LATTICE_LINE_WIDTH
-			)
-			draw_rect(
-				Rect2(origin + Vector2(cell, cell) * 0.28, Vector2(cell, cell) * 0.44),
-				UiPalette.LATTICE, false, LATTICE_LINE_WIDTH
-			)

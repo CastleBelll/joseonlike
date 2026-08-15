@@ -82,63 +82,36 @@ Used by:   N3-3 auto-attack projectile, N3-5 XP drop (scripts/combat/projectile.
 Fallback:  code-drawn paper ColorRect + vermilion seal / cyan-green draw_circle orb
 ```
 
-```
-[MISSING] loot drop icons (9): bamboo, tough_fiber, beast_fang, talisman_paper,
-          wonhon_shard, dokkaebi_flame, whetstone, ghost_iron, fire_spirit_stone
-Size:      24x24 px idle (+ optional 32x32 collect frames x4, like existing drops)
-Members:   res://asset/drop/loot/<loot_id>/idle.png per loot id
-Used by:   DropPool loot drops (R2-2), data/loot.json
-Fallback:  PlaceholderArt swatch tinted by tier (LootDrops.TIER_TINTS)
-```
+Satisfied by the AC-3 icon set + N3-13 wiring (asset/ui, scripts/ui/ui_icons.gd):
+all 28 weapon icons, all 11 loot icons (mod-card display; the in-field drop
+stays the intentional tier-tinted diamond per DESIGN.md §5.1), and the HUD
+skull/coin/pause/info glyphs. The former [MISSING] entries for loot icons,
+thunder_stone, mod weapon icons, weapon card icons and combat HUD icons are
+cleared; what remains of those wants is below.
 
 ```
-[MISSING] thunder_stone loot icon
-Size:      24x24 loot idle
-Members:   res://asset/drop/loot/thunder_stone/idle.png
-Used by:   noejeongbu mod line (taoist lightning build, N4-4a)
-Fallback:  tier-tinted swatch
-```
-
-```
-[MISSING] taoist archetype weapons (N4-4a): icons + field art for the five new
-          cores and their mod results — hwabu, noebu, seokjang, honbul,
-          beopgeom, hwaryeongbu, noejeongbu, bongmageom, ghost_staff,
-          flame_honbul
-Size:      icons like existing weapon icons; field art: charm travel sprites
-           ~8x14, sword-qi blade ~6x26, staff swing arc sheet, soul-flame orb
-           ~10x10 (2-frame flicker), explosion burst sheet ~3 frames
+[MISSING] taoist archetype weapon FIELD art (N4-4a): travel/impact sprites for
+          hwabu, noebu, seokjang, honbul, beopgeom, hwaryeongbu, noejeongbu,
+          bongmageom, ghost_staff, flame_honbul (icons shipped in AC-3)
+Size:      charm travel sprites ~8x14, sword-qi blade ~6x26, staff swing arc
+           sheet, soul-flame orb ~10x10 (2-frame flicker), explosion burst
+           sheet ~3 frames
 Used by:   N4-4a weapon mechanics (scripts/combat/auto_weapon.gd,
-           projectile.gd), level-up cards (scripts/ui/level_up_popup.gd)
+           projectile.gd)
 Fallback:  palette-token placeholders per weapon — tinted paper/blade rects
            (WEAPON_FIRE/LIGHTNING/SEAL), WOOD/WEAPON_GHOST arc strokes,
            WEAPON_SOUL orbs, WEAPON_FIRE ring flash
 ```
 
 ```
-[MISSING] mod weapon icons (3): sharp_sword, ghost_sword, flame_sword
-Size:      same as existing weapon icons
-Members:   res://asset/weapon/icons/<weapon_id>.png
-Used by:   data/weapon_mods.json results (R2-4)
-Fallback:  the base sword icon (asset/weapon/icons/sword.png)
-```
-
-```
-[MISSING] power-up card icons: weapon icons (old_talisman, sword, bow + upgrades)
-          and passive stat icons (attack_damage, attack_speed, move_speed,
-          max_hp, magnet_radius)
-Size:      72x72 px card well (48x48 reuse in the owned-weapon strip)
-Members:   weapons.json sprite paths (res://asset/weapon/icons/<id>.png) +
-           res://asset/ui/passive_icons/<passive_id>.png
+[MISSING] passive stat icons: attack_damage, attack_speed, move_speed,
+          max_hp, magnet_radius
+Size:      32x32 logical, like the weapon icons
+Members:   res://asset/ui/passive_icons/<passive_id>.png (UiIcons would need
+           a passive_icon lookup once these exist)
 Used by:   N3-6 power-up popup (scripts/ui/level_up_popup.gd icon wells)
-Fallback:  INK well + first syllable of name_ko as a GOLD glyph
-```
-
-```
-[MISSING] combat HUD icons (AC-3): pause, info, skull kill counter, coin (yeopjeon)
-Size:      20x20 px counter icons; 44x44 px touch glyphs (pause/info)
-Members:   res://asset/ui/hud/{pause,info,skull,coin}.png
-Used by:   N3-7 combat HUD (scripts/ui/combat_hud.gd)
-Fallback:  code-drawn palette-token glyphs (PauseGlyph/InfoGlyph/SkullIcon/CoinIcon)
+Fallback:  INK well + first syllable of name_ko as a GOLD glyph (the N3-13
+           missing-icon fallback path)
 ```
 
 ```

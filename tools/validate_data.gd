@@ -51,6 +51,9 @@ const SOFT_ENRAGE_FIELDS: Array[String] = [
 const STATUS_IDS: Array[String] = ["burn", "shock", "curse"]
 # N4-4b character actives contract (characters.json "actives").
 const ACTIVE_TYPES: Array[String] = ["blink", "burst"]
+# N3-13 icon binding contract (asset/ui/README.md): filenames are data ids.
+const WEAPON_ICON_DIR := "res://asset/ui/weapon_icons"
+const LOOT_ICON_DIR := "res://asset/ui/loot_icons"
 const ACTIVE_TYPE_FIELDS: Dictionary = {
 	"blink": ["distance_px", "invulnerable_sec"],
 	"burst": ["radius_px", "damage"],
@@ -449,6 +452,20 @@ func _check_loot(monsters: Dictionary, weapons: Dictionary, stages: Dictionary) 
 			_fail(mod_label + ".result_weapon not in weapons.json")
 		if not loot.has(mod.get("loot_id", "")):
 			_fail(mod_label + ".loot_id not in loot.json")
+	_check_ui_icons(weapons, loot)
+
+
+## N3-13 icon binding: every weapon and loot id binds by filename to
+## asset/ui — an id without an icon file would silently letter-render.
+func _check_ui_icons(weapons: Dictionary, loot: Dictionary) -> void:
+	for weapon_id: String in weapons:
+		if weapon_id.begins_with("_"):
+			continue
+		if not FileAccess.file_exists(WEAPON_ICON_DIR.path_join(weapon_id + ".png")):
+			_fail("weapons.%s has no icon in %s" % [weapon_id, WEAPON_ICON_DIR])
+	for loot_id: String in loot:
+		if not FileAccess.file_exists(LOOT_ICON_DIR.path_join(loot_id + ".png")):
+			_fail("loot.%s has no icon in %s" % [loot_id, LOOT_ICON_DIR])
 
 
 ## N3-9 prop catalogue: sizes positive, collision boxes inside sprite bounds,

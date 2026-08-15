@@ -4,8 +4,9 @@ extends Control
 ## large outlined pixel timer top-centre, a full-width thin XP bar, "Lv.N"
 ## under the bar on the left and skull/coin counters stacked on the right.
 ## Icons and numbers sit directly on the world — no chips, no panels. The
-## skull/coin/pause/info glyphs are palette-token placeholder drawings until
-## the AC-3 icon set lands (ASSET_REQUIREMENTS.md).
+## skull/coin/pause/info glyphs are the real asset/ui/hud icons (N3-13),
+## displayed at integer multiples of their 16px logical size for crisp NEAREST
+## sampling.
 
 const TITLE_SCENE := "res://scenes/title.tscn"
 
@@ -16,10 +17,12 @@ const BUTTON_SIZE := 44.0  # UiPalette.TOUCH_TARGET_MIN
 const BAR_TOP := 92.0
 const BAR_HEIGHT := 8.0
 const BAR_MARGIN_X := 8.0
-const COUNTER_ROW_HEIGHT := 26.0
+const COUNTER_ROW_HEIGHT := 36.0
 const COUNTER_STACK_WIDTH := 144.0
-const ICON_SIZE := 20.0
-const GLYPH_LINE_WIDTH := 3.0
+# 2x of the 16px logical HUD icon (asset/ui/README.md) — the capture's
+# counter icons read ~30 logical px, and 2x NEAREST stays pixel-crisp.
+const ICON_SIZE := 32.0
+const CORNER_ICON_SIZE := 32.0
 const OVERLAY_PANEL_MARGIN_X := 64.0
 const OVERLAY_PANEL_HEIGHT := 260.0
 const OVERLAY_BUTTON_HEIGHT := 56.0
@@ -159,13 +162,13 @@ func _build_corner_buttons() -> void:
 	row.position = Vector2(UiPalette.SPACE_MD, TOP_MARGIN)
 	row.add_theme_constant_override("separation", UiPalette.SPACE_SM)
 	var pause := _flat_button("PauseButton")
-	pause.add_child(_center_glyph(PauseGlyph.new()))
+	pause.add_child(_corner_icon("pause"))
 	pause.pressed.connect(_on_pause_pressed)
 	row.add_child(pause)
 	# The info screen is a later feature; the button completes the capture's
 	# corner grammar and gets wired when that screen exists.
 	var info := _flat_button("InfoButton")
-	info.add_child(_center_glyph(InfoGlyph.new()))
+	info.add_child(_corner_icon("info"))
 	row.add_child(info)
 	add_child(row)
 
@@ -219,8 +222,8 @@ func _build_counters() -> void:
 	stack.offset_left = -COUNTER_STACK_WIDTH
 	stack.offset_right = -UiPalette.SPACE_MD
 	stack.offset_top = BAR_TOP + BAR_HEIGHT + UiPalette.SPACE_XS
-	_kill_label = _counter_row(stack, "Kills", SkullIcon.new())
-	_gold_label = _counter_row(stack, "Gold", CoinIcon.new())
+	_kill_label = _counter_row(stack, "Kills", UiIcons.icon_rect(UiIcons.hud_icon("skull"), ICON_SIZE))
+	_gold_label = _counter_row(stack, "Gold", UiIcons.icon_rect(UiIcons.hud_icon("coin"), ICON_SIZE))
 	add_child(stack)
 
 
@@ -231,8 +234,7 @@ func _counter_row(stack: VBoxContainer, row_name: String, icon: Control) -> Labe
 	row.custom_minimum_size = Vector2(0.0, COUNTER_ROW_HEIGHT)
 	row.alignment = BoxContainer.ALIGNMENT_END
 	row.add_theme_constant_override("separation", UiPalette.SPACE_SM)
-	icon.custom_minimum_size = Vector2(ICON_SIZE, ICON_SIZE)
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(icon)
 	var value := _label("0", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_ON_DARK)
 	value.name = "Value"
@@ -283,12 +285,7 @@ func _build_pause_overlay() -> void:
 	_pause_overlay.visible = false
 	var panel := PanelContainer.new()
 	panel.name = "PaperPanel"
-	var style := StyleBoxFlat.new()
-	style.bg_color = UiPalette.PAPER
-	style.border_color = UiPalette.WOOD_BORDER
-	style.set_border_width_all(3)
-	style.set_corner_radius_all(12)
-	panel.add_theme_stylebox_override("panel", style)
+	panel.add_theme_stylebox_override("panel", UiIcons.paper_panel())
 	# Full-width band centered vertically; set anchors directly because the
 	# wide presets re-derive offsets from the current rect on insertion.
 	panel.anchor_left = 0.0
@@ -353,10 +350,11 @@ func _flat_button(button_name: String) -> Button:
 	return button
 
 
-func _center_glyph(glyph: Control) -> Control:
-	glyph.set_anchors_preset(Control.PRESET_FULL_RECT)
-	glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return glyph
+## 2x HUD icon centered inside the 44px flat corner button.
+func _corner_icon(icon_name: String) -> Control:
+	var rect: TextureRect = UiIcons.icon_rect(UiIcons.hud_icon(icon_name), CORNER_ICON_SIZE)
+	rect.set_anchors_preset(Control.PRESET_CENTER)
+	return rect
 
 
 func _label(text: String, font_size: int, color: Color) -> Label:
@@ -454,76 +452,4 @@ class ActiveButton:
 			font, center + Vector2(-text_size.x / 2.0, text_size.y * 0.35),
 			skill_name, HORIZONTAL_ALIGNMENT_CENTER, -1.0, FONT_SIZE,
 			UiPalette.WOOD_TEXT
-		)
-
-
-## ‖ pause glyph, drawn because the pixel font has no reliable glyph for it.
-class PauseGlyph:
-	extends Control
-
-	func _draw() -> void:
-		var bar_size := Vector2(size.x * 0.14, size.y * 0.5)
-		var gap: float = size.x * 0.12
-		var top: float = (size.y - bar_size.y) / 2.0
-		var center_x: float = size.x / 2.0
-		draw_rect(
-			Rect2(Vector2(center_x - gap / 2.0 - bar_size.x, top), bar_size),
-			UiPalette.TEXT_ON_DARK
-		)
-		draw_rect(
-			Rect2(Vector2(center_x + gap / 2.0, top), bar_size),
-			UiPalette.TEXT_ON_DARK
-		)
-
-
-## ⓘ info glyph: ring plus dot-and-stem "i".
-class InfoGlyph:
-	extends Control
-
-	func _draw() -> void:
-		var center := size / 2.0
-		var radius: float = minf(size.x, size.y) * 0.32
-		draw_arc(center, radius, 0.0, TAU, 32, UiPalette.TEXT_ON_DARK, GLYPH_LINE_WIDTH)
-		draw_circle(center + Vector2(0.0, -radius * 0.45), radius * 0.14, UiPalette.TEXT_ON_DARK)
-		draw_rect(
-			Rect2(
-				center + Vector2(-radius * 0.1, -radius * 0.1),
-				Vector2(radius * 0.2, radius * 0.6)
-			),
-			UiPalette.TEXT_ON_DARK
-		)
-
-
-## Skull placeholder: spirit-white dome + jaw + ink eyes (capture _04 shape).
-class SkullIcon:
-	extends Control
-
-	func _draw() -> void:
-		var center := Vector2(size.x / 2.0, size.y * 0.42)
-		var radius: float = size.x * 0.36
-		draw_circle(center, radius, UiPalette.ENEMY_SPIRIT)
-		draw_rect(
-			Rect2(
-				center + Vector2(-radius * 0.6, radius * 0.5),
-				Vector2(radius * 1.2, radius * 0.7)
-			),
-			UiPalette.ENEMY_SPIRIT
-		)
-		draw_circle(center + Vector2(-radius * 0.4, 0.0), radius * 0.2, UiPalette.INK)
-		draw_circle(center + Vector2(radius * 0.4, 0.0), radius * 0.2, UiPalette.INK)
-
-
-## Coin placeholder: gold disc, darker rim, square hole (yeopjeon).
-class CoinIcon:
-	extends Control
-
-	func _draw() -> void:
-		var center := size / 2.0
-		var radius: float = minf(size.x, size.y) * 0.4
-		draw_circle(center, radius, UiPalette.GOLD)
-		draw_arc(center, radius, 0.0, TAU, 32, UiPalette.GOLD_BORDER, 2.0)
-		var hole: float = radius * 0.55
-		draw_rect(
-			Rect2(center - Vector2(hole, hole) / 2.0, Vector2(hole, hole)),
-			UiPalette.NIGHT_BROWN
 		)

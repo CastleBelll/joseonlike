@@ -1,9 +1,10 @@
 class_name ResultScreen
 extends CanvasLayer
-## Run result screen (N5-1b): paper panel per DESIGN.md §3 with lattice
-## corners, 승리/패배 title, the run summary rows (time / kills / gold /
-## banked total) and a single wood CTA back to the title. The run's gold is
-## banked into the permanent profile by Stage._end_run before open() (N5-2).
+## Run result screen (N5-1b): chrome paper panel (lattice corners baked into
+## the 9-slice, N3-13), 승리/패배 title, the run summary rows (time / kills /
+## gold / banked total) and a single wood CTA back to the title. The run's
+## gold is banked into the permanent profile by Stage._end_run before open()
+## (N5-2).
 
 const TITLE_SCENE := "res://scenes/title.tscn"
 
@@ -14,9 +15,6 @@ const HEADER_HEIGHT := 72.0
 const ROW_HEIGHT := 44.0
 const BODY_MARGIN := 24.0
 const CTA_HEIGHT := 64.0
-const LATTICE_CELL := 36.0
-const LATTICE_INSET := 14.0
-const LATTICE_LINE_WIDTH := 2.0
 
 var _root: Control
 var _title_label: Label
@@ -40,7 +38,7 @@ func _ready() -> void:
 	add_child(_root)
 	var panel := PanelContainer.new()
 	panel.name = "PaperPanel"
-	panel.add_theme_stylebox_override("panel", _paper_style())
+	panel.add_theme_stylebox_override("panel", UiIcons.paper_panel())
 	panel.anchor_left = 0.0
 	panel.anchor_right = 1.0
 	panel.anchor_top = 0.5
@@ -53,7 +51,6 @@ func _ready() -> void:
 	var layout := Control.new()
 	layout.name = "Layout"
 	panel.add_child(layout)
-	layout.add_child(_make_lattice())
 	layout.add_child(_make_header())
 	layout.add_child(_make_body())
 	visible = false
@@ -131,14 +128,6 @@ func _add_row(body: VBoxContainer, row_name: String) -> Label:
 	return value
 
 
-func _make_lattice() -> Control:
-	var lattice := LatticeCorners.new()
-	lattice.name = "Lattice"
-	lattice.set_anchors_preset(Control.PRESET_FULL_RECT)
-	lattice.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return lattice
-
-
 func _label(text: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.text = text
@@ -146,36 +135,3 @@ func _label(text: String, font_size: int, color: Color) -> Label:
 	label.add_theme_color_override("font_color", color)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
-
-
-func _paper_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = UiPalette.PAPER
-	style.border_color = UiPalette.WOOD_BORDER
-	style.set_border_width_all(3)
-	style.set_corner_radius_all(12)
-	return style
-
-
-## Same four-corner lattice ornament grammar as the level-up popup (§3).
-class LatticeCorners:
-	extends Control
-
-	func _draw() -> void:
-		var cell: float = LATTICE_CELL
-		var inset: float = LATTICE_INSET
-		var corners: Array[Vector2] = [
-			Vector2(inset, inset),
-			Vector2(size.x - inset - cell, inset),
-			Vector2(inset, size.y - inset - cell),
-			Vector2(size.x - inset - cell, size.y - inset - cell),
-		]
-		for origin: Vector2 in corners:
-			draw_rect(
-				Rect2(origin, Vector2(cell, cell)), UiPalette.LATTICE,
-				false, LATTICE_LINE_WIDTH
-			)
-			draw_rect(
-				Rect2(origin + Vector2(cell, cell) * 0.28, Vector2(cell, cell) * 0.44),
-				UiPalette.LATTICE, false, LATTICE_LINE_WIDTH
-			)
