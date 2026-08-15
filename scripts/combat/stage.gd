@@ -262,6 +262,9 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 	if _outcome != RunFlow.OUTCOME_NONE or outcome == RunFlow.OUTCOME_NONE:
 		return
 	_outcome = outcome
+	# A timeout victory leaves the boss alive — its HP bar must not sit on top
+	# of the result screen (QA-1).
+	_hud.hide_boss_bar()
 	# A run ending mid shockwave-punch would freeze the camera slightly zoomed
 	# for the whole result screen (physics stops while paused) — reset first.
 	var camera: Camera2D = get_viewport().get_camera_2d()

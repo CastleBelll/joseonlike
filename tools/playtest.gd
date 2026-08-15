@@ -537,8 +537,10 @@ func _finish() -> void:
 	])
 	if _stage._boss != null:
 		print("PLAYTEST boss hp left: %.0f / %.0f" % [_stage._boss.hp, _stage._boss_hp_max])
-	else:
+	elif _spawner._boss_spawn_done:
 		print("PLAYTEST boss killed")
+	else:
+		print("PLAYTEST boss never spawned (run ended before boss_at_sec)")
 	print("PLAYTEST damage total: %.0f (%.1f dps over %.1fs)" % [
 		_damage_total, _damage_total / maxf(elapsed, 0.001), elapsed
 	])

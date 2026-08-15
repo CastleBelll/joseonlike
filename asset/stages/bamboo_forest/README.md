@@ -22,7 +22,7 @@ partial alpha.
 | `props/bamboo_clump_large.png` | 40x56 | Solid obstacle |
 | `props/rock_small.png` | 20x16 | Solid obstacle |
 | `props/rock_large.png` | 32x26 | Solid obstacle |
-| `props/water_puddle.png` | 40x28 | Solid obstacle |
+| `props/water_puddle.png` | 40x28 | Walkable ground decal (QA-1: flat water must not block) |
 | `props/fallen_log.png` | 48x20 | Solid obstacle |
 | `props/stone_lantern.png` | 20x36 | Solid obstacle |
 | `props/shrine_post.png` | 16x40 | Solid obstacle |

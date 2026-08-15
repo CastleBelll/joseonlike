@@ -48,8 +48,7 @@
     },
     "water_puddle": {
       "size": [40.0, 28.0],
-      "collision": [-15.0, -16.0, 30.0, 16.0],
-      "solid": true,
+      "solid": false,
       "weight": 1.5,
       "shape": "round",
       "texture": "res://asset/stages/bamboo_forest/props/water_puddle.png",
