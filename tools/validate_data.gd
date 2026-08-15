@@ -461,8 +461,13 @@ func _check_loot(monsters: Dictionary, weapons: Dictionary, stages: Dictionary) 
 		var mod_label: String = "weapon_mods." + mod_id
 		if not weapons.has(mod.get("weapon_id", "")):
 			_fail(mod_label + ".weapon_id not in weapons.json")
-		if not weapons.has(mod.get("result_weapon", "")):
+		var result_id: String = String(mod.get("result_weapon", ""))
+		if not weapons.has(result_id):
 			_fail(mod_label + ".result_weapon not in weapons.json")
+		# N4-7: a mod result is obtainable ONLY through its recipe — without the
+		# flag it would leak into the new-weapon pool as a plain random pick.
+		elif not bool((weapons[result_id] as Dictionary).get("evolution_only", false)):
+			_fail(mod_label + ".result_weapon '%s' must be evolution_only" % result_id)
 		if not loot.has(mod.get("loot_id", "")):
 			_fail(mod_label + ".loot_id not in loot.json")
 	_check_ui_icons(weapons, loot)

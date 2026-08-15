@@ -95,6 +95,10 @@ var _rows: Array[Dictionary] = []
 var _weapons_json: Dictionary = {}
 var _passive_names: Array[String] = []
 var _skipped_screens: int = 0
+# N4-7 guard metric: display names of every mod result — a card offering one
+# of these as 신규! is the bug the exclusion exists to prevent.
+var _evo_result_names: Array[String] = []
+var _evo_violations: int = 0
 
 
 func _ready() -> void:
@@ -113,6 +117,14 @@ func _ready() -> void:
 	)
 	for passive_id: String in passives:
 		_passive_names.append(String((passives[passive_id] as Dictionary).get("name_ko", "")))
+	var mods: Dictionary = JSON.parse_string(
+		FileAccess.get_file_as_string(Stage.WEAPON_MODS_PATH)
+	)
+	for mod_id: String in mods:
+		var result_id: String = String((mods[mod_id] as Dictionary).get("result_weapon", ""))
+		_evo_result_names.append(String(
+			(_weapons_json.get(result_id, {}) as Dictionary).get("name_ko", result_id)
+		))
 	_parse_args()
 	Engine.time_scale = _speed
 	if _batch:
@@ -189,6 +201,7 @@ func _reset_run_metrics() -> void:
 	_damage_total = 0.0
 	_tracked_weapons = []
 	_skipped_screens = 0
+	_evo_violations = 0
 
 
 ## N4-3 forced build: swap the character's starting weapon for the named one
@@ -372,6 +385,16 @@ func _pick_card() -> void:
 		if _button_has_label(button, LevelUp.MOD_LABEL):
 			mod_on_screen = true
 			break
+	# N4-7: a mod result showing up as a 신규! card means the evolution_only
+	# exclusion regressed — count it so the report proves the run stayed clean.
+	for button: Button in buttons:
+		var labels: Array[Label] = []
+		for child: Node in button.get_children():
+			if child is Label:
+				labels.append(child)
+		if labels.size() >= 2 and labels[0].text == LevelUpPopup.NEW_LABEL \
+				and labels[1].text in _evo_result_names:
+			_evo_violations += 1
 	if mod_on_screen:
 		_mod_offers += 1
 	var chosen: Button = null
@@ -483,6 +506,7 @@ func _finish() -> void:
 	print("PLAYTEST mod cards: offered on %d screens, taken %d at %s" % [
 		_mod_offers, _special_times.size(), str(_special_times)
 	])
+	print("PLAYTEST mod results offered as new weapon: %d" % _evo_violations)
 	print("PLAYTEST fps floor (whole run): %.0f" % (
 		_fps_min_all if _fps_min_all < 1e9 else 0.0
 	))

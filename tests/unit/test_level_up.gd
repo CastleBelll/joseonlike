@@ -221,6 +221,70 @@ func test_pick_three_from_larger_pool_has_no_duplicates() -> bool:
 	return picked[0] != picked[1] and picked[1] != picked[2] and picked[0] != picked[2]
 
 
+## N4-7: the pool legitimately holds a level card AND a grade card for the
+## same weapon — one screen must still never show the same weapon twice, by
+## construction, not by shuffle luck.
+func test_pick_never_yields_two_cards_for_the_same_weapon() -> bool:
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		WEAPONS, {}, {"talisman": 1}, {}, {"talisman": "common"}, GRADES
+	)
+	var talisman_cards: int = 0
+	for choice: Dictionary in pool:
+		if String(choice["id"]) == "talisman":
+			talisman_cards += 1
+	if talisman_cards != 2:
+		push_error("test_level_up: fixture no longer yields level+grade for one weapon")
+		return false
+	var rng := _rng()
+	for _attempt: int in range(200):
+		var seen: Array[String] = []
+		for choice: Dictionary in LevelUp.pick(pool, 3, rng):
+			for id: String in LevelUp.subject_ids(choice):
+				if seen.has(id):
+					return false
+				seen.append(id)
+	return true
+
+
+## N4-7: the 개조 card already shows its base weapon — the fill picks must not
+## show that weapon (or the result) again on the same screen.
+func test_assemble_never_repeats_the_mod_cards_weapons() -> bool:
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		WEAPONS, PASSIVES, {"talisman": 1}, {}, {"talisman": "common"}, GRADES
+	)
+	var mod_pool: Array[Dictionary] = [
+		{"kind": LevelUp.KIND_MOD, "id": "fire_mod", "mod": MODS["fire_mod"]},
+	]
+	var rng := _rng()
+	for _attempt: int in range(200):
+		var cards: Array[Dictionary] = LevelUp.assemble(pool, mod_pool, 3, rng)
+		for card: Dictionary in cards.slice(1):
+			if String(card["id"]) == "talisman" or String(card["id"]) == "fire_talisman":
+				return false
+	return true
+
+
+## N4-7 (owner-reported): every weapon_mods.json result must stay out of the
+## new-weapon pool — mod results are obtainable only through their recipe.
+func test_real_data_mod_results_never_offered_as_new_weapons() -> bool:
+	var weapons: Dictionary = JSON.parse_string(
+		FileAccess.get_file_as_string("res://data/weapons.json")
+	)
+	var mods: Dictionary = JSON.parse_string(
+		FileAccess.get_file_as_string("res://data/weapon_mods.json")
+	)
+	var result_ids: Array[String] = []
+	for mod_id: String in mods:
+		result_ids.append(String((mods[mod_id] as Dictionary).get("result_weapon", "")))
+	var pool: Array[Dictionary] = LevelUp.candidates(weapons, {}, {}, {})
+	for choice: Dictionary in pool:
+		if String(choice["kind"]) == LevelUp.KIND_NEW_WEAPON \
+				and result_ids.has(String(choice["id"])):
+			push_error("test_level_up: mod result offered as new weapon: " + String(choice["id"]))
+			return false
+	return true
+
+
 func test_pick_handles_two_one_and_zero_candidates() -> bool:
 	var two: Array[Dictionary] = [
 		{"kind": LevelUp.KIND_PASSIVE, "id": "a"}, {"kind": LevelUp.KIND_PASSIVE, "id": "b"}

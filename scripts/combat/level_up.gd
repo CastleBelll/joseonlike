@@ -110,7 +110,9 @@ static func mod_candidates(
 
 
 ## One level-up screen (N4-6): at most ONE 개조 card — attractive but never
-## crowding out the pool — plus regular picks filling up to `count`.
+## crowding out the pool — plus regular picks filling up to `count`. The mod
+## card's weapons seed the distinctness set (N4-7), so the same weapon can
+## never appear twice on one screen.
 static func assemble(
 	pool: Array[Dictionary],
 	mod_pool: Array[Dictionary],
@@ -119,14 +121,29 @@ static func assemble(
 ) -> Array[Dictionary]:
 	if mod_pool.is_empty():
 		return pick(pool, count, rng)
-	var cards: Array[Dictionary] = [mod_pool[rng.randi_range(0, mod_pool.size() - 1)]]
-	cards.append_array(pick(pool, count - 1, rng))
+	var mod_choice: Dictionary = mod_pool[rng.randi_range(0, mod_pool.size() - 1)]
+	var cards: Array[Dictionary] = [mod_choice]
+	cards.append_array(pick(pool, count - 1, rng, subject_ids(mod_choice)))
 	return cards
 
 
-## Draw up to `count` distinct choices from the pool without mutating it.
+## The weapon/passive ids one card visibly represents — the distinctness key
+## for a screen (N4-7). A mod card stands for both its base and its result.
+static func subject_ids(choice: Dictionary) -> Array[String]:
+	if String(choice.get("kind", "")) == KIND_MOD:
+		var mod: Dictionary = choice.get("mod", {})
+		return [String(mod.get("weapon_id", "")), String(mod.get("result_weapon", ""))]
+	return [String(choice.get("id", ""))]
+
+
+## Draw up to `count` choices from the pool without mutating it, guaranteed
+## distinct by subject id (N4-7): the pool legitimately holds a level card AND
+## a grade card for the same weapon, and one screen must never show both.
 static func pick(
-	pool: Array[Dictionary], count: int, rng: RandomNumberGenerator
+	pool: Array[Dictionary],
+	count: int,
+	rng: RandomNumberGenerator,
+	excluded_ids: Array[String] = []
 ) -> Array[Dictionary]:
 	var shuffled: Array[Dictionary] = pool.duplicate()
 	for i: int in range(shuffled.size() - 1, 0, -1):
@@ -134,7 +151,17 @@ static func pick(
 		var swap: Dictionary = shuffled[i]
 		shuffled[i] = shuffled[j]
 		shuffled[j] = swap
-	return shuffled.slice(0, mini(count, shuffled.size()))
+	var taken: Array[String] = excluded_ids.duplicate()
+	var picked: Array[Dictionary] = []
+	for choice: Dictionary in shuffled:
+		if picked.size() >= count:
+			break
+		var ids: Array[String] = subject_ids(choice)
+		if ids.any(func(id: String) -> bool: return taken.has(id)):
+			continue
+		taken.append_array(ids)
+		picked.append(choice)
+	return picked
 
 
 ## Pure state transition for one picked card. Returns new copies:
