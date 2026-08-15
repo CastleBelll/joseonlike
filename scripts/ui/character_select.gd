@@ -8,6 +8,7 @@ extends Control
 
 const CHARACTERS_PATH := "res://data/characters.json"
 const TITLE_SCENE := "res://scenes/title.tscn"
+const CAMP_SCENE := "res://scenes/camp.tscn"
 const PORTRAIT_PATH_TEMPLATE := "res://asset/characters/%s/portrait.png"
 
 ## data/characters.json `accent` tokens → palette colors. validate_data.gd
@@ -321,7 +322,15 @@ func _rebuild_cards() -> void:
 		selected_card.grab_focus()
 
 
+## N5-3: back returns to camp for a returning profile; a fresh profile can
+## only be here via the title's corner detour, so it goes back to the title.
 func _on_back_pressed() -> void:
+	var profile: Dictionary = SaveProfile.default_profile()
+	if SaveService.instance != null:
+		profile = SaveService.instance.profile
+	if Camp.destination_after_select_exit(profile) == Camp.DEST_CAMP:
+		get_tree().change_scene_to_file(CAMP_SCENE)
+		return
 	get_tree().change_scene_to_file(TITLE_SCENE)
 
 

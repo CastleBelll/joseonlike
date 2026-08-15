@@ -2,11 +2,14 @@ class_name ResultScreen
 extends CanvasLayer
 ## Run result screen (N5-1b): chrome paper panel (lattice corners baked into
 ## the 9-slice, N3-13), 승리/패배 title, the run summary rows (time / kills /
-## gold / banked total) and a single wood CTA back to the title. The run's
+## gold / banked total) and a single wood CTA back to the camp (N5-3). The run's
 ## gold is banked into the permanent profile by Stage._end_run before open()
 ## (N5-2).
 
-const TITLE_SCENE := "res://scenes/title.tscn"
+# N5-3: a finished run returns to the base camp — the first result is how a
+# new player discovers camp exists (the run already banked, so the profile
+# counts as returning by the time this CTA fires).
+const CAMP_SCENE := "res://scenes/camp.tscn"
 
 const LAYER_ABOVE_POPUP := 12
 const PANEL_MARGIN_X := 48.0
@@ -70,7 +73,7 @@ func open(outcome: String, summary: Dictionary) -> void:
 
 func _on_cta_pressed() -> void:
 	get_tree().paused = false
-	get_tree().change_scene_to_file(TITLE_SCENE)
+	get_tree().change_scene_to_file(CAMP_SCENE)
 
 
 func _make_header() -> Control:
@@ -104,7 +107,7 @@ func _make_body() -> Control:
 	body.add_child(spacer)
 	var cta := Button.new()
 	cta.name = "TitleButton"
-	cta.text = "타이틀로"
+	cta.text = "본거지로"
 	cta.custom_minimum_size = Vector2(0.0, CTA_HEIGHT)
 	WoodButton.apply(cta)
 	cta.pressed.connect(_on_cta_pressed)

@@ -23,6 +23,8 @@ const PAPER_INSET := Color("#f7f0e2")
 const PAPER_CARD_BORDER := Color("#c9a0a6")
 const LATTICE := Color("#a89880")
 const TEXT_MUTED_ON_PAPER := Color("#6b6258")
+# N5-3 camp stats: muted row names on the dark card (AA vs NIGHT_BROWN).
+const TEXT_MUTED_ON_DARK := Color("#b0a494")
 const PILL_TEXT := Color("#ffffff")
 
 # In-game world tokens (DESIGN.md §5 dark forest look).

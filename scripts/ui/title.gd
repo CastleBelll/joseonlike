@@ -10,6 +10,7 @@ signal menu_selected(id: String)
 
 const STAGE_SCENE := "res://scenes/stage.tscn"
 const SELECT_SCENE := "res://scenes/character_select.tscn"
+const CAMP_SCENE := "res://scenes/camp.tscn"
 
 const SKY_TEXTURE := "res://asset/title/bg_sky.png"
 const VILLAGE_TEXTURE := "res://asset/title/bg_village.png"
@@ -49,8 +50,15 @@ func _ready() -> void:
 func _on_menu_selected(id: String) -> void:
 	if id == "start":
 		# N6-1 first-boot routing (GDD §28): the first run is always the
-		# taoist, no character select detour. A returning profile is a no-op
-		# (route_character returns its own selection), so nothing is saved.
+		# taoist, straight into the stage with no camp or select detour.
+		# From the second visit on, start lands in the base camp (N5-3)
+		# and the run departs from there.
+		var profile: Dictionary = SaveProfile.default_profile()
+		if SaveService.instance != null:
+			profile = SaveService.instance.profile
+		if Camp.destination_after_title(profile) == Camp.DEST_CAMP:
+			get_tree().change_scene_to_file(CAMP_SCENE)
+			return
 		if SaveService.instance != null:
 			var routed: String = Ftue.route_character(SaveService.instance.profile)
 			if routed != SaveService.instance.selected_character():

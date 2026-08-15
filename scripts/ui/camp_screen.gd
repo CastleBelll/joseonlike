@@ -1,0 +1,235 @@
+class_name CampScreen
+extends Control
+## Base camp between runs (N5-3, GDD §24): the returning player's home.
+## Shows the permanent state the profile already tracks (보유 엽전 + lifetime
+## stats), the GDD building spots as tappable 준비 중 placeholders, and the
+## two departures — 출정 (one tap into a run) and 수행자 선택.
+## Dark meta-screen grammar per DESIGN.md §4 (`_02`): NIGHT background, GOLD
+## title top-left, currency top-right, wood buttons at the bottom.
+
+const STAGE_SCENE := "res://scenes/stage.tscn"
+const SELECT_SCENE := "res://scenes/character_select.tscn"
+
+const MARGIN_SIDE := 32
+const MARGIN_TOP := 24
+const MARGIN_BOTTOM := 48
+const STAT_ROW_HEIGHT := 40.0
+const PANEL_PADDING := 16
+const PANEL_CORNER_RADIUS := 12
+const SPOT_HEIGHT := 96.0
+const SPOT_CORNER_RADIUS := 8
+const SPOT_BORDER_WIDTH := 2
+const SPOT_COLUMNS := 2
+const BUTTON_HEIGHT := 64
+const SELECT_BUTTON_HEIGHT := 56
+const COIN_ICON_SIZE := 32.0
+const NOTICE_FADE_SEC := 1.6
+
+var _notice_label: Label
+var _notice_tween: Tween
+
+
+func _ready() -> void:
+	build_ui()
+
+
+## Builds every child node. Public so the headless test can construct the
+## screen without a running SceneTree (same contract as TitleScreen).
+func build_ui() -> void:
+	var background := ColorRect.new()
+	background.name = "Background"
+	background.color = UiPalette.NIGHT
+	background.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(background)
+
+	var margin := MarginContainer.new()
+	margin.name = "Layout"
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", MARGIN_SIDE)
+	margin.add_theme_constant_override("margin_right", MARGIN_SIDE)
+	margin.add_theme_constant_override("margin_top", MARGIN_TOP)
+	margin.add_theme_constant_override("margin_bottom", MARGIN_BOTTOM)
+	add_child(margin)
+
+	var column := VBoxContainer.new()
+	column.name = "Column"
+	column.add_theme_constant_override("separation", UiPalette.SPACE_LG)
+	margin.add_child(column)
+
+	var summary: Dictionary = Camp.summary(_profile())
+	column.add_child(_build_header(summary))
+	column.add_child(_build_stats(summary))
+	column.add_child(_build_buildings())
+
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(spacer)
+
+	_notice_label = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
+	_notice_label.name = "Notice"
+	_notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(_notice_label)
+
+	column.add_child(_build_menu())
+
+
+## GOLD title left, coin + permanent gold right (meta grammar, capture _02).
+func _build_header(summary: Dictionary) -> Control:
+	var header := HBoxContainer.new()
+	header.name = "Header"
+	header.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	var title := _label("본거지", UiPalette.FONT_SIZE_TITLE, UiPalette.GOLD)
+	title.name = "CampTitle"
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(title)
+	header.add_child(UiIcons.icon_rect(UiIcons.hud_icon("coin"), COIN_ICON_SIZE))
+	var gold := _label(str(int(summary["gold"])), UiPalette.FONT_SIZE_TITLE, UiPalette.TEXT_ON_DARK)
+	gold.name = "GoldValue"
+	header.add_child(gold)
+	return header
+
+
+## Lifetime record rows on a dark card — permanent state only (N5-2 stats).
+func _build_stats(summary: Dictionary) -> Control:
+	var panel := PanelContainer.new()
+	panel.name = "Stats"
+	var box := StyleBoxFlat.new()
+	box.bg_color = UiPalette.NIGHT_BROWN
+	box.set_corner_radius_all(PANEL_CORNER_RADIUS)
+	box.set_content_margin_all(PANEL_PADDING)
+	panel.add_theme_stylebox_override("panel", box)
+	var rows := VBoxContainer.new()
+	rows.name = "Rows"
+	rows.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	panel.add_child(rows)
+	_add_stat_row(rows, "출정 횟수", str(int(summary["runs_played"])))
+	_add_stat_row(rows, "최고 생존", String(summary["best_time_text"]))
+	_add_stat_row(rows, "최고 처치", str(int(summary["best_kills"])))
+	_add_stat_row(rows, "보스 처치", str(int(summary["bosses_killed"])))
+	return panel
+
+
+## GDD building spots: labelled places that answer 준비 중 when touched —
+## present and tappable, never a greyed-out button (DESIGN.md §6).
+func _build_buildings() -> Control:
+	var grid := GridContainer.new()
+	grid.name = "Buildings"
+	grid.columns = SPOT_COLUMNS
+	grid.add_theme_constant_override("h_separation", UiPalette.SPACE_MD)
+	grid.add_theme_constant_override("v_separation", UiPalette.SPACE_MD)
+	for building: Dictionary in Camp.buildings():
+		var spot := Button.new()
+		spot.name = "Spot_" + String(building["id"])
+		spot.text = String(building["label"])
+		spot.custom_minimum_size = Vector2(0.0, SPOT_HEIGHT)
+		spot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		spot.add_theme_stylebox_override("normal", _spot_plate(UiPalette.CARD_BG))
+		spot.add_theme_stylebox_override("hover", _spot_plate(UiPalette.CARD_BG_SELECTED))
+		spot.add_theme_stylebox_override("pressed", _spot_plate(UiPalette.CARD_BG_SELECTED))
+		spot.add_theme_stylebox_override("focus", _focus_ring())
+		spot.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+		spot.add_theme_color_override("font_hover_color", UiPalette.TEXT_ON_DARK)
+		spot.add_theme_color_override("font_pressed_color", UiPalette.TEXT_ON_DARK)
+		spot.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
+		spot.pressed.connect(_on_building_pressed.bind(building))
+		grid.add_child(spot)
+	return grid
+
+
+func _build_menu() -> Control:
+	var stack := VBoxContainer.new()
+	stack.name = "MenuButtons"
+	stack.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+
+	var select := Button.new()
+	select.name = "SelectButton"
+	select.text = "수행자 선택"
+	select.custom_minimum_size = Vector2(0.0, SELECT_BUTTON_HEIGHT)
+	WoodButton.apply(select)
+	select.pressed.connect(_on_select_pressed)
+	stack.add_child(select)
+
+	var depart := Button.new()
+	depart.name = "DepartButton"
+	depart.text = "출정"
+	depart.custom_minimum_size = Vector2(0.0, BUTTON_HEIGHT)
+	WoodButton.apply(depart)
+	depart.pressed.connect(_on_depart_pressed)
+	stack.add_child(depart)
+	return stack
+
+
+## One tap into a run (interaction budget, DESIGN.md §5.2). route_character
+## is a no-op for returning profiles, so the saved selection is what departs.
+func _on_depart_pressed() -> void:
+	if SaveService.instance != null:
+		var routed: String = Ftue.route_character(SaveService.instance.profile)
+		if routed != SaveService.instance.selected_character():
+			SaveService.instance.set_selected_character(routed)
+	get_tree().change_scene_to_file(STAGE_SCENE)
+
+
+func _on_select_pressed() -> void:
+	get_tree().change_scene_to_file(SELECT_SCENE)
+
+
+func _on_building_pressed(building: Dictionary) -> void:
+	var notice: String = Camp.building_notice(building)
+	if notice.is_empty():
+		return
+	_notice_label.text = String(building["label"]) + " — " + notice
+	_notice_label.modulate = Color.WHITE
+	if not is_inside_tree():
+		return
+	if _notice_tween != null:
+		_notice_tween.kill()
+	_notice_tween = create_tween()
+	_notice_tween.tween_interval(NOTICE_FADE_SEC)
+	_notice_tween.tween_property(_notice_label, "modulate", Color.TRANSPARENT, NOTICE_FADE_SEC)
+
+
+func _profile() -> Dictionary:
+	if SaveService.instance != null:
+		return SaveService.instance.profile
+	return SaveProfile.default_profile()
+
+
+func _add_stat_row(rows: VBoxContainer, row_name: String, value_text: String) -> void:
+	var row := HBoxContainer.new()
+	row.name = row_name
+	row.custom_minimum_size = Vector2(0.0, STAT_ROW_HEIGHT)
+	var name_label := _label(row_name, UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_DARK)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(name_label)
+	var value := _label(value_text, UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_ON_DARK)
+	value.name = "Value"
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(value)
+	rows.add_child(row)
+
+
+func _spot_plate(fill: Color) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = fill
+	box.border_color = UiPalette.CARD_BORDER_DIM
+	box.set_border_width_all(SPOT_BORDER_WIDTH)
+	box.set_corner_radius_all(SPOT_CORNER_RADIUS)
+	return box
+
+
+func _focus_ring() -> StyleBoxFlat:
+	var ring := StyleBoxFlat.new()
+	ring.draw_center = false
+	ring.border_color = UiPalette.GOLD
+	ring.set_border_width_all(SPOT_BORDER_WIDTH)
+	ring.set_corner_radius_all(SPOT_CORNER_RADIUS)
+	return ring
+
+
+func _label(text_value: String, font_size: int, color: Color) -> Label:
+	var label := Label.new()
+	label.text = text_value
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return label

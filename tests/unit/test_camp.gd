@@ -1,0 +1,82 @@
+extends RefCounted
+## Guards the N5-3 base camp: routing from profile state, the summary
+## view-model over the save profile, building placeholder resolution and the
+## camp screen construction.
+
+const CAMP_SCENE := "res://scenes/camp.tscn"
+
+
+static func _returning_profile() -> Dictionary:
+	var profile: Dictionary = SaveProfile.default_profile()
+	return SaveProfile.apply_run_result(profile, 213.0, 87, 450, true)
+
+
+func test_first_boot_routes_straight_to_stage() -> bool:
+	# GDD §28: a brand new profile never sees camp before its first run.
+	var fresh: Dictionary = SaveProfile.default_profile()
+	if Camp.destination_after_title(fresh) != Camp.DEST_STAGE:
+		push_error("test_camp: fresh profile must skip camp")
+		return false
+	return Camp.destination_after_select_exit(fresh) == Camp.DEST_TITLE
+
+
+func test_returning_profile_routes_to_camp() -> bool:
+	var returning: Dictionary = _returning_profile()
+	if Camp.destination_after_title(returning) != Camp.DEST_CAMP:
+		push_error("test_camp: returning profile must land in camp")
+		return false
+	return Camp.destination_after_select_exit(returning) == Camp.DEST_CAMP
+
+
+func test_summary_reads_profile_state() -> bool:
+	var summary: Dictionary = Camp.summary(_returning_profile())
+	var passed: bool = int(summary["gold"]) == 450
+	passed = passed and int(summary["runs_played"]) == 1
+	passed = passed and String(summary["best_time_text"]) == "3:33"
+	passed = passed and int(summary["best_kills"]) == 87
+	passed = passed and int(summary["bosses_killed"]) == 1
+	if not passed:
+		push_error("test_camp: summary does not mirror the profile")
+	return passed
+
+
+func test_summary_tolerates_missing_sections() -> bool:
+	# A hand-edited or pre-migration dict must never crash the camp screen.
+	var summary: Dictionary = Camp.summary({})
+	return int(summary["gold"]) == 0 and int(summary["runs_played"]) == 0 \
+		and String(summary["best_time_text"]) == "0:00"
+
+
+func test_buildings_present_but_not_ready() -> bool:
+	var buildings: Array[Dictionary] = Camp.buildings()
+	if buildings.size() != 4:
+		push_error("test_camp: expected 4 GDD building spots")
+		return false
+	for building: Dictionary in buildings:
+		if String(building["label"]).is_empty() or bool(building["ready"]):
+			push_error("test_camp: building must be labelled and not ready yet")
+			return false
+		if Camp.building_notice(building) != Camp.NOT_READY_NOTICE:
+			push_error("test_camp: not-ready building must answer 준비 중")
+			return false
+	# A ready building stops talking and will route instead.
+	return Camp.building_notice({"id": "x", "label": "x", "ready": true}) == ""
+
+
+func test_camp_screen_builds() -> bool:
+	var scene: PackedScene = load(CAMP_SCENE)
+	var camp: CampScreen = scene.instantiate()
+	camp.build_ui()
+	var passed: bool = camp.get_node_or_null("Layout/Column/Header/GoldValue") != null
+	passed = passed and camp.get_node_or_null("Layout/Column/Stats") != null
+	var grid: GridContainer = camp.get_node_or_null("Layout/Column/Buildings")
+	passed = passed and grid != null and grid.get_child_count() == Camp.buildings().size()
+	var depart: Button = camp.get_node_or_null("Layout/Column/MenuButtons/DepartButton")
+	passed = passed and depart != null \
+		and depart.custom_minimum_size.y >= UiPalette.TOUCH_TARGET_MIN
+	var select: Button = camp.get_node_or_null("Layout/Column/MenuButtons/SelectButton")
+	passed = passed and select != null
+	if not passed:
+		push_error("test_camp: camp screen structure incomplete")
+	camp.free()
+	return passed
