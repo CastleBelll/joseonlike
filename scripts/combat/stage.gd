@@ -69,6 +69,13 @@ var _result: ResultScreen
 var _actives: Array[Dictionary] = []
 var _active_cooldowns: Dictionary = {}
 
+# N6-1 FTUE state: the one-shot move hint node (null once dismissed or for a
+# returning profile) and the first-run guarantee table from stages.json —
+# _first_run_log maps each guaranteed loot_id to the second it first dropped.
+var _move_hint: MoveHint
+var _first_run_drops: Array = []
+var _first_run_log: Dictionary = {}
+
 
 func _ready() -> void:
 	var props_config: Dictionary = StageField.load_config()
@@ -96,10 +103,8 @@ func _ready() -> void:
 		func(amount: float, at: Vector2) -> void: _on_hit_landed(amount, at, false)
 	)
 	_feedback = _load_json(Spawner.EFFECTS_PATH).get("hit_feedback", {})
-	_duration_sec = float(
-		(_load_json(Spawner.STAGES_PATH).get(Spawner.STAGE_ID, {}) as Dictionary)
-		.get("duration_sec", 0.0)
-	)
+	var stage_entry: Dictionary = _load_json(Spawner.STAGES_PATH).get(Spawner.STAGE_ID, {})
+	_duration_sec = float(stage_entry.get("duration_sec", 0.0))
 	_puff_pool = NodePool.new(self, _create_puff)
 	_result = ResultScreen.new()
 	add_child(_result)
@@ -133,10 +138,25 @@ func _ready() -> void:
 	_hud.build_actives(_actives)
 	_hud.active_pressed.connect(_on_active_pressed)
 	_refresh_progress_hud()
+	# N6-1 FTUE: the scripted first-run drop table only arms on a profile that
+	# has never finished a run, and the move hint only until first dismissal.
+	var profile: Dictionary = _profile()
+	if Ftue.is_first_run(profile):
+		_first_run_drops = stage_entry.get("first_run_drops", [])
+	if Ftue.should_show_move_hint(profile):
+		_move_hint = MoveHint.new()
+		_move_hint.name = "MoveHint"
+		_move_hint.target = _joystick
+		$Hud.add_child(_move_hint)
 
 
 func _physics_process(delta: float) -> void:
 	_player.joystick_input = _joystick.output
+	if _move_hint != null and (
+		_joystick.output != Vector2.ZERO
+		or Input.get_vector("move_left", "move_right", "move_up", "move_down") != Vector2.ZERO
+	):
+		_dismiss_move_hint()
 	_run_elapsed += delta
 	if _duration_sec > 0.0 and _run_elapsed >= _duration_sec:
 		_end_run(RunFlow.resolve_outcome(false, false, true))
@@ -149,6 +169,23 @@ func _physics_process(delta: float) -> void:
 		_hud.set_active_cooldown(active_id, ActiveSkill.cooldown_fraction(
 			left, float(active.get("cooldown_sec", 0.0))
 		))
+
+
+## First movement input retires the hint for good (N6-1): the flag persists
+## immediately so a crash later in the run cannot bring it back.
+func _dismiss_move_hint() -> void:
+	_move_hint.queue_free()
+	_move_hint = null
+	if SaveService.instance != null:
+		SaveService.instance.mark_move_hint_seen()
+
+
+## The live profile, or the default shape in node-free tests and demo tools
+## that boot the stage without the SaveManager autoload.
+func _profile() -> Dictionary:
+	if SaveService.instance != null:
+		return SaveService.instance.profile
+	return SaveProfile.default_profile()
 
 
 func _on_player_died() -> void:
@@ -321,6 +358,13 @@ func _show_next_level_up() -> void:
 			choice, _weapons_data, _passives_data, _owned_levels, _passive_stacks,
 			_owned_grades, _grades_config
 		))
+	# N6-1: the very first 개조 card a profile ever sees carries one extra
+	# explanation line — same card, same single tap, never again.
+	if Ftue.should_explain_mod(_profile()):
+		var explained: Dictionary = Ftue.explain_mod_cards(cards)
+		cards = explained["cards"]
+		if bool(explained["explained"]) and SaveService.instance != null:
+			SaveService.instance.mark_mod_explained()
 	_popup.open(POWER_UP_HEADER, cards, _owned_levels, _weapons_data)
 
 
@@ -490,7 +534,13 @@ func _load_json(path: String) -> Dictionary:
 ## the corpse so they never hide under the XP orb.
 func _spawn_loot(enemy: Enemy) -> void:
 	var table: Dictionary = _drop_tables.get(enemy.monster_id, {})
-	for loot_id: String in Loot.roll_drops(table, _loot_rng):
+	var drops: Array[String] = Loot.roll_drops(table, _loot_rng)
+	# N6-1 scripted first run: any overdue guarantee rides the next kill; a
+	# natural drop of the same loot earlier satisfies it via _first_run_log.
+	drops.append_array(Ftue.due_guarantees(_first_run_drops, _run_elapsed, _first_run_log))
+	for loot_id: String in drops:
+		if Ftue.is_guaranteed(_first_run_drops, loot_id) and not _first_run_log.has(loot_id):
+			_first_run_log[loot_id] = _run_elapsed
 		var drop: LootDrop = _loot_pool.acquire()
 		var scatter := Vector2(
 			_loot_rng.randf_range(-LOOT_SCATTER_PX, LOOT_SCATTER_PX),

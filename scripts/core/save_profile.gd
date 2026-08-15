@@ -29,6 +29,7 @@ static func default_profile() -> Dictionary:
 			"best_kills": 0,
 			"bosses_killed": 0,
 		},
+		"ftue": Ftue.default_flags(),
 	}
 
 
@@ -70,7 +71,17 @@ static func migrate(profile: Dictionary) -> Dictionary:
 	merged["selected_character"] = String(merged["selected_character"])
 	merged["settings"] = clamp_settings(merged["settings"])
 	merged["stats"] = _normalized_stats(merged["stats"])
+	merged["ftue"] = _normalized_ftue(merged["ftue"])
 	return merged
+
+
+## N6-1 one-shot FTUE flags; unknown values coerce to bool so a hand-edited
+## profile can never resurrect a dismissed hint as a crash.
+static func _normalized_ftue(ftue: Dictionary) -> Dictionary:
+	var flags: Dictionary = Ftue.default_flags()
+	for key: String in flags.keys():
+		flags[key] = bool(ftue.get(key, false))
+	return flags
 
 
 static func _normalized_stats(stats: Dictionary) -> Dictionary:

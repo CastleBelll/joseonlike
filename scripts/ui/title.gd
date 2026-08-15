@@ -48,6 +48,13 @@ func _ready() -> void:
 
 func _on_menu_selected(id: String) -> void:
 	if id == "start":
+		# N6-1 first-boot routing (GDD §28): the first run is always the
+		# taoist, no character select detour. A returning profile is a no-op
+		# (route_character returns its own selection), so nothing is saved.
+		if SaveService.instance != null:
+			var routed: String = Ftue.route_character(SaveService.instance.profile)
+			if routed != SaveService.instance.selected_character():
+				SaveService.instance.set_selected_character(routed)
 		get_tree().change_scene_to_file(STAGE_SCENE)
 	elif id == "select_character":
 		get_tree().change_scene_to_file(SELECT_SCENE)

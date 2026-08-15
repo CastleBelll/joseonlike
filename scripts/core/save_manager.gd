@@ -70,6 +70,19 @@ func gold() -> int:
 	return int(profile.get("gold", 0))
 
 
+## N6-1 one-shot FTUE marks: persisted the moment they happen (a crash right
+## after must not replay the hint), never re-fired — callers gate on the
+## Ftue.should_* readers first.
+func mark_move_hint_seen() -> void:
+	profile = Ftue.mark_move_hint_seen(profile)
+	save_profile()
+
+
+func mark_mod_explained() -> void:
+	profile = Ftue.mark_mod_explained(profile)
+	save_profile()
+
+
 ## Banks a finished run into the permanent profile and saves.
 ## Returns the new permanent gold total for the result screen.
 func bank_run(elapsed_sec: float, kills: int, run_gold: int, boss_killed: bool) -> int:

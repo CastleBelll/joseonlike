@@ -13,6 +13,10 @@
       "damage_mult_max": 2.5,
       "speed_mult_max": 1.45
     },
+    "first_run_drops": [
+      { "loot_id": "talisman_paper", "at_sec": 10 },
+      { "loot_id": "dokkaebi_flame", "at_sec": 60 }
+    ],
     "spawning": {
       "live_cap": 60,
       "spawn_margin_px": 48.0,

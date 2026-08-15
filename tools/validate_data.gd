@@ -158,7 +158,7 @@ func _check_combat_cross_references() -> void:
 		effects.get("hit_feedback", {}), HIT_FEEDBACK_FIELDS, "effects.hit_feedback"
 	)
 	_check_props()
-	_check_loot(monsters, weapons)
+	_check_loot(monsters, weapons, stages)
 
 
 ## N2-1 select-card contract: full card copy, an accent the screen can
@@ -407,7 +407,8 @@ func _check_weapon_targeting(weapons: Dictionary) -> void:
 
 ## N4-1 loot chain: every drop table points at a real monster and real loot,
 ## every mod recipe joins real weapons to real loot, chances stay in (0, 1].
-func _check_loot(monsters: Dictionary, weapons: Dictionary) -> void:
+## N6-1 adds the first-run guarantee tables (stages.json "first_run_drops").
+func _check_loot(monsters: Dictionary, weapons: Dictionary, stages: Dictionary) -> void:
 	var loot: Dictionary = _load(DATA_DIR + "/loot.json")
 	if loot.is_empty():
 		_fail("loot.json missing or empty")
@@ -432,6 +433,12 @@ func _check_loot(monsters: Dictionary, weapons: Dictionary) -> void:
 			var chance: float = float(drop.get("chance", 0.0))
 			if chance <= 0.0 or chance > 1.0:
 				_fail(drop_label + ".chance must be in (0, 1]")
+	for stage_id: String in stages:
+		var stage: Dictionary = stages[stage_id]
+		for issue: String in Ftue.first_run_issues(
+			stage.get("first_run_drops", []), loot, float(stage.get("duration_sec", 0.0))
+		):
+			_fail("stages.%s %s" % [stage_id, issue])
 	var mods: Dictionary = _load(DATA_DIR + "/weapon_mods.json")
 	for mod_id: String in mods:
 		var mod: Dictionary = mods[mod_id]

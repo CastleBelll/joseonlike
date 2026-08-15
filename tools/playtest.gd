@@ -32,6 +32,9 @@ const RESULT_SHOT_PATH := "user://playtest_result.png"
 const MOD_SHOT_PATH := "user://playtest_mod_card.png"
 const MIDRUN_SHOT_PATH := "user://playtest_midrun.png"
 const MIDRUN_SHOT_AT_SEC := 75.0
+## N6-1: capture the move hint before the bot's first input dismisses it.
+const HINT_SHOT_PATH := "user://playtest_move_hint.png"
+const HINT_SHOT_AT_SEC := 0.6
 ## N3-14 crowd metric: an enemy counts as "stacked" when another enemy's
 ## center sits closer than half the pair's combined contact radii.
 const OVERLAP_SAMPLE_SEC := 1.0
@@ -69,6 +72,8 @@ var _mod_offers: int = 0
 var _mod_shot_done: bool = false
 var _real_elapsed: float = 0.0
 var _midrun_shot_done: bool = false
+var _hint_shown: bool = false
+var _hint_shot_done: bool = true
 var _fps_min_all: float = 1e9
 var _peak_live: int = 0
 var _overlap_sum: float = 0.0
@@ -158,6 +163,9 @@ func _start_run() -> void:
 	_spawner.burn_damaged.connect(
 		func(amount: float, _at: Vector2) -> void: _damage_total += amount
 	)
+	# N6-1: hold the bot still until the hint shot lands (no hint = no hold).
+	_hint_shown = _stage._move_hint != null
+	_hint_shot_done = not _hint_shown
 
 
 func _reset_run_metrics() -> void:
@@ -226,6 +234,9 @@ func _process(delta: float) -> void:
 		# Whole-run fps floor; skip the first second while the scene warms up.
 		if _real_elapsed > 1.0:
 			_fps_min_all = minf(_fps_min_all, Engine.get_frames_per_second())
+	if not _hint_shot_done and elapsed >= HINT_SHOT_AT_SEC:
+		_hint_shot_done = true
+		_capture(HINT_SHOT_PATH)
 	if not _midrun_shot_done and elapsed >= MIDRUN_SHOT_AT_SEC:
 		_midrun_shot_done = true
 		_capture(MIDRUN_SHOT_PATH)
@@ -250,6 +261,9 @@ func _physics_process(delta: float) -> void:
 		if _pick_wait <= 0.0 and _stage._popup.visible:
 			_pick_wait = PICK_COOLDOWN_SEC
 			_pick_card()
+		return
+	if not _hint_shot_done:
+		_release_moves()
 		return
 	_pick_wait = PICK_COOLDOWN_SEC
 	_peak_live = maxi(_peak_live, _spawner.active_enemies().size())
@@ -476,6 +490,9 @@ func _finish() -> void:
 		_peak_live, _overlap_sum / float(maxi(_overlap_samples, 1)), _overlap_samples
 	])
 	print("PLAYTEST kills: %d gold: %d" % [_stage._kills, _stage._gold])
+	print("PLAYTEST first-run: hint shown %s, guarantees %d, fired %s" % [
+		str(_hint_shown), _stage._first_run_drops.size(), str(_stage._first_run_log)
+	])
 	if _stage._boss != null:
 		print("PLAYTEST boss hp left: %.0f / %.0f" % [_stage._boss.hp, _stage._boss_hp_max])
 	else:
