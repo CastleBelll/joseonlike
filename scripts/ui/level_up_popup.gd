@@ -18,10 +18,11 @@ const TRANSFORM_LABEL := "변신!"
 const LAYER_ABOVE_HUD := 10
 const PANEL_MARGIN_X := 24.0
 const PANEL_TOP := 96.0
-const PANEL_HEIGHT := 560.0
 const HEADER_HEIGHT := 64.0
 const BODY_MARGIN := 20.0
-const CARD_HEIGHT := 136.0
+## Cards grow with their wrapped description (N3-17); this is the floor that
+## keeps a short card's icon well and pill layout intact.
+const CARD_HEIGHT_MIN := 136.0
 const CARD_GAP := 16.0
 const CARD_CORNER := 10
 const CARD_BORDER_WIDTH := 2
@@ -36,6 +37,17 @@ const WELL_ICON_SIZE := 64.0
 const OWNED_ICON_SIZE := 32.0
 const LOOT_BADGE_SIZE := 24.0
 const TEXT_LEFT := 104.0
+## Description block geometry inside a card (N3-17): top edge below the name,
+## bottom padding to the card border, and the wrap flags matching
+## AUTOWRAP_WORD_SMART so the height measurement equals the render.
+const DESC_TOP := WELL_MARGIN + 44.0
+const DESC_BOTTOM_PAD := WELL_MARGIN
+const DESC_BREAK_FLAGS := (
+	TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE
+)
+## Screen space kept clear below the panel for the owned-weapon strip; past
+## this the card list scrolls instead of growing (N3-17).
+const OWNED_STRIP_RESERVE := 120.0
 const PILL_SIZE := Vector2(64.0, 30.0)
 const PILL_MARGIN := 12.0
 const OWNED_WELL_SIZE := 48.0
@@ -45,6 +57,7 @@ const CLOSE_BUTTON_SIZE := Vector2(200.0, 64.0)
 var _root: Control
 var _panel: PanelContainer
 var _body: Control
+var _scroll: ScrollContainer
 var _owned_row: HBoxContainer
 var _title: Label
 
@@ -68,7 +81,8 @@ func _ready() -> void:
 	_panel.offset_left = PANEL_MARGIN_X
 	_panel.offset_right = -PANEL_MARGIN_X
 	_panel.offset_top = PANEL_TOP
-	_panel.offset_bottom = PANEL_TOP + PANEL_HEIGHT
+	# The bottom edge is recomputed per open() from the card stack (N3-17).
+	_panel.offset_bottom = PANEL_TOP + CARD_HEIGHT_MIN
 	_root.add_child(_panel)
 	var layout := Control.new()
 	layout.name = "Layout"
@@ -83,10 +97,21 @@ func _ready() -> void:
 	_body.offset_top = HEADER_HEIGHT + BODY_MARGIN
 	_body.offset_bottom = -BODY_MARGIN * 2.0
 	layout.add_child(_body)
+	# The scroll only ever engages when a pathological card stack outgrows the
+	# clamped panel (N3-17); with real data everything fits and it is inert.
+	_scroll = ScrollContainer.new()
+	_scroll.name = "CardScroll"
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_scroll.offset_left = BODY_MARGIN
+	_scroll.offset_right = -BODY_MARGIN
+	_scroll.offset_top = BODY_MARGIN
+	_scroll.offset_bottom = -BODY_MARGIN
+	_body.add_child(_scroll)
 	_owned_row = HBoxContainer.new()
 	_owned_row.name = "OwnedRow"
 	_owned_row.add_theme_constant_override("separation", int(OWNED_ROW_GAP))
-	_owned_row.position = Vector2(PANEL_MARGIN_X, PANEL_TOP + PANEL_HEIGHT + UiPalette.SPACE_MD)
+	_owned_row.position = Vector2(PANEL_MARGIN_X, PANEL_TOP + CARD_HEIGHT_MIN)
 	_root.add_child(_owned_row)
 	visible = false
 
@@ -100,7 +125,7 @@ func open(
 	owned_levels: Dictionary,
 	weapons: Dictionary
 ) -> void:
-	for child: Node in _body.get_children():
+	for child: Node in _scroll.get_children():
 		child.queue_free()
 	for child: Node in _owned_row.get_children():
 		child.queue_free()
@@ -108,15 +133,30 @@ func open(
 	var cards := VBoxContainer.new()
 	cards.name = "Cards"
 	cards.add_theme_constant_override("separation", int(CARD_GAP))
-	cards.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	cards.offset_left = BODY_MARGIN
-	cards.offset_right = -BODY_MARGIN
-	cards.offset_top = BODY_MARGIN
-	_body.add_child(cards)
+	_scroll.add_child(cards)
+	# Cards are sized to their wrapped description up front (N3-17): the width
+	# is derived from the fixed portrait layout, so the wrap measurement in
+	# card_height_for equals what the Label renders.
+	var card_width: float = _card_width()
+	var heights: Array[float] = []
 	for card: Dictionary in display_cards:
-		cards.add_child(_make_card(card))
+		var height: float = card_height_for(
+			String(card.get("desc", "")), card_font(), card_width - TEXT_LEFT - WELL_MARGIN,
+			_title.get_theme_constant("line_spacing")
+		)
+		heights.append(height)
+		cards.add_child(_make_card(card, card_width, height))
 	if display_cards.is_empty():
+		heights.append(CARD_HEIGHT_MIN)
 		cards.add_child(_make_close_button())
+	var panel_height: float = minf(
+		panel_height_for(heights, _panel_style_margins_y()),
+		_root_size().y - PANEL_TOP - OWNED_STRIP_RESERVE
+	)
+	_panel.offset_bottom = PANEL_TOP + panel_height
+	_owned_row.position = Vector2(
+		PANEL_MARGIN_X, PANEL_TOP + panel_height + UiPalette.SPACE_MD
+	)
 	_build_owned_row(owned_levels, weapons)
 	visible = true
 	var first: Control = cards.get_child(0)
@@ -127,9 +167,14 @@ func close() -> void:
 	visible = false
 
 
-func _make_card(display: Dictionary) -> Button:
+## Fixed-size card (N3-17): width comes from the portrait layout constants,
+## height from card_height_for on the wrapped description. A fixed rect keeps
+## the measured wrap width identical to the rendered one even when the
+## overflow scrollbar appears (it may overlap the card edge in that
+## pathological case — accepted, real data never engages the scroll).
+func _make_card(display: Dictionary, card_width: float, card_height: float) -> Button:
 	var card := Button.new()
-	card.custom_minimum_size = Vector2(0.0, CARD_HEIGHT)
+	card.custom_minimum_size = Vector2(card_width, card_height)
 	card.focus_mode = Control.FOCUS_ALL
 	card.add_theme_stylebox_override("normal", _card_style(UiPalette.PAPER_CARD))
 	card.add_theme_stylebox_override("hover", _card_style(UiPalette.PAPER_INSET))
@@ -153,23 +198,88 @@ func _make_card(display: Dictionary) -> Button:
 	well_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card.add_child(well_label)
 	var name_label := _label(name_text, UiPalette.FONT_SIZE_TITLE, UiPalette.INK)
-	name_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	name_label.offset_left = TEXT_LEFT
-	name_label.offset_top = WELL_MARGIN
-	name_label.offset_right = -(PILL_SIZE.x + PILL_MARGIN * 2.0)
+	name_label.position = Vector2(TEXT_LEFT, WELL_MARGIN)
+	name_label.size = Vector2(
+		card_width - TEXT_LEFT - PILL_SIZE.x - PILL_MARGIN * 2.0, 32.0
+	)
+	name_label.clip_text = true
 	card.add_child(name_label)
 	var desc_label := _label(
 		String(display.get("desc", "")),
 		UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
 	)
-	desc_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	desc_label.offset_left = TEXT_LEFT
-	desc_label.offset_top = WELL_MARGIN + 44.0
-	desc_label.offset_right = -WELL_MARGIN
+	# Autowrap first: set_size clamps to the minimum size, and without wrap the
+	# minimum width is the full unwrapped line (N3-17 regression).
 	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc_label.position = Vector2(TEXT_LEFT, DESC_TOP)
+	desc_label.size = Vector2(
+		card_width - TEXT_LEFT - WELL_MARGIN, card_height - DESC_TOP - DESC_BOTTOM_PAD
+	)
 	card.add_child(desc_label)
 	card.add_child(_make_grade_pill(String(display.get("grade", ""))))
 	return card
+
+
+## The font every card label renders with: the project theme's default, with
+## the engine fallback for a broken theme install. Static so the headless
+## layout test measures with the exact same font (N3-17).
+static func card_font() -> Font:
+	var theme: Theme = load("res://asset/ui_theme.tres")
+	if theme != null and theme.default_font != null:
+		return theme.default_font
+	return ThemeDB.fallback_font
+
+
+## Card height for one description at its wrap width (N3-17): the measured
+## multiline text block plus the fixed geometry above and below it, floored at
+## CARD_HEIGHT_MIN. Label line spacing is added per extra line on top of the
+## server measurement — a few px of bottom slack beats a clipped last line.
+static func card_height_for(
+	desc: String, font: Font, wrap_width: float, line_spacing: int
+) -> float:
+	var measured: Vector2 = font.get_multiline_string_size(
+		desc, HORIZONTAL_ALIGNMENT_LEFT, wrap_width, UiPalette.FONT_SIZE_LABEL,
+		-1, DESC_BREAK_FLAGS
+	)
+	var line_height: float = maxf(font.get_height(UiPalette.FONT_SIZE_LABEL), 1.0)
+	var lines: int = maxi(int(ceilf(measured.y / (line_height + float(line_spacing)))), 1)
+	var text_height: float = measured.y + float(line_spacing * (lines - 1))
+	return maxf(CARD_HEIGHT_MIN, DESC_TOP + text_height + DESC_BOTTOM_PAD)
+
+
+## Unclamped panel height for a card stack: header, body/scroll margins, the
+## cards and their gaps, plus the panel stylebox's own content margins.
+static func panel_height_for(card_heights: Array[float], style_margins_y: float) -> float:
+	var cards_total: float = 0.0
+	for height: float in card_heights:
+		cards_total += height
+	cards_total += CARD_GAP * float(maxi(card_heights.size() - 1, 0))
+	return style_margins_y + HEADER_HEIGHT + BODY_MARGIN * 5.0 + cards_total
+
+
+func _card_width() -> float:
+	var style: StyleBox = _panel.get_theme_stylebox("panel")
+	return (
+		_root_size().x - PANEL_MARGIN_X * 2.0
+		- style.get_margin(SIDE_LEFT) - style.get_margin(SIDE_RIGHT)
+		- BODY_MARGIN * 4.0
+	)
+
+
+func _panel_style_margins_y() -> float:
+	var style: StyleBox = _panel.get_theme_stylebox("panel")
+	return style.get_margin(SIDE_TOP) + style.get_margin(SIDE_BOTTOM)
+
+
+## The blocker fills the viewport once inside the tree; before that (headless
+## layout tests) fall back to the project's portrait design size.
+func _root_size() -> Vector2:
+	if _root != null and _root.size.x > 0.0:
+		return _root.size
+	return Vector2(
+		float(ProjectSettings.get_setting("display/window/size/viewport_width", 540)),
+		float(ProjectSettings.get_setting("display/window/size/viewport_height", 960))
+	)
 
 
 func _make_icon_well(name_text: String, weapon_icon_id: String, loot_icon_id: String) -> Panel:
