@@ -87,6 +87,24 @@ func mark_mod_explained() -> void:
 	save_profile()
 
 
+## N5-4 괴이록: the first sighting of a kind/id persists the moment it
+## happens (mid-run), so the record survives death and crashes alike — that
+## is the point of the record (GDD §31). Repeats are no-ops with no IO.
+func record_discovery(kind: String, id: String) -> void:
+	var result: Dictionary = Bestiary.record_discovery(profile, kind, id)
+	if bool(result["new"]):
+		profile = result["profile"]
+		save_profile()
+
+
+## Opening the 괴이록 clears the camp's new-discoveries hint.
+func mark_bestiary_seen() -> void:
+	var result: Dictionary = Bestiary.mark_seen(profile)
+	if bool(result["changed"]):
+		profile = result["profile"]
+		save_profile()
+
+
 ## Banks a finished run into the permanent profile and saves.
 ## Returns the new permanent gold total for the result screen.
 func bank_run(elapsed_sec: float, kills: int, run_gold: int, boss_killed: bool) -> int:

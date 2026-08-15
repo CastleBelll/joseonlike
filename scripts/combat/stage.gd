@@ -200,6 +200,13 @@ func _dismiss_move_hint() -> void:
 		SaveService.instance.mark_move_hint_seen()
 
 
+## N5-4 괴이록 funnel: null-guarded so demo tools without the autoload run;
+## SaveService only writes on a genuinely new discovery.
+func _record_discovery(kind: String, id: String) -> void:
+	if SaveService.instance != null:
+		SaveService.instance.record_discovery(kind, id)
+
+
 ## The live profile, or the default shape in node-free tests and demo tools
 ## that boot the stage without the SaveManager autoload.
 func _profile() -> Dictionary:
@@ -222,6 +229,7 @@ func _on_player_hit() -> void:
 ## back to its pool right after (see Spawner.enemy_killed).
 func _on_enemy_killed(enemy: Enemy) -> void:
 	_kills += 1
+	_record_discovery(Bestiary.KIND_MONSTERS, enemy.monster_id)
 	_gold += enemy.gold_drop
 	_hud.set_kills(_kills)
 	_hud.set_gold(_gold)
@@ -510,6 +518,9 @@ func _advance_popup_queue() -> void:
 
 
 func _add_weapon_node(weapon_id: String) -> void:
+	# N5-4: owning a weapon is its discovery — covers the starting weapon,
+	# level-up picks and mod results (a completed mod) through one funnel.
+	_record_discovery(Bestiary.KIND_WEAPONS, weapon_id)
 	var weapon := AutoWeapon.new()
 	add_child(weapon)
 	weapon.setup(weapon_id, _player, _spawner)
@@ -603,6 +614,7 @@ func _spawn_loot(enemy: Enemy) -> void:
 func _on_loot_collected(orb: XpOrb) -> void:
 	var loot_id: String = (orb as LootDrop).loot_id
 	_loot_pool.release(orb)
+	_record_discovery(Bestiary.KIND_LOOT, loot_id)
 	var stats: Dictionary = _loot_data.get(loot_id, {})
 	if Loot.is_material_useful(loot_id, _mods_data, _owned_levels, _replaced_weapons):
 		_run_state.inventory = Loot.add(_run_state.inventory, loot_id)

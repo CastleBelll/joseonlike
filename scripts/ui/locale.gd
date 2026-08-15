@@ -33,6 +33,14 @@ const STRINGS := {
 	"meta.maxed_fmt": {"ko": "최대 강화 완료 · %s +%d%%", "en": "Fully upgraded · %s +%d%%"},
 	"meta.next_fmt": {"ko": "%s +%d%% (%d/%d 단계)", "en": "%s +%d%% (rank %d/%d)"},
 	"meta.permanent": {"ko": "영구 적용 · 다음 출정부터", "en": "Permanent · from the next run"},
+	"bestiary.title": {"ko": "괴이록", "en": "Records of Anomalies"},
+	"bestiary.tab_monsters": {"ko": "몬스터", "en": "Monsters"},
+	"bestiary.tab_loot": {"ko": "전리품", "en": "Loot"},
+	"bestiary.tab_weapons": {"ko": "무기", "en": "Weapons"},
+	"bestiary.appears_fmt": {"ko": "출몰: %s", "en": "Appears in: %s"},
+	"bestiary.boss": {"ko": "보스", "en": "Boss"},
+	"bestiary.branch_fmt": {"ko": "개조: %s", "en": "Mod: %s"},
+	"bestiary.camp_hint_fmt": {"ko": "괴이록에 새 기록 %d건", "en": "%d new records in the archive"},
 }
 
 static var current_locale: String = DEFAULT_LOCALE

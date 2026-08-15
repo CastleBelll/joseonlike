@@ -52,15 +52,20 @@ func test_buildings_roster_and_meta_routing() -> bool:
 	if buildings.size() != 5:
 		push_error("test_camp: expected 5 GDD building spots (incl. 명부수)")
 		return false
+	# Buildings with a landed screen route to it instead of talking
+	# (명부수 N7-1, 괴이록 N5-4); the rest stay 준비 중 placeholders.
+	var routed: Dictionary = {
+		"meta": "res://scenes/meta_tree.tscn",
+		"bestiary": "res://scenes/bestiary.tscn",
+	}
 	for building: Dictionary in buildings:
 		if String(building["label"]).is_empty():
 			push_error("test_camp: building must be labelled")
 			return false
-		if String(building["id"]) == "meta":
-			# N7-1: the 명부수 spot routes to its scene instead of talking.
+		if routed.has(String(building["id"])):
 			if Camp.building_notice(building) != "" \
-					or Camp.building_scene(building) != "res://scenes/meta_tree.tscn":
-				push_error("test_camp: meta building must route to the tree scene")
+					or Camp.building_scene(building) != String(routed[building["id"]]):
+				push_error("test_camp: routed building must open its scene")
 				return false
 			continue
 		if bool(building["ready"]) \

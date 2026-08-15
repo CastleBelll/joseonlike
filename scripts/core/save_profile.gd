@@ -34,6 +34,7 @@ static func default_profile() -> Dictionary:
 		},
 		"ftue": Ftue.default_flags(),
 		"meta_tree": {},
+		"bestiary": Bestiary.default_record(),
 	}
 
 
@@ -92,6 +93,10 @@ static func migrate(profile: Dictionary) -> Dictionary:
 		for key: Variant in (profile["meta_tree"] as Dictionary).keys():
 			state[String(key)] = int((profile["meta_tree"] as Dictionary)[key])
 		merged["meta_tree"] = state
+	# N5-4: a record-less (pre-bestiary) profile gets the empty record from the
+	# default fill above; a present one is re-coerced into shape here. Unknown
+	# ids are pruned against game data at the consumer (Bestiary.prune_record).
+	merged["bestiary"] = Bestiary.normalized_record(merged["bestiary"])
 	return merged
 
 

@@ -9,9 +9,14 @@ const SHOT_PATH := "user://camp_check.png"
 func _ready() -> void:
 	if SaveService.instance != null:
 		# In-memory only — save_profile() is never called here.
-		SaveService.instance.profile = SaveProfile.apply_run_result(
+		var profile: Dictionary = SaveProfile.apply_run_result(
 			SaveProfile.default_profile(), 287.0, 132, 875, true
 		)
+		# N5-4: one unseen discovery so the shot proves the camp hint line.
+		profile = Bestiary.record_discovery(
+			profile, Bestiary.KIND_MONSTERS, "forest_goblin"
+		)["profile"]
+		SaveService.instance.profile = profile
 	var camp: Control = (load("res://scenes/camp.tscn") as PackedScene).instantiate()
 	add_child(camp)
 	_capture()

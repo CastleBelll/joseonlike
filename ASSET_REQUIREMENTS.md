@@ -158,6 +158,16 @@ Fallback:  loot icons borrowed per node via the "icon" data field
            word 잠김 + dimmed icon
 ```
 
+```
+[NICE-TO-HAVE] bestiary_undiscovered_stamp (N5-4)
+Size:      16px logical (32px 2x NEAREST)
+Used by:   괴이록 undiscovered row icon well (scripts/ui/bestiary_screen.gd)
+Fallback:  IN USE — the entry's real art self-modulated to INK reads as a
+           silhouette; entries with no art show a "?" glyph. No new asset is
+           required for the feature; a dedicated ink-stamp mark would only
+           polish the ??? rows.
+```
+
 ## Anticipated (not yet needed — do not pre-produce)
 
 These become `[MISSING]` entries only when the feature that needs them is actually

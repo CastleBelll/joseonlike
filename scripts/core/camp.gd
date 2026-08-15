@@ -14,7 +14,7 @@ const DEST_TITLE := "title"
 ## carries the scene it routes to.
 const BUILDINGS: Array[Dictionary] = [
 	{"id": "meta", "label": "명부수", "ready": true, "scene": "res://scenes/meta_tree.tscn"},
-	{"id": "bestiary", "label": "괴이록", "ready": false},
+	{"id": "bestiary", "label": "괴이록", "ready": true, "scene": "res://scenes/bestiary.tscn"},
 	{"id": "weapon_codex", "label": "무기 도감", "ready": false},
 	{"id": "training", "label": "훈련장", "ready": false},
 	{"id": "region_select", "label": "지역 선택", "ready": false},

@@ -61,6 +61,15 @@ func build_ui() -> void:
 	column.add_child(_build_stats(summary))
 	column.add_child(_build_buildings())
 
+	# N5-4: one quiet line after a run that revealed something new — no popup,
+	# no extra tap (DESIGN.md §5.2); opening the 괴이록 clears it.
+	var hint: String = Bestiary.camp_hint(_profile())
+	if not hint.is_empty():
+		var hint_label := _label(hint, UiPalette.FONT_SIZE_LABEL, UiPalette.GOLD)
+		hint_label.name = "BestiaryHint"
+		hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		column.add_child(hint_label)
+
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(spacer)
