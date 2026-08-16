@@ -227,6 +227,17 @@ func _start_run() -> void:
 		print("META applied: hp_max=%.1f effects=%s" % [
 			_player.hp_max, str(_stage._meta_effects)
 		])
+	# N7-2 evidence line: the forced weapon's LIVE mechanic config, so a 술법
+	# branch node's change (chain jumps, burn duration…) is measurable.
+	if _forced != "" and _stage._weapon_nodes.has(_forced):
+		var stats: Dictionary = (_stage._weapon_nodes[_forced] as AutoWeapon)._stats
+		for key: String in ["chain", "ward", "on_hit_status", "on_hit_seal"]:
+			if stats.has(key):
+				print("PLAYTEST weapon %s %s: %s" % [_forced, key, str(stats[key])])
+		if String(stats.get("mechanic", "")) == "orbit":
+			print("PLAYTEST weapon %s orbs: %d" % [
+				_forced, int(stats.get("projectile_count", 1))
+			])
 
 
 func _reset_run_metrics() -> void:
