@@ -10,11 +10,14 @@ func test_config_has_every_field() -> bool:
 	# Same field list validate_data enforces — kept in the runtime helper's
 	# terms so a renamed key fails here even before the validator runs.
 	for field: String in [
-		"explosion_ring_sec", "chain_bolt_sec", "chain_bolt_jitter_px",
-		"arc_sweep_sec", "blade_trail_sec", "orbit_trail_sec", "ward_pulse_sec",
-		"summon_strike_sec", "shockwave_ring_sec", "shockwave_nudge_px",
+		"explosion_ring_sec", "explosion_spark_px", "chain_bolt_sec",
+		"chain_bolt_jitter_px", "chain_bolt_width_px", "chain_first_leg_px",
+		"arc_sweep_sec", "blade_trail_sec", "paper_width_px", "paper_length_px",
+		"paper_trail_sec", "blade_width_px", "blade_length_px", "orbit_trail_sec",
+		"ward_pulse_sec", "ward_spin_deg_s", "summon_strike_sec",
+		"summon_strike_px", "shockwave_ring_sec", "shockwave_nudge_px",
 		"shockwave_nudge_sec", "curse_jump_sec", "status_flicker_hz",
-		"blink_puff_sec", "screen_flash_sec",
+		"blink_puff_sec", "screen_flash_sec", "burst_ring_sec",
 	]:
 		if WeaponEffects.value(field) <= 0.0:
 			push_error("test_weapon_effects: missing or non-positive " + field)
@@ -23,10 +26,10 @@ func test_config_has_every_field() -> bool:
 
 
 func test_sprite_effects_resolve() -> bool:
-	# N3-17 art integration: the three shipped sheets must resolve through the
-	# same gate the runtime uses, with playable numbers.
+	# N3-17 art integration, trimmed N3-18: only the blink mist still ships as
+	# a sheet — explosion and summon strike went back to parametric drawing.
 	var passed: bool = true
-	for effect_id: String in ["explosion", "strike_flash", "blink_puff"]:
+	for effect_id: String in ["blink_puff"]:
 		var config: Dictionary = WeaponEffects.sprite_config(effect_id)
 		if not EffectSprite.available(effect_id):
 			push_error("test_weapon_effects: sprite effect unavailable: " + effect_id)

@@ -448,7 +448,9 @@ func _label(text: String, font_size: int, color: Color) -> Label:
 class ScreenFlash:
 	extends Control
 
-	const ALPHA_MAX := 0.28
+	# N3-18: 0.28 flooded the whole night palette olive for the full flash;
+	# the burst ring now carries the area read, the flash only punctuates.
+	const ALPHA_MAX := 0.14
 
 	var _left: float = 0.0
 	var _duration: float = 0.0

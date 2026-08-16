@@ -5,7 +5,7 @@ Every asset under `asset/` must have a row here before it ships. No row, no comm
 | Path | Source | License | Attribution required | Added |
 |---|---|---|---|---|
 | `asset/font/neodgm.ttf` (Neo둥근모) | https://github.com/neodgm/neodgm v1.530 | SIL OFL 1.1 | Credit in-game before release (RZ) | 2026-08-14 (relocated) |
-| `asset/effect/explosion.png`, `asset/effect/strike_flash.png`, `asset/effect/blink_puff.png` | Owner-dropped pack `new_asset/Retro Impact Effect Pack 5` (sheet A, rows 5/27/23; strike/puff desaturated for engine tinting) | **UNCONFIRMED** — no license file shipped inside the pack; owner must confirm terms before release | Unknown until confirmed | 2026-08-15 |
+| `asset/effect/blink_puff.png` | Owner-dropped pack `new_asset/Retro Impact Effect Pack 5` (sheet A, row 23; desaturated for engine tinting). explosion/strike_flash sheets dropped N3-18 — back to code-drawn | **UNCONFIRMED** — no license file shipped inside the pack; owner must confirm terms before release | Unknown until confirmed | 2026-08-15 |
 
 ## Rules
 

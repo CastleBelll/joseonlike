@@ -42,7 +42,7 @@ Fallback:  <what ships until it arrives>
 Size:      ~170x170 px (radius-scaled)
 Members:   ward circle ground decal + placement flash, fire variant (화염 결계)
 Used by:   weapons.json gyeolgye / hwayeom_gyeolgye (N4-4b)
-Fallback:  palette-token translucent disc + ring (scripts/combat/ward.gd)
+Fallback:  palette-token rotating sigil — dashed ring + eight-point star (scripts/combat/ward.gd, N3-18)
 
 [MISSING] summon_sinjang
 Size:      40x40 logical frames (16x export blocks, like the taoist)

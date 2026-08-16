@@ -88,8 +88,6 @@ var _flash_pool: NodePool
 # N3-17 effect state: chain-jump bolts and the shockwave camera thump.
 var _bolt_pool: NodePool
 var _nudge_left: float = 0.0
-# N3-17 art integration: pooled sprite explosions when the sheet shipped.
-var _fx_pool: NodePool
 var _caught: Array[Enemy] = []  # per-frame scratch, reused without alloc
 # N4-4b mechanic state: pooled wards, one live summon, shockwave numbers.
 var _ward: Dictionary = {}
@@ -136,8 +134,6 @@ func setup(
 			_build_orbs(int(_stats.get("projectile_count", 1)))
 		MECHANIC_EXPLOSION:
 			_flash_pool = NodePool.new(self, _create_blast_ring)
-			if EffectSprite.available("explosion"):
-				_fx_pool = NodePool.new(self, _create_effect_sprite)
 		MECHANIC_CHAIN:
 			_bolt_pool = NodePool.new(self, _create_chain_bolt)
 		MECHANIC_WARD:
@@ -197,8 +193,7 @@ func _build_shot_config() -> Dictionary:
 		MECHANIC_PIERCE:
 			config["pierce"] = int(_stats.get("pierce", 0))
 			config["pierce_retention"] = float(_stats.get("pierce_retention", 1.0))
-			config["size"] = Projectile.BLADE_SIZE
-			config["trail"] = true  # 법검 blade streak (N3-17)
+			config["size"] = Projectile.blade_size()  # 법검 blade streak (N3-17)
 		MECHANIC_EXPLOSION:
 			var explosion: Dictionary = _stats.get("explosion", {})
 			config["explosion_radius"] = float(explosion.get("radius_px", 0.0))
@@ -364,7 +359,12 @@ func _pulse_shockwave() -> void:
 	var knockback: float = float(_shockwave.get("knockback_scale", 1.0))
 	var seal: Dictionary = _stats.get("on_hit_seal", {})
 	var flash: BlastRing = _flash_pool.acquire()
-	flash.burst(origin, radius, WeaponEffects.value("shockwave_ring_sec"), _tint())
+	# N3-18: a control pulse is a clean double ring, not a detonation — enemies
+	# inside the stun space stay readable.
+	flash.burst(
+		origin, radius, WeaponEffects.value("shockwave_ring_sec"), _tint(),
+		BlastRing.Style.WAVE
+	)
 	_start_nudge()
 	var enemies: Array[Enemy] = _spawner.active_enemies()
 	_positions.clear()
@@ -429,15 +429,6 @@ func _tint() -> Color:
 	return TINTS.get(weapon_id, UiPalette.PAPER)
 
 
-## Sprite-sheet effects carry their own colors, so they play untinted (WHITE)
-## — except a mythic "tinted" grade, which still modulates to the tier color
-## so the raise reads on field like every other visual (N3-17).
-func _sprite_tint() -> Color:
-	if WeaponGrade.has_flag(_grades, String(_stats.get("grade", "")), _grade, "tinted"):
-		return Loot.TIER_COLORS.get(_grade, Color.WHITE)
-	return Color.WHITE
-
-
 func _create_projectile() -> Projectile:
 	var projectile := Projectile.new()
 	projectile.hit_landed.connect(
@@ -452,12 +443,9 @@ func _create_projectile() -> Projectile:
 
 
 func _on_projectile_exploded(at: Vector2, radius: float) -> void:
-	# Art-integrated blast (N3-17): the sheet animation scaled to the true
-	# blast diameter; the code-drawn ring stays as the missing-sheet fallback.
-	if _fx_pool != null:
-		var sprite: EffectSprite = _fx_pool.acquire()
-		sprite.play_effect("explosion", at, radius * 2.0, _sprite_tint())
-		return
+	# N3-18: back to the parametric blast — the sheet frames never filled their
+	# square, so the sprite under-sold the true radius and its pack colors
+	# fought the night palette. The code ring lands exactly on the data radius.
 	if _flash_pool == null:
 		return
 	var flash: BlastRing = _flash_pool.acquire()
@@ -554,30 +542,28 @@ func _create_chain_bolt() -> ChainBolt:
 	return bolt
 
 
-func _create_effect_sprite() -> EffectSprite:
-	var sprite := EffectSprite.new()
-	sprite.finished_effect.connect(
-		func(done: EffectSprite) -> void: _fx_pool.release(done)
-	)
-	return sprite
-
-
 func _on_projectile_finished(projectile: Projectile) -> void:
 	_pool.release(projectile)
 
 
-## 혼불 orb (N4-4a, glow + trail N3-17): soul-flame disc with a soft glow halo
-## and a fading trail of its recent orbit positions. The trail ring buffer is
-## pre-sized once; recording never allocates. Fade time from data
-## (weapon_effects.orbit_trail_sec).
+## 혼불 orb (N4-4a, reworked N3-18): a soul FLAME, not a fog moon — the N3-17
+## pass drew a 2.1x glow halo over a 16px disc which read as a ~65px white
+## blob smearing a comet tail. Now: tight glow capped at the true hit radius,
+## a tapering three-lobe flame body, a white core, and a short thin trail.
+## The trail ring buffer is pre-sized once; recording never allocates. Fade
+## time from data (weapon_effects.orbit_trail_sec).
 class OrbVisual:
 	extends Node2D
 
-	const TRAIL_CAPACITY := 10
-	const GLOW_RADIUS_SCALE := 2.1
-	const GLOW_ALPHA := 0.16
-	const TRAIL_ALPHA := 0.4
-	const TRAIL_RADIUS_SCALE := 0.7
+	const TRAIL_CAPACITY := 6
+	const GLOW_ALPHA := 0.22
+	const TRAIL_ALPHA := 0.3
+	const TRAIL_RADIUS_SCALE := 0.35
+	## Flame body lobes, bottom-up: each {offset_y as radius share, radius share}.
+	## Stacked shrinking discs read as a licking flame at 16px without a sheet.
+	const LOBES: Array[Vector2] = [
+		Vector2(0.25, 0.75), Vector2(-0.2, 0.55), Vector2(-0.6, 0.32)
+	]
 
 	var color: Color = UiPalette.WEAPON_SOUL
 	var radius: float = AutoWeapon.ORB_RADIUS_PX
@@ -614,9 +600,11 @@ class OrbVisual:
 				radius * TRAIL_RADIUS_SCALE * fade,
 				Color(color, TRAIL_ALPHA * fade)
 			)
-		draw_circle(Vector2.ZERO, radius * GLOW_RADIUS_SCALE, Color(color, GLOW_ALPHA))
-		draw_circle(Vector2.ZERO, radius, color)
-		draw_circle(Vector2.ZERO, radius * 0.45, UiPalette.LOOT_CORE)
+		# Glow stops exactly at the data hit radius: what glows is what hits.
+		draw_circle(Vector2.ZERO, radius, Color(color, GLOW_ALPHA))
+		for lobe: Vector2 in LOBES:
+			draw_circle(Vector2(0.0, lobe.x * radius), radius * lobe.y, color)
+		draw_circle(Vector2(0.0, radius * 0.1), radius * 0.35, UiPalette.LOOT_CORE)
 
 
 ## 석장 swing (N3-17): an animated sweep — the leading edge travels across the
@@ -627,12 +615,10 @@ class OrbVisual:
 class ArcFlash:
 	extends Node2D
 
-	const OUTER_RATIO := 0.9
-	const INNER_RATIO := 0.55
 	const EDGE_WIDTH := 6.0
-	const TRAIL_WIDTH := 4.0
+	const TRAIL_WIDTH := 2.0
 	const POINTS := 20
-	const TRAIL_ALPHA := 0.45
+	const TRAIL_ALPHA := 0.28
 	## The bright leading blade covers this slice of the full arc.
 	const EDGE_SLICE := 0.22
 
@@ -669,6 +655,10 @@ class ArcFlash:
 			return
 		queue_redraw()
 
+	## Pre-sized wedge scratch: POINTS arc samples + the origin. Refilled in
+	## place every frame — drawing never allocates beyond the first frame.
+	var _wedge := PackedVector2Array()
+
 	func _draw() -> void:
 		var progress: float = clampf(_age / _duration, 0.0, 1.0)
 		var start: float = _aim - _arc_rad / 2.0
@@ -676,23 +666,29 @@ class ArcFlash:
 		var eased: float = 1.0 - (1.0 - progress) * (1.0 - progress)
 		var edge: float = start + _arc_rad * eased
 		var fade: float = 1.0 - progress
-		# Trail wedge: everything already swept, fading as a whole.
+		# N3-18: the swept sector is a FILLED wedge — the N3-17 thin double arc
+		# read as two disconnected scratches. A filled fan from the player to
+		# the true range says "everything in here was hit".
 		if edge > start:
+			if _wedge.size() != POINTS + 2:
+				_wedge.resize(POINTS + 2)
+			_wedge[0] = Vector2.ZERO
+			for i: int in range(POINTS + 1):
+				var angle: float = lerpf(start, edge, float(i) / float(POINTS))
+				_wedge[i + 1] = Vector2.from_angle(angle) * _radius
+			draw_colored_polygon(_wedge, Color(_color, TRAIL_ALPHA * fade))
 			draw_arc(
-				Vector2.ZERO, _radius * OUTER_RATIO, start, edge, POINTS,
-				Color(_color, TRAIL_ALPHA * fade), TRAIL_WIDTH
+				Vector2.ZERO, _radius, start, edge, POINTS,
+				Color(_color, 0.8 * fade), TRAIL_WIDTH
 			)
-			draw_arc(
-				Vector2.ZERO, _radius * INNER_RATIO, start, edge, POINTS,
-				Color(_color, TRAIL_ALPHA * 0.6 * fade), TRAIL_WIDTH * 0.6
-			)
-		# Leading blade: a short, bright slice with a white-hot core.
+		# Leading blade: a short, bright slice with a white-hot core riding the
+		# outer rim — the moving staff head.
 		var blade_from: float = maxf(edge - _arc_rad * EDGE_SLICE, start)
 		draw_arc(
-			Vector2.ZERO, _radius * OUTER_RATIO, blade_from, edge, POINTS,
-			Color(_color, fade), EDGE_WIDTH
+			Vector2.ZERO, _radius, blade_from, edge, POINTS,
+			Color(UiPalette.PAPER, fade), EDGE_WIDTH
 		)
 		draw_arc(
-			Vector2.ZERO, _radius * OUTER_RATIO, blade_from, edge, POINTS,
-			Color(UiPalette.LOOT_CORE, 0.7 * fade), EDGE_WIDTH * 0.4
+			Vector2.ZERO, _radius, blade_from, edge, POINTS,
+			Color(UiPalette.LOOT_CORE, 0.8 * fade), EDGE_WIDTH * 0.4
 		)

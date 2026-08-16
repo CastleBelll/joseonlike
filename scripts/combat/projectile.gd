@@ -13,10 +13,22 @@ signal exploded(at: Vector2, radius: float)
 signal chained(from: Vector2, to: Vector2)
 signal finished(projectile: Projectile)
 
-const PAPER_SIZE := Vector2(6.0, 12.0)
-## 법검/봉마검 placeholder: a longer, thinner blade of sword-qi (N4-4a).
-const BLADE_SIZE := Vector2(4.0, 24.0)
 const HIT_RADIUS := 4.0
+
+
+## Talisman paper size (N3-18: from data — the 6x12 N3-3 paper was invisible
+## in flight at 540x960, so the throw read as nothing but a damage number).
+static func paper_size() -> Vector2:
+	return Vector2(
+		WeaponEffects.value("paper_width_px"), WeaponEffects.value("paper_length_px")
+	)
+
+
+## 법검/봉마검 sword-qi blade (N4-4a, sized from data since N3-18).
+static func blade_size() -> Vector2:
+	return Vector2(
+		WeaponEffects.value("blade_width_px"), WeaponEffects.value("blade_length_px")
+	)
 
 var _velocity := Vector2.ZERO
 var _damage: float = 0.0
@@ -60,7 +72,7 @@ func _ready() -> void:
 	_trail = TrailVisual.new()
 	_trail.name = "Trail"
 	add_child(_trail)
-	_apply_shape(PAPER_SIZE)
+	_apply_shape(paper_size())
 
 
 ## `config` arms the N4-4a mechanics; an empty dict keeps the plain N3-3 shot:
@@ -92,8 +104,16 @@ func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 	_status = config.get("status", {})
 	_seal = config.get("seal", {})
 	_struck.clear()
-	_trail.arm(bool(config.get("trail", false)), tint)
-	_apply_shape(config.get("size", PAPER_SIZE))
+	# N3-18: every shot trails — the flight path is the weapon's read. Pierce
+	# keeps the long blade streak; paper shots get a short fade so a crowded
+	# field doesn't fill with ribbons.
+	_trail.arm(
+		true, tint,
+		WeaponEffects.value(
+			"blade_trail_sec" if config.has("size") else "paper_trail_sec"
+		)
+	)
+	_apply_shape(config.get("size", paper_size()))
 
 
 func _physics_process(delta: float) -> void:
@@ -152,9 +172,16 @@ func _strike(enemy: Enemy, damage: float) -> void:
 	var boss_hit: bool = enemy.is_boss
 	_struck[enemy.get_instance_id()] = true
 	# N3-17: a chain shot draws its lightning leg between consecutive hits.
+	# N3-18: the FIRST hit also crackles — a short leg arcing in along the
+	# flight line — so a lone target still reads "lightning", not plain paper.
 	if _chain_range > 0.0:
 		if _chain_prev != Vector2.INF:
 			chained.emit(_chain_prev, hit_at)
+		else:
+			chained.emit(
+				hit_at - _velocity.normalized() * WeaponEffects.value("chain_first_leg_px"),
+				hit_at
+			)
 		_chain_prev = hit_at
 	match String(_status.get("id", "")):
 		"burn":
@@ -263,10 +290,10 @@ class TrailVisual:
 		_points.resize(CAPACITY)
 		_ages.resize(CAPACITY)
 
-	func arm(enabled: bool, color: Color) -> void:
+	func arm(enabled: bool, color: Color, fade_sec: float) -> void:
 		_enabled = enabled
 		_color = color
-		_fade_sec = WeaponEffects.value("blade_trail_sec")
+		_fade_sec = fade_sec
 		_head = -1
 		_count = 0
 		queue_redraw()

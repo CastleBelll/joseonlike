@@ -9,10 +9,10 @@ extends Node2D
 signal finished(bolt: ChainBolt)
 
 const SEGMENTS := 6
-const WIDTH_ROOT := 3.5
-const WIDTH_TIP := 1.0
+## Tip keeps this share of the root width (weapon_effects.chain_bolt_width_px).
+const TIP_WIDTH_SCALE := 0.3
 const CORE_WIDTH_SCALE := 0.4
-const CORE_ALPHA := 0.8
+const CORE_ALPHA := 0.9
 
 var _age: float = 0.0
 var _duration: float = 0.0
@@ -66,9 +66,11 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var fade: float = 1.0 - clampf(_age / _duration, 0.0, 1.0)
+	# N3-18: root width from data — the 3.5px N3-17 bolt vanished at 540x960.
+	var width_root: float = WeaponEffects.value("chain_bolt_width_px")
 	for i: int in range(_points.size() - 1):
 		var t: float = float(i) / float(_points.size() - 1)
-		var width: float = lerpf(WIDTH_ROOT, WIDTH_TIP, t)
+		var width: float = lerpf(width_root, width_root * TIP_WIDTH_SCALE, t)
 		draw_line(_points[i], _points[i + 1], Color(_color, fade), width)
 		draw_line(
 			_points[i], _points[i + 1],

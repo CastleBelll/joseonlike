@@ -8,9 +8,18 @@ extends Node2D
 signal ticked(amount: float, at: Vector2, boss_hit: bool)
 signal finished(ward: Ward)
 
-const FILL_ALPHA := 0.14
-const RING_WIDTH := 2.0
+const FILL_ALPHA := 0.1
+const RING_WIDTH := 2.5
 const RING_POINTS := 40
+## N3-18 sigil look: dashed outer ring + an inner square frame rotated as a
+## diamond (팔괘-style 진). Dash count and the inner ratio are style, the spin
+## speed comes from data (weapon_effects.ward_spin_deg_s).
+const DASH_COUNT := 12
+## Lit share of each dash slot.
+const DASH_FILL := 0.6
+const SIGIL_RATIO := 0.62
+const SIGIL_WIDTH := 2.0
+const SIGIL_ALPHA := 0.7
 ## The slow must outlive the gap between ticks or enemies stutter-step;
 ## twice the tick keeps it seamless while ending soon after the ward does.
 const SLOW_CARRY_SCALE := 2.0
@@ -24,6 +33,9 @@ var _life_left: float = 0.0
 var _tick_timer: float = 0.0
 var _status: Dictionary = {}
 var _color: Color = UiPalette.PAPER
+## Accumulated spin phase (radians); advances every physics frame so the 진
+## visibly rotates. Reset on (re)arm so pooled reuse never inherits a phase.
+var _spin: float = 0.0
 ## N3-17: seconds since the last damage tick, drawn as an expanding pulse ring
 ## so the ward visibly "works" on every bite. Past the pulse window nothing
 ## redraws.
@@ -53,6 +65,7 @@ func arm(
 	_color = color
 	_tick_timer = 0.0
 	_pulse_age = INF
+	_spin = 0.0
 	queue_redraw()
 
 
@@ -61,10 +74,11 @@ func _physics_process(delta: float) -> void:
 	if _life_left <= 0.0:
 		finished.emit(self)
 		return
+	_spin += deg_to_rad(WeaponEffects.value("ward_spin_deg_s")) * delta
+	queue_redraw()  # the spinning sigil animates every frame while live
 	var pulse_sec: float = WeaponEffects.value("ward_pulse_sec")
 	if _pulse_age < pulse_sec:
 		_pulse_age += delta
-		queue_redraw()
 	_tick_timer -= delta
 	if _tick_timer > 0.0:
 		return
@@ -99,13 +113,23 @@ func _tick() -> void:
 		ticked.emit(_damage, at, boss_hit)
 
 
-## Placeholder art: translucent tinted disc with a solid ring (palette token
-## via the weapon tint; real art registered in ASSET_REQUIREMENTS.md), plus
-## the N3-17 tick pulse — a ring expanding from the center to the edge and
-## fading over ward_pulse_sec after every landed damage tick.
+## N3-18 결계 look: the N3-17 plain circle read as a debug range ring. Now a
+## slowly rotating formation — dashed outer ring, counter-rotating inner
+## diamond frame, soft fill — plus the N3-17 tick pulse (a ring expanding to
+## the edge and fading over ward_pulse_sec after every landed damage tick).
+## Still all palette-token code drawing; real ground-sigil art stays wanted in
+## ASSET_REQUIREMENTS.md.
 func _draw() -> void:
 	draw_circle(Vector2.ZERO, _radius, Color(_color, FILL_ALPHA))
-	draw_arc(Vector2.ZERO, _radius, 0.0, TAU, RING_POINTS, _color, RING_WIDTH)
+	var slot: float = TAU / float(DASH_COUNT)
+	for i: int in range(DASH_COUNT):
+		var from: float = _spin + slot * float(i)
+		draw_arc(
+			Vector2.ZERO, _radius, from, from + slot * DASH_FILL, 6,
+			_color, RING_WIDTH
+		)
+	_draw_sigil_square(-_spin)
+	_draw_sigil_square(-_spin + TAU / 8.0)
 	var pulse_sec: float = WeaponEffects.value("ward_pulse_sec")
 	if _pulse_age >= pulse_sec or pulse_sec <= 0.0:
 		return
@@ -114,3 +138,14 @@ func _draw() -> void:
 		Vector2.ZERO, _radius * progress, 0.0, TAU, RING_POINTS,
 		Color(_color, 1.0 - progress), RING_WIDTH * 1.5
 	)
+
+
+## One rotated square of the inner formation; two of them 45° apart make the
+## eight-pointed 진 frame.
+func _draw_sigil_square(phase: float) -> void:
+	var reach: float = _radius * SIGIL_RATIO
+	var color := Color(_color, SIGIL_ALPHA)
+	for i: int in range(4):
+		var a: Vector2 = Vector2.from_angle(phase + TAU * float(i) / 4.0) * reach
+		var b: Vector2 = Vector2.from_angle(phase + TAU * float(i + 1) / 4.0) * reach
+		draw_line(a, b, color, SIGIL_WIDTH)

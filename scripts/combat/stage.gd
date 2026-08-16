@@ -62,6 +62,8 @@ var _replaced_weapons: Array[String] = []
 # N3-8 feedback + N5-1 run flow state.
 var _feedback: Dictionary = {}
 var _puff_pool: NodePool
+# N3-18: pooled 벽사진 wave rings (one per cast; pooled like every effect).
+var _burst_ring_pool: NodePool
 # N3-17 art integration: pooled sprite puffs for 축지 when the sheet shipped.
 var _fx_pool: NodePool
 var _gold: int = 0
@@ -116,6 +118,7 @@ func _ready() -> void:
 	var stage_entry: Dictionary = _load_json(Spawner.STAGES_PATH).get(Spawner.STAGE_ID, {})
 	_duration_sec = float(stage_entry.get("duration_sec", 0.0))
 	_puff_pool = NodePool.new(self, _create_puff)
+	_burst_ring_pool = NodePool.new(self, _create_burst_ring)
 	if EffectSprite.available("blink_puff"):
 		_fx_pool = NodePool.new(self, _create_effect_sprite)
 	_result = ResultScreen.new()
@@ -391,9 +394,14 @@ func _execute_burst(active: Dictionary) -> void:
 	var origin: Vector2 = _player.global_position
 	var radius: float = float(active.get("radius_px", 0.0))
 	var damage: float = float(active.get("damage", 0.0))
-	var puff: DeathPuff = _puff_pool.acquire()
-	puff.puff(origin, radius, WeaponEffects.value("screen_flash_sec"), UiPalette.GOLD)
-	# N3-17: the emergency button reads across the whole screen, not just a ring.
+	# N3-18: a clean expanding wave that lands exactly on the damage radius —
+	# the N3-17 DeathPuff reuse opened as an opaque gold pancake covering half
+	# the screen. The short screen flash stays as the "emergency" punctuation.
+	var ring: BlastRing = _burst_ring_pool.acquire()
+	ring.burst(
+		origin, radius, WeaponEffects.value("burst_ring_sec"), UiPalette.GOLD,
+		BlastRing.Style.WAVE
+	)
 	_hud.flash_screen(UiPalette.GOLD, WeaponEffects.value("screen_flash_sec"))
 	var enemies: Array[Enemy] = _spawner.active_enemies()
 	var positions: Array[Vector2] = []
@@ -736,14 +744,17 @@ func _create_damage_number() -> DamageNumber:
 
 
 func _blink_puff(at: Vector2) -> void:
+	# N3-18: mist tinted WEAPON_SOUL — the N3-17 ACCENT_TAOIST modulate turned
+	# the white smoke sheet near-black on the night ground, so the step
+	# vanished. Pale soul-blue reads at both ends of the jump.
 	if _fx_pool != null:
 		var sprite: EffectSprite = _fx_pool.acquire()
-		sprite.play_effect("blink_puff", at, 0.0, UiPalette.ACCENT_TAOIST)
+		sprite.play_effect("blink_puff", at, 0.0, UiPalette.WEAPON_SOUL)
 		return
 	var puff: DeathPuff = _puff_pool.acquire()
 	puff.puff(
 		at, Player.CONTACT_RADIUS * 2.0,
-		WeaponEffects.value("blink_puff_sec"), UiPalette.ACCENT_TAOIST
+		WeaponEffects.value("blink_puff_sec"), UiPalette.WEAPON_SOUL
 	)
 
 
@@ -753,6 +764,14 @@ func _create_effect_sprite() -> EffectSprite:
 		func(done: EffectSprite) -> void: _fx_pool.release(done)
 	)
 	return sprite
+
+
+func _create_burst_ring() -> BlastRing:
+	var ring := BlastRing.new()
+	ring.finished.connect(
+		func(done: BlastRing) -> void: _burst_ring_pool.release(done)
+	)
+	return ring
 
 
 func _create_puff() -> DeathPuff:
