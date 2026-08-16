@@ -17,6 +17,12 @@
       { "loot_id": "talisman_paper", "at_sec": 10 },
       { "loot_id": "dokkaebi_flame", "at_sec": 60 }
     ],
+    "opening": {
+      "rush_window_sec": 20.0,
+      "min_spawns": 18,
+      "first_level_xp_by_sec": 40.0,
+      "guarantee_offset_px": 160.0
+    },
     "spawning": {
       "live_cap": 60,
       "spawn_margin_px": 48.0,
@@ -24,8 +30,9 @@
       "contact_cooldown_sec": 1.0
     },
     "waves": [
-      { "at_sec": 0,   "monster_id": "forest_goblin",     "count": 5,  "interval_sec": 2.5 },
-      { "at_sec": 30,  "monster_id": "forest_goblin",     "count": 6,  "interval_sec": 2.2 },
+      { "at_sec": 0,   "monster_id": "forest_goblin",     "count": 14, "interval_sec": 0.7 },
+      { "at_sec": 12,  "monster_id": "forest_goblin",     "count": 10, "interval_sec": 0.8 },
+      { "at_sec": 30,  "monster_id": "forest_goblin",     "count": 8,  "interval_sec": 1.8 },
       { "at_sec": 60,  "monster_id": "forest_goblin",     "count": 8,  "interval_sec": 2.0 },
       { "at_sec": 60,  "monster_id": "forest_spirit",     "count": 4,  "interval_sec": 2.6 },
       { "at_sec": 90,  "monster_id": "forest_goblin",     "count": 10, "interval_sec": 1.8 },

@@ -57,6 +57,10 @@ static func derive_elite_stats(base: Dictionary, elite: Dictionary) -> Dictionar
 	return derived
 
 var monster_id := ""
+## N6-2 killer attribution: the resolved localized display name (elite
+## derivation included) — what the result screen prints if this enemy lands
+## the killing blow.
+var name_ko := ""
 var hp: float = 0.0
 var contact_radius: float = 0.0
 var xp_drop: int = 0
@@ -152,6 +156,7 @@ func setup(
 	feedback: Dictionary = {}
 ) -> void:
 	monster_id = id
+	name_ko = String(stats.get("name_ko", ""))
 	hp = float(stats.get("hp", 1.0))
 	_damage = float(stats.get("damage", 0.0))
 	_speed = float(stats.get("speed", 0.0))
@@ -403,7 +408,7 @@ func _try_contact_damage() -> void:
 	var reach: float = contact_radius + Player.CONTACT_RADIUS
 	if global_position.distance_squared_to(_target.global_position) > reach * reach:
 		return
-	if _target.take_hit(_damage):
+	if _target.take_hit(_damage, name_ko):
 		_time_since_contact = 0.0
 
 

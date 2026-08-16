@@ -12,6 +12,15 @@ static func is_dead(hp: float) -> bool:
 	return hp <= 0.0
 
 
+## N6-2 low-health warning gate: true while alive at or under the data
+## threshold fraction (effects.json hit_feedback.low_hp_threshold). Boundary
+## inclusive so crossing exactly onto the threshold already warns.
+static func is_low_hp(hp: float, hp_max: float, threshold: float) -> bool:
+	if hp_max <= 0.0 or is_dead(hp):
+		return false
+	return hp <= hp_max * threshold
+
+
 ## Shared window rule for the player invulnerability window and the
 ## per-enemy contact cooldown: a hit exactly at the boundary lands.
 static func can_hit(time_since_last_hit: float, cooldown: float) -> bool:

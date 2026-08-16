@@ -25,6 +25,9 @@ var _time_value: Label
 var _kills_value: Label
 var _gold_value: Label
 var _total_gold_value: Label
+# N6-2: the death line — row shown on defeat only, so death teaches something.
+var _death_row: Control
+var _death_value: Label
 
 
 func _init() -> void:
@@ -63,6 +66,13 @@ func _ready() -> void:
 ## `summary` comes from RunFlow.build_summary.
 func open(outcome: String, summary: Dictionary) -> void:
 	_title_label.text = "승리" if outcome == RunFlow.OUTCOME_VICTORY else "패배"
+	# N6-2: what killed the run, localized — victory never shows the row.
+	var defeated: bool = outcome == RunFlow.OUTCOME_DEFEAT
+	_death_row.visible = defeated
+	if defeated:
+		_death_value.text = RunFlow.death_cause_text(
+			String(summary.get("death_cause", ""))
+		)
 	_time_value.text = String(summary.get("time_text", ""))
 	_kills_value.text = str(int(summary.get("kills", 0)))
 	_gold_value.text = str(int(summary.get("gold", 0)))
@@ -98,6 +108,9 @@ func _make_body() -> Control:
 	body.offset_right = -BODY_MARGIN
 	body.offset_top = HEADER_HEIGHT
 	body.offset_bottom = -BODY_MARGIN
+	_death_value = _add_row(body, "죽음")
+	_death_row = _death_value.get_parent() as Control
+	_death_row.visible = false
 	_time_value = _add_row(body, "생존 시간")
 	_kills_value = _add_row(body, "처치")
 	_gold_value = _add_row(body, "엽전")

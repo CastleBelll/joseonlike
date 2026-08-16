@@ -17,6 +17,11 @@ const BUTTON_SIZE := 44.0  # UiPalette.TOUCH_TARGET_MIN
 const BAR_TOP := 92.0
 const BAR_HEIGHT := 8.0
 const BAR_MARGIN_X := 8.0
+# N6-2 HUD HP bar: a second thin strip right under the XP bar — same minimal
+# grammar (token colours, no chip background, no numbers).
+const HP_BAR_GAP := 2.0
+const HP_BAR_HEIGHT := 5.0
+const HP_BAR_BOTTOM := BAR_TOP + BAR_HEIGHT + HP_BAR_GAP + HP_BAR_HEIGHT
 const COUNTER_ROW_HEIGHT := 36.0
 const COUNTER_STACK_WIDTH := 144.0
 # 2x of the 16px logical HUD icon (asset/ui/README.md) — the capture's
@@ -45,6 +50,8 @@ const ACTIVE_CLUSTER_MARGIN := 32.0
 var _elapsed: float = 0.0
 var _timer_label: Label
 var _xp_bar: ProgressBar
+var _hp_bar: ProgressBar
+var _hp_fill: StyleBoxFlat
 var _level_label: Label
 var _kill_label: Label
 var _gold_label: Label
@@ -81,6 +88,7 @@ func build_ui() -> void:
 	_build_corner_buttons()
 	_build_timer()
 	_build_xp_bar()
+	_build_hp_bar()
 	_build_level_label()
 	_build_counters()
 	_build_boss_bar()
@@ -94,6 +102,32 @@ func set_level(level: int) -> void:
 func set_xp(current: int, needed: int) -> void:
 	_xp_bar.max_value = maxi(needed, 1)
 	_xp_bar.value = current
+
+
+## N6-2 pure HUD HP view-model, node-free for the headless suite: bar range,
+## clamped value, fill ratio and the low-HP flag (CombatMath threshold rule).
+static func hp_view(hp: float, hp_max: float, threshold: float) -> Dictionary:
+	var bar_max: float = maxf(hp_max, 1.0)
+	var value: float = clampf(hp, 0.0, bar_max)
+	return {
+		"max": bar_max,
+		"value": value,
+		"ratio": value / bar_max,
+		"low": CombatMath.is_low_hp(hp, hp_max, threshold),
+	}
+
+
+## N6-2: HUD HP readout plus the low-HP warning. `threshold` and `pulse_sec`
+## come from data (effects.json hit_feedback) via the stage — the HUD never
+## reads data files itself. While low, the fill turns vermilion AND the edge
+## vignette pulses continuously (never colour alone).
+func set_hp(hp: float, hp_max: float, threshold: float, pulse_sec: float) -> void:
+	var view: Dictionary = hp_view(hp, hp_max, threshold)
+	_hp_bar.max_value = float(view["max"])
+	_hp_bar.value = float(view["value"])
+	var low: bool = bool(view["low"])
+	_hp_fill.bg_color = UiPalette.VERMILION if low else UiPalette.SUCCESS
+	_vignette.set_looping(low, pulse_sec)
 
 
 func set_kills(count: int) -> void:
@@ -215,11 +249,36 @@ func _build_xp_bar() -> void:
 	add_child(_xp_bar)
 
 
+## Same strip styling as the XP bar, one gap below it; green fill matches the
+## under-sprite bar so both readouts are unambiguously "the same number".
+func _build_hp_bar() -> void:
+	_hp_bar = ProgressBar.new()
+	_hp_bar.name = "HpBar"
+	_hp_bar.show_percentage = false
+	_hp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var track := StyleBoxFlat.new()
+	track.bg_color = UiPalette.NIGHT_BROWN
+	track.border_color = UiPalette.WOOD_BORDER
+	track.set_border_width_all(1)
+	_hp_fill = StyleBoxFlat.new()
+	_hp_fill.bg_color = UiPalette.SUCCESS
+	_hp_bar.add_theme_stylebox_override("background", track)
+	_hp_bar.add_theme_stylebox_override("fill", _hp_fill)
+	_hp_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_hp_bar.offset_left = BAR_MARGIN_X
+	_hp_bar.offset_right = -BAR_MARGIN_X
+	_hp_bar.offset_top = BAR_TOP + BAR_HEIGHT + HP_BAR_GAP
+	_hp_bar.offset_bottom = HP_BAR_BOTTOM
+	_hp_bar.max_value = 1.0
+	_hp_bar.value = 1.0
+	add_child(_hp_bar)
+
+
 func _build_level_label() -> void:
 	_level_label = _label("Lv.1", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_ON_DARK)
 	_level_label.name = "LevelLabel"
 	_level_label.position = Vector2(
-		UiPalette.SPACE_MD, BAR_TOP + BAR_HEIGHT + UiPalette.SPACE_XS
+		UiPalette.SPACE_MD, HP_BAR_BOTTOM + UiPalette.SPACE_XS
 	)
 	add_child(_level_label)
 
@@ -230,7 +289,7 @@ func _build_counters() -> void:
 	stack.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	stack.offset_left = -COUNTER_STACK_WIDTH
 	stack.offset_right = -UiPalette.SPACE_MD
-	stack.offset_top = BAR_TOP + BAR_HEIGHT + UiPalette.SPACE_XS
+	stack.offset_top = HP_BAR_BOTTOM + UiPalette.SPACE_XS
 	_kill_label = _counter_row(stack, "Kills", UiIcons.icon_rect(UiIcons.hud_icon("skull"), ICON_SIZE))
 	_gold_label = _counter_row(stack, "Gold", UiIcons.icon_rect(UiIcons.hud_icon("coin"), ICON_SIZE))
 	add_child(stack)
@@ -418,12 +477,20 @@ class ScreenFlash:
 
 
 ## N3-8 screen-edge red pulse on player damage: four vermilion edge bars that
-## fade out. One persistent Control — no per-hit instancing.
+## fade out. One persistent Control — no per-hit instancing. N6-2 adds a
+## looping low-HP mode: while active the edges breathe continuously between
+## LOOP_ALPHA_MIN and the hit peak, so danger stays visible without ever
+## covering the play area; a hit pulse on top still wins while stronger.
 class DamageVignette:
 	extends Control
 
+	const LOOP_ALPHA_MIN := 0.12
+
 	var _left: float = 0.0
 	var _duration: float = 0.0
+	var _looping: bool = false
+	var _loop_period: float = 1.0
+	var _loop_phase: float = 0.0
 
 	func pulse(duration: float) -> void:
 		_duration = maxf(duration, 0.01)
@@ -431,7 +498,24 @@ class DamageVignette:
 		visible = true
 		queue_redraw()
 
+	## Low-HP warning loop (period from data). Turning it off clears the
+	## screen unless a hit pulse is still fading.
+	func set_looping(active: bool, period_sec: float) -> void:
+		_looping = active
+		_loop_period = maxf(period_sec, 0.05)
+		if active:
+			visible = true
+		else:
+			_loop_phase = 0.0
+			visible = _left > 0.0
+		queue_redraw()
+
 	func _process(delta: float) -> void:
+		if _looping:
+			_loop_phase = fmod(_loop_phase + delta / _loop_period, 1.0)
+			_left = maxf(_left - delta, 0.0)
+			queue_redraw()
+			return
 		if _left <= 0.0:
 			return
 		_left -= delta
@@ -441,7 +525,12 @@ class DamageVignette:
 		queue_redraw()
 
 	func _draw() -> void:
-		var alpha: float = VIGNETTE_MAX_ALPHA * (_left / _duration)
+		var alpha: float = 0.0
+		if _left > 0.0 and _duration > 0.0:
+			alpha = VIGNETTE_MAX_ALPHA * (_left / _duration)
+		if _looping:
+			var wave: float = 0.5 + 0.5 * sin(_loop_phase * TAU)
+			alpha = maxf(alpha, lerpf(LOOP_ALPHA_MIN, VIGNETTE_MAX_ALPHA, wave))
 		var color := Color(UiPalette.VERMILION, alpha)
 		var thickness: float = VIGNETTE_THICKNESS
 		draw_rect(Rect2(0.0, 0.0, size.x, thickness), color)

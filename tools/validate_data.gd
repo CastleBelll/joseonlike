@@ -104,6 +104,7 @@ func _check_combat_cross_references() -> void:
 			continue
 		_require_positive_numbers(monsters[monster_id], MONSTER_FIELDS, "monsters." + monster_id)
 		_check_monster_sprites(monsters[monster_id], "monsters." + monster_id)
+	var curve: Dictionary = RunState.load_curve()
 	for stage_id: String in stages:
 		var stage: Dictionary = stages[stage_id]
 		if not monsters.has(stage.get("boss_id", "")):
@@ -122,6 +123,12 @@ func _check_combat_cross_references() -> void:
 				])
 		# N4-2 pacing invariants: monotonic times, boss last, surge peak first.
 		for issue: String in RunFlow.schedule_issues(stage):
+			_fail("stages.%s %s" % [stage_id, issue])
+		# N6-2 opening invariants: rush density + first-level-up XP bound,
+		# checked against the stage's own "opening" block.
+		for issue: String in RunFlow.opening_issues(
+			stage, monsters, float(curve.get("base_xp", 0.0)), float(curve.get("growth", 0.0))
+		):
 			_fail("stages.%s %s" % [stage_id, issue])
 		if stage.has("soft_enrage"):
 			_require_positive_numbers(

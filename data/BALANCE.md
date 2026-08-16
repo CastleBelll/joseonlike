@@ -1767,3 +1767,42 @@ even in the deliberate no-pick evasion build (seed 123). The caps hold; the
 run is not trivialised. Watch item: nopick survival went from ~1/1 death
 (pre-meta seed 99) to 2/4 deaths — if future tree growth pushes nopick
 survival to 4/4, cut caps before adding nodes.
+
+## N6-2 — The opening is now dangerous (2026-08-16)
+
+**Problem (QA-2, owner-confirmed):** the first 90 seconds had no threat and
+no decision — 5 goblins every 2.5s died to the auto-talisman at the screen
+edge, a standing-still player still reached Lv.3, and the first level-up
+(the first actual decision) landed at ~1:16.
+
+**Wave change:** the 0s wave goes 5@2.5s → **14@0.7s**, and a new **12s
+wave adds 10@0.8s** (the old 30s wave becomes 8@1.8s to bridge into the
+existing 60s ramp). That is 24 scheduled goblins inside the first 20
+seconds versus 5 before. Goblins are the right instrument: weakest monster
+in the stage (20 hp, 6 damage, dies to 2 talisman hits), so density
+demands movement without demanding dps the player doesn't have yet.
+
+**First level-up:** untouched XP curve (`6 * 1.5^(L-1)`); the density
+change alone schedules the level-2 cost (6 XP) by ~3.5s of spawns. The
+real bound is kill + walk time — measured **33.9s** on the normal bot
+(was ~76s), inside the ≤40s target.
+
+**Contract in data, not in heads:** the stage now carries an `opening`
+block (`rush_window_sec: 20, min_spawns: 18, first_level_xp_by_sec: 40,
+guarantee_offset_px: 160`) and `RunFlow.opening_issues` fails
+validate_data when a future wave edit quietly re-flattens the opening.
+The guaranteed first material lands 160px ahead of the player's travel
+direction — walked toward and seen, not delivered to their feet.
+
+**Measured (seed 20260814):**
+
+| bot | first level-up | damage 0-20s | outcome |
+|---|---|---|---|
+| normal (kiting) | 33.9s | 0.0 | victory 300.1s, 38.7 dps — unchanged band |
+| standing still | 28.4s | 30.0 | dead at 33.2s to 숲 도깨비 |
+
+The opening now punishes standing still (a third of a 126-hp pool inside
+the window, dead shortly after) while a moving player takes nothing — the
+demanded skill is exactly the one the genre teaches first: move. Not
+tuned lethal for movers; the 60s+ waves are untouched, so the mid-run
+danger shape (minute-7 ranged spike, surge, enrage) is unaffected.

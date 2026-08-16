@@ -42,6 +42,45 @@ func test_build_and_update() -> bool:
 	return passed
 
 
+func test_hp_view_ranges_and_low_flag() -> bool:
+	# N6-2 HUD HP view-model: clamped value, ratio, threshold-driven low flag.
+	var full: Dictionary = CombatHud.hp_view(100.0, 100.0, 0.25)
+	var passed: bool = float(full["ratio"]) == 1.0 and not bool(full["low"])
+	var low: Dictionary = CombatHud.hp_view(25.0, 100.0, 0.25)
+	passed = passed and bool(low["low"]) and absf(float(low["ratio"]) - 0.25) < 0.001
+	var clamped: Dictionary = CombatHud.hp_view(-5.0, 100.0, 0.25)
+	passed = passed and float(clamped["value"]) == 0.0
+	var degenerate: Dictionary = CombatHud.hp_view(50.0, 0.0, 0.25)
+	passed = passed and float(degenerate["max"]) == 1.0 and not bool(degenerate["low"])
+	if not passed:
+		push_error("test_combat_hud: hp_view broken")
+	return passed
+
+
+func test_hud_hp_bar_tracks_and_warns() -> bool:
+	# N6-2: the bar sits under the XP bar, tracks set_hp, turns vermilion and
+	# starts the looping vignette when low, and clears both on recovery.
+	var hud := CombatHud.new()
+	hud.build_ui()
+	var bar: ProgressBar = hud.get_node("HpBar")
+	var xp_bar: ProgressBar = hud.get_node("XpBar")
+	var passed: bool = bar.offset_top > xp_bar.offset_bottom
+	hud.set_hp(80.0, 100.0, 0.25, 0.9)
+	passed = passed and bar.max_value == 100.0 and bar.value == 80.0
+	var fill: StyleBoxFlat = bar.get_theme_stylebox("fill") as StyleBoxFlat
+	passed = passed and fill.bg_color == UiPalette.SUCCESS
+	var vignette: Control = hud.get_node("DamageVignette")
+	passed = passed and not vignette.visible
+	hud.set_hp(20.0, 100.0, 0.25, 0.9)
+	passed = passed and fill.bg_color == UiPalette.VERMILION and vignette.visible
+	hud.set_hp(60.0, 100.0, 0.25, 0.9)
+	passed = passed and fill.bg_color == UiPalette.SUCCESS and not vignette.visible
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: HP bar or low-HP warning broken")
+	return passed
+
+
 func test_run_state_xp_needed() -> bool:
 	var curve: Dictionary = RunState.load_curve()
 	var expected: int = RunState.xp_to_next(

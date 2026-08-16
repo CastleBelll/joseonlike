@@ -33,6 +33,9 @@ var hp_max: float = 0.0  # raised with hp by the max_hp passive (stage)
 ## Last non-zero travel direction — the 축지 blink heading (N4-4b); defaults
 ## to facing-right so a blink from standstill still goes somewhere.
 var last_move_direction := Vector2.RIGHT
+## N6-2: display name of whatever landed the last hit — the killing blow's
+## source by the time `died` fires. Empty when nothing attributable ever hit.
+var last_hit_source := ""
 
 var _speed: float = 0.0
 var _invuln_window: float = 0.0
@@ -149,13 +152,15 @@ func grant_invulnerability(duration: float) -> void:
 
 
 ## Returns true when the hit landed; false while the invulnerability window
-## from the previous hit is still open.
-func take_hit(damage: float) -> bool:
+## from the previous hit is still open. `source_name` is the attacker's
+## localized display name for killer attribution (N6-2).
+func take_hit(damage: float, source_name: String = "") -> bool:
 	if _bonus_invuln_left > 0.0:
 		return false
 	if not CombatMath.can_hit(_time_since_hit, _invuln_window):
 		return false
 	_time_since_hit = 0.0
+	last_hit_source = source_name
 	hp = CombatMath.apply_damage(hp, damage)
 	hit_taken.emit()
 	if CombatMath.is_dead(hp):

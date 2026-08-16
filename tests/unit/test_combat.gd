@@ -30,6 +30,35 @@ func test_alive_above_zero_hp() -> bool:
 	return not CombatMath.is_dead(0.1)
 
 
+func test_take_hit_records_attack_source() -> bool:
+	# N6-2 killer attribution: a landed hit stores the attacker's display
+	# name; a sourceless call (future projectiles, tools) stores empty and the
+	# result screen's death_cause_text turns that into the neutral fallback.
+	var player := Player.new()
+	player.hp = 10.0
+	player.hp_max = 10.0
+	var passed: bool = player.take_hit(4.0, "숲 도깨비")
+	passed = passed and player.last_hit_source == "숲 도깨비"
+	player.free()
+	return passed
+
+
+func test_low_hp_only_below_threshold() -> bool:
+	# N6-2: warning off above the line, on at and under it (boundary inclusive).
+	var passed: bool = not CombatMath.is_low_hp(26.0, 100.0, 0.25)
+	passed = passed and CombatMath.is_low_hp(25.0, 100.0, 0.25)
+	passed = passed and CombatMath.is_low_hp(10.0, 100.0, 0.25)
+	return passed
+
+
+func test_low_hp_never_for_dead_or_degenerate() -> bool:
+	# Dead players get the result screen, not a warning; a zero max is data
+	# breakage and must not divide or warn.
+	var passed: bool = not CombatMath.is_low_hp(0.0, 100.0, 0.25)
+	passed = passed and not CombatMath.is_low_hp(10.0, 0.0, 0.25)
+	return passed
+
+
 func test_invuln_window_blocks_second_hit_inside_window() -> bool:
 	return not CombatMath.can_hit(INVULN * 0.5, INVULN)
 

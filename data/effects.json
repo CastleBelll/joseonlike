@@ -6,7 +6,9 @@
     "boss_knockback_scale": 0.12,
     "death_puff_sec": 0.3,
     "death_puff_radius_scale": 1.6,
-    "player_vignette_sec": 0.35
+    "player_vignette_sec": 0.35,
+    "low_hp_threshold": 0.25,
+    "low_hp_pulse_sec": 0.9
   },
   "separation": {
     "weight": 2.0,

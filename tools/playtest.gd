@@ -38,6 +38,10 @@ const MIDRUN_SHOT_AT_SEC := 75.0
 ## N6-1: capture the move hint before the bot's first input dismisses it.
 const HINT_SHOT_PATH := "user://playtest_move_hint.png"
 const HINT_SHOT_AT_SEC := 0.6
+## N6-2: the opening rush mid-swarm and the low-HP warning the moment it fires.
+const OPENING_SHOT_PATH := "user://playtest_opening.png"
+const OPENING_SHOT_AT_SEC := 12.0
+const LOW_HP_SHOT_PATH := "user://playtest_low_hp.png"
 ## N3-14 crowd metric: an enemy counts as "stacked" when another enemy's
 ## center sits closer than half the pair's combined contact radii.
 const OVERLAP_SAMPLE_SEC := 1.0
@@ -49,6 +53,10 @@ const ORB_RADIUS := 320.0
 const BOUNDS_MARGIN := 90.0
 const TIMEOUT_GRACE_SEC := 90.0
 const MOVE_ACTIONS: Array[String] = ["move_left", "move_right", "move_up", "move_down"]
+## N6-2 opening metrics: damage-taken window and the standing-still bot's
+## early stop (the opening is proven by then; a full idle run adds nothing).
+const DAMAGE_WINDOW_SEC := 20.0
+const IDLE_QUIT_SEC := 45.0
 ## N4-3: the ten base taoist weapons a run can start on (non-evolution_only).
 const BATCH_WEAPONS: Array[String] = [
 	"old_talisman", "hwabu", "noebu", "seokjang", "honbul",
@@ -94,6 +102,15 @@ var _grants: Array[String] = []
 var _meta_max: bool = false
 var _headless: bool = false
 var _damage_total: float = 0.0
+# N6-2: --idle holds the bot still; the opening must hurt it but not kill a
+# moving player. Both modes report first level-up time and 0-20s damage taken.
+var _idle: bool = false
+var _first_level_up_at: float = -1.0
+var _damage_taken_open: float = 0.0
+var _prev_hp: float = 0.0
+var _opening_shot_done: bool = false
+var _low_hp_shot_done: bool = false
+var _low_hp_threshold: float = 0.0
 var _tracked_weapons: Array[String] = []
 var _rows: Array[Dictionary] = []
 var _weapons_json: Dictionary = {}
@@ -112,6 +129,12 @@ func _ready() -> void:
 		FileAccess.get_file_as_string(Spawner.STAGES_PATH)
 	)
 	var stage_entry: Dictionary = stage_data.get(Spawner.STAGE_ID, {})
+	var effects: Dictionary = JSON.parse_string(
+		FileAccess.get_file_as_string(Spawner.EFFECTS_PATH)
+	)
+	_low_hp_threshold = float(
+		(effects.get("hit_feedback", {}) as Dictionary).get("low_hp_threshold", 0.0)
+	)
 	_duration = float(stage_entry.get("duration_sec", 0.0))
 	_surge_at = float(stage_entry.get("surge_at_sec", 0.0))
 	_boss_at = RunFlow.boss_spawn_time(stage_entry)
@@ -153,6 +176,8 @@ func _parse_args() -> void:
 			_batch = true
 		elif arg == "--nopick":
 			_no_pick = true
+		elif arg == "--idle":
+			_idle = true
 		elif arg == "--meta=max":
 			_meta_max = true
 
@@ -190,6 +215,12 @@ func _start_run() -> void:
 	# N6-1: hold the bot still until the hint shot lands (no hint = no hold).
 	_hint_shown = _stage._move_hint != null
 	_hint_shot_done = not _hint_shown
+	_prev_hp = _player.hp
+	_stage._run_state.level_reached.connect(
+		func(_new_level: int) -> void:
+			if _first_level_up_at < 0.0:
+				_first_level_up_at = _stage._run_elapsed
+	)
 	if not _stage._meta_effects.is_empty():
 		# N7-1 evidence line: an owned tree must be visible in the run's
 		# actual starting stats, not just in the profile.
@@ -217,6 +248,10 @@ func _reset_run_metrics() -> void:
 	_overlap_samples = 0
 	_overlap_timer = 0.0
 	_damage_total = 0.0
+	_first_level_up_at = -1.0
+	_damage_taken_open = 0.0
+	_opening_shot_done = false
+	_low_hp_shot_done = false
 	_tracked_weapons = []
 	_skipped_screens = 0
 	_evo_violations = 0
@@ -265,9 +300,25 @@ func _process(delta: float) -> void:
 		# Whole-run fps floor; skip the first second while the scene warms up.
 		if _real_elapsed > 1.0:
 			_fps_min_all = minf(_fps_min_all, Engine.get_frames_per_second())
+	# N6-2: the standing-still probe has proven its point once the opening
+	# window is well past — report and stop instead of idling to a sure death.
+	if _idle and elapsed >= IDLE_QUIT_SEC and _stage._outcome == RunFlow.OUTCOME_NONE \
+			and not _result_shot_done:
+		print("PLAYTEST idle probe stopped at %.1fs" % elapsed)
+		_result_shot_done = true
+		_finish()
+		return
 	if not _hint_shot_done and elapsed >= HINT_SHOT_AT_SEC:
 		_hint_shot_done = true
 		_capture(HINT_SHOT_PATH)
+	if not _opening_shot_done and elapsed >= OPENING_SHOT_AT_SEC:
+		_opening_shot_done = true
+		_capture(OPENING_SHOT_PATH)
+	if not _low_hp_shot_done and _player != null and CombatMath.is_low_hp(
+		_player.hp, _player.hp_max, _low_hp_threshold
+	):
+		_low_hp_shot_done = true
+		_capture(LOW_HP_SHOT_PATH)
 	if not _midrun_shot_done and elapsed >= MIDRUN_SHOT_AT_SEC:
 		_midrun_shot_done = true
 		_capture(MIDRUN_SHOT_PATH)
@@ -282,6 +333,12 @@ func _process(delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if _stage == null or _result_shot_done:
 		return
+	# N6-2: hp lost inside the opening window (increases from passives/meta
+	# never count — only drops do).
+	var hp_drop: float = maxf(_prev_hp - _player.hp, 0.0)
+	_prev_hp = _player.hp
+	if _stage._run_elapsed <= DAMAGE_WINDOW_SEC:
+		_damage_taken_open += hp_drop
 	_track_weapon_damage()
 	if _stage._outcome != RunFlow.OUTCOME_NONE:
 		_release_moves()
@@ -293,7 +350,7 @@ func _physics_process(delta: float) -> void:
 			_pick_wait = PICK_COOLDOWN_SEC
 			_pick_card()
 		return
-	if not _hint_shot_done:
+	if _idle or not _hint_shot_done:
 		_release_moves()
 		return
 	_pick_wait = PICK_COOLDOWN_SEC
@@ -532,6 +589,12 @@ func _finish() -> void:
 		_peak_live, _overlap_sum / float(maxi(_overlap_samples, 1)), _overlap_samples
 	])
 	print("PLAYTEST kills: %d gold: %d" % [_stage._kills, _stage._gold])
+	print("PLAYTEST first level-up: %.1fs (idle=%s)" % [_first_level_up_at, str(_idle)])
+	print("PLAYTEST damage taken 0-%.0fs: %.1f (hp now %.1f/%.1f)" % [
+		DAMAGE_WINDOW_SEC, _damage_taken_open, _player.hp, _player.hp_max
+	])
+	if _stage._outcome == RunFlow.OUTCOME_DEFEAT:
+		print("PLAYTEST death cause: %s" % RunFlow.death_cause_text(_player.last_hit_source))
 	print("PLAYTEST first-run: hint shown %s, guarantees %d, fired %s" % [
 		str(_hint_shown), _stage._first_run_drops.size(), str(_stage._first_run_log)
 	])

@@ -78,6 +78,9 @@ var _active_cooldowns: Dictionary = {}
 var _move_hint: MoveHint
 var _first_run_drops: Array = []
 var _first_run_log: Dictionary = {}
+# N6-2: a guaranteed first-run drop lands ahead of the player (data offset),
+# not on the corpse — something to walk toward and see, not receive.
+var _guarantee_offset_px: float = 0.0
 
 
 func _ready() -> void:
@@ -163,6 +166,9 @@ func _ready() -> void:
 	var profile: Dictionary = _profile()
 	if Ftue.is_first_run(profile):
 		_first_run_drops = stage_entry.get("first_run_drops", [])
+		_guarantee_offset_px = float(
+			(stage_entry.get("opening", {}) as Dictionary).get("guarantee_offset_px", 0.0)
+		)
 	if Ftue.should_show_move_hint(profile):
 		_move_hint = MoveHint.new()
 		_move_hint.name = "MoveHint"
@@ -178,6 +184,7 @@ func _physics_process(delta: float) -> void:
 	):
 		_dismiss_move_hint()
 	_run_elapsed += delta
+	_refresh_hp_hud()
 	if _duration_sec > 0.0 and _run_elapsed >= _duration_sec:
 		_end_run(RunFlow.resolve_outcome(false, false, true))
 	if _boss != null and not CombatMath.is_dead(_boss.hp):
@@ -271,7 +278,9 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 	if camera != null:
 		camera.zoom = Vector2.ONE
 	get_tree().paused = true
-	var summary: Dictionary = RunFlow.build_summary(_run_elapsed, _kills, _gold)
+	var summary: Dictionary = RunFlow.build_summary(
+		_run_elapsed, _kills, _gold, _player.last_hit_source
+	)
 	summary["total_gold"] = SaveService.instance.bank_run(_run_elapsed, _kills, _gold, boss_killed)
 	_result.open(outcome, summary)
 
@@ -362,6 +371,16 @@ func _on_orb_collected(orb: XpOrb) -> void:
 func _refresh_progress_hud() -> void:
 	_hud.set_level(_run_state.level)
 	_hud.set_xp(_run_state.xp, _run_state.xp_needed())
+
+
+## N6-2: HUD HP bar + low-HP warning, every physics frame — covers hits,
+## max-HP passives and the meta grant through one path. Numbers from data.
+func _refresh_hp_hud() -> void:
+	_hud.set_hp(
+		_player.hp, _player.hp_max,
+		float(_feedback.get("low_hp_threshold", 0.0)),
+		float(_feedback.get("low_hp_pulse_sec", 0.0))
+	)
 
 
 func _on_hit_landed(amount: float, at: Vector2, boss_hit: bool) -> void:
@@ -597,15 +616,23 @@ func _spawn_loot(enemy: Enemy) -> void:
 	# natural drop of the same loot earlier satisfies it via _first_run_log.
 	drops.append_array(Ftue.due_guarantees(_first_run_drops, _run_elapsed, _first_run_log))
 	for loot_id: String in drops:
+		var at: Vector2 = enemy.global_position
 		if Ftue.is_guaranteed(_first_run_drops, loot_id) and not _first_run_log.has(loot_id):
 			_first_run_log[loot_id] = _run_elapsed
+			# N6-2: place the scripted guarantee ahead of the player's travel
+			# direction, clamped to the field — seen and walked toward, never
+			# landing in their lap at the corpse.
+			if _guarantee_offset_px > 0.0:
+				at = _player.global_position + _player.last_move_direction * _guarantee_offset_px
+				if _player.bounds.has_area():
+					at = at.clamp(_player.bounds.position, _player.bounds.end)
 		var drop: LootDrop = _loot_pool.acquire()
 		var scatter := Vector2(
 			_loot_rng.randf_range(-LOOT_SCATTER_PX, LOOT_SCATTER_PX),
 			_loot_rng.randf_range(-LOOT_SCATTER_PX, LOOT_SCATTER_PX)
 		)
 		drop.launch_loot(
-			enemy.global_position + scatter, loot_id,
+			at + scatter, loot_id,
 			Loot.tier_color(_loot_data, loot_id), _player, _orb_config
 		)
 
