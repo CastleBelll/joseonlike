@@ -117,7 +117,8 @@ func bank_run(elapsed_sec: float, kills: int, run_gold: int, boss_killed: bool) 
 ## together), then one atomic write persists it — a crash in between leaves
 ## the old state fully intact. Returns the MetaTree.REASON_* outcome.
 func purchase_meta_node(tree: Dictionary, node_id: String) -> String:
-	var result: Dictionary = MetaTree.purchase(profile, tree, node_id)
+	var unlocked: Array[String] = MetaTree.unlocked_characters(MetaTree.load_characters())
+	var result: Dictionary = MetaTree.purchase(profile, tree, node_id, unlocked)
 	if bool(result["ok"]):
 		profile = result["profile"]
 		save_profile()

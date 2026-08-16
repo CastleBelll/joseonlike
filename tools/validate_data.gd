@@ -188,9 +188,13 @@ func _check_combat_cross_references() -> void:
 ## N7-1 명부수 tree: the full MetaTree data contract (stat vocabulary, costs,
 ## prerequisites, cycles/reachability, duplicate ids, caps) plus icon binding
 ## — every node icon must exist in the loot icon set until dedicated art ships.
+## N7-2 adds: wired-effect stat vocabulary (a node whose effect nothing
+## consumes FAILS), per-character branch ownership against characters.json,
+## and the strictly-increasing cost curve.
 func _check_meta_tree() -> void:
 	var tree: Dictionary = _load(DATA_DIR + "/meta_tree.json")
-	for issue: String in MetaTree.data_issues(tree):
+	var characters: Dictionary = _load(DATA_DIR + "/characters.json")
+	for issue: String in MetaTree.data_issues(tree, characters):
 		_fail("meta_tree " + issue)
 	for entry: Dictionary in MetaTree.nodes(tree):
 		var icon: String = String(entry.get("icon", ""))

@@ -101,7 +101,11 @@ var _shockwave: Dictionary = {}
 var _positions: Array[Vector2] = []  # per-pulse scratch, reused without alloc
 
 
-func setup(id: String, player: Player, spawner: Spawner) -> void:
+## `meta_effects` (N7-2) is the capped 명부수 aggregate; the 술법-branch keys
+## fold into this weapon's mechanic blocks before anything reads them.
+func setup(
+	id: String, player: Player, spawner: Spawner, meta_effects: Dictionary = {}
+) -> void:
 	_player = player
 	_spawner = spawner
 	_pool = NodePool.new(self, _create_projectile)
@@ -110,7 +114,7 @@ func setup(id: String, player: Player, spawner: Spawner) -> void:
 		push_error("auto_weapon: unknown weapon id '%s' in %s" % [id, WEAPONS_PATH])
 		return
 	weapon_id = id
-	_stats = weapons[id]
+	_stats = MetaTree.modified_weapon_stats(weapons[id], meta_effects)
 	_grades = WeaponGrade.config(weapons)
 	_grade = String(_stats.get("grade", ""))
 	_speed = float(_stats.get("speed", 0.0))

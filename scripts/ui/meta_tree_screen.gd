@@ -1,13 +1,15 @@
 class_name MetaTreeScreen
 extends Control
-## 명부수 permanent-upgrade screen (N7-1, DESIGN.md §4 capture `_02`):
-## NIGHT_BROWN meta grammar — back arrow + GOLD title top-left, currency pill
-## top-right, a scrollable node graph over a trunk in the middle, and the
+## 명부수 permanent-upgrade screen (N7-1, branches N7-2, DESIGN.md §4 capture
+## `_02`): NIGHT_BROWN meta grammar — back arrow + GOLD title top-left,
+## currency pill top-right, pill tabs (공용 trunk + one branch per roster
+## character), a scrollable node graph over a trunk in the middle, and the
 ## selected node's detail card + one full-width wood CTA at the bottom.
+## Locked characters' branches render as visible locked content with their
+## unlock condition named — never purchasable, never dead chrome.
 ## All purchase rules live in MetaTree; this screen only renders and routes.
 
 const CAMP_SCENE := "res://scenes/camp.tscn"
-const PASSIVES_PATH := "res://data/passives.json"
 
 const MARGIN_SIDE := 24
 const MARGIN_TOP := 24
@@ -30,14 +32,18 @@ const CARD_ICON_WELL := 64.0
 const COIN_ICON_SIZE := 28.0
 const BACK_SIZE := 44.0
 const CTA_HEIGHT := 60
+const TAB_HEIGHT := 40
 const DETAIL_MIN_HEIGHT := 96.0
 const NOTICE_FADE_SEC := 1.4
-const PERCENT_SCALE := 100.0
 ## Locked node icons dim by alpha only — no raw color values outside palette.
 const LOCKED_ICON_ALPHA := 0.35
+## The shared-trunk tab id; character tabs use the roster id.
+const TAB_TRUNK := ""
 
 var _tree: Dictionary = {}
-var _passives: Dictionary = {}
+var _characters: Dictionary = {}
+var _unlocked: Array[String] = []
+var _current_tab: String = TAB_TRUNK
 var _selected_id: String = ""
 ## Test/tool fallback profile when the SaveManager autoload is absent; with
 ## SaveService live this mirrors its profile and purchases go through it.
@@ -53,6 +59,7 @@ var _detail_icon: TextureRect
 var _cta: Button
 var _notice_label: Label
 var _notice_tween: Tween
+var _tab_buttons: Dictionary = {}
 var _node_buttons: Dictionary = {}
 var _node_labels: Dictionary = {}
 
@@ -65,10 +72,12 @@ func _ready() -> void:
 ## screen without a running SceneTree (same contract as CampScreen).
 func build_ui() -> void:
 	_tree = MetaTree.load_tree()
-	_passives = _load_json(PASSIVES_PATH)
+	_characters = MetaTree.load_characters()
+	_unlocked = MetaTree.unlocked_characters(_characters)
 	_profile = _live_profile()
 	# Corrupt or stale tree state heals once, up front — the whole screen
-	# then renders from clean state only.
+	# then renders from clean state only. N7-2 migration: nodes the rework
+	# removed are pruned here (with this warning) and NOT refunded.
 	var clean: Dictionary = MetaTree.sanitize_state(
 		_tree, _profile.get("meta_tree", {}) as Dictionary
 	)
@@ -99,6 +108,7 @@ func build_ui() -> void:
 	margin.add_child(column)
 
 	column.add_child(_build_header())
+	column.add_child(_build_tabs())
 	column.add_child(_build_graph())
 	column.add_child(_build_detail_card())
 
@@ -114,6 +124,7 @@ func build_ui() -> void:
 	_cta.pressed.connect(_on_cta_pressed)
 	column.add_child(_cta)
 
+	_populate_tab()
 	_refresh()
 
 
@@ -163,6 +174,42 @@ func _build_header() -> Control:
 	return header
 
 
+## N7-2 pill tabs (bestiary grammar): 공용 trunk first, then one tab per
+## roster character — locked ones stay tappable so the branch advertises the
+## roster instead of hiding it.
+func _build_tabs() -> Control:
+	var tabs := HBoxContainer.new()
+	tabs.name = "Tabs"
+	tabs.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	var tab_ids: Array[String] = [TAB_TRUNK]
+	for character_id: String in _characters:
+		tab_ids.append(character_id)
+	for tab_id: String in tab_ids:
+		var tab := Button.new()
+		tab.name = "Tab_" + (tab_id if not tab_id.is_empty() else "shared")
+		tab.custom_minimum_size = Vector2(0.0, TAB_HEIGHT)
+		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tab.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+		tab.add_theme_color_override("font_hover_color", UiPalette.TEXT_ON_DARK)
+		tab.add_theme_color_override("font_pressed_color", UiPalette.TEXT_ON_DARK)
+		tab.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
+		tab.pressed.connect(_on_tab_pressed.bind(tab_id))
+		tabs.add_child(tab)
+		_tab_buttons[tab_id] = tab
+	return tabs
+
+
+func _on_tab_pressed(tab_id: String) -> void:
+	if tab_id == _current_tab:
+		return
+	_current_tab = tab_id
+	_selected_id = ""
+	_populate_tab()
+	_refresh()
+	if is_inside_tree():
+		_scroll.scroll_vertical = 0
+
+
 func _build_graph() -> Control:
 	_scroll = ScrollContainer.new()
 	_scroll.name = "Scroll"
@@ -172,19 +219,30 @@ func _build_graph() -> Control:
 	_canvas = Control.new()
 	_canvas.name = "Canvas"
 	_canvas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var max_row: float = 0.0
-	for entry: Dictionary in MetaTree.nodes(_tree):
-		max_row = maxf(max_row, float((entry.get("pos", []) as Array)[1]))
-	_canvas.custom_minimum_size = Vector2(
-		0.0, CANVAS_TOP_PAD + (max_row + 1.0) * ROW_HEIGHT + CANVAS_BOTTOM_PAD
-	)
 	# Tapping the empty canvas deselects; node buttons swallow their own taps.
 	_canvas.gui_input.connect(_on_canvas_input)
 	_canvas.draw.connect(_draw_graph)
 	_canvas.resized.connect(_layout_nodes)
 	_scroll.add_child(_canvas)
+	return _scroll
 
-	for entry: Dictionary in MetaTree.nodes(_tree):
+
+## (Re)builds the node buttons for the current tab — the graph shows ONE
+## branch at a time so a much larger total tree still reads on 540x960.
+func _populate_tab() -> void:
+	for button: Button in _node_buttons.values():
+		button.queue_free()
+	for caption: Label in _node_labels.values():
+		caption.queue_free()
+	_node_buttons.clear()
+	_node_labels.clear()
+	var max_row: float = 0.0
+	for entry: Dictionary in _tab_nodes():
+		max_row = maxf(max_row, float((entry.get("pos", []) as Array)[1]))
+	_canvas.custom_minimum_size = Vector2(
+		0.0, CANVAS_TOP_PAD + (max_row + 1.0) * ROW_HEIGHT + CANVAS_BOTTOM_PAD
+	)
+	for entry: Dictionary in _tab_nodes():
 		var node_id: String = String(entry["id"])
 		var button := Button.new()
 		button.name = "Node_" + node_id
@@ -213,7 +271,6 @@ func _build_graph() -> Control:
 		caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_canvas.add_child(caption)
 		_node_labels[node_id] = caption
-	return _scroll
 
 
 func _build_detail_card() -> Control:
@@ -254,6 +311,7 @@ func _build_detail_card() -> Control:
 	lines.add_child(_detail_name)
 	_detail_effect = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_ON_DARK)
 	_detail_effect.name = "DetailEffect"
+	_detail_effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lines.add_child(_detail_effect)
 	_detail_info = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_DARK)
 	_detail_info.name = "DetailInfo"
@@ -266,6 +324,12 @@ func _build_detail_card() -> Control:
 
 
 func select_node(node_id: String) -> void:
+	# A programmatic select may target another tab (tests, deep links) — the
+	# tab follows the node so the selection is always visible.
+	var branch: String = MetaTree.node_character(MetaTree.node(_tree, node_id))
+	if branch != _current_tab:
+		_current_tab = branch
+		_populate_tab()
 	_selected_id = node_id
 	_refresh()
 	var button: Button = _node_buttons.get(node_id)
@@ -298,7 +362,7 @@ func _on_cta_pressed() -> void:
 		reason = SaveService.instance.purchase_meta_node(_tree, _selected_id)
 		_profile = SaveService.instance.profile
 	else:
-		var result: Dictionary = MetaTree.purchase(_profile, _tree, _selected_id)
+		var result: Dictionary = MetaTree.purchase(_profile, _tree, _selected_id, _unlocked)
 		reason = String(result["reason"])
 		_profile = result["profile"]
 	match reason:
@@ -306,6 +370,8 @@ func _on_cta_pressed() -> void:
 			_flash_notice(UiLocale.text("meta.bought"))
 		MetaTree.REASON_GOLD:
 			_flash_notice(UiLocale.text("meta.no_gold"))
+		MetaTree.REASON_CHARACTER:
+			_flash_notice(UiLocale.text("meta.char_locked"))
 		_:
 			# locked/maxed/unknown never expose a CTA; reaching here means a
 			# stale click raced a state change — just re-render.
@@ -320,13 +386,44 @@ func _refresh() -> void:
 	_gold_label.text = str(maxi(int(_profile.get("gold", 0)), 0))
 	var state: Dictionary = _profile.get("meta_tree", {})
 	var gold: int = int(_profile.get("gold", 0))
-	for entry: Dictionary in MetaTree.nodes(_tree):
+	_refresh_tabs()
+	for entry: Dictionary in _tab_nodes():
 		var node_id: String = String(entry["id"])
 		_style_node(entry, node_id, state, gold)
 	_refresh_detail(state, gold)
 	if _canvas != null:
 		_layout_nodes()
 		_canvas.queue_redraw()
+
+
+func _refresh_tabs() -> void:
+	for tab_id: String in _tab_buttons:
+		var tab: Button = _tab_buttons[tab_id]
+		var caption: String
+		var muted: bool = false
+		if tab_id == TAB_TRUNK:
+			caption = UiLocale.text("meta.tab_shared")
+		else:
+			caption = MetaTree.display_name(
+				_characters.get(tab_id, {}) as Dictionary, UiLocale.current_locale
+			)
+			if tab_id not in _unlocked:
+				caption += " · " + UiLocale.text("meta.locked")
+				muted = true
+		tab.text = caption
+		tab.add_theme_color_override(
+			"font_color",
+			UiPalette.TEXT_MUTED_ON_DARK if muted else UiPalette.TEXT_ON_DARK
+		)
+		for state_name: String in ["normal", "hover", "pressed", "focus"]:
+			tab.add_theme_stylebox_override(
+				state_name, _pill_plate(tab_id == _current_tab)
+			)
+
+
+## True when the visible tab is a character branch the profile cannot buy yet.
+func _branch_locked() -> bool:
+	return _current_tab != TAB_TRUNK and _current_tab not in _unlocked
 
 
 func _style_node(
@@ -345,7 +442,12 @@ func _style_node(
 	var status: String
 	var icon: TextureRect = button.get_node("Icon")
 	icon.modulate.a = 1.0
-	if rank > 0:
+	if _branch_locked():
+		# The whole branch is roster advertising: named, priced, not buyable.
+		icon.modulate.a = LOCKED_ICON_ALPHA
+		status = UiLocale.text("meta.locked") + " · " \
+			+ UiLocale.text("meta.cost_fmt") % cost
+	elif rank > 0:
 		border = UiPalette.GOLD_BORDER
 		fill = UiPalette.CARD_BG_SELECTED
 		if cost == MetaTree.NO_NEXT_COST:
@@ -374,7 +476,8 @@ func _style_node(
 	caption.text = name_text + "\n" + status
 	caption.add_theme_color_override(
 		"font_color",
-		UiPalette.TEXT_ON_DARK if unlocked or rank > 0 else UiPalette.TEXT_MUTED_ON_DARK
+		UiPalette.TEXT_ON_DARK if (unlocked or rank > 0) and not _branch_locked()
+		else UiPalette.TEXT_MUTED_ON_DARK
 	)
 
 
@@ -382,18 +485,24 @@ func _refresh_detail(state: Dictionary, gold: int) -> void:
 	if _selected_id.is_empty():
 		_detail_icon.texture = null
 		_detail_name.text = UiLocale.text("meta.hint")
-		_detail_effect.text = ""
+		_detail_effect.text = _branch_hint()
 		_detail_info.text = ""
 		_cta.visible = false
 		return
 	var entry: Dictionary = MetaTree.node(_tree, _selected_id)
 	var rank: int = MetaTree.rank_of(state, _selected_id)
 	var cost: int = MetaTree.next_cost(entry, rank)
-	var stat: String = String((entry.get("effect", {}) as Dictionary).get("stat", ""))
-	var per_rank: float = float((entry.get("effect", {}) as Dictionary).get("per_rank", 0.0))
+	var desc: String = MetaTree.display_desc(entry, UiLocale.current_locale)
 	_detail_icon.texture = UiIcons.loot_icon(String(entry.get("icon", "")))
 	_detail_name.text = MetaTree.display_name(entry, UiLocale.current_locale)
 
+	if _branch_locked():
+		# The locked branch names its unlock condition (DESIGN.md: locked
+		# content, not a dead button) — straight from characters.json.
+		_detail_effect.text = desc
+		_detail_info.text = _branch_hint()
+		_cta.visible = false
+		return
 	if not MetaTree.is_unlocked(_tree, state, _selected_id):
 		# The lock names its requirement instead of just refusing (edge #2).
 		var names: Array[String] = MetaTree.locked_names(
@@ -405,21 +514,15 @@ func _refresh_detail(state: Dictionary, gold: int) -> void:
 		return
 	if cost == MetaTree.NO_NEXT_COST:
 		# Maxed: the CTA disappears rather than sit greyed-out (DESIGN.md §6).
-		# per_rank * rank is honest only while each stat's node maxima sum to
-		# its stat_caps entry (they do — see data/BALANCE.md N7-1 table);
-		# re-balance the caps if a node is ever added onto an existing stat.
-		_detail_effect.text = UiLocale.text("meta.maxed_fmt") % [
-			_stat_name(stat), roundi(per_rank * rank * PERCENT_SCALE)
-		]
-		_detail_info.text = UiLocale.text("meta.permanent")
+		_detail_effect.text = UiLocale.text("meta.maxed_fmt") % desc
+		_detail_info.text = _detail_info_line()
 		_cta.visible = false
 		return
 	# The card always describes the NEXT rank, not rank 1 (edge #4).
 	_detail_effect.text = UiLocale.text("meta.next_fmt") % [
-		_stat_name(stat), roundi(per_rank * PERCENT_SCALE),
-		rank + 1, MetaTree.max_rank(entry)
+		desc, rank + 1, MetaTree.max_rank(entry)
 	]
-	_detail_info.text = UiLocale.text("meta.permanent")
+	_detail_info.text = _detail_info_line()
 	_cta.visible = true
 	# QA-2: grey the CTA when unaffordable so it doesn't invite dead taps.
 	_cta.disabled = gold < cost
@@ -429,14 +532,35 @@ func _refresh_detail(state: Dictionary, gold: int) -> void:
 	)
 
 
+## Branch tabs remind whose runs the node applies to; the trunk stays quiet.
+func _detail_info_line() -> String:
+	if _current_tab == TAB_TRUNK:
+		return UiLocale.text("meta.permanent")
+	return UiLocale.text("meta.branch_only_fmt") % MetaTree.display_name(
+		_characters.get(_current_tab, {}) as Dictionary, UiLocale.current_locale
+	)
+
+
+## The locked branch's unlock condition, straight from characters.json.
+func _branch_hint() -> String:
+	if not _branch_locked():
+		return ""
+	var character: Dictionary = _characters.get(_current_tab, {})
+	var key: String = "unlock_text_en" if UiLocale.current_locale == "en" \
+		else "unlock_text_ko"
+	return String(character.get(key, UiLocale.text("meta.char_locked")))
+
+
 ## Positions every node/caption from its data pos; runs on canvas resize so
 ## the fractional x coordinates track the actual width.
 func _layout_nodes() -> void:
 	var width: float = _canvas.size.x
 	if width <= 0.0:
 		return
-	for entry: Dictionary in MetaTree.nodes(_tree):
+	for entry: Dictionary in _tab_nodes():
 		var node_id: String = String(entry["id"])
+		if not _node_buttons.has(node_id):
+			continue
 		var center: Vector2 = _node_center(entry, width)
 		var button: Button = _node_buttons[node_id]
 		button.position = center - Vector2(NODE_SIZE / 2.0, NODE_SIZE / 2.0)
@@ -444,6 +568,10 @@ func _layout_nodes() -> void:
 		caption.position = Vector2(
 			center.x - NODE_LABEL_WIDTH / 2.0, center.y + NODE_SIZE / 2.0
 		)
+
+
+func _tab_nodes() -> Array[Dictionary]:
+	return MetaTree.branch_nodes(_tree, _current_tab)
 
 
 func _node_center(entry: Dictionary, width: float) -> Vector2:
@@ -465,7 +593,7 @@ func _draw_graph() -> void:
 		UiPalette.WOOD_BORDER, TRUNK_WIDTH
 	)
 	var state: Dictionary = _profile.get("meta_tree", {})
-	for entry: Dictionary in MetaTree.nodes(_tree):
+	for entry: Dictionary in _tab_nodes():
 		var to_center: Vector2 = _node_center(entry, width)
 		for required: Variant in entry.get("requires", []):
 			var from_entry: Dictionary = MetaTree.node(_tree, String(required))
@@ -482,18 +610,21 @@ func _draw_graph() -> void:
 ## --- helpers --------------------------------------------------------------
 
 
-func _stat_name(stat: String) -> String:
-	var passive: Dictionary = _passives.get(stat, {})
-	var key: String = "name_en" if UiLocale.current_locale == "en" else "name_ko"
-	return String(passive.get(key, stat))
-
-
 func _node_plate(fill: Color, border: Color) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = fill
 	box.border_color = border
 	box.set_border_width_all(NODE_BORDER_WIDTH)
 	box.set_corner_radius_all(int(NODE_SIZE / 2.0))
+	return box
+
+
+func _pill_plate(active: bool) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = UiPalette.CARD_BG_SELECTED if active else UiPalette.CARD_BG
+	box.border_color = UiPalette.GOLD_BORDER if active else UiPalette.CARD_BORDER_DIM
+	box.set_border_width_all(NODE_BORDER_WIDTH)
+	box.set_corner_radius_all(PILL_CORNER_RADIUS)
 	return box
 
 
@@ -524,11 +655,3 @@ func _label(text_value: String, font_size: int, color: Color) -> Label:
 	label.add_theme_color_override("font_color", color)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
-
-
-func _load_json(path: String) -> Dictionary:
-	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-	if data is not Dictionary:
-		push_error("meta_tree_screen: cannot parse " + path)
-		return {}
-	return data

@@ -39,6 +39,9 @@ var last_hit_source := ""
 
 var _speed: float = 0.0
 var _invuln_window: float = 0.0
+## N7-2 명부수: incoming-hit multiplier (철피) and invulnerability-window
+## scale (긴 호흡), both set once by the stage from the capped meta aggregate.
+var _damage_taken_scale: float = 1.0
 var _time_since_hit: float = 0.0
 var _bonus_invuln_left: float = 0.0  # granted by actives, on top of hit i-frames
 var _visual: Node2D
@@ -145,6 +148,17 @@ func set_speed_scale(scale: float) -> void:
 	_speed = load_move_speed() * scale
 
 
+## N7-2 철피: scales every incoming hit; rescaled from 1.0 so it can never
+## compound with itself across refreshes.
+func set_damage_taken_scale(scale: float) -> void:
+	_damage_taken_scale = clampf(scale, 0.0, 1.0)
+
+
+## N7-2 긴 호흡: post-hit invulnerability window, rescaled from the data base.
+func set_invuln_scale(scale: float) -> void:
+	_invuln_window = load_hit_invuln_sec() * maxf(scale, 1.0)
+
+
 ## 축지 (N4-4b): a timed shield on top of the post-hit i-frames; repeats
 ## refresh, never shorten. The same alpha flash telegraphs it.
 func grant_invulnerability(duration: float) -> void:
@@ -161,7 +175,7 @@ func take_hit(damage: float, source_name: String = "") -> bool:
 		return false
 	_time_since_hit = 0.0
 	last_hit_source = source_name
-	hp = CombatMath.apply_damage(hp, damage)
+	hp = CombatMath.apply_damage(hp, damage * _damage_taken_scale)
 	hit_taken.emit()
 	if CombatMath.is_dead(hp):
 		died.emit()

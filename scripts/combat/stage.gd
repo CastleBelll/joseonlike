@@ -35,6 +35,10 @@ var _passive_stacks: Dictionary = {}
 # N7-1: the capped permanent 명부수 bonus, computed ONCE in _ready — the only
 # meta input the run ever reads, so tree effects cannot double-apply.
 var _meta_effects: Dictionary = {}
+# N7-2: meta_tree.json config block (revive ratio, first-find timing) and the
+# one-shot revive latch — 회생부 fires at most once per run.
+var _meta_config: Dictionary = {}
+var _revive_used: bool = false
 var _weapon_nodes: Dictionary = {}
 # N4-2 grade axis: per-weapon run grade plus the data ladder/steps config.
 var _owned_grades: Dictionary = {}
@@ -128,7 +132,13 @@ func _ready() -> void:
 		push_warning(
 			"stage: dropped %d invalid meta_tree entries" % int(meta_clean["dropped"])
 		)
-	_meta_effects = MetaTree.aggregate_effects(meta_data, meta_clean["state"] as Dictionary)
+	# N7-2: only the trunk plus the SELECTED character's branch apply here —
+	# another character's branch must never leak into this run.
+	_meta_effects = MetaTree.aggregate_effects(
+		meta_data, meta_clean["state"] as Dictionary,
+		String(_profile().get("selected_character", SaveProfile.DEFAULT_CHARACTER))
+	)
+	_meta_config = meta_data.get("config", {})
 	_orb_pool = NodePool.new(self, _create_orb)
 	_number_pool = NodePool.new(self, _create_damage_number)
 	_weapons_data = _load_json(WEAPONS_PATH)
@@ -150,6 +160,10 @@ func _ready() -> void:
 	var meta_hp_grant: float = Player.load_base_hp() * _meta_bonus("max_hp")
 	_player.hp += meta_hp_grant
 	_player.hp_max += meta_hp_grant
+	# N7-2 survivability nodes: capped damage reduction (철피) and the longer
+	# post-hit invulnerability window (긴 호흡), each applied exactly once.
+	_player.set_damage_taken_scale(1.0 - _meta_bonus("damage_reduction"))
+	_player.set_invuln_scale(1.0 + _meta_bonus("hit_invuln"))
 	_popup = LevelUpPopup.new()
 	_popup.picked.connect(_on_choice_picked)
 	_popup.dismissed.connect(_on_popup_dismissed)
@@ -161,6 +175,10 @@ func _ready() -> void:
 	_hud.build_actives(_actives)
 	_hud.active_pressed.connect(_on_active_pressed)
 	_refresh_progress_hud()
+	# N7-2 조기 수행: a banked head start grants its levels — and their power-up
+	# screens — right now, before the first wave lands.
+	for i: int in range(int(_meta_bonus("start_level"))):
+		_run_state.add_xp(_run_state.xp_needed())
 	# N6-1 FTUE: the scripted first-run drop table only arms on a profile that
 	# has never finished a run, and the move hint only until first dismissal.
 	var profile: Dictionary = _profile()
@@ -174,6 +192,29 @@ func _ready() -> void:
 		_move_hint.name = "MoveHint"
 		_move_hint.target = _joystick
 		$Hud.add_child(_move_hint)
+	# N7-2 첫 인연: every run guarantees one special material early, through the
+	# same guarantee pipeline the FTUE table uses (data timing, run-seeded pick).
+	if int(_meta_bonus("first_find")) >= 1:
+		_arm_first_find()
+
+
+## Appends the 첫 인연 guarantee to the run's guarantee table: one random
+## special material, due at the data-configured second.
+func _arm_first_find() -> void:
+	var special_ids: Array[String] = []
+	for loot_id: String in _loot_data:
+		if bool((_loot_data[loot_id] as Dictionary).get("special", false)):
+			special_ids.append(loot_id)
+	if special_ids.is_empty():
+		return
+	var at_sec: float = float(
+		(_meta_config.get("first_find", {}) as Dictionary).get("at_sec", 0.0)
+	)
+	_first_run_drops = _first_run_drops.duplicate()
+	_first_run_drops.append({
+		"loot_id": special_ids[_loot_rng.randi_range(0, special_ids.size() - 1)],
+		"at_sec": at_sec,
+	})
 
 
 func _physics_process(delta: float) -> void:
@@ -223,6 +264,16 @@ func _profile() -> Dictionary:
 
 
 func _on_player_died() -> void:
+	# N7-2 회생부: once per run, the killing blow becomes a second wind instead
+	# of the result screen — visible as the HP refill plus the float label.
+	var revive: Dictionary = _meta_config.get("revive", {})
+	var revive_ratio: float = float(revive.get("hp_ratio", 0.0))
+	if not _revive_used and int(_meta_bonus("revive")) >= 1 and revive_ratio > 0.0:
+		_revive_used = true
+		_player.hp = _player.hp_max * revive_ratio
+		_player.grant_invulnerability(float(revive.get("invuln_sec", 0.0)))
+		_float_label("회생부 발동!")
+		return
 	_end_run(RunFlow.resolve_outcome(true, false, false))
 
 
@@ -237,9 +288,8 @@ func _on_player_hit() -> void:
 func _on_enemy_killed(enemy: Enemy) -> void:
 	_kills += 1
 	_record_discovery(Bestiary.KIND_MONSTERS, enemy.monster_id)
-	_gold += enemy.gold_drop
+	_add_gold(enemy.gold_drop)
 	_hud.set_kills(_kills)
-	_hud.set_gold(_gold)
 	var puff: DeathPuff = _puff_pool.acquire()
 	puff.puff(
 		enemy.global_position,
@@ -363,7 +413,8 @@ func _execute_burst(active: Dictionary) -> void:
 
 
 func _on_orb_collected(orb: XpOrb) -> void:
-	_run_state.add_xp(orb.xp_value)
+	# N7-2 문리: the xp_gain meta bonus scales every orb at pickup.
+	_run_state.add_xp(int(round(float(orb.xp_value) * (1.0 + _meta_bonus("xp_gain")))))
 	_refresh_progress_hud()
 	_orb_pool.release(orb)
 
@@ -409,8 +460,9 @@ func _show_next_level_up() -> void:
 	var mod_pool: Array[Dictionary] = LevelUp.mod_candidates(
 		_mods_data, _run_state.inventory, _owned_levels, _replaced_weapons
 	)
+	# N7-2 혜안: the choice_count meta bonus widens every level-up screen.
 	var choices: Array[Dictionary] = LevelUp.assemble(
-		pool, mod_pool, CHOICES_PER_LEVEL, _choice_rng
+		pool, mod_pool, CHOICES_PER_LEVEL + int(_meta_bonus("choice_count")), _choice_rng
 	)
 	var cards: Array[Dictionary] = []
 	for choice: Dictionary in choices:
@@ -497,8 +549,7 @@ func _apply_weapon_mod(mod: Dictionary) -> void:
 	)
 	_run_state.inventory = sweep["inventory"]
 	if int(sweep["gold"]) > 0:
-		_gold += int(sweep["gold"])
-		_hud.set_gold(_gold)
+		_add_gold(int(sweep["gold"]))
 
 
 ## Single write point for a weapon's run grade: updates the dict, retunes the
@@ -545,7 +596,7 @@ func _add_weapon_node(weapon_id: String) -> void:
 	_record_discovery(Bestiary.KIND_WEAPONS, weapon_id)
 	var weapon := AutoWeapon.new()
 	add_child(weapon)
-	weapon.setup(weapon_id, _player, _spawner)
+	weapon.setup(weapon_id, _player, _spawner, _meta_effects)
 	weapon.hit_landed.connect(_on_hit_landed)
 	_weapon_nodes[weapon_id] = weapon
 	_refresh_weapon_scales()
@@ -560,6 +611,16 @@ func _passive_bonus(passive_id: String) -> float:
 
 func _meta_bonus(stat: String) -> float:
 	return float(_meta_effects.get(stat, 0.0))
+
+
+## N7-2 재물안: every run gold gain routes through here so the gold_gain meta
+## bonus applies uniformly (kills, salvage, dead-material cash-outs).
+## Returns the amount actually gained for cue labels.
+func _add_gold(amount: int) -> int:
+	var gained: int = int(round(float(amount) * (1.0 + _meta_bonus("gold_gain"))))
+	_gold += gained
+	_hud.set_gold(_gold)
+	return gained
 
 
 ## Recompute every run-wide passive effect from the stack counts, then apply
@@ -651,11 +712,9 @@ func _on_loot_collected(orb: XpOrb) -> void:
 		if bool(stats.get("special", false)):
 			_float_label("%s 획득" % String(stats.get("name_ko", loot_id)))
 		return
-	var gold: int = Loot.salvage_gold(_loot_data, loot_id)
-	_gold += gold
-	_hud.set_gold(_gold)
+	var gained: int = _add_gold(Loot.salvage_gold(_loot_data, loot_id))
 	if bool(stats.get("special", false)):
-		_float_label("엽전 +%d" % gold)
+		_float_label("엽전 +%d" % gained)
 
 
 func _create_loot_drop() -> LootDrop:
