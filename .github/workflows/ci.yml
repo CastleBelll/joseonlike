@@ -40,7 +40,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .godot
-          key: godot-import-${{ env.GODOT_VERSION }}-${{ hashFiles('**/*.tscn', '**/*.tres', '**/*.import', 'project.godot') }}
+          # .import sidecars are untracked (only the customized font one is committed),
+          # so the key hashes the asset sources themselves to stay change-sensitive.
+          key: godot-import-${{ env.GODOT_VERSION }}-${{ hashFiles('**/*.tscn', '**/*.tres', '**/*.import', '**/*.png', '**/*.svg', '**/*.ttf', 'project.godot') }}
           restore-keys: |
             godot-import-${{ env.GODOT_VERSION }}-
 

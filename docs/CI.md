@@ -91,10 +91,19 @@ isn't a gap specific to this workflow; it's how Godot's script loading works.
 Wire new scripts into a scene/autoload/test as soon as they're written to get
 gate coverage.
 
-**Asset import:** `asset/**` PNGs (character rotations, monster sprites) have no
-`.import` sidecar files committed — Godot generates those during the import step
-above. Verified locally against a fully clean `.godot`-less checkout: `--import`
-imports every asset under `asset/**` without any manual editor pass.
+**Asset import policy:** `.import` sidecar files are **not tracked** (`*.import`
+is gitignored) — Godot regenerates them with default params during the import step
+above. Verified against a fresh clone with zero `.import` files present: `--import`
+imports every asset without errors or a manual editor pass.
+
+**The one exception: `asset/font/neodgm.ttf.import` is tracked** (gitignore
+whitelist `!asset/font/neodgm.ttf.import`). It carries non-default pixel-font
+import params (`antialiasing=0` plus the matching hinting/subpixel settings)
+that a default regeneration would lose, making the UI font blurry. Godot honors
+a pre-existing `.import` file's params on first import, so committing this one
+file preserves the setting on fresh clones with no manual re-import step. If you
+customize import params on any other asset, whitelist its `.import` the same
+way — otherwise the customization silently disappears for everyone else.
 
 ## Exporting per platform
 
