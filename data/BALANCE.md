@@ -1806,3 +1806,134 @@ the window, dead shortly after) while a moving player takes nothing — the
 demanded skill is exactly the one the genre teaches first: move. Not
 tuned lethal for movers; the 60s+ waves are untouched, so the mid-run
 danger shape (minute-7 ranged spike, surge, enrage) is unaffected.
+
+## N7-2 — Meta economy rework, node variety, per-character branches (2026-08-16)
+
+**Problem (owner-confirmed):** the N7-1 tree cost 1,330냥 total against
+~500냥 banked per victorious run — everything maxed in 3-5 runs; 8 nodes
+covering 5 stats, every one a flat percentage; nothing character-specific.
+
+### Income, measured before retuning (seed-controlled autoplay, 2026-08-16)
+
+| run shape | seed | outcome | gold banked |
+|---|---|---|---|
+| deliberately bad (--nopick) | 99 | defeat 197.3s | **83냥** |
+| single-weapon build (noebu forced) | 7 | victory 300.1s | **299냥** |
+| full-pool normal bot | 7 | victory 300.1s | **512냥** |
+| full-pool normal bot | 20260814 | victory 300.1s | **512냥** |
+
+Run income is NOT changed this pass: a losing run already banks something
+(83냥), a victory already pays ~6x a loss, and the wave schedule money is
+deterministic enough to price against. The fix is entirely on the cost side.
+
+### Cost curve (the chosen shape, and why)
+
+Per-rank costs are explicit ladders in `data/meta_tree.json`, built on two
+rules that `MetaTree.data_issues` now ENFORCES so a data edit cannot
+quietly flatten them:
+
+1. **Within a node, each rank costs strictly more than the last** (~1.6-1.7x
+   steps — rank 3 of a trunk stat is a real decision, not a checkbox).
+2. **A node's first rank costs more than its prerequisite's first rank** —
+   depth is expensive, the trunk stays cheap. Roots open at 60-70냥 (one
+   losing run buys the first rank — early progress is real), tier-5+ nodes
+   open at 700-1,400냥 (multi-run goals).
+
+### Totals and runs-to-max
+
+| scope | total cost |
+|---|---|
+| shared trunk (13 nodes) | 11,980냥 |
+| taoist branch (5 nodes) | 3,010냥 |
+| **taoist-relevant total** | **14,990냥** |
+| warrior branch (2 nodes, locked) | 1,050냥 |
+| archer branch (2 nodes, locked) | 960냥 |
+
+Before: 1,330냥 ≈ **3 victories**. After: 14,990냥 at a blended
+~350-450냥/run (mix of losses and wins, 재물안 raising the tail to ~665냥
+per victory once maxed) ≈ **~35-40 runs** — inside the 30-50 target, with
+the first purchase still affordable after a single losing run.
+
+### Node variety (18 wired stats, every one consumed by the run)
+
+Flat scalars remain the trunk's floor (max_hp/move_speed/attack_damage/
+attack_speed/magnet_radius — caps unchanged in spirit). Added, each wired
+end to end and visible in play:
+
+- **재물안 gold_gain** (+10%/rank, cap 30%) — every gold gain routes through
+  `Stage._add_gold`.
+- **문리 xp_gain** (+8%/rank, cap 24%) — scaled at orb pickup.
+- **조기 수행 start_level** — the run starts at level 2 with its power-up
+  screen offered immediately.
+- **혜안 choice_count** — every level-up screen deals 4 cards instead of 3.
+- **첫 인연 first_find** — one special material guaranteed inside 45s of
+  every run, through the same guarantee pipeline as the FTUE table.
+- **철피 damage_reduction** (-5%/rank, cap 14% with warrior branch) — in
+  `Player.take_hit`.
+- **긴 호흡 hit_invuln** (+10%/rank, cap 20%) — post-hit i-frame window.
+- **회생부 revive** — once per run, death becomes a 30% HP second wind
+  (ratio/invuln in `config.revive`).
+
+**Survivability trim, forced by measurement:** the first cut of these
+numbers (-8%/rank DR capped 20%, +20%/rank i-frames capped 40%, 50%
+revive) made a fully maxed profile UNLOSABLE for the deliberately-bad
+--nopick build — 6/6 victories across seeds 123/99/1/42/5/77, against
+2/4 nopick deaths pre-rework. That trips N7-1's own watch item ("if
+nopick survival hits 4/4, cut caps before adding nodes"), so DR went to
+-5%/rank (cap 14%), i-frames to +10%/rank (cap 20%) and the revive to
+30% HP before shipping. Maxed sweep after the trim is tabled below.
+
+### Per-character branches (술법, not parallel systems)
+
+Trunk applies to everyone; a branch applies ONLY to its selected character
+(`MetaTree.aggregate_effects` filters by `selected_character` — the
+no-leak rule is unit-tested). Taoist branch reuses the exact weapon stats
+the runtime already reads, folded in by `MetaTree.modified_weapon_stats`
+at `AutoWeapon.setup`:
+
+| node | effect | reads |
+|---|---|---|
+| 불씨 정진 | burn duration +25%/rank | `on_hit_status.burn.duration_sec` |
+| 결계 확장 | ward radius +12%/rank | `ward.radius_px` |
+| 연쇄 심화 | chain jumps +1/rank | `chain.jumps` |
+| 혼불 하나 더 | +1 orbit orb | orbit `projectile_count` |
+| 봉인 간파 | seal burst_at -1 (floor 2) | `on_hit_seal.burst_at` |
+
+Warrior/archer branches (locked, visible with their unlock text) are
+character-scoped scalar nodes; their sums are why attack_damage's cap is
+0.20 and move_speed's 0.12 — `_cap_issues` now fails any character whose
+reachable total exceeds a cap (dead ranks cannot ship).
+
+**Branch effect, measured (forced noebu, seed 7, 8x):**
+
+| setup | chain jumps | dps | kills | gold |
+|---|---|---|---|---|
+| no meta | 3 | 22.2 | 173 | 299 |
+| maxed tree | **5** | 32.4 | 213 | 645 (gold_gain visible) |
+
+### Migration
+
+Surviving node ids (철골/질풍보/부적 연마/혼백 인력/빠른 결인) keep their
+purchased ranks under the new prices. Removed nodes (태산 기골/필살 부적/
+신속 주문) are pruned by `MetaTree.sanitize_state` with a warning on the
+next screen/stage load, and their gold is deliberately **not refunded** —
+the rework is a repricing of a 3-run-old economy, not a rollback; an
+automatic refund would hand returning profiles a head start the new curve
+was not priced for. Stated here so it is a decision, not an accident.
+
+### Maxed-profile guard (post-trim sweep, 2026-08-16, 8x headless)
+
+| setup | seed | outcome |
+|---|---|---|
+| maxed, normal bot | 7 | victory 290.5s (888냥 banked — gold_gain visible) |
+| maxed, --nopick | 99 | victory 300.1s |
+| maxed, --nopick | 123 | victory 300.1s |
+| maxed, --nopick | 42 | victory 300.1s |
+| maxed, --nopick | 5 | **defeat at 279.5s** (killed by 정예 죽림 거한) |
+
+A fully maxed profile can still lose (1/4 nopick deaths after the trim,
+vs 0/6 before it). The normal bot winning at max is expected — it already
+wins these seeds with no meta at all (see the income table above); the
+tree shifts margins, it does not decide the run. **Watch item renewed:**
+if a future node addition pushes maxed nopick back to 0-deaths across a
+4+ seed sweep, trim survivability again before shipping the node.

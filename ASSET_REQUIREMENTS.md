@@ -146,11 +146,14 @@ Fallback:  code-drawn WOOD_BORDER trunk line + prerequisite edge lines
 ```
 
 ```
-[MISSING] meta_node_icons (N7-1)
+[MISSING] meta_node_icons (N7-1, roster expanded N7-2)
 Size:      16px logical (32px 2x NEAREST), one per data/meta_tree.json node
-Members:   iron_bones / wind_steps / sharp_talisman / soul_pull /
-           quick_hands / ox_vigor / talisman_edge / spirit_haste; plus a
-           small lock badge overlay
+Members:   trunk: iron_bones / wind_steps / sharp_talisman / soul_pull /
+           quick_hands / coin_eye / head_start / insight / fourth_card /
+           first_find / stone_skin / long_breath / revive; taoist branch:
+           burn_mastery / ward_wide / chain_reach / orbit_extra /
+           seal_ease; warrior: hwando_hone / iron_stance; archer:
+           wind_read / rapid_nock; plus a small lock badge overlay
 Used by:   meta tree node circles + detail card icon well
 Fallback:  loot icons borrowed per node via the "icon" data field
            (tough_fiber, beast_fang, talisman_paper, wonhon_shard,
