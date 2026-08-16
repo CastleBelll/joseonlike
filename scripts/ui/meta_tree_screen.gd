@@ -421,6 +421,8 @@ func _refresh_detail(state: Dictionary, gold: int) -> void:
 	]
 	_detail_info.text = UiLocale.text("meta.permanent")
 	_cta.visible = true
+	# QA-2: grey the CTA when unaffordable so it doesn't invite dead taps.
+	_cta.disabled = gold < cost
 	_cta.text = (
 		UiLocale.text("meta.buy_fmt") % cost if gold >= cost
 		else UiLocale.text("meta.short_fmt") % cost

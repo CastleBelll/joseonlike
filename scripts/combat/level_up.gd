@@ -205,7 +205,8 @@ static func mechanic_text(stats: Dictionary) -> String:
 	var parts: Array[String] = []
 	match String(stats.get("mechanic", "straight")):
 		"explosion":
-			parts.append("폭발 반경 %spx" % _fmt(
+			# Player-facing copy: no "px" — engine units are dev jargon (QA-2).
+			parts.append("폭발 반경 %s" % _fmt(
 				float((stats.get("explosion", {}) as Dictionary).get("radius_px", 0.0))
 			))
 		"chain":
@@ -222,7 +223,7 @@ static func mechanic_text(stats: Dictionary) -> String:
 			])
 		"orbit":
 			var orbit: Dictionary = stats.get("orbit", {})
-			parts.append("선회 구슬 %d개 · 반경 %spx" % [
+			parts.append("선회 구슬 %d개 · 반경 %s" % [
 				int(stats.get("projectile_count", 1)),
 				_fmt(float(orbit.get("radius_px", 0.0))),
 			])
@@ -231,7 +232,7 @@ static func mechanic_text(stats: Dictionary) -> String:
 			parts.append("직선 전원 관통" if pierce >= PIERCE_ALL else "관통 %d" % pierce)
 		"ward":
 			var ward: Dictionary = stats.get("ward", {})
-			parts.append("장판 반경 %spx · %s초 지속 · 이동 %d%%" % [
+			parts.append("장판 반경 %s · %s초 지속 · 이동 %d%%" % [
 				_fmt(float(ward.get("radius_px", 0.0))),
 				_fmt(float(ward.get("duration_sec", 0.0))),
 				int(round(float(ward.get("slow_scale", 1.0)) * 100.0)),
@@ -244,7 +245,7 @@ static func mechanic_text(stats: Dictionary) -> String:
 			])
 		"shockwave":
 			var shockwave: Dictionary = stats.get("shockwave", {})
-			parts.append("파동 반경 %spx · 기절 %s초 · 넉백 %s배" % [
+			parts.append("파동 반경 %s · 기절 %s초 · 넉백 %s배" % [
 				_fmt(float(shockwave.get("radius_px", 0.0))),
 				_fmt(float(shockwave.get("stun_sec", 0.0))),
 				_fmt(float(shockwave.get("knockback_scale", 1.0))),

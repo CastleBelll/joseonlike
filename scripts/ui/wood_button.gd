@@ -6,16 +6,32 @@ extends RefCounted
 const BORDER_WIDTH := 3
 const CORNER_RADIUS := 12
 const FOCUS_RING_WIDTH := 3
+# QA-2: a disabled wood button must read as inert, not identically orange.
+const DISABLED_PLATE_TINT := Color(0.55, 0.55, 0.55)
+const DISABLED_TEXT_ALPHA := 0.75
 
 
 static func apply(button: Button) -> void:
 	for state: String in ["normal", "hover", "pressed"]:
 		button.add_theme_stylebox_override(state, UiIcons.wood_button(state))
+	button.add_theme_stylebox_override("disabled", _disabled_plate())
 	button.add_theme_stylebox_override("focus", _focus_ring())
 	for state: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
 		button.add_theme_color_override(state, UiPalette.WOOD_TEXT)
+	button.add_theme_color_override(
+		"font_disabled_color", Color(UiPalette.WOOD_TEXT, DISABLED_TEXT_ALPHA)
+	)
 	button.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
 	button.focus_mode = Control.FOCUS_ALL
+
+
+static func _disabled_plate() -> StyleBox:
+	var plate: StyleBox = UiIcons.wood_button("pressed")
+	if plate is StyleBoxTexture:
+		(plate as StyleBoxTexture).modulate_color = DISABLED_PLATE_TINT
+	elif plate is StyleBoxFlat:
+		(plate as StyleBoxFlat).bg_color = UiPalette.WOOD_PRESSED.darkened(0.35)
+	return plate
 
 
 static func _focus_ring() -> StyleBoxFlat:

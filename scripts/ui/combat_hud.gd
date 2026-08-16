@@ -173,10 +173,11 @@ func _build_corner_buttons() -> void:
 	pause.add_child(_corner_icon("pause"))
 	pause.pressed.connect(_on_pause_pressed)
 	row.add_child(pause)
-	# The info screen is a later feature; the button completes the capture's
-	# corner grammar and gets wired when that screen exists.
+	# The info screen is a later feature; the button stays hidden until that
+	# screen exists — a visible control that does nothing reads as broken (QA-2).
 	var info := _flat_button("InfoButton")
 	info.add_child(_corner_icon("info"))
+	info.visible = false
 	row.add_child(info)
 	add_child(row)
 
