@@ -19,6 +19,9 @@ const PULSE_HZ := 1.6
 var _player: Player
 var _open_radius_squared: float = 0.0
 var _phase: float = 0.0
+## One-shot latch: opened must fire exactly once per placement, even if the
+## handler ever stops releasing this node synchronously.
+var _opened: bool = false
 
 
 func place(at: Vector2, player: Player, open_radius: float) -> void:
@@ -26,11 +29,12 @@ func place(at: Vector2, player: Player, open_radius: float) -> void:
 	_player = player
 	_open_radius_squared = open_radius * open_radius
 	_phase = 0.0
+	_opened = false
 	queue_redraw()
 
 
 func _physics_process(delta: float) -> void:
-	if _player == null:
+	if _player == null or _opened:
 		return
 	_phase += delta * PULSE_HZ
 	queue_redraw()
@@ -38,6 +42,7 @@ func _physics_process(delta: float) -> void:
 		_player.global_position
 	)
 	if distance_squared <= _open_radius_squared:
+		_opened = true
 		opened.emit(self)
 
 
