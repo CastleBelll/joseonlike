@@ -139,17 +139,25 @@ static func _solid_fits(
 	return true
 
 
+## N5-5: the run's live destructible props, filled by build(). The stage wires
+## their broke signals and hands the list to the spawner so weapons can hit
+## them; broken ones stay in the list but answer alive() false.
+var breakables: Array[Breakable] = []
+
+
 ## Instantiates the generated layout: solid props become Y-sorted StaticBody2D
-## children of this node, decor becomes plain visuals under `decor_parent`.
+## children of this node (Breakable bodies when the data says so), decor
+## becomes plain visuals under `decor_parent`.
 func build(
 	catalog: Dictionary, field: Dictionary, decor_parent: Node2D, field_seed: int
 ) -> void:
 	y_sort_enabled = true
+	breakables = []
 	for placement: Dictionary in generate(catalog, field, field_seed):
 		var prop: Dictionary = catalog[placement["id"]]
 		var pos: Vector2 = placement["position"]
 		if bool(placement["solid"]):
-			var body: StaticBody2D = _make_solid(prop)
+			var body: StaticBody2D = _make_solid(String(placement["id"]), prop)
 			body.position = pos
 			add_child(body)
 		else:
@@ -158,8 +166,13 @@ func build(
 			decor_parent.add_child(visual)
 
 
-func _make_solid(prop: Dictionary) -> StaticBody2D:
-	var body := StaticBody2D.new()
+func _make_solid(prop_id: String, prop: Dictionary) -> StaticBody2D:
+	var breakable_config: Dictionary = prop.get("breakable", {})
+	var body: StaticBody2D
+	if breakable_config.is_empty():
+		body = StaticBody2D.new()
+	else:
+		body = Breakable.new()
 	body.collision_layer = LAYER_OBSTACLE
 	body.collision_mask = 0
 	var box: Array = prop.get("collision", [])
@@ -172,6 +185,11 @@ func _make_solid(prop: Dictionary) -> StaticBody2D:
 	)
 	body.add_child(shape)
 	body.add_child(_make_visual(prop))
+	if body is Breakable:
+		(body as Breakable).arm(
+			prop_id, float(breakable_config.get("hp", 1.0)), spacing_radius(prop), shape
+		)
+		breakables.append(body)
 	return body
 
 

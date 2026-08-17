@@ -18,6 +18,11 @@ const MONSTERS_PATH := "res://data/monsters.json"
 const EFFECTS_PATH := "res://data/effects.json"
 const STAGE_ID := "bamboo_forest"
 
+## N5-5: the field's destructible props, set by the stage after StageField
+## builds. The spawner is the target registry every weapon already holds, so
+## projectiles/arcs/orbs read breakables from here — enemies never touch them.
+var breakables: Array[Breakable] = []
+
 var _monsters: Dictionary = {}
 var _spawning: Dictionary = {}
 var _feedback: Dictionary = {}

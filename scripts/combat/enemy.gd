@@ -54,6 +54,8 @@ static func derive_elite_stats(base: Dictionary, elite: Dictionary) -> Dictionar
 	derived["size_scale"] = size_mult
 	derived["name_ko"] = String(elite.get("name_ko", base.get("name_ko", "")))
 	derived["name_en"] = String(elite.get("name_en", base.get("name_en", "")))
+	# N5-5: elites drop reward chests and resist the nuke pickup's full damage.
+	derived["is_elite"] = true
 	return derived
 
 var monster_id := ""
@@ -66,6 +68,8 @@ var contact_radius: float = 0.0
 var xp_drop: int = 0
 var gold_drop: int = 0
 var is_boss: bool = false
+## N5-5: set for "elite_of" variants (derive_elite_stats) — chest drop + nuke cap.
+var is_elite: bool = false
 ## N3-14: written by the spawner every physics frame (already weighted);
 ## the boss always keeps ZERO so trash never shoves it around.
 var separation_push := Vector2.ZERO
@@ -164,6 +168,7 @@ func setup(
 	xp_drop = int(stats.get("xp_drop", 0))
 	gold_drop = int(stats.get("gold_drop", 0))
 	is_boss = String(stats.get("behaviour", "")) == "boss"
+	is_elite = bool(stats.get("is_elite", false))
 	_size_scale = float(stats.get("size_scale", 1.0))
 	_flash_left = 0.0
 	_flash_sec = float(feedback.get("enemy_flash_sec", 0.0))

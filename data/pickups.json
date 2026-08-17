@@ -1,0 +1,33 @@
+{
+  "break_table": [
+    {"kind": "nothing", "weight": 50.0},
+    {"kind": "gold", "weight": 38.0},
+    {"kind": "health", "weight": 6.0},
+    {"kind": "nuke", "weight": 3.0},
+    {"kind": "magnet", "weight": 3.0}
+  ],
+  "_rules": {
+    "plain_share_min": 0.8
+  },
+  "gold": {
+    "amount": 12
+  },
+  "health": {
+    "hp_ratio": 0.25,
+    "full_hp_gold": 10
+  },
+  "nuke": {
+    "damage": 999.0,
+    "elite_boss_damage": 150.0,
+    "ring_radius_px": 320.0
+  },
+  "magnet": {
+    "ring_radius_px": 120.0
+  },
+  "chest": {
+    "open_radius_px": 26.0,
+    "weights": {"1": 70.0, "3": 22.0, "5": 8.0},
+    "luck_shift": {"1": 0.0, "3": 4.0, "5": 10.0},
+    "fallback_gold": 40
+  }
+}

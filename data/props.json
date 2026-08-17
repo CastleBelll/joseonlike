@@ -17,7 +17,8 @@
       "weight": 5.0,
       "shape": "rect",
       "texture": "res://asset/stages/bamboo_forest/props/bamboo_clump_small.png",
-      "placeholder": "bamboo"
+      "placeholder": "bamboo",
+      "breakable": {"hp": 25.0}
     },
     "bamboo_clump_large": {
       "size": [40.0, 56.0],
@@ -35,7 +36,8 @@
       "weight": 3.0,
       "shape": "round",
       "texture": "res://asset/stages/bamboo_forest/props/rock_small.png",
-      "placeholder": "rock"
+      "placeholder": "rock",
+      "breakable": {"hp": 45.0}
     },
     "rock_large": {
       "size": [32.0, 26.0],
@@ -61,7 +63,8 @@
       "weight": 1.5,
       "shape": "rect",
       "texture": "res://asset/stages/bamboo_forest/props/fallen_log.png",
-      "placeholder": "log"
+      "placeholder": "log",
+      "breakable": {"hp": 60.0}
     },
     "stone_lantern": {
       "size": [20.0, 36.0],

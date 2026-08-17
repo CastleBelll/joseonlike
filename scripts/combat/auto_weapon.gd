@@ -307,6 +307,17 @@ func _fire_arc(enemies: Array[Enemy], positions: Array[Vector2], index: int) -> 
 	_arc_flash.flash(
 		origin, aim, arc_rad, _range, _tint(), WeaponEffects.value("arc_sweep_sec")
 	)
+	# N5-5: the swing also smashes destructible props caught in the sector.
+	var break_positions: Array[Vector2] = []
+	var break_radii: Array[float] = []
+	for breakable: Breakable in _spawner.breakables:
+		break_positions.append(breakable.global_position)
+		break_radii.append(breakable.hit_radius)
+	for i: int in WeaponMath.arc_hits(
+		origin, aim, arc_rad, _range, break_positions, break_radii
+	):
+		if _spawner.breakables[i].alive():
+			_spawner.breakables[i].take_weapon_damage(_damage)
 	return true
 
 
@@ -328,6 +339,19 @@ func _process_orbit(delta: float) -> void:
 		for orb: Node2D in _orbs:
 			if orb.global_position.distance_squared_to(enemy.global_position) <= reach * reach:
 				_caught.append(enemy)
+				break
+	# N5-5: orbs grind destructible props too, on the same per-target re-hit
+	# clock enemies use (_orb_recent keys are instance ids, shared namespace).
+	for breakable: Breakable in _spawner.breakables:
+		if not breakable.alive() \
+				or float(_orb_recent.get(breakable.get_instance_id(), 0.0)) > _orbit_elapsed:
+			continue
+		var break_reach: float = breakable.hit_radius + _orb_radius
+		for orb: Node2D in _orbs:
+			if orb.global_position.distance_squared_to(breakable.global_position) \
+					<= break_reach * break_reach:
+				_orb_recent[breakable.get_instance_id()] = _orbit_elapsed + _cooldown
+				breakable.take_weapon_damage(_damage)
 				break
 	var status: Dictionary = _stats.get("on_hit_status", {})
 	for enemy: Enemy in _caught:
@@ -412,6 +436,11 @@ func _pulse_shockwave() -> void:
 		hit_landed.emit(_damage, hit_at, boss_hit)
 		if burst > 0.0:
 			hit_landed.emit(burst, hit_at, boss_hit)
+	# N5-5: the pulse cracks destructible props inside its radius as well.
+	for breakable: Breakable in _spawner.breakables:
+		if breakable.alive() and origin.distance_squared_to(breakable.global_position) \
+				<= (radius + breakable.hit_radius) * (radius + breakable.hit_radius):
+			breakable.take_weapon_damage(_damage)
 
 
 ## Shared on-screen targeting (N3-15) for non-projectile placements.

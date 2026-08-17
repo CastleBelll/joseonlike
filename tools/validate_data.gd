@@ -46,7 +46,8 @@ const PROP_FIELD_FIELDS: Array[String] = [
 	"min_gap_px", "spawn_clear_radius_px", "max_attempts_per_prop"
 ]
 const PROP_ALLOWED_KEYS: Array[String] = [
-	"size", "collision", "solid", "weight", "shape", "texture", "placeholder"
+	"size", "collision", "solid", "weight", "shape", "texture", "placeholder",
+	"breakable"
 ]
 const PROP_SHAPES: Array[String] = ["rect", "round"]
 # N4-1 loot contract (data/loot.json, drop_tables.json, weapon_mods.json).
@@ -186,6 +187,7 @@ func _check_combat_cross_references() -> void:
 	_check_props()
 	_check_loot(monsters, weapons, stages)
 	_check_meta_tree()
+	_check_pickups(monsters, stages)
 
 
 ## N7-1 명부수 tree: the full MetaTree data contract (stat vocabulary, costs,
@@ -650,6 +652,14 @@ func _check_props() -> void:
 			_fail(label + ".weight missing or not positive")
 		if String(prop.get("shape", "")) not in PROP_SHAPES:
 			_fail(label + ".shape must be one of " + str(PROP_SHAPES))
+		# N5-5: only SOLID props may be breakable (decor never breaks), and a
+		# breakable block must carry a positive hp.
+		if prop.has("breakable"):
+			if not bool(prop.get("solid", false)):
+				_fail(label + " is decor and must not be breakable")
+			if prop.get("breakable") is not Dictionary \
+					or float((prop.get("breakable") as Dictionary).get("hp", 0.0)) <= 0.0:
+				_fail(label + ".breakable.hp missing or not positive")
 		if not String(prop.get("texture", "")).begins_with("res://"):
 			_fail(label + ".texture must be a res:// path")
 		if not StageField.PLACEHOLDER_COLORS.has(String(prop.get("placeholder", ""))):
@@ -714,6 +724,39 @@ func _check_sprite_effects(sprites: Dictionary) -> void:
 		var file: String = String(entry.get("file", ""))
 		if not FileAccess.file_exists(file):
 			_fail("effects.sprite_effects.%s file missing: %s" % [effect_id, file])
+
+
+## N5-5 pickup/chest contract: the pure Pickups.data_issues rules (table
+## completeness, plain-share floor, chest weight escalation, luck bend bounds
+## at the meta tree's luck cap) plus the cross-file nuke cap — the capped nuke
+## damage must never one-shot any boss or any derived elite.
+func _check_pickups(monsters: Dictionary, stages: Dictionary) -> void:
+	var pickups: Dictionary = _load(DATA_DIR + "/pickups.json")
+	var meta: Dictionary = _load(DATA_DIR + "/meta_tree.json")
+	var luck_cap: float = float((
+		(meta.get("config", {}) as Dictionary).get("stat_caps", {}) as Dictionary
+	).get("luck", 0.0))
+	for issue: String in Pickups.data_issues(pickups, luck_cap):
+		_fail("pickups " + issue)
+	var capped: float = float((pickups.get("nuke", {}) as Dictionary).get("elite_boss_damage", 0.0))
+	var boss_ids: Array[String] = []
+	for stage_id: String in stages:
+		boss_ids.append(String((stages[stage_id] as Dictionary).get("boss_id", "")))
+	for monster_id: String in monsters:
+		var monster: Dictionary = monsters[monster_id]
+		var hp: float = 0.0
+		if monster.has("elite_of") and monsters.has(monster.get("elite_of", "")):
+			hp = float(Enemy.derive_elite_stats(
+				monsters[monster.get("elite_of", "")], monster
+			).get("hp", 0.0))
+		elif boss_ids.has(monster_id):
+			hp = float(monster.get("hp", 0.0))
+		else:
+			continue
+		if capped >= hp:
+			_fail("pickups nuke.elite_boss_damage %.0f one-shots monsters.%s (hp %.0f)" % [
+				capped, monster_id, hp
+			])
 
 
 func _require_positive_numbers(entry: Dictionary, fields: Array[String], label: String) -> void:

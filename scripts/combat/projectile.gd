@@ -128,6 +128,17 @@ func _physics_process(delta: float) -> void:
 			rotation = direction.angle() + PI / 2.0
 	global_position += _velocity * delta
 	_trail.record(global_position, delta)
+	# N5-5: a shot passing over a destructible prop chips it. Free of pierce
+	# accounting on purpose — props never eat a shot meant for a monster — and
+	# gated by _struck so one flight damages each prop once.
+	for breakable: Breakable in _spawner.breakables:
+		if not breakable.alive() or _struck.has(breakable.get_instance_id()):
+			continue
+		var break_reach: float = breakable.hit_radius + HIT_RADIUS
+		if global_position.distance_squared_to(breakable.global_position) \
+				<= break_reach * break_reach:
+			_struck[breakable.get_instance_id()] = true
+			breakable.take_weapon_damage(_damage)
 	# Collect overlaps first: striking mutates the spawner's active list, so
 	# never kill while iterating it.
 	_touched.clear()
