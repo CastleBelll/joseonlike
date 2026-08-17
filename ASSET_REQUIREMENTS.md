@@ -171,6 +171,35 @@ Fallback:  IN USE — the entry's real art self-modulated to INK reads as a
            polish the ??? rows.
 ```
 
+```
+[MISSING] reward_chest (N5-5)
+Size:      ~20x16px logical in-world sprite (closed + open frame; a short
+           3-4 frame open burst is a plus)
+Used by:   elite reward chest entity (scripts/combat/chest.gd)
+Fallback:  IN USE — code-drawn wood box with gold clasp + pulsing gold
+           glow. Reads, but a real chest sprite is the payoff moment and
+           deserves art.
+```
+
+```
+[MISSING] pickup_set (N5-5)
+Size:      ~14px logical in-world sprites, 4 members: coin (엽전), health
+           (medicine pouch/herb), nuke (talisman bomb/spark), magnet
+           (lodestone)
+Used by:   prop-break pickups (scripts/combat/pickup.gd)
+Fallback:  IN USE — code-drawn glyph discs (gold coin w/ square hole,
+           green cross, vermilion burst star, blue horseshoe). Shape+color
+           per DESIGN.md §2.
+```
+
+```
+[NICE-TO-HAVE] prop_break_frames (N5-5)
+Size:      per breakable prop (bamboo_clump_small / rock_small /
+           fallen_log), 2-3 shatter frames or a damaged variant
+Used by:   Breakable props (scripts/combat/breakable.gd)
+Fallback:  IN USE — hit flash + pooled death-puff ring on shatter.
+```
+
 ## Anticipated (not yet needed — do not pre-produce)
 
 These become `[MISSING]` entries only when the feature that needs them is actually

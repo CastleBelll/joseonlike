@@ -2375,3 +2375,107 @@ runs exercised loot auto-collect, mod swap (meta-max batch performed
 evolutions), replaced-weapon exclusion (0 violations), meta effects
 (luck visible in META applied), bestiary recording, boss, result and
 autosave paths with no new errors.
+
+# N5-5 — Destructibles, pickups, elite chests (2026-08-17)
+
+**Owner direction.** Vampire Survivors idiom: breakable field objects that
+can spew a pickup (gold / health / nuke / magnet), and elite kills dropping
+a reward chest that grants 1 / 3 / 5 level-up-grade rewards by luck.
+
+## Destructibles (data/props.json "breakable")
+
+| Prop | HP | Notes |
+|---|---|---|
+| bamboo_clump_small | 25 | commonest solid (weight 5) |
+| rock_small | 45 | |
+| fallen_log | 60 | |
+
+~64% of the 60 scattered solids are breakable per field. They block
+movement until broken (StaticBody2D unchanged), take PLAYER weapon damage
+only — projectiles in flight, 석장 arc, 혼불 orbs, 진언 pulse — and shatter
+with the pooled death-puff. Enemies cannot damage them (deliberate: their
+only attack is contact damage on the player, so every shatter is the
+player's doing). Decor is never breakable (validator FAILs it).
+
+## Break table (data/pickups.json)
+
+| Kind | Weight | Measured 10k (seed 20260817) |
+|---|---|---|
+| nothing | 50 | 49.4% |
+| gold (+12냥) | 38 | 38.0% |
+| health (25% max HP) | 6 | 5.8% |
+| nuke | 3 | 3.6% |
+| magnet | 3 | 3.2% |
+
+nothing+gold = 88% ≥ the 80% floor in `_rules.plain_share_min`, which
+validate_data enforces — a table that turns the field into a vending
+machine FAILs (unit-proven). Pickups spawn as world entities on the XP-orb
+magnet/collect path, never instant grants.
+
+- **HEALTH at full HP converts to 10냥** (collection-time check, so getting
+  hit on the way there still heals). Proven: gold 12 → 22 in pickup_check.
+- **NUKE**: 999 to every on-screen trash enemy through the normal damage
+  pipeline (kills pay XP/gold/loot as usual); elites and the boss take the
+  data cap 150 (`nuke.elite_boss_damage`). validate_data FAILs a cap that
+  would one-shot any boss or derived elite. Runtime proof: boss 2400→2250,
+  elite 510→360, both alive. Effect: VERMILION wave ring + screen flash
+  (벽사진 vocabulary).
+- **MAGNET**: every uncollected orb/material/pickup flies in (attract_now);
+  empty field → ring + 자석! label, no crash, chest not pulled (walk-over).
+
+## Elite chests (data/pickups.json "chest")
+
+Every elite death drops a pooled chest (bamboo_forest schedules 6 elites:
+1@120s, 2@180s, 3@210s). Walk-over opens it; opening freezes time and
+presents ONE row card per reward — a 5-reward chest costs exactly 5 taps.
+Rewards are drawn one at a time through the SAME LevelUp pool machinery
+(candidates + mod_candidates + assemble), so every chest card obeys the
+level-up rules: no mod-result weapons raw, replaced weapons excluded, and
+each draw is legal against the state the previous reward produced. A dry
+pool (everything maxed) pays 40냥 per missing reward.
+
+| Count | Base weight | luck_shift | 10k @ luck 0 | 10k @ luck 0.5 (cap) |
+|---|---|---|---|---|
+| 1 | 70 | 0 | 69.5% | 38.5% |
+| 3 | 22 | 4 | 22.8% | 35.4% |
+| 5 | 8 | 10 | 7.8% | 26.1% |
+
+Luck bend: weight × (1 + luck × shift) — the 천운 stat (cap 0.5) never
+touches the 1-count weight, so it only pushes toward 3/5. validate_data
+FAILs weights that do not strictly decrease 1→3→5, a shift that does not
+favor 5, and any bend that would make the 5-count ≥50% at capped luck.
+
+Edge rules (all deliberate): a chest opened after the run ended is
+discarded (run already banked; the game is never left paused — the popup
+queue drops dead screens when an outcome exists); a death and a chest open
+on the same frame resolve to the result screen; breaking a prop while a
+popup is open cannot happen (physics paused).
+
+## Measured (playtest, seeded)
+
+5 headless runs (--runs=5 seed 100, returning zero-meta profile): breaks
+0/5/6/9/12 per run (avg 6.4); rolled kinds across 32 breaks: nothing 16,
+gold 8, health 4, magnet 3, nuke 1. Chests opened 0/2/3/4/6 per run
+(avg 3.0, bot pathing — 6 spawn); counts rolled: ten 1s, four 3s, one 5.
+
+Rendered 1x run (seed 7): victory 262.7s (boss killed), 5 breaks, 5 chests
+opened [1,5,1,3,5], **surge fps min 59 avg 60 over 1624 samples** — the
+N3-18/N4-3 baseline exactly.
+
+## Screenshots (captures/n5-5/)
+
+- prop shatter + pickup: pickup_check_pickup_break.png
+- gold / health / full-HP-convert / nuke / magnet:
+  pickup_check_pickup_gold.png, _health.png, _health_full.png, _nuke.png,
+  _magnet.png
+- chest sequence: pickup_check_chest_1_first.png (single),
+  pickup_check_chest_5_first.png (1/5), pickup_check_chest_5_mid.png (2/5)
+- nuke cap probe frame: pickup_check_nuke_boss_cap.png
+
+## Regression
+
+310/310 unit tests PASS, validate_data PASS (15 files), headless import
+clean. Seeded runs exercised props blocking (unchanged collision), ground
+rendering, separation, targeting, loot auto-collect, level-up/mod cards
+(0 evolution-leak violations), meta effects, bestiary recording, boss,
+result and autosave with no new errors.

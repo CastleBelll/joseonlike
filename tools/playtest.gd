@@ -450,7 +450,8 @@ func _steer() -> void:
 	var seek := Vector2.ZERO
 	var best: float = ORB_RADIUS
 	for child: Node in _stage.get_children():
-		if child is XpOrb and (child as Node2D).visible:
+		# N5-5: chests count as seek targets too — walking over one opens it.
+		if (child is XpOrb or child is Chest) and (child as Node2D).visible:
 			var dist: float = pos.distance_to((child as Node2D).global_position)
 			if dist < best:
 				best = dist
@@ -668,6 +669,14 @@ func _finish() -> void:
 		_peak_live, _overlap_sum / float(maxi(_overlap_samples, 1)), _overlap_samples
 	])
 	print("PLAYTEST kills: %d gold: %d" % [_stage._kills, _stage._gold])
+	# N5-5 evidence: prop breaks by rolled kind, and each opened chest's count.
+	var breaks_total: int = 0
+	for kind: String in _stage._break_stats:
+		breaks_total += int(_stage._break_stats[kind])
+	print("PLAYTEST breaks: %d %s" % [breaks_total, str(_stage._break_stats)])
+	print("PLAYTEST chests opened: %d counts: %s" % [
+		_stage._chest_counts.size(), str(_stage._chest_counts)
+	])
 	print("PLAYTEST first level-up: %.1fs (idle=%s)" % [_first_level_up_at, str(_idle)])
 	print("PLAYTEST damage taken 0-%.0fs: %.1f (hp now %.1f/%.1f)" % [
 		DAMAGE_WINDOW_SEC, _damage_taken_open, _player.hp, _player.hp_max
