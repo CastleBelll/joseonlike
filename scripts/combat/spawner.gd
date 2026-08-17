@@ -155,8 +155,8 @@ func _run_waves() -> void:
 	var live_cap: int = int(_spawning.get("live_cap", 0))
 	for wave: Dictionary in _running_waves:
 		while int(wave["remaining"]) > 0 and _elapsed >= float(wave["next_at"]):
-			if _active.size() >= live_cap:
-				return  # cap reached; waves resume as enemies die or despawn
+			if _active.size() >= live_cap and not _evict_farthest_offscreen():
+				return  # visible field genuinely full; waves resume on deaths
 			_spawn_one(String(wave["monster_id"]))
 			wave["remaining"] = int(wave["remaining"]) - 1
 			wave["next_at"] = float(wave["next_at"]) + float(wave["interval"])
@@ -208,6 +208,35 @@ func _spawn_one(monster_id: String) -> Enemy:
 	)
 	_active.append(enemy)
 	return enemy
+
+
+## N4-8: a saturated field must not freeze the wave schedule — a zero-dps
+## evasion run used to pin live_cap slow enemies and silently block the
+## surge/escort/enrage waves (the last pure-evasion hole). A due spawn on a
+## full field recycles the farthest enemy already outside the spawn view rect
+## (where new spawns appear anyway), so the swap is never visible on screen;
+## a fully on-screen field still blocks the spawn. Live count never exceeds
+## the cap, so the fps budget the cap protects is untouched.
+func _evict_farthest_offscreen() -> bool:
+	var view: Rect2 = CombatMath.view_rect(
+		_player.global_position, get_viewport_rect().size,
+		float(_spawning.get("spawn_margin_px", 0.0))
+	)
+	var farthest: Enemy = null
+	var farthest_distance: float = 0.0
+	for enemy: Enemy in _active:
+		if enemy.is_boss or view.has_point(enemy.global_position):
+			continue
+		var distance: float = _player.global_position.distance_squared_to(
+			enemy.global_position
+		)
+		if distance > farthest_distance:
+			farthest_distance = distance
+			farthest = enemy
+	if farthest == null:
+		return false
+	_release(farthest)
+	return true
 
 
 func _despawn_far_enemies() -> void:

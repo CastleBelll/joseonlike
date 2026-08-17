@@ -320,95 +320,150 @@ func _check_weapon_mechanics(weapons: Dictionary) -> void:
 			continue
 		var weapon: Dictionary = weapons[weapon_id]
 		var label: String = "weapons." + weapon_id
-		var mechanic: String = String(weapon.get("mechanic", "straight"))
-		if mechanic not in LevelUp.SUPPORTED_MECHANICS:
-			_fail("%s.mechanic '%s' not implemented by the runtime" % [label, mechanic])
+		_check_weapon_milestones(weapon, label)
+		_check_mechanic_blocks(weapon, label)
+		# N4-8: the merged milestone stats at max level must satisfy the same
+		# mechanic contract — a delta cannot push falloff past 1, an arc past
+		# 360°, or a seal below its floor.
+		if weapon.has("milestones"):
+			_check_mechanic_blocks(
+				LevelUp.stats_at_level(weapon, int(weapon.get("max_level", 1))),
+				label + "@max"
+			)
+
+
+func _check_mechanic_blocks(weapon: Dictionary, label: String) -> void:
+	var mechanic: String = String(weapon.get("mechanic", "straight"))
+	if mechanic not in LevelUp.SUPPORTED_MECHANICS:
+		_fail("%s.mechanic '%s' not implemented by the runtime" % [label, mechanic])
+		return
+	# Only entries that declare a mechanic promise the runtime can fire
+	# them; legacy speed-0 melee data (환도 family) stays exempt until its
+	# character ships.
+	if weapon.has("mechanic") and mechanic in LevelUp.PROJECTILE_MECHANICS \
+			and float(weapon.get("speed", 0.0)) <= 0.0:
+		_fail(label + " projectile mechanic needs a positive speed")
+	match mechanic:
+		"pierce":
+			if int(weapon.get("pierce", 0)) < 1:
+				_fail(label + ".pierce must be at least 1 for the pierce mechanic")
+			# N4-3: optional damage retention per pierced enemy.
+			if weapon.has("pierce_retention"):
+				var retention: float = float(weapon.get("pierce_retention", 0.0))
+				if retention <= 0.0 or retention > 1.0:
+					_fail(label + ".pierce_retention must be in (0, 1]")
+		"explosion":
+			_require_positive_numbers(
+				weapon.get("explosion", {}), ["radius_px"], label + ".explosion"
+			)
+			# N4-3: optional damage share kept at the blast edge.
+			var explosion: Dictionary = weapon.get("explosion", {})
+			if explosion.has("edge_falloff"):
+				var edge: float = float(explosion.get("edge_falloff", 0.0))
+				if edge <= 0.0 or edge > 1.0:
+					_fail(label + ".explosion.edge_falloff must be in (0, 1]")
+		"chain":
+			var chain: Dictionary = weapon.get("chain", {})
+			_require_positive_numbers(chain, ["jumps", "range_px"], label + ".chain")
+			var falloff: float = float(chain.get("falloff", 0.0))
+			if falloff <= 0.0 or falloff > 1.0:
+				_fail(label + ".chain.falloff must be in (0, 1]")
+		"melee_arc":
+			var arc: Dictionary = weapon.get("arc", {})
+			_require_positive_numbers(arc, ["knockback_scale"], label + ".arc")
+			var angle: float = float(arc.get("angle_deg", 0.0))
+			if angle <= 0.0 or angle > 360.0:
+				_fail(label + ".arc.angle_deg must be in (0, 360]")
+		"orbit":
+			_require_positive_numbers(
+				weapon.get("orbit", {}), ["radius_px", "speed_deg_s"], label + ".orbit"
+			)
+			# N4-3: optional orb hit/visual radius (falls back to the code default).
+			if (weapon.get("orbit", {}) as Dictionary).has("orb_radius_px"):
+				_require_positive_numbers(
+					weapon.get("orbit", {}), ["orb_radius_px"], label + ".orbit"
+				)
+			if int(weapon.get("projectile_count", 0)) < 1:
+				_fail(label + ".projectile_count must be at least 1 for orbit")
+		"ward":
+			var ward: Dictionary = weapon.get("ward", {})
+			_require_positive_numbers(
+				ward, ["radius_px", "duration_sec", "tick_sec"], label + ".ward"
+			)
+			var ward_slow: float = float(ward.get("slow_scale", 0.0))
+			if ward_slow <= 0.0 or ward_slow >= 1.0:
+				_fail(label + ".ward.slow_scale must be in (0, 1)")
+		"summon":
+			_require_positive_numbers(
+				weapon.get("summon", {}),
+				["lifetime_sec", "speed", "leash_px", "attack_cooldown_sec"],
+				label + ".summon"
+			)
+		"shockwave":
+			_require_positive_numbers(
+				weapon.get("shockwave", {}),
+				["radius_px", "stun_sec", "knockback_scale"],
+				label + ".shockwave"
+			)
+		"curse":
+			# The curse mechanic IS its status — without it the weapon
+			# degenerates to a plain straight throw.
+			if String(
+				(weapon.get("on_hit_status", {}) as Dictionary).get("id", "")
+			) != "curse":
+				_fail(label + " curse mechanic needs on_hit_status.id 'curse'")
+	_check_weapon_status(weapon, label)
+	if weapon.has("on_hit_seal"):
+		var seal: Dictionary = weapon.get("on_hit_seal", {})
+		_require_positive_numbers(seal, ["burst_damage_scale"], label + ".on_hit_seal")
+		if int(seal.get("burst_at", 0)) < 2:
+			_fail(label + ".on_hit_seal.burst_at must be at least 2")
+	if weapon.has("lifesteal"):
+		var lifesteal: float = float(weapon.get("lifesteal", 0.0))
+		if lifesteal <= 0.0 or lifesteal > 1.0:
+			_fail(label + ".lifesteal must be in (0, 1]")
+
+
+## N4-8 milestone growth contract: every 도사 (spiritual) weapon must define
+## qualitative milestones — at least one below max level and one at max — and
+## every delta path must be in LevelUp.MILESTONE_LABELS (so the card can
+## always describe it) and numeric. damage/cooldown_sec belong to per_level,
+## never to a milestone.
+func _check_weapon_milestones(weapon: Dictionary, label: String) -> void:
+	var max_level: int = int(weapon.get("max_level", 1))
+	var milestones: Dictionary = weapon.get("milestones", {})
+	if String(weapon.get("category", "")) == "spiritual":
+		var has_mid: bool = false
+		var has_max: bool = false
+		for key: String in milestones:
+			if int(key) == max_level:
+				has_max = true
+			elif int(key) < max_level:
+				has_mid = true
+		if not has_mid or not has_max:
+			_fail(label + ".milestones must define one below max_level and one at it")
+	for key: String in milestones:
+		if not key.is_valid_int() or int(key) < 2 or int(key) > max_level:
+			_fail("%s.milestones key '%s' must be an int in [2, max_level]" % [label, key])
 			continue
-		# Only entries that declare a mechanic promise the runtime can fire
-		# them; legacy speed-0 melee data (환도 family) stays exempt until its
-		# character ships.
-		if weapon.has("mechanic") and mechanic in LevelUp.PROJECTILE_MECHANICS \
-				and float(weapon.get("speed", 0.0)) <= 0.0:
-			_fail(label + " projectile mechanic needs a positive speed")
-		match mechanic:
-			"pierce":
-				if int(weapon.get("pierce", 0)) < 1:
-					_fail(label + ".pierce must be at least 1 for the pierce mechanic")
-				# N4-3: optional damage retention per pierced enemy.
-				if weapon.has("pierce_retention"):
-					var retention: float = float(weapon.get("pierce_retention", 0.0))
-					if retention <= 0.0 or retention > 1.0:
-						_fail(label + ".pierce_retention must be in (0, 1]")
-			"explosion":
-				_require_positive_numbers(
-					weapon.get("explosion", {}), ["radius_px"], label + ".explosion"
-				)
-				# N4-3: optional damage share kept at the blast edge.
-				var explosion: Dictionary = weapon.get("explosion", {})
-				if explosion.has("edge_falloff"):
-					var edge: float = float(explosion.get("edge_falloff", 0.0))
-					if edge <= 0.0 or edge > 1.0:
-						_fail(label + ".explosion.edge_falloff must be in (0, 1]")
-			"chain":
-				var chain: Dictionary = weapon.get("chain", {})
-				_require_positive_numbers(chain, ["jumps", "range_px"], label + ".chain")
-				var falloff: float = float(chain.get("falloff", 0.0))
-				if falloff <= 0.0 or falloff > 1.0:
-					_fail(label + ".chain.falloff must be in (0, 1]")
-			"melee_arc":
-				var arc: Dictionary = weapon.get("arc", {})
-				_require_positive_numbers(arc, ["knockback_scale"], label + ".arc")
-				var angle: float = float(arc.get("angle_deg", 0.0))
-				if angle <= 0.0 or angle > 360.0:
-					_fail(label + ".arc.angle_deg must be in (0, 360]")
-			"orbit":
-				_require_positive_numbers(
-					weapon.get("orbit", {}), ["radius_px", "speed_deg_s"], label + ".orbit"
-				)
-				# N4-3: optional orb hit/visual radius (falls back to the code default).
-				if (weapon.get("orbit", {}) as Dictionary).has("orb_radius_px"):
-					_require_positive_numbers(
-						weapon.get("orbit", {}), ["orb_radius_px"], label + ".orbit"
-					)
-				if int(weapon.get("projectile_count", 0)) < 1:
-					_fail(label + ".projectile_count must be at least 1 for orbit")
-			"ward":
-				var ward: Dictionary = weapon.get("ward", {})
-				_require_positive_numbers(
-					ward, ["radius_px", "duration_sec", "tick_sec"], label + ".ward"
-				)
-				var ward_slow: float = float(ward.get("slow_scale", 0.0))
-				if ward_slow <= 0.0 or ward_slow >= 1.0:
-					_fail(label + ".ward.slow_scale must be in (0, 1)")
-			"summon":
-				_require_positive_numbers(
-					weapon.get("summon", {}),
-					["lifetime_sec", "speed", "leash_px", "attack_cooldown_sec"],
-					label + ".summon"
-				)
-			"shockwave":
-				_require_positive_numbers(
-					weapon.get("shockwave", {}),
-					["radius_px", "stun_sec", "knockback_scale"],
-					label + ".shockwave"
-				)
-			"curse":
-				# The curse mechanic IS its status — without it the weapon
-				# degenerates to a plain straight throw.
-				if String(
-					(weapon.get("on_hit_status", {}) as Dictionary).get("id", "")
-				) != "curse":
-					_fail(label + " curse mechanic needs on_hit_status.id 'curse'")
-		_check_weapon_status(weapon, label)
-		if weapon.has("on_hit_seal"):
-			var seal: Dictionary = weapon.get("on_hit_seal", {})
-			_require_positive_numbers(seal, ["burst_damage_scale"], label + ".on_hit_seal")
-			if int(seal.get("burst_at", 0)) < 2:
-				_fail(label + ".on_hit_seal.burst_at must be at least 2")
-		if weapon.has("lifesteal"):
-			var lifesteal: float = float(weapon.get("lifesteal", 0.0))
-			if lifesteal <= 0.0 or lifesteal > 1.0:
-				_fail(label + ".lifesteal must be in (0, 1]")
+		var delta: Variant = milestones[key]
+		if delta is not Dictionary or (delta as Dictionary).is_empty():
+			_fail("%s.milestones.%s must be a non-empty object" % [label, key])
+			continue
+		_check_milestone_delta(delta, "", "%s.milestones.%s" % [label, key])
+
+
+func _check_milestone_delta(delta: Dictionary, path: String, label: String) -> void:
+	for field: String in delta:
+		var full: String = field if path.is_empty() else path + "." + field
+		if delta[field] is Dictionary:
+			_check_milestone_delta(delta[field] as Dictionary, full, label)
+			continue
+		if delta[field] is not float and delta[field] is not int:
+			_fail("%s.%s must be a number" % [label, full])
+			continue
+		if not LevelUp.MILESTONE_LABELS.has(full):
+			_fail("%s.%s not a known milestone field" % [label, full])
 
 
 func _check_weapon_status(weapon: Dictionary, label: String) -> void:
@@ -444,6 +499,10 @@ func _check_weapon_targeting(weapons: Dictionary) -> void:
 	var targeting: Dictionary = weapons.get("_targeting", {})
 	if float(targeting.get("view_margin_px", 0.0)) <= 0.0:
 		_fail("weapons._targeting.view_margin_px missing or not positive")
+	# N4-8 multishot fan: optional, but a declared spread must be positive.
+	if targeting.has("multishot_spread_deg") \
+			and float(targeting.get("multishot_spread_deg", 0.0)) <= 0.0:
+		_fail("weapons._targeting.multishot_spread_deg must be positive")
 	for weapon_id: String in weapons:
 		if weapon_id.begins_with("_"):
 			continue

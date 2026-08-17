@@ -34,6 +34,8 @@ const SURGE_SHOT_PATH := "user://playtest_surge.png"
 const RESULT_SHOT_PATH := "user://playtest_result.png"
 const MOD_SHOT_PATH := "user://playtest_mod_card.png"
 const MIDRUN_SHOT_PATH := "user://playtest_midrun.png"
+## N4-8: first level-up card that crosses a milestone (★ in its description).
+const MILESTONE_SHOT_PATH := "user://playtest_milestone_card.png"
 const MIDRUN_SHOT_AT_SEC := 75.0
 ## N6-1: capture the move hint before the bot's first input dismisses it.
 const HINT_SHOT_PATH := "user://playtest_move_hint.png"
@@ -93,6 +95,10 @@ var _overlap_timer: float = 0.0
 
 # N4-3 balance harness state.
 var _forced: String = ""
+## N4-8: --level=<n> starts the forced weapon at level n (with --nopick this
+## pins a run to one exact growth point for per-level measurement).
+var _start_level: int = 1
+var _milestone_shot_done: bool = false
 var _batch: bool = false
 var _batch_index: int = 0
 var _no_pick: bool = false
@@ -168,6 +174,8 @@ func _parse_args() -> void:
 				_grants.append(weapon_id)
 		elif arg.begins_with("--weapon="):
 			_forced = arg.get_slice("=", 1)
+		elif arg.begins_with("--level="):
+			_start_level = maxi(int(arg.get_slice("=", 1)), 1)
 		elif arg.begins_with("--seed="):
 			_run_seed = int(arg.get_slice("=", 1))
 		elif arg.begins_with("--speed="):
@@ -205,6 +213,9 @@ func _start_run() -> void:
 		_stage._loot_rng.seed = _run_seed + 2
 	if _forced != "":
 		_force_build(_forced)
+		if _start_level > 1:
+			_stage._owned_levels[_forced] = _start_level
+			(_stage._weapon_nodes[_forced] as AutoWeapon).set_level(_start_level)
 	# N4-4b: --grant hands the run extra weapons at start, so a surge can be
 	# load-tested with specific mechanics the picker bot might never draw.
 	for weapon_id: String in _grants:
@@ -266,6 +277,7 @@ func _reset_run_metrics() -> void:
 	_tracked_weapons = []
 	_skipped_screens = 0
 	_evo_violations = 0
+	_milestone_shot_done = false
 
 
 ## N4-3 forced build: swap the character's starting weapon for the named one
@@ -483,6 +495,18 @@ func _pick_card() -> void:
 			_evo_violations += 1
 	if mod_on_screen:
 		_mod_offers += 1
+	# N4-8: capture the first card whose description crosses a milestone —
+	# the ★ mark is LevelUp's own milestone glyph, so text and shot agree.
+	if not _milestone_shot_done:
+		for button: Button in buttons:
+			var labels: Array[Label] = []
+			for child: Node in button.get_children():
+				if child is Label:
+					labels.append(child)
+			if labels.size() >= 3 and labels[2].text.contains(LevelUp.MILESTONE_MARK):
+				_milestone_shot_done = true
+				await _capture(MILESTONE_SHOT_PATH)
+				break
 	var chosen: Button = null
 	if _forced != "":
 		chosen = _choose_forced(buttons)

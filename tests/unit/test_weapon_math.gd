@@ -323,3 +323,27 @@ func test_explosion_damage_falloff_one_stays_flat() -> bool:
 		and absf(WeaponMath.explosion_damage(10.0, 500.0, 90.0, 0.5) - 5.0) < EPSILON
 		and absf(WeaponMath.explosion_damage(10.0, 5.0, 0.0, 0.5) - 10.0) < EPSILON
 	)
+
+
+func test_fan_directions_single_shot_is_unchanged() -> bool:
+	var fan: Array[Vector2] = WeaponMath.fan_directions(Vector2.RIGHT, 1, deg_to_rad(12.0))
+	return fan.size() == 1 and fan[0].is_equal_approx(Vector2.RIGHT)
+
+
+func test_fan_directions_spread_is_symmetric_around_aim() -> bool:
+	var spread: float = deg_to_rad(10.0)
+	var fan: Array[Vector2] = WeaponMath.fan_directions(Vector2.RIGHT, 3, spread)
+	if fan.size() != 3:
+		return false
+	# Center shot stays on the aim; outer shots sit one spread either side.
+	return fan[1].is_equal_approx(Vector2.RIGHT) \
+		and absf(fan[0].angle() + spread) < EPSILON \
+		and absf(fan[2].angle() - spread) < EPSILON
+
+
+func test_fan_directions_even_count_straddles_aim() -> bool:
+	var spread: float = deg_to_rad(12.0)
+	var fan: Array[Vector2] = WeaponMath.fan_directions(Vector2.RIGHT, 2, spread)
+	return fan.size() == 2 \
+		and absf(fan[0].angle() + spread / 2.0) < EPSILON \
+		and absf(fan[1].angle() - spread / 2.0) < EPSILON

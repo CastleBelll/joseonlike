@@ -43,6 +43,43 @@ const PROJECTILE_MECHANICS: Array[String] = [
 ## At or past this pierce count the card reads "everything on the line".
 const PIERCE_ALL := 99
 
+## N4-8 milestone vocabulary: every field a weapons.json "milestones" delta
+## may touch, mapped to its card fragment. validate_data rejects any other
+## path, so a typo'd milestone fails CI instead of silently doing nothing.
+## Labels without %s cover fields whose delta is negative (a reduction the
+## player reads as a buff).
+const MILESTONE_LABELS: Dictionary = {
+	"projectile_count": "투사체 +%s",
+	"pierce": "관통 +%s",
+	"pierce_retention": "관통 피해 유지 +%s",
+	"chain.jumps": "연쇄 +%s회",
+	"chain.falloff": "도약 피해 유지 +%s",
+	"chain.range_px": "연쇄 범위 +%s",
+	"explosion.radius_px": "폭발 반경 +%s",
+	"explosion.edge_falloff": "가장자리 피해 +%s",
+	"arc.angle_deg": "원호 +%s°",
+	"arc.knockback_scale": "넉백 +%s배",
+	"orbit.speed_deg_s": "선회 속도 +%s",
+	"orbit.radius_px": "선회 반경 +%s",
+	"ward.radius_px": "장판 반경 +%s",
+	"ward.duration_sec": "장판 지속 +%s초",
+	"ward.slow_scale": "감속 강화",
+	"summon.lifetime_sec": "소환 지속 +%s초",
+	"summon.attack_cooldown_sec": "소환수 공격 가속",
+	"summon.speed": "소환수 이동 +%s",
+	"shockwave.radius_px": "파동 반경 +%s",
+	"shockwave.stun_sec": "기절 +%s초",
+	"shockwave.knockback_scale": "넉백 +%s배",
+	"on_hit_status.spread_count": "전염 +%s마리",
+	"on_hit_status.dps": "지속 피해 +%s",
+	"on_hit_status.spread_radius_px": "전파 반경 +%s",
+	"on_hit_status.duration_sec": "상태 지속 +%s초",
+	"on_hit_seal.burst_at": "봉인 폭발 조건 완화",
+}
+## Card marker for a level that crosses a milestone — the playtest harness
+## keys its screenshot off this glyph, so keep the two in sync.
+const MILESTONE_MARK := "★"
+
 
 ## Every legal choice given the current run: owned weapons below max level,
 ## unowned non-evolution weapons the AutoWeapon runtime can fire (speed > 0),
@@ -297,6 +334,56 @@ static func weapon_stat_at(stats: Dictionary, field: String, level: int) -> floa
 	return base + float(per_level.get(field, 0.0)) * float(level - 1)
 
 
+## N4-8 milestone growth: effective stats at `level` — every "milestones"
+## delta at or below the level folded in additively (numbers add, nested
+## dicts recurse). damage/cooldown_sec stay per_level's job (validated), so
+## WeaponGrade.stat_at reads the same base either way. Additive deltas
+## compose with the 명부수 branch bonuses MetaTree already folded in.
+static func stats_at_level(stats: Dictionary, level: int) -> Dictionary:
+	var milestones: Dictionary = stats.get("milestones", {})
+	if milestones.is_empty():
+		return stats
+	var result: Dictionary = stats.duplicate(true)
+	for key: String in milestones:
+		if int(key) <= level:
+			_merge_delta(result, milestones[key] as Dictionary)
+	return result
+
+
+## The single milestone delta a weapon gains AT exactly `level` (empty when
+## the level is not a milestone) — the card and screenshot hook read this.
+static func milestone_delta(stats: Dictionary, level: int) -> Dictionary:
+	return (stats.get("milestones", {}) as Dictionary).get(str(level), {})
+
+
+## Card fragment for one milestone delta, e.g. "투사체 +1 · 관통 +1".
+## Unknown paths render nothing here; validate_data already rejects them.
+static func milestone_text(delta: Dictionary, path: String = "") -> String:
+	var parts: Array[String] = []
+	for field: String in delta:
+		var full: String = field if path.is_empty() else path + "." + field
+		if delta[field] is Dictionary:
+			var nested: String = milestone_text(delta[field] as Dictionary, full)
+			if not nested.is_empty():
+				parts.append(nested)
+			continue
+		var label: String = String(MILESTONE_LABELS.get(full, ""))
+		if label.is_empty():
+			continue
+		parts.append(label % _fmt(float(delta[field])) if label.contains("%s") else label)
+	return " · ".join(parts)
+
+
+static func _merge_delta(target: Dictionary, delta: Dictionary) -> void:
+	for field: String in delta:
+		if delta[field] is Dictionary:
+			if target.get(field) is not Dictionary:
+				target[field] = {}
+			_merge_delta(target[field] as Dictionary, delta[field] as Dictionary)
+		else:
+			target[field] = float(target.get(field, 0.0)) + float(delta[field])
+
+
 static func display_name(
 	choice: Dictionary, weapons: Dictionary, passives: Dictionary
 ) -> String:
@@ -380,12 +467,16 @@ static func describe(
 			var stats: Dictionary = weapons.get(id, {})
 			var level: int = int(owned_levels.get(id, 1))
 			var grade: String = current_grade(id, weapons, owned_grades)
-			return "피해 %s→%s · 쿨다운 %s초→%s초" % [
+			var line: String = "피해 %s→%s · 쿨다운 %s초→%s초" % [
 				_fmt(WeaponGrade.stat_at(stats, "damage", level, grade, grades)),
 				_fmt(WeaponGrade.stat_at(stats, "damage", level + 1, grade, grades)),
 				_fmt(WeaponGrade.stat_at(stats, "cooldown_sec", level, grade, grades)),
 				_fmt(WeaponGrade.stat_at(stats, "cooldown_sec", level + 1, grade, grades)),
 			]
+			# N4-8: a level that crosses a milestone sells the mechanic change,
+			# not just the numbers — that IS the reason to pick this card.
+			var extra: String = milestone_text(milestone_delta(stats, level + 1))
+			return line if extra.is_empty() else "%s · %s%s" % [line, MILESTONE_MARK, extra]
 		KIND_GRADE_UP:
 			var stats: Dictionary = weapons.get(id, {})
 			var level: int = int(owned_levels.get(id, 1))

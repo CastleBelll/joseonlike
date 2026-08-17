@@ -1937,3 +1937,350 @@ wins these seeds with no meta at all (see the income table above); the
 tree shifts margins, it does not decide the run. **Watch item renewed:**
 if a future node addition pushes maxed nopick back to 0-deaths across a
 4+ seed sweep, trim survivability again before shipping the node.
+
+# N4-8 — Weapon growth curves: weak at 1, felt every level (2026-08-17)
+
+**Problem (owner direction):** N4-3 equalised weapons against each other
+over a whole run, but nobody shaped the curve WITHIN a weapon's life —
+level 1 already carried a run (measured below: a level-1 낡은 부적 won a
+full 5-minute run) and a level-up was an invisible few percent with the
+mechanic never changing. This pass reshapes every 도사 weapon's life:
+humble at level 1, a felt step every level, and MILESTONE levels where the
+mechanic itself grows.
+
+## Schema and code hooks (all growth in data)
+
+- `weapons.json` per weapon: **`milestones`** — `{"<level>": {additive
+  deltas}}`, merged cumulatively by `LevelUp.stats_at_level` (the runtime,
+  the level-up card, the validator and `tools/growth_table.gd` all use the
+  same merge). Delta paths are whitelisted in `LevelUp.MILESTONE_LABELS`;
+  validate_data rejects unknown paths, requires every spiritual weapon to
+  have one milestone below max and one at max, and re-runs the whole
+  mechanic contract on the merged stats at max level.
+- **Multishot hook**: projectile mechanics fire `projectile_count` shots
+  fanned `_targeting.multishot_spread_deg` (12°) apart
+  (`WeaponMath.fan_directions`, unit-tested). Count 1 is bit-identical to
+  the old single shot.
+- **AutoWeapon recomputes the mechanic on every `set_level`** — shot
+  config, arc, ward, summon, shockwave blocks and the orbit ring (orbs are
+  rebuilt only when the count changes).
+- Level-up cards mark a milestone level with ★ and the mechanic change
+  ("★투사체 +1"), so the moment IS visible on the card
+  (`LevelUp.describe`); the playtest harness screenshots the first ★ card.
+- Harness: `--level=<n>` starts the forced weapon at level n; with
+  `--nopick` this pins a run to one growth point.
+
+## The live_cap eviction fix (the real pure-evasion hole)
+
+The N4-3 "no-pick must be able to lose" fix worked by surge pressure — but
+a zero-dps evasion run pins `live_cap` (60) slow enemies and the spawner
+silently BLOCKED every later wave (surge, escort, enrage all never
+spawned; measured peak live 61, then nothing new). `Spawner._run_waves`
+now recycles the farthest enemy already outside the spawn view rect when a
+due spawn finds the cap full — invisible on screen, live count never
+exceeds the cap, and the danger schedule can no longer be frozen by not
+fighting. A fully on-screen field still blocks the spawn.
+
+Supporting stage retune: `soft_enrage.start_sec` 280→250 and
+`speed_mult_max` 1.45→1.6, and the 240s escort waves stretched
+(goblin interval 1.4→2.5, spirit 2.0→4.0) so the post-boss minute keeps
+spawning into the enrage ramp instead of finishing at 264s.
+
+## BEFORE (HEAD 1b27f52, model + measured)
+
+Model dps per level (damage×proj/cooldown with mechanic factors; see
+`tools/growth_table.gd` header). BEFORE curves were pure linear per_level
+— no mechanic growth at any level — so endpoints describe them fully:
+
+| weapon | L1 dmg/cd → dps | L8 dmg/cd → dps | growth L1→L8 |
+|---|---|---|---|
+| 낡은 부적 | 15.0/1.10 → 13.6 | 39.5/0.75 → 52.7 | x3.9 |
+| 화부 | 13.0/1.45 → 9.0 | 34.0/1.03 → 33.0 | x3.7 |
+| 뇌부 | 11.0/1.40 → 19.9 | 28.5/1.05 → 68.8 | x3.5 |
+| 석장 | 12.0/1.50 → 8.0 | 31.6/1.08 → 29.3 | x3.7 |
+| 혼불 | 8.0/0.90 → 26.7 | 18.5/0.55 → 100.9 | x3.8 |
+| 법검 | 10.5/1.10 → 9.5 | 27.3/0.82 → 33.3 | x3.5 |
+| 결계 | 3.0/4.00 → 4.4 | 9.3/3.30 → 15.5 | x3.5 |
+| 신장 소환 | 15.0/3.50 → 17.5 | 29.0/2.10 → 37.5 | x2.1 |
+| 진언 | 13.5/2.50 → 5.4 | 28.9/1.66 → 17.4 | x3.2 |
+| 살 | 9.0/1.60 → 5.6 | 23.0/1.18 → 19.5 | x3.5 |
+
+Mod results (BEFORE growth): 화염 부적 x3.7, 봉황 부적 x2.6, 화령부
+x3.3, 뇌정부 x3.3, 봉마검 x2.9, 귀철 석장 x3.4, 화령 혼불 x3.7, 화염
+결계 x3.1, 뇌정 신장 x2.1, 봉인 진언 x3.1, 귀살 x3.5.
+
+**headroom level1_dps / maxlevel_dps: 0.26–0.47** — the whole kit lived
+inside a x2.1–x3.9 band, all of it raw numbers, none of it mechanic.
+
+Measured (forced-build batch, seed 20260814, 8x, HEAD 1b27f52):
+
+| weapon | outcome | time_s | level | kills | damage | dps | final build |
+|---|---|---|---|---|---|---|---|
+| old_talisman | victory | 300.1 | 6 | 87 | 3729 | 12.4 | old_talisman Lv1 |
+| hwabu | defeat | 198.3 | 8 | 107 | 3856 | 19.5 | hwabu Lv2 |
+| noebu | defeat | 225.1 | 9 | 129 | 5118 | 22.7 | noebu Lv4 |
+| seokjang | defeat | 249.5 | 9 | 141 | 6302 | 25.3 | seokjang Lv3 |
+| honbul | defeat | 253.9 | 9 | 142 | 5982 | 23.6 | honbul Lv1 |
+| beopgeom | defeat | 295.9 | 7 | 133 | 5282 | 17.9 | beopgeom Lv2 |
+| gyeolgye | defeat | 224.4 | 8 | 123 | 3637 | 16.2 | gyeolgye Lv3 |
+| sinjang | victory | 300.1 | 8 | 142 | 5515 | 18.4 | sinjang Lv1 |
+| jineon | victory | 300.1 | 9 | 201 | 10265 | 34.2 | bongin_jineon Lv3 |
+| sal | defeat | 259.5 | 8 | 170 | 5638 | 21.7 | sal Lv1 |
+
+The indictment is the first row: **a weapon that never left level 1 won
+the run.** Two more level-1 builds (신장, 살) survived past 4:15.
+
+## What changed (data)
+
+Every spiritual weapon: base damage cut to ~70–77% of BEFORE, per-level
+damage step raised ~15–20% (a level-up is now +25–40% of current damage
+early), and mechanic growth moved into milestones. Cooldown curves
+unchanged. Full list of milestone levels per weapon:
+
+| weapon | L3 milestone | max (L8) milestone | other |
+|---|---|---|---|
+| 낡은 부적 | 투사체 +1 (2발 부채꼴) | 투사체 +1 (3발) | L6 관통 +1 |
+| 화부 | 폭발 반경 +20 (90→110) | 폭탄 투사체 +1 | — |
+| 뇌부 | 연쇄 +1 (3→4) | 연쇄 +2 (→6), 도약 유지 0.70→0.75 | — |
+| 석장 | 원호 +60° (160→220°) | 원호 +140° (→360° 전방위), 넉백 +0.5 | — |
+| 혼불 | 구슬 +1 (2→3) | 구슬 +1 (→5), 선회 +40°/s | L5 구슬 +1 (→4) |
+| 법검 | 검 +1 (2줄 관통) | 검 +1 (3줄), 관통 유지 0.95→1.0 | — |
+| 결계 | 반경 +20, 감속 0.6→0.5 | 지속 +1s (지속>쿨다운, 상시 장판), 반경 +15 | — |
+| 신장 소환 | 공격 0.65→0.5s, 이동 +30 | 소환 지속 +6s (11→17s) | — |
+| 진언 | 파동 반경 +25, 기절 +0.3s | 반경 +35 (→190), 넉백 +0.8 | — |
+| 살 | 전염 +1 (3→4), 전파 반경 +20 | 전염 +2 (→6), 저주 dps 5→8 | — |
+
+Mod results carry the same shape (their own milestones at 3/8; 봉마검과
+봉인 진언 max는 봉인 폭발 조건 4→3중첩, 화령 혼불은 최대 6구슬). A mod
+at the carried level immediately inherits every crossed milestone, so the
+swap reads as a leap: 화염 부적@3 = 2발+관통+화상 38.4 모델 dps vs 낡은
+부적@3 30.8, plus the branch effect.
+
+## AFTER — per-level tables (base ten)
+
+Generated by `tools/growth_table.gd` against shipped data (★ = milestone):
+
+### old_talisman (낡은 부적)
+| level | damage | cooldown | mechanic | est dps |
+|---|---|---|---|---|
+| 1 | 11.0 | 1.10 | proj 1 | 10.0 |
+| 2 | 15.0 | 1.05 | proj 1 | 14.3 |
+| 3 | 19.0 | 1.00 | proj 2 ★투사체 +1 | 38.0 |
+| 4 | 23.0 | 0.95 | proj 2 | 48.4 |
+| 5 | 27.0 | 0.90 | proj 2 | 60.0 |
+| 6 | 31.0 | 0.85 | proj 2 pierce 1 ★관통 +1 | 72.9 |
+| 7 | 35.0 | 0.80 | proj 2 pierce 1 | 87.5 |
+| 8 | 39.0 | 0.75 | proj 3 pierce 1 ★투사체 +1 | 156.0 |
+headroom L1/Lmax: 0.06 (x15.6 growth)
+
+### hwabu (화부)
+| level | damage | cooldown | mechanic | est dps |
+|---|---|---|---|---|
+| 1 | 10.0 | 1.45 | proj 1 radius 90 | 6.9 |
+| 2 | 14.0 | 1.39 | proj 1 radius 90 | 10.1 |
+| 3 | 18.0 | 1.33 | proj 1 radius 110 ★폭발 반경 +20 | 13.5 |
+| 4 | 22.0 | 1.27 | proj 1 radius 110 | 17.3 |
+| 5 | 26.0 | 1.21 | proj 1 radius 110 | 21.5 |
+| 6 | 30.0 | 1.15 | proj 1 radius 110 | 26.1 |
+| 7 | 34.0 | 1.09 | proj 1 radius 110 | 31.2 |
+| 8 | 38.0 | 1.03 | proj 2 radius 110 ★투사체 +1 | 73.8 |
+headroom L1/Lmax: 0.09 (x10.7 growth)
+
+### noebu (뇌부)
+| level | damage | cooldown | mechanic | est dps |
+|---|---|---|---|---|
+| 1 | 8.5 | 1.40 | jumps 3 falloff 0.70 | 15.4 |
+| 2 | 11.7 | 1.35 | jumps 3 falloff 0.70 | 22.0 |
+| 3 | 14.9 | 1.30 | jumps 4 falloff 0.70 ★연쇄 +1회 | 31.8 |
+| 4 | 18.1 | 1.25 | jumps 4 falloff 0.70 | 40.2 |
+| 5 | 21.3 | 1.20 | jumps 4 falloff 0.70 | 49.2 |
+| 6 | 24.5 | 1.15 | jumps 4 falloff 0.70 | 59.1 |
+| 7 | 27.7 | 1.10 | jumps 4 falloff 0.70 | 69.8 |
+| 8 | 30.9 | 1.05 | jumps 6 falloff 0.75 ★연쇄 +2회 · 도약 피해 유지 +0.05 | 102.0 |
+headroom L1/Lmax: 0.15 (x6.6 growth)
+
+### seokjang (석장)
+| level | damage | cooldown | mechanic | est dps |
+|---|---|---|---|---|
+| 1 | 10.0 | 1.50 | arc 160° kb 2.5 | 6.7 |
+| 2 | 13.8 | 1.44 | arc 160° kb 2.5 | 9.6 |
+| 3 | 17.6 | 1.38 | arc 220° kb 2.5 ★원호 +60° | 12.8 |
+| 4 | 21.4 | 1.32 | arc 220° kb 2.5 | 16.2 |
+| 5 | 25.2 | 1.26 | arc 220° kb 2.5 | 20.0 |
+| 6 | 29.0 | 1.20 | arc 220° kb 2.5 | 24.2 |
+| 7 | 32.8 | 1.14 | arc 220° kb 2.5 | 28.8 |
+| 8 | 36.6 | 1.08 | arc 360° kb 3.0 ★원호 +140° · 넉백 +0.5배 | 33.9 |
+headroom L1/Lmax: 0.20 (x5.1 growth)
+
+### honbul (혼불)
+| level | damage | cooldown | mechanic | est dps |
+|---|---|---|---|---|
+| 1 | 6.0 | 0.90 | orbs 2 | 13.3 |
+| 2 | 8.1 | 0.85 | orbs 2 | 19.1 |
+| 3 | 10.2 | 0.80 | orbs 3 ★투사체 +1 | 38.2 |
+| 4 | 12.3 | 0.75 | orbs 3 | 49.2 |
+| 5 | 14.4 | 0.70 | orbs 4 ★투사체 +1 | 82.3 |
+| 6 | 16.5 | 0.65 | orbs 4 | 101.5 |
+| 7 | 18.6 | 0.60 | orbs 4 | 124.0 |
+| 8 | 20.7 | 0.55 | orbs 5 ★투사체 +1 · 선회 속도 +40 | 188.2 |
+headroom L1/Lmax: 0.07 (x14.1 growth)
+
+### beopgeom (법검)
+| level | damage | cooldown | mechanic | est dps |
+|---|---|---|---|---|
+| 1 | 8.5 | 1.10 | proj 1 pierce 99 | 7.7 |
+| 2 | 11.9 | 1.06 | proj 1 pierce 99 | 11.2 |
+| 3 | 15.3 | 1.02 | proj 2 pierce 99 ★투사체 +1 | 30.0 |
+| 4 | 18.7 | 0.98 | proj 2 pierce 99 | 38.2 |
+| 5 | 22.1 | 0.94 | proj 2 pierce 99 | 47.0 |
+| 6 | 25.5 | 0.90 | proj 2 pierce 99 | 56.7 |
+| 7 | 28.9 | 0.86 | proj 2 pierce 99 | 67.2 |
+| 8 | 32.3 | 0.82 | proj 3 pierce 99 ★투사체 +1 · 관통 피해 유지 +0.05 | 118.2 |
+headroom L1/Lmax: 0.07 (x15.3 growth)
+
+### gyeolgye (결계)
+| level | damage | cooldown | mechanic | est dps |
+|---|---|---|---|---|
+| 1 | 2.6 | 4.00 | radius 85 dur 3.5 slow 0.60 | 3.8 |
+| 2 | 3.9 | 3.90 | radius 85 dur 3.5 slow 0.60 | 5.8 |
+| 3 | 5.1 | 3.80 | radius 105 dur 3.5 slow 0.50 ★장판 반경 +20 · 감속 강화 | 7.8 |
+| 4 | 6.3 | 3.70 | radius 105 dur 3.5 slow 0.50 | 10.0 |
+| 5 | 7.6 | 3.60 | radius 105 dur 3.5 slow 0.50 | 12.3 |
+| 6 | 8.8 | 3.50 | radius 105 dur 3.5 slow 0.50 | 14.8 |
+| 7 | 10.1 | 3.40 | radius 105 dur 3.5 slow 0.50 | 16.8 |
+| 8 | 11.4 | 3.30 | radius 120 dur 4.5 slow 0.50 ★장판 지속 +1초 · 장판 반경 +15 | 18.9 |
+headroom L1/Lmax: 0.20 (x5.0 growth)
+
+### sinjang (신장 소환)
+| level | damage | cooldown | mechanic | est dps |
+|---|---|---|---|---|
+| 1 | 12.0 | 3.50 | life 11.0 atk 0.65 | 14.0 |
+| 2 | 15.2 | 3.30 | life 11.0 atk 0.65 | 18.0 |
+| 3 | 18.4 | 3.10 | life 11.0 atk 0.50 ★소환수 공격 가속 · 소환수 이동 +30 | 28.7 |
+| 4 | 21.6 | 2.90 | life 11.0 atk 0.50 | 34.2 |
+| 5 | 24.8 | 2.70 | life 11.0 atk 0.50 | 39.8 |
+| 6 | 28.0 | 2.50 | life 11.0 atk 0.50 | 45.6 |
+| 7 | 31.2 | 2.30 | life 11.0 atk 0.50 | 51.6 |
+| 8 | 34.4 | 2.10 | life 17.0 atk 0.50 ★소환 지속 +6초 | 61.2 |
+headroom L1/Lmax: 0.23 (x4.4 growth)
+
+### jineon (진언)
+| level | damage | cooldown | mechanic | est dps |
+|---|---|---|---|---|
+| 1 | 10.0 | 2.50 | radius 130 stun 0.8 kb 2.0 | 4.0 |
+| 2 | 13.5 | 2.38 | radius 130 stun 0.8 kb 2.0 | 5.7 |
+| 3 | 17.0 | 2.26 | radius 155 stun 1.1 kb 2.0 ★파동 반경 +25 · 기절 +0.3초 | 7.5 |
+| 4 | 20.5 | 2.14 | radius 155 stun 1.1 kb 2.0 | 9.6 |
+| 5 | 24.0 | 2.02 | radius 155 stun 1.1 kb 2.0 | 11.9 |
+| 6 | 27.5 | 1.90 | radius 155 stun 1.1 kb 2.0 | 14.5 |
+| 7 | 31.0 | 1.78 | radius 155 stun 1.1 kb 2.0 | 17.4 |
+| 8 | 34.5 | 1.66 | radius 190 stun 1.1 kb 2.8 ★파동 반경 +35 · 넉백 +0.8배 | 20.8 |
+headroom L1/Lmax: 0.19 (x5.2 growth)
+
+### sal (살)
+| level | damage | cooldown | mechanic | est dps |
+|---|---|---|---|---|
+| 1 | 7.0 | 1.60 | proj 1 curse 5/4.0s spread 3 | 4.4 |
+| 2 | 9.8 | 1.54 | proj 1 curse 5/4.0s spread 3 | 6.4 |
+| 3 | 12.6 | 1.48 | proj 1 curse 5/4.0s spread 4 ★전염 +1마리 · 전파 반경 +20 | 8.5 |
+| 4 | 15.4 | 1.42 | proj 1 curse 5/4.0s spread 4 | 10.8 |
+| 5 | 18.2 | 1.36 | proj 1 curse 5/4.0s spread 4 | 13.4 |
+| 6 | 21.0 | 1.30 | proj 1 curse 5/4.0s spread 4 | 16.2 |
+| 7 | 23.8 | 1.24 | proj 1 curse 5/4.0s spread 4 | 19.2 |
+| 8 | 26.6 | 1.18 | proj 1 curse 8/4.0s spread 6 ★전염 +2마리 · 지속 피해 +3 | 22.5 |
+headroom L1/Lmax: 0.19 (x5.2 growth)
+Mod-result per-level tables: same generator, 11 blocks — regenerate with
+`godot --headless --path . --script tools/growth_table.gd`. Their headroom:
+화염 부적 x13.6, 봉황 부적 x11.3, 화령부 x8.8, 뇌정부 x5.5, 봉마검
+x12.7, 귀철 석장 x4.3, 화령 혼불 x10.3, 화염 결계 x4.3, 뇌정 신장 x3.9,
+봉인 진언 x4.3, 귀살 x4.7.
+
+**Headroom AFTER (level1_dps / maxlevel_dps per base weapon):** 낡은 부적
+0.06 (x15.6), 화부 0.09 (x10.7), 뇌부 0.15 (x6.6), 석장 0.20 (x5.1), 혼불
+0.07 (x14.1), 법검 0.07 (x15.3), 결계 0.20 (x5.0), 신장 0.23 (x4.4), 진언
+0.19 (x5.2), 살 0.19 (x5.2) — against 0.26–0.47 BEFORE. Projectile/orb
+weapons carry the widest headroom because their milestone growth
+multiplies coverage; control weapons (석장/결계/진언/신장) grow x4.4–5.2
+in raw output plus area/uptime/control that the dps model undersells
+(석장 ends as a 360° full-circle swing, 결계 ends with 100% ward uptime).
+
+## AFTER — measured (all seed 20260814, 8x headless unless stated)
+
+Forced-build batch (bot levels its one weapon when offered):
+
+| weapon | outcome | time_s | level | kills | damage | dps | final build |
+|---|---|---|---|---|---|---|---|
+| old_talisman | defeat | 203.1 | 4 | 55 | 1629 | 8.0 | old_talisman Lv1 |
+| hwabu | defeat | 287.2 | 9 | 193 | 9284 | 32.3 | hwabu Lv2 |
+| noebu | victory | 300.1 | 8 | 163 | 7132 | 23.8 | noebu Lv4 |
+| seokjang | victory | 300.1 | 9 | 177 | 8013 | 26.7 | seokjang Lv3 |
+| honbul | defeat | 189.1 | 6 | 81 | 2362 | 12.5 | honbul Lv1 |
+| beopgeom | defeat | 291.7 | 7 | 122 | 5301 | 18.2 | beopgeom Lv2 |
+| gyeolgye | defeat | 282.3 | 8 | 191 | 7082 | 25.1 | gyeolgye Lv3 |
+| sinjang | victory | 300.1 | 7 | 107 | 4230 | 14.1 | noe_sinjang Lv1 |
+| jineon | victory | 300.1 | 8 | 171 | 7886 | 26.3 | bongin_jineon Lv3 |
+| sal | defeat | 246.4 | 7 | 148 | 4603 | 18.7 | sal Lv1 |
+
+The shape flipped exactly as intended: every run whose weapon stayed at
+Lv1 now DIES (낡은 부적 Lv1 8.0 dps dead at 203s — the build that won the
+run at BEFORE; 혼불 Lv1 dead at 189s), while runs that leveled or modded
+their weapon survive.
+
+Max-level anchors (`--level=8 --nopick`, weapon maxed from second 0, zero
+passives):
+
+| weapon | outcome | dps | | weapon | outcome | dps |
+|---|---|---|---|---|---|---|
+| 낡은 부적 | victory (boss kill 271.7s) | 53.0 | | 법검 | defeat 223.5s | 28.6 |
+| 화부 | victory | 46.3 | | 결계 | victory | 34.3 |
+| 뇌부 | defeat 213.6s | 24.7 | | 신장 | victory | 35.8 |
+| 석장 | victory | 43.5 | | 진언 | victory | 42.1 |
+| 혼불 | victory | 31.2 | | 살 | victory | 30.8 |
+
+**Max-level cross-weapon spread: 53.0 / 24.7 = 2.1x** over all ten (the
+eight winners span 30.8–53.0 = 1.7x) — inside the 2.3x band N4-3
+established as this instrument's noise floor, so cross-weapon parity at
+max level held through the reshape. The two max-level deaths (뇌부, 법검
+— both line weapons a passive-less kiting bot underplays) also confirm a
+maxed weapon alone is not an auto-win.
+
+## Run curve (Part C)
+
+- **No-upgrade run loses, 3/3 seeds:** `--nopick` (weapon pinned at Lv1)
+  dies at **238.8s / 216.0s / 255.5s** (seeds 20260814/99/7), killed by
+  죽림 거한/정예 — the surge-to-escort window, exactly where the owner
+  asked the free ride to end. BEFORE this pass the same build WON seed
+  20260814 (live_cap freeze, see above).
+- **Normal run wins:** full-pool bot, victory on seeds 20260814 (297.6s,
+  40.7 dps) and 7 (300.1s, 38.2 dps); seed 55667788 still loses (~225s) —
+  the same seed lost most N4-3-era sweeps; win rate unchanged from the
+  established band. Power curve through a winning run: ~8 dps in the
+  opening (Lv1 band), ~20 dps by the elite checkpoints, 38–41 dps through
+  surge and boss — the curve now climbs through the run instead of
+  starting flat.
+- **Maxed meta guard re-verified:** `--meta=max --nopick` across 8 seeds
+  (99/123/42/5/77/1/11/31): **1 death (seed 31, 225.5s)** — a fully maxed
+  profile can still lose; the N7-1/N7-2 guard holds. Maxed meta + maxed
+  weapon (`--meta=max --weapon=noebu --level=8`): victories at 44–52 dps
+  with 명부수 chain nodes visibly applied (jumps 8 at Lv8 + branch) — it
+  should win most runs, and the nopick death above proves the profile
+  still CAN lose. **Watch item renewed:** maxed-nopick deaths thinned from
+  1/4 (N7-2) to 1/8 — the next survivability-touching pass must re-sweep
+  and trim if it hits 0/8.
+
+## Screenshots
+
+- Milestone card (뇌부 Lv3 "★연쇄 +1회" on the level-up screen):
+  `captures/n4-8/milestone_card_noebu.png`
+- Early vs late, same weapon (혼불 Lv1 2 orbs at the opening vs Lv8 5
+  orbs in the surge): `captures/n4-8/honbul_early_L1.png` /
+  `captures/n4-8/honbul_late_L8.png`
+
+## Regression
+
+All 294 unit tests PASS (fan/milestone tests added), validate_data PASS
+(milestone contract + merged-stats-at-max checks added), headless import
+clean. Batch sweep exercises all ten weapons and mod swaps; meta sweep
+exercises the maxed tree incl. 술법 branch weapon hooks; FTUE first-run
+guarantees, boss, result and autosave paths all ran inside the sweeps
+above with no new errors.

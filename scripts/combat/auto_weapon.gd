@@ -53,9 +53,17 @@ const TINTS: Dictionary = {
 	"gwisal": UiPalette.WEAPON_CURSE,
 }
 
+## Fan spread between adjacent multishot projectiles when the data omits
+## _targeting.multishot_spread_deg (N4-8).
+const FAN_SPREAD_DEG := 10.0
+
 var weapon_id: String = ""
 
+## Meta-modified base entry from weapons.json; _stats is this with the
+## current level's milestone deltas folded in (N4-8).
+var _base_stats: Dictionary = {}
 var _stats: Dictionary = {}
+var _fan_spread_deg: float = FAN_SPREAD_DEG
 var _level: int = 1
 var _grade: String = ""
 var _grades: Dictionary = {}
@@ -112,39 +120,27 @@ func setup(
 		push_error("auto_weapon: unknown weapon id '%s' in %s" % [id, WEAPONS_PATH])
 		return
 	weapon_id = id
-	_stats = MetaTree.modified_weapon_stats(weapons[id], meta_effects)
+	_base_stats = MetaTree.modified_weapon_stats(weapons[id], meta_effects)
 	_grades = WeaponGrade.config(weapons)
-	_grade = String(_stats.get("grade", ""))
-	_speed = float(_stats.get("speed", 0.0))
-	_range = float(_stats.get("range_px", 0.0))
-	_view_margin = float(
-		((weapons as Dictionary).get("_targeting", {}) as Dictionary).get("view_margin_px", 0.0)
-	)
-	_mechanic = String(_stats.get("mechanic", MECHANIC_STRAIGHT))
-	_lifesteal = float(_stats.get("lifesteal", 0.0))
-	_shot_config = _build_shot_config()
+	_grade = String(_base_stats.get("grade", ""))
+	var targeting: Dictionary = (weapons as Dictionary).get("_targeting", {})
+	_view_margin = float(targeting.get("view_margin_px", 0.0))
+	_fan_spread_deg = float(targeting.get("multishot_spread_deg", FAN_SPREAD_DEG))
+	_mechanic = String(_base_stats.get("mechanic", MECHANIC_STRAIGHT))
+	# One-time pools and visuals; every per-level number (milestones included)
+	# is derived in _recompute so a level-up can reshape the mechanic (N4-8).
 	match _mechanic:
 		MECHANIC_MELEE_ARC:
-			_arc = _stats.get("arc", {})
 			_arc_flash = ArcFlash.new()
 			add_child(_arc_flash)
-		MECHANIC_ORBIT:
-			_orbit = _stats.get("orbit", {})
-			_orb_radius = float(_orbit.get("orb_radius_px", ORB_RADIUS_PX))
-			_build_orbs(int(_stats.get("projectile_count", 1)))
-		MECHANIC_EXPLOSION:
+		MECHANIC_EXPLOSION, MECHANIC_SHOCKWAVE:
 			_flash_pool = NodePool.new(self, _create_blast_ring)
 		MECHANIC_CHAIN:
 			_bolt_pool = NodePool.new(self, _create_chain_bolt)
 		MECHANIC_WARD:
-			_ward = _stats.get("ward", {})
 			_ward_pool = NodePool.new(self, _create_ward)
 		MECHANIC_SUMMON:
-			_summon_config = _stats.get("summon", {})
 			_summon_pool = NodePool.new(self, _create_summon)
-		MECHANIC_SHOCKWAVE:
-			_shockwave = _stats.get("shockwave", {})
-			_flash_pool = NodePool.new(self, _create_blast_ring)
 	_recompute()
 
 
@@ -170,8 +166,29 @@ func set_scales(damage_scale: float, cooldown_scale: float) -> void:
 
 
 func _recompute() -> void:
-	if _stats.is_empty():
+	if _base_stats.is_empty():
 		return
+	# N4-8: fold the current level's milestone deltas in first, so every
+	# consumer below reads the effective mechanic numbers, not the level-1 base.
+	_stats = LevelUp.stats_at_level(_base_stats, _level)
+	_speed = float(_stats.get("speed", 0.0))
+	_range = float(_stats.get("range_px", 0.0))
+	_lifesteal = float(_stats.get("lifesteal", 0.0))
+	_shot_config = _build_shot_config()
+	_arc = _stats.get("arc", {})
+	_ward = _stats.get("ward", {})
+	_summon_config = _stats.get("summon", {})
+	_shockwave = _stats.get("shockwave", {})
+	if _mechanic == MECHANIC_ORBIT:
+		_orbit = _stats.get("orbit", {})
+		_orb_radius = float(_orbit.get("orb_radius_px", ORB_RADIUS_PX))
+		_sync_orbs(int(_stats.get("projectile_count", 1)))
+	# A milestone delta and the 봉인 간파 meta node can both lower the seal
+	# threshold; re-apply MetaTree's floor after composition so no data combo
+	# can push it below the mechanic's minimum.
+	var seal: Dictionary = _stats.get("on_hit_seal", {})
+	if not seal.is_empty():
+		seal["burst_at"] = maxi(int(seal.get("burst_at", 0)), MetaTree.MIN_SEAL_BURST)
 	_damage = WeaponGrade.stat_at(_stats, "damage", _level, _grade, _grades) * _damage_scale
 	_cooldown = maxf(
 		WeaponGrade.stat_at(_stats, "cooldown_sec", _level, _grade, _grades) * _cooldown_scale,
@@ -252,11 +269,16 @@ func _try_fire() -> bool:
 	)
 	if direction == Vector2.ZERO:
 		direction = Vector2.RIGHT  # enemy exactly on the player; any heading hits
-	var projectile: Projectile = _pool.acquire()
-	projectile.launch(
-		_player.global_position, direction, _speed, _damage, _spawner, _player,
-		_tint(), _view_margin, _shot_config
-	)
+	# N4-8 multishot: projectile mechanics fire projectile_count shots fanned
+	# around the aim; count 1 keeps the exact single-shot behaviour.
+	for shot_direction: Vector2 in WeaponMath.fan_directions(
+		direction, int(_stats.get("projectile_count", 1)), deg_to_rad(_fan_spread_deg)
+	):
+		var projectile: Projectile = _pool.acquire()
+		projectile.launch(
+			_player.global_position, shot_direction, _speed, _damage, _spawner,
+			_player, _tint(), _view_margin, _shot_config
+		)
 	return true
 
 
@@ -410,6 +432,17 @@ func _after_hit(amount: float) -> void:
 	if _lifesteal <= 0.0:
 		return
 	_player.hp = minf(_player.hp + amount * _lifesteal, _player.hp_max)
+
+
+## Rebuild the orbit ring only when the orb count actually changes (N4-8
+## milestone orb) — ordinary levels keep the same nodes and their trails.
+func _sync_orbs(count: int) -> void:
+	if _orbs.size() == maxi(count, 1):
+		return
+	for orb: Node2D in _orbs:
+		orb.queue_free()
+	_orbs.clear()
+	_build_orbs(count)
 
 
 func _build_orbs(count: int) -> void:

@@ -418,3 +418,63 @@ func test_card_icon_ids_bind_by_kind() -> bool:
 	if not passed:
 		push_error("test_level_up: card icon ids broken")
 	return passed
+
+
+# --- N4-8 milestone growth ---
+
+const MILESTONE_WEAPON := {
+	"name_ko": "시험 뇌부", "grade": "common", "mechanic": "chain",
+	"damage": 7.0, "cooldown_sec": 1.4, "projectile_count": 1,
+	"max_level": 8,
+	"per_level": {"damage": 2.6, "cooldown_sec": -0.05},
+	"chain": {"jumps": 3, "falloff": 0.7, "range_px": 150.0},
+	"milestones": {
+		"3": {"chain": {"jumps": 1}},
+		"8": {"chain": {"jumps": 2, "falloff": 0.05}, "projectile_count": 1},
+	},
+}
+
+
+func test_stats_at_level_below_first_milestone_is_base() -> bool:
+	var stats: Dictionary = LevelUp.stats_at_level(MILESTONE_WEAPON, 2)
+	return int((stats["chain"] as Dictionary)["jumps"]) == 3 \
+		and int(stats.get("projectile_count", 1)) == 1
+
+
+func test_stats_at_level_merges_cumulatively_and_additively() -> bool:
+	var mid: Dictionary = LevelUp.stats_at_level(MILESTONE_WEAPON, 3)
+	var top: Dictionary = LevelUp.stats_at_level(MILESTONE_WEAPON, 8)
+	return int((mid["chain"] as Dictionary)["jumps"]) == 4 \
+		and int((top["chain"] as Dictionary)["jumps"]) == 6 \
+		and absf(float((top["chain"] as Dictionary)["falloff"]) - 0.75) < 0.001 \
+		and int(top["projectile_count"]) == 2
+
+
+func test_stats_at_level_does_not_mutate_the_source() -> bool:
+	var _top: Dictionary = LevelUp.stats_at_level(MILESTONE_WEAPON, 8)
+	return int((MILESTONE_WEAPON["chain"] as Dictionary)["jumps"]) == 3
+
+
+func test_milestone_delta_hits_only_the_exact_level() -> bool:
+	return not LevelUp.milestone_delta(MILESTONE_WEAPON, 3).is_empty() \
+		and LevelUp.milestone_delta(MILESTONE_WEAPON, 4).is_empty()
+
+
+func test_milestone_text_renders_known_fields() -> bool:
+	var text: String = LevelUp.milestone_text(
+		LevelUp.milestone_delta(MILESTONE_WEAPON, 8)
+	)
+	return text.contains("연쇄") and text.contains("투사체")
+
+
+func test_describe_marks_a_milestone_level_up_card() -> bool:
+	var weapons: Dictionary = {"test_chain": MILESTONE_WEAPON}
+	var choice: Dictionary = {"kind": LevelUp.KIND_WEAPON_UP, "id": "test_chain"}
+	var marked: String = LevelUp.describe(
+		choice, weapons, {}, {"test_chain": 2}, {}
+	)
+	var plain: String = LevelUp.describe(
+		choice, weapons, {}, {"test_chain": 3}, {}
+	)
+	return marked.contains(LevelUp.MILESTONE_MARK) \
+		and not plain.contains(LevelUp.MILESTONE_MARK)

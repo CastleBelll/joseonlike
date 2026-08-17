@@ -136,6 +136,20 @@ static func curse_spread_targets(
 	return targets
 
 
+## Multishot fan (N4-8): `count` unit directions centered on `direction`,
+## adjacent shots `spread_rad` apart. Count 1 is the unchanged single shot,
+## so every existing single-projectile weapon keeps its exact behaviour.
+static func fan_directions(
+	direction: Vector2, count: int, spread_rad: float
+) -> Array[Vector2]:
+	var shots: int = maxi(count, 1)
+	var directions: Array[Vector2] = []
+	var start: float = -spread_rad * float(shots - 1) / 2.0
+	for i: int in range(shots):
+		directions.append(direction.rotated(start + spread_rad * float(i)))
+	return directions
+
+
 ## Pierce reference model: indices hit by a projectile flying from `origin`
 ## along `direction`, ordered by distance along the line. A candidate is on
 ## the line when its perpendicular distance is within hit_radius + its own
