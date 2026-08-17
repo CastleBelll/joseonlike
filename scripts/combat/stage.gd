@@ -9,8 +9,12 @@ const PASSIVES_PATH := "res://data/passives.json"
 const LOOT_PATH := "res://data/loot.json"
 const DROP_TABLES_PATH := "res://data/drop_tables.json"
 const WEAPON_MODS_PATH := "res://data/weapon_mods.json"
+const PICKUPS_PATH := "res://data/pickups.json"
 const CHOICES_PER_LEVEL := 3
 const POWER_UP_HEADER := "파워 업!"
+## N5-5 chest sequence header: one card per screen, (n/total) so the payoff
+## reads as a counted sequence, not an endless wall.
+const CHEST_HEADER := "보물 상자! (%d/%d)"
 const LOOT_SCATTER_PX := 14.0
 
 @onready var _player: Player = $World/Player
@@ -61,6 +65,21 @@ var _replaced_weapons: Array[String] = []
 # N4-9 rarity evidence: the run second each SPECIAL material dropped at —
 # the playtest harness reads this to prove the intended drop rate.
 var _special_drop_times: Array[float] = []
+
+# N5-5 destructibles + elite chests: pickup table data, pooled pickup/chest
+# entities, and the chest reward queue. _chest_pending counts rewards still
+# owed; each is drawn fresh from the level-up pool machinery at show time so a
+# card can never offer something the previous reward made illegal. Kind
+# counters and chest counts are harness evidence (playtest reads them).
+var _pickups_data: Dictionary = {}
+var _pickup_pool: NodePool
+var _chest_pool: NodePool
+var _chest_pending: int = 0
+var _chest_batch_total: int = 0
+var _chest_batch_index: int = 0
+var _chest_showing: bool = false
+var _break_stats: Dictionary = {}
+var _chest_counts: Array[int] = []
 
 # N3-8 feedback + N5-1 run flow state.
 var _feedback: Dictionary = {}
@@ -156,6 +175,14 @@ func _ready() -> void:
 	_mods_data = _load_json(WEAPON_MODS_PATH)
 	_loot_pool = NodePool.new(self, _create_loot_drop)
 	_loot_rng.randomize()  # the run RNG: one seed replays a run's drops
+	# N5-5: destructible props + pickups + elite chests. The spawner carries
+	# the breakable list because it is the target registry weapons already hold.
+	_pickups_data = _load_json(PICKUPS_PATH)
+	_pickup_pool = NodePool.new(self, _create_pickup)
+	_chest_pool = NodePool.new(self, _create_chest)
+	_spawner.breakables = _field.breakables
+	for breakable: Breakable in _field.breakables:
+		breakable.broke.connect(_on_breakable_broke)
 	var starting_weapon: String = Player.load_starting_weapon()
 	_owned_levels[starting_weapon] = 1
 	_owned_grades[starting_weapon] = LevelUp.current_grade(starting_weapon, _weapons_data, {})
@@ -305,6 +332,13 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 	var orb: XpOrb = _orb_pool.acquire()
 	orb.launch(enemy.global_position, enemy.xp_drop, _player, _orb_config)
 	_spawn_loot(enemy)
+	# N5-5: an elite death leaves a reward chest where it fell (walk to open).
+	if enemy.is_elite:
+		var chest: Chest = _chest_pool.acquire()
+		chest.place(
+			enemy.global_position, _player,
+			float((_pickups_data.get("chest", {}) as Dictionary).get("open_radius_px", 0.0))
+		)
 	if enemy.is_boss:
 		_boss = null
 		_hud.hide_boss_bar()
@@ -527,7 +561,11 @@ func _on_choice_picked(payload: Dictionary) -> void:
 			_apply_weapon_mod(mod)
 		_:
 			push_error("stage: unknown popup payload " + str(payload))
-	_pending_level_ups -= 1
+	# N5-5: a chest reward screen consumes no pending level-up.
+	if _chest_showing:
+		_chest_showing = false
+	else:
+		_pending_level_ups -= 1
 	_advance_popup_queue()
 
 
@@ -612,14 +650,32 @@ func _float_label(text: String) -> void:
 
 
 func _on_popup_dismissed() -> void:
-	_pending_level_ups -= 1
+	if _chest_showing:
+		_chest_showing = false
+	else:
+		_pending_level_ups -= 1
 	_advance_popup_queue()
 
 
+## Single scheduler for every reward screen: pending level-ups first, then
+## queued chest rewards, then release the pause. When the run has ended the
+## result screen owns the pause — queued screens are dropped, never shown, and
+## the game is never left paused behind a dead popup (N5-5 edge).
 func _advance_popup_queue() -> void:
+	if _outcome != RunFlow.OUTCOME_NONE:
+		_pending_level_ups = 0
+		_chest_pending = 0
+		_chest_showing = false
+		_popup.close()
+		return
 	if _pending_level_ups > 0:
 		_show_next_level_up()
 		return
+	if _chest_pending > 0:
+		_show_next_chest_reward()
+		return
+	_chest_batch_total = 0
+	_chest_batch_index = 0
 	_popup.close()
 	get_tree().paused = false
 
@@ -757,6 +813,170 @@ func _on_loot_collected(orb: XpOrb) -> void:
 	var gained: int = _add_gold(Loot.salvage_gold(_loot_data, loot_id))
 	if bool(stats.get("special", false)):
 		_float_label("엽전 +%d" % gained)
+
+
+## N5-5 destructible feedback: the shared pooled puff at the prop's footprint,
+## then one roll on the data table — most breaks give nothing or small gold on
+## purpose; the exciting kinds stay uncommon (validator-enforced shares).
+func _on_breakable_broke(breakable: Breakable) -> void:
+	var puff: DeathPuff = _puff_pool.acquire()
+	puff.puff(
+		breakable.global_position,
+		breakable.hit_radius * float(_feedback.get("death_puff_radius_scale", 1.0)),
+		float(_feedback.get("death_puff_sec", 0.0))
+	)
+	var kind: String = Pickups.roll_break(_pickups_data, _loot_rng)
+	_break_stats[kind] = int(_break_stats.get(kind, 0)) + 1
+	if kind == Pickups.KIND_NOTHING:
+		return
+	var pickup: Pickup = _pickup_pool.acquire()
+	pickup.launch_pickup(breakable.global_position, kind, _player, _orb_config)
+
+
+## N5-5 pickup effects, each applied at collection so the player walked to it.
+## HEALTH at full HP converts to gold (chosen rule: the drop is never wasted,
+## and the check runs at collection time so getting hit on the way still heals).
+func _on_pickup_collected(orb: XpOrb) -> void:
+	var kind: String = (orb as Pickup).kind
+	_pickup_pool.release(orb)
+	match kind:
+		Pickups.KIND_GOLD:
+			var gained: int = _add_gold(
+				int((_pickups_data.get("gold", {}) as Dictionary).get("amount", 0))
+			)
+			_float_label("엽전 +%d" % gained)
+		Pickups.KIND_HEALTH:
+			_collect_health()
+		Pickups.KIND_NUKE:
+			_execute_nuke()
+		Pickups.KIND_MAGNET:
+			_execute_magnet()
+
+
+func _collect_health() -> void:
+	var health: Dictionary = _pickups_data.get("health", {})
+	if _player.hp >= _player.hp_max:
+		var gained: int = _add_gold(int(health.get("full_hp_gold", 0)))
+		_float_label("엽전 +%d" % gained)
+		return
+	var heal: float = _player.hp_max * float(health.get("hp_ratio", 0.0))
+	_player.hp = minf(_player.hp + heal, _player.hp_max)
+	_float_label("회복 +%d" % int(round(heal)))
+	# Green pulse on the player: the heal reads even in a crowd (N3-18 grammar).
+	var puff: DeathPuff = _puff_pool.acquire()
+	puff.puff(
+		_player.global_position, Player.CONTACT_RADIUS * 2.0,
+		float(_feedback.get("death_puff_sec", 0.0)), UiPalette.SUCCESS
+	)
+
+
+## NUKE: full data damage to every ON-SCREEN trash enemy, capped damage to
+## elites and the boss (data elite_boss_damage) so a set-piece fight can never
+## be one-shot by a lucky pot. Reuses the 벽사진 wave-ring + screen-flash
+## vocabulary in VERMILION so the payoff reads full-screen.
+func _execute_nuke() -> void:
+	var origin: Vector2 = _player.global_position
+	var ring: BlastRing = _burst_ring_pool.acquire()
+	ring.burst(
+		origin, float((_pickups_data.get("nuke", {}) as Dictionary).get("ring_radius_px", 0.0)),
+		WeaponEffects.value("burst_ring_sec"), UiPalette.VERMILION, BlastRing.Style.WAVE
+	)
+	_hud.flash_screen(UiPalette.VERMILION, WeaponEffects.value("screen_flash_sec"))
+	# Collect refs first: killing mutates the spawner's active list.
+	var caught: Array[Enemy] = _spawner.active_enemies().duplicate()
+	var view_size: Vector2 = get_viewport_rect().size
+	for enemy: Enemy in caught:
+		if CombatMath.is_dead(enemy.hp):
+			continue
+		if CombatMath.outside_view(enemy.global_position, origin, view_size, 0.0):
+			continue  # "everything on screen", literally — offscreen waves survive
+		var capped: bool = enemy.is_boss or enemy.is_elite
+		var damage: float = Pickups.nuke_damage(_pickups_data, capped)
+		var hit_at: Vector2 = enemy.global_position
+		var boss_hit: bool = enemy.is_boss
+		enemy.take_damage(damage, CombatMath.chase_direction(origin, hit_at))
+		_on_hit_landed(damage, hit_at, boss_hit)
+
+
+## MAGNET: every uncollected orb, material and pickup on the field flies in at
+## once. An empty field still shows the ring + label — never a dead tap.
+func _execute_magnet() -> void:
+	var ring: BlastRing = _burst_ring_pool.acquire()
+	ring.burst(
+		_player.global_position,
+		float((_pickups_data.get("magnet", {}) as Dictionary).get("ring_radius_px", 0.0)),
+		WeaponEffects.value("burst_ring_sec"), UiPalette.LOOT_RARE, BlastRing.Style.WAVE
+	)
+	_float_label("자석!")
+	for child: Node in get_children():
+		if child is XpOrb and (child as XpOrb).visible:
+			(child as XpOrb).attract_now()
+
+
+## N5-5 chest open: roll the reward count against luck, then queue that many
+## reward screens. Rewards are drawn one at a time at show time (never here),
+## so every card is legal against the state the previous reward produced. A
+## chest opened after the run ended is deliberately discarded — the run is
+## banked, the result screen owns the game.
+func _on_chest_opened(chest: Chest) -> void:
+	_chest_pool.release(chest)
+	if _outcome != RunFlow.OUTCOME_NONE:
+		return
+	var count: int = Pickups.roll_chest_count(
+		_pickups_data.get("chest", {}), _meta_bonus("luck"), _loot_rng
+	)
+	_chest_counts.append(count)
+	_chest_pending += count
+	_chest_batch_total += count
+	if not _popup.visible:
+		_advance_popup_queue()
+
+
+## One chest reward screen: a single card drawn fresh through the level-up
+## pool machinery (same legality rules — dedupe, evolution_only, replaced
+## exclusions). A dry pool pays out the data fallback gold instead.
+func _show_next_chest_reward() -> void:
+	_chest_pending -= 1
+	_chest_batch_index += 1
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		_weapons_data, _passives_data, _owned_levels, _passive_stacks,
+		_owned_grades, _grades_config, _replaced_weapons
+	)
+	var mod_pool: Array[Dictionary] = LevelUp.mod_candidates(
+		_mods_data, _run_state.inventory, _owned_levels, _replaced_weapons,
+		Ftue.is_first_run(_profile())
+	)
+	var rewards: Array[Dictionary] = LevelUp.assemble(pool, mod_pool, 1, _choice_rng)
+	if rewards.is_empty():
+		var gained: int = _add_gold(
+			int((_pickups_data.get("chest", {}) as Dictionary).get("fallback_gold", 0))
+		)
+		_float_label("엽전 +%d" % gained)
+		_advance_popup_queue()
+		return
+	get_tree().paused = true
+	_chest_showing = true
+	var masked: Array[String] = _unknown_mod_results(rewards)
+	var cards: Array[Dictionary] = [LevelUp.as_card(
+		rewards[0], _weapons_data, _passives_data, _owned_levels, _passive_stacks,
+		_owned_grades, _grades_config, masked
+	)]
+	_popup.open(
+		CHEST_HEADER % [_chest_batch_index, _chest_batch_total],
+		cards, _owned_levels, _weapons_data
+	)
+
+
+func _create_pickup() -> Pickup:
+	var pickup := Pickup.new()
+	pickup.collected.connect(_on_pickup_collected)
+	return pickup
+
+
+func _create_chest() -> Chest:
+	var chest := Chest.new()
+	chest.opened.connect(_on_chest_opened)
+	return chest
 
 
 func _create_loot_drop() -> LootDrop:

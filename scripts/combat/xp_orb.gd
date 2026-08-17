@@ -33,6 +33,12 @@ func launch(at: Vector2, xp: int, player: Player, orb_config: Dictionary) -> voi
 	_speed = 0.0
 
 
+## N5-5 magnet pickup: pull this orb in from anywhere on the field, ignoring
+## the normal magnet radius. One-shot per launch — launch() re-arms the radius.
+func attract_now() -> void:
+	_magnet_radius_squared = INF
+
+
 func _physics_process(delta: float) -> void:
 	var distance_squared: float = global_position.distance_squared_to(_player.global_position)
 	if distance_squared <= _collect_radius_squared:
