@@ -2284,3 +2284,94 @@ clean. Batch sweep exercises all ten weapons and mod swaps; meta sweep
 exercises the maxed tree incl. 술법 branch weapon hooks; FTUE first-run
 guarantees, boss, result and autosave paths all ran inside the sweeps
 above with no new errors.
+
+---
+
+# N4-9 — Earned evolution: rarity, gates, knowledge (2026-08-17)
+
+**Owner direction.** Evolution was routine: a special material showed up in
+essentially every run and the 개조 card followed. It should take several
+runs to see a given evolution, and landing one should feel like the run
+paid off. Materials still do not persist between runs (GDD) — difficulty
+comes from in-run rarity plus permanent knowledge, never hoarding.
+
+## What changed (all data-driven)
+
+- **Trash almost never drops specials.** drop_tables.json: goblin whetstone
+  0.03 → gone, spirit 도깨비불 0.07 → 0.005, spirit 뇌정석/주사 and brute
+  귀철 → gone. Ordinary materials keep their rates — the field stays alive.
+- **Elites are the source.** bamboo_brute_elite specials: 화령석 0.08
+  (matches the taoist starting weapon, so an elite kill is usually a live
+  decision), 주사 0.02, 뇌정석 0.01, 귀철 0.01 — sum 0.12 per elite kill.
+  Boss table unchanged (1.0/0.5/0.5): it drops as the run ends — a trophy
+  and 괴이록 entry, not evolution currency (excluded from the metric).
+- **Rarity is enforced by the validator.** drop_tables._config
+  .special_chance_max {trash 0.005, elite 0.12, boss 2.0}; validate_data
+  FAILs any table whose summed special chance exceeds its class cap
+  (proven: goblin whetstone 0.03 → FAIL "exceeds trash cap 0.005").
+- **The 개조 card demands investment.** Every weapon_mods.json recipe got
+  `level_required: 3` — the base weapon's first N4-8 milestone level.
+  validate_data FAILs a missing gate, a gate above the base's max_level
+  (proven with 99 → FAIL) or one off the milestone ladder. The gate never
+  soft-locks a screen: a gated mod just leaves the pool to regular cards
+  (unit-tested).
+- **Luck is a real strategy.** New trunk node 천운 (luck, 2 ranks × +25%,
+  cap 0.5, after 긴 호흡): multiplies SPECIAL drop chances only, in
+  Loot.roll_drops. Capped so maxed luck stays well short of every-run.
+- **FTUE unchanged.** First run still guarantees 부적지 + 도깨비불 and one
+  개조 card; the level gate is waived on the scripted first run only.
+
+## Permanent knowledge (multi-run arc)
+
+The 괴이록 weapons record (existing store, no parallel one) now also feeds
+the card: a mod result the profile has never made shows as `낡은 부적 → ???`
+with no numbers, no mechanic, no result icon. Performing the evolution once
+records the result weapon, which makes the recipe legible in the 괴이록
+(`화부 → 화령부`) and puts the real name/numbers on every later card.
+Knowledge only — a recorded evolution is never cheaper.
+
+## Intended vs measured
+
+Intent: most runs 0–1 specials; evolutions a jackpot without investment,
+a plan with it; maxed luck must not restore every-run specials.
+
+Model (every elite killed): 6 × 0.12 + ~61 × 0.005 ≈ 1.0 specials/run
+upper bound; real kill-rates land lower.
+
+Measured (playtest --runs, seed 20260817+, speed 10 headless, returning
+zero-meta profile, evolution-chasing card priority; boss trophy excluded):
+
+| Config | Runs | Specials | Runs with ≥1 | Per run | Evolutions |
+|---|---|---|---|---|---|
+| BEFORE (old tables, model) | — | ~17 expected/run | every run | ~17 | routine |
+| luck 0 | 20 | 11 (12×0, 5×1, 3×2) | 8/20 | 0.55 | 0/20 |
+| 천운 max (+50%) | 20 | 18 (7×0, 8×1, 5×2) | 13/20 | 0.90 | 1/20 |
+| meta max (첫 인연+천운…) | 10 | 17 | 10/10 | 1.7 | 2/10 |
+| FTUE fresh profile | 1 | 1 (guaranteed 도깨비불) | 1/1 | 1 | 1/1 (taught) |
+
+- Luck delta is exactly the designed ×~1.5 (11 → 18 specials on the same
+  seeds) and maxed luck still leaves 7/20 runs empty — not every-run.
+- The zero-meta floor is deliberately below the "handful per ten runs"
+  line: organic evolution is the jackpot. The earned paths close the gap —
+  첫 인연 (650냥) guarantees an early special every run, 천운 scales odds,
+  and the recorded recipe tells the player exactly what to level and hunt.
+  The autoplay bot understates conversion (it spreads picks and dies at
+  ~220s on a zero-meta profile); a player chasing a known recipe converts
+  a usable material at level 3+ far more often.
+- Specials cluster at 150–260s because that is where the elite waves are —
+  an elite kill now reads as the event that pays the run off.
+
+## Screenshots
+
+- 괴이록 recipe knowledge (performed 화부→화령부 legible, unperformed
+  branches ???): `captures/n4-9/bestiary_recipe.png`
+
+## Regression
+
+300/300 unit tests PASS (luck roll, level gate + FTUE waiver, soft-lock
+guard, real-data milestone gates, card masking added), validate_data PASS
+with both new rejection proofs, headless import clean. 60+ full seeded
+runs exercised loot auto-collect, mod swap (meta-max batch performed
+evolutions), replaced-weapon exclusion (0 violations), meta effects
+(luck visible in META applied), bestiary recording, boss, result and
+autosave paths with no new errors.

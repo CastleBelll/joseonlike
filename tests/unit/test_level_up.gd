@@ -172,6 +172,82 @@ func test_mod_candidates_exclude_owned_or_replaced_result() -> bool:
 	return result_owned.is_empty() and result_replaced.is_empty()
 
 
+## N4-9: a recipe with level_required only fires once the base weapon reached
+## that milestone; the FTUE waiver bypasses the gate on the scripted first run.
+func test_mod_candidates_respect_level_required() -> bool:
+	var gated := {"fire_mod": {
+		"weapon_id": "talisman", "loot_id": "fire_stone",
+		"result_weapon": "fire_talisman", "level_required": 3,
+	}}
+	var too_low: Array[Dictionary] = LevelUp.mod_candidates(
+		gated, {"fire_stone": 1}, {"talisman": 2}
+	)
+	var at_level: Array[Dictionary] = LevelUp.mod_candidates(
+		gated, {"fire_stone": 1}, {"talisman": 3}
+	)
+	var waived: Array[Dictionary] = LevelUp.mod_candidates(
+		gated, {"fire_stone": 1}, {"talisman": 1}, [], true
+	)
+	return too_low.is_empty() and at_level.size() == 1 and waived.size() == 1
+
+
+## N4-9 soft-lock guard: when the only usable mod is level-gated, the screen
+## still fills with regular cards — the gate removes one card, never the pool.
+func test_level_gated_mod_leaves_pool_full() -> bool:
+	var gated := {"fire_mod": {
+		"weapon_id": "talisman", "loot_id": "fire_stone",
+		"result_weapon": "fire_talisman", "level_required": 3,
+	}}
+	var mod_pool: Array[Dictionary] = LevelUp.mod_candidates(
+		gated, {"fire_stone": 1}, {"talisman": 1}
+	)
+	var pool: Array[Dictionary] = LevelUp.candidates(WEAPONS, PASSIVES, {"talisman": 1}, {})
+	var cards: Array[Dictionary] = LevelUp.assemble(pool, mod_pool, 3, _rng())
+	for card: Dictionary in cards:
+		if String(card["kind"]) == LevelUp.KIND_MOD:
+			return false
+	return mod_pool.is_empty() and cards.size() == 3
+
+
+## N4-9: every shipping recipe must gate on a reachable milestone level.
+func test_real_data_mods_all_gate_on_a_milestone() -> bool:
+	var weapons: Dictionary = JSON.parse_string(
+		FileAccess.get_file_as_string("res://data/weapons.json")
+	)
+	var mods: Dictionary = JSON.parse_string(
+		FileAccess.get_file_as_string("res://data/weapon_mods.json")
+	)
+	for mod_id: String in mods:
+		var mod: Dictionary = mods[mod_id]
+		var base: Dictionary = weapons.get(String(mod.get("weapon_id", "")), {})
+		var required: int = int(mod.get("level_required", 0))
+		if required < 2 or required > int(base.get("max_level", 0)):
+			return false
+		var milestones: Dictionary = base.get("milestones", {})
+		if not milestones.is_empty() and not milestones.has(str(required)):
+			return false
+	return true
+
+
+## N4-9 knowledge rule: an unrecorded mod result shows as ??? with no numbers,
+## no mechanic and no result icon — the recipe is legible only once performed.
+func test_mod_card_masks_unrecorded_result() -> bool:
+	var choice := {"kind": LevelUp.KIND_MOD, "id": "fire_mod", "mod": MODS["fire_mod"]}
+	var masked: Dictionary = LevelUp.as_card(
+		choice, MOD_WEAPONS, {}, {"talisman": 1}, {}, {}, GRADES, ["fire_talisman"]
+	)
+	var known: Dictionary = LevelUp.as_card(
+		choice, MOD_WEAPONS, {}, {"talisman": 1}, {}, {}, GRADES, []
+	)
+	return (
+		String(masked["desc"]) == "낡은 부적 → ??? (레벨 유지)"
+		and String(masked["icon_weapon_id"]).is_empty()
+		and String(masked["icon_loot_id"]) == "fire_stone"
+		and String(known["desc"]).contains("화염 부적")
+		and String(known["icon_weapon_id"]) == "fire_talisman"
+	)
+
+
 func test_assemble_keeps_at_most_one_mod_card_and_fills_three() -> bool:
 	var pool: Array[Dictionary] = LevelUp.candidates(WEAPONS, PASSIVES, {"talisman": 1}, {})
 	var mod_pool: Array[Dictionary] = [

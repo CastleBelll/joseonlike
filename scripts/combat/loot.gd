@@ -20,11 +20,23 @@ const TIER_COLORS: Dictionary = {
 
 ## Roll one dead monster's drop table. Each entry is an independent chance;
 ## the caller owns the RNG so a fixed seed replays the same drops.
-static func roll_drops(table: Dictionary, rng: RandomNumberGenerator) -> Array[String]:
+## N4-9: `special_bonus` (the luck meta stat) scales SPECIAL material odds
+## only — ordinary drops keep their data rates so the field stays alive.
+static func roll_drops(
+	table: Dictionary,
+	rng: RandomNumberGenerator,
+	loot_data: Dictionary = {},
+	special_bonus: float = 0.0
+) -> Array[String]:
 	var dropped: Array[String] = []
 	for entry: Dictionary in table.get("drops", []):
-		if rng.randf() < float(entry.get("chance", 0.0)):
-			dropped.append(String(entry.get("loot_id", "")))
+		var loot_id: String = String(entry.get("loot_id", ""))
+		var chance: float = float(entry.get("chance", 0.0))
+		if special_bonus > 0.0 \
+				and bool((loot_data.get(loot_id, {}) as Dictionary).get("special", false)):
+			chance = minf(chance * (1.0 + special_bonus), 1.0)
+		if rng.randf() < chance:
+			dropped.append(loot_id)
 	return dropped
 
 

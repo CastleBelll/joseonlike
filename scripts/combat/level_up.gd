@@ -22,6 +22,9 @@ const DEFAULT_GRADE_KO := "일반"
 const GRADE_UP_LABEL := "등급↑"
 const MOD_LABEL := "변신!"
 const MOD_NAME := "개조"
+## N4-9 knowledge rule: a mod result the 괴이록 has not recorded yet shows as
+## this mask — performing the evolution is what makes the recipe legible.
+const UNKNOWN_RESULT := "???"
 
 ## Only stats the current runtime actually applies may be offered; a card
 ## that changes nothing would lie to the player.
@@ -125,19 +128,27 @@ static func candidates(
 
 
 ## 개조 candidates (N4-6): one per recipe whose material is held, base weapon
-## owned, and result neither owned nor already replaced by an earlier mod.
+## owned AND invested to the recipe's milestone level (N4-9 "level_required"),
+## and result neither owned nor already replaced by an earlier mod.
+## `waive_level_gate` is the FTUE exception (N4-9): the scripted first run
+## teaches the system, so its one guaranteed card must never be level-blocked.
 static func mod_candidates(
 	mods: Dictionary,
 	inventory: Dictionary,
 	owned_levels: Dictionary,
-	replaced: Array = []
+	replaced: Array = [],
+	waive_level_gate: bool = false
 ) -> Array[Dictionary]:
 	var pool: Array[Dictionary] = []
 	for mod_id: String in mods:
 		var mod: Dictionary = mods[mod_id]
 		if int(inventory.get(String(mod.get("loot_id", "")), 0)) <= 0:
 			continue
-		if not owned_levels.has(String(mod.get("weapon_id", ""))):
+		var base_id: String = String(mod.get("weapon_id", ""))
+		if not owned_levels.has(base_id):
+			continue
+		if not waive_level_gate \
+				and int(owned_levels[base_id]) < int(mod.get("level_required", 1)):
 			continue
 		var result_id: String = String(mod.get("result_weapon", ""))
 		if owned_levels.has(result_id) or replaced.has(result_id):
@@ -459,7 +470,8 @@ static func describe(
 	owned_levels: Dictionary,
 	passive_stacks: Dictionary,
 	owned_grades: Dictionary = {},
-	grades: Dictionary = {}
+	grades: Dictionary = {},
+	masked_results: Array = []
 ) -> String:
 	var id: String = String(choice.get("id", ""))
 	match String(choice.get("kind", "")):
@@ -494,6 +506,14 @@ static func describe(
 			var mod: Dictionary = choice.get("mod", {})
 			var base_id: String = String(mod.get("weapon_id", ""))
 			var result_id: String = String(mod.get("result_weapon", ""))
+			# N4-9: an evolution this profile has never performed stays a
+			# mystery — no result name, numbers or mechanic until the 괴이록
+			# records it. Knowledge is earned by doing it once.
+			if masked_results.has(result_id):
+				return "%s → %s (레벨 유지)" % [
+					String((weapons.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
+					UNKNOWN_RESULT,
+				]
 			var level: int = int(owned_levels.get(base_id, 1))
 			var carried: String = mod_carried_grade(mod, weapons, owned_grades, grades)
 			var line: String = "%s → %s · 피해 %s→%s (레벨 유지)" % [
@@ -566,16 +586,23 @@ static func as_card(
 	owned_levels: Dictionary,
 	passive_stacks: Dictionary,
 	owned_grades: Dictionary = {},
-	grades: Dictionary = {}
+	grades: Dictionary = {},
+	masked_results: Array = []
 ) -> Dictionary:
+	# N4-9: a masked mod result must not leak through its icon either — the
+	# well falls back to the material icon the card already shows.
+	var icon_id: String = icon_weapon_id(choice)
+	if masked_results.has(icon_id):
+		icon_id = ""
 	return {
 		"name": display_name(choice, weapons, passives),
 		"desc": describe(
-			choice, weapons, passives, owned_levels, passive_stacks, owned_grades, grades
+			choice, weapons, passives, owned_levels, passive_stacks, owned_grades,
+			grades, masked_results
 		),
 		"well_label": well_label(choice, owned_levels, passive_stacks),
 		"grade": grade_text(choice, weapons, owned_grades, grades),
-		"icon_weapon_id": icon_weapon_id(choice),
+		"icon_weapon_id": icon_id,
 		"icon_loot_id": icon_loot_id(choice),
 		"payload": choice,
 	}

@@ -529,6 +529,8 @@ func _check_loot(monsters: Dictionary, weapons: Dictionary, stages: Dictionary) 
 		_require_positive_numbers(entry, ["salvage_gold"], label)
 	var drop_tables: Dictionary = _load(DATA_DIR + "/drop_tables.json")
 	for monster_id: String in drop_tables:
+		if monster_id.begins_with("_"):
+			continue  # reserved config keys ("_config") are not monsters
 		if not monsters.has(monster_id):
 			_fail("drop_tables.%s not in monsters.json" % monster_id)
 		for drop: Dictionary in (drop_tables[monster_id] as Dictionary).get("drops", []):
@@ -538,6 +540,7 @@ func _check_loot(monsters: Dictionary, weapons: Dictionary, stages: Dictionary) 
 			var chance: float = float(drop.get("chance", 0.0))
 			if chance <= 0.0 or chance > 1.0:
 				_fail(drop_label + ".chance must be in (0, 1]")
+	_check_special_rarity(drop_tables, monsters, stages, loot)
 	for stage_id: String in stages:
 		var stage: Dictionary = stages[stage_id]
 		for issue: String in Ftue.first_run_issues(
@@ -550,6 +553,8 @@ func _check_loot(monsters: Dictionary, weapons: Dictionary, stages: Dictionary) 
 		var mod_label: String = "weapon_mods." + mod_id
 		if not weapons.has(mod.get("weapon_id", "")):
 			_fail(mod_label + ".weapon_id not in weapons.json")
+		else:
+			_check_mod_level_gate(mod, weapons, mod_label)
 		var result_id: String = String(mod.get("result_weapon", ""))
 		if not weapons.has(result_id):
 			_fail(mod_label + ".result_weapon not in weapons.json")
@@ -560,6 +565,56 @@ func _check_loot(monsters: Dictionary, weapons: Dictionary, stages: Dictionary) 
 		if not loot.has(mod.get("loot_id", "")):
 			_fail(mod_label + ".loot_id not in loot.json")
 	_check_ui_icons(weapons, loot)
+
+
+## N4-9 rarity guard: the summed SPECIAL-material chance per kill must respect
+## the intent caps declared in drop_tables._config.special_chance_max — a
+## trash table loaded with special weight would quietly bring back every-run
+## evolutions. Monsters classify as boss (a stages.json boss_id), elite
+## ("elite_of" entries) or trash.
+func _check_special_rarity(
+	drop_tables: Dictionary, monsters: Dictionary, stages: Dictionary, loot: Dictionary
+) -> void:
+	var caps: Dictionary = (
+		drop_tables.get("_config", {}) as Dictionary
+	).get("special_chance_max", {})
+	var cap_fields: Array[String] = ["trash", "elite", "boss"]
+	_require_positive_numbers(caps, cap_fields, "drop_tables._config.special_chance_max")
+	var boss_ids: Array[String] = []
+	for stage_id: String in stages:
+		boss_ids.append(String((stages[stage_id] as Dictionary).get("boss_id", "")))
+	for monster_id: String in drop_tables:
+		if monster_id.begins_with("_") or not monsters.has(monster_id):
+			continue
+		var special_sum: float = 0.0
+		for drop: Dictionary in (drop_tables[monster_id] as Dictionary).get("drops", []):
+			if bool((loot.get(drop.get("loot_id", ""), {}) as Dictionary).get("special", false)):
+				special_sum += float(drop.get("chance", 0.0))
+		var kind: String = "trash"
+		if boss_ids.has(monster_id):
+			kind = "boss"
+		elif (monsters[monster_id] as Dictionary).has("elite_of"):
+			kind = "elite"
+		if special_sum > float(caps.get(kind, 0.0)) + 0.0001:
+			_fail("drop_tables.%s special chance sum %.3f exceeds %s cap %.3f" % [
+				monster_id, special_sum, kind, float(caps.get(kind, 0.0))
+			])
+
+
+## N4-9 earned evolution: every recipe must name a level gate the base weapon
+## can actually reach — at least 2 (never a just-picked weapon), never past
+## max_level, and on the base's milestone ladder when it defines one.
+func _check_mod_level_gate(mod: Dictionary, weapons: Dictionary, mod_label: String) -> void:
+	var base: Dictionary = weapons.get(mod.get("weapon_id", ""), {})
+	var required: int = int(mod.get("level_required", 0))
+	if required < 2:
+		_fail(mod_label + ".level_required missing or below 2")
+		return
+	if required > int(base.get("max_level", 0)):
+		_fail(mod_label + ".level_required exceeds the base weapon's max_level")
+	var milestones: Dictionary = base.get("milestones", {})
+	if not milestones.is_empty() and not milestones.has(str(required)):
+		_fail(mod_label + ".level_required is not a milestone level of the base weapon")
 
 
 ## N3-13 icon binding: every weapon and loot id binds by filename to

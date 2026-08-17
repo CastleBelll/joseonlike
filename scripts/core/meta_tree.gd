@@ -27,8 +27,9 @@ const NO_NEXT_COST := -1
 const SCALAR_STATS: Array[String] = [
 	"max_hp", "move_speed", "attack_damage", "attack_speed", "magnet_radius"
 ]
-## Run economy multipliers (Stage gold/xp pickup paths).
-const ECONOMY_STATS: Array[String] = ["gold_gain", "xp_gain"]
+## Run economy multipliers (Stage gold/xp pickup paths; luck scales the
+## special-material drop odds in the loot roll — N4-9).
+const ECONOMY_STATS: Array[String] = ["gold_gain", "xp_gain", "luck"]
 ## Start-of-run and choice-quality counters (Stage._ready / level-up screen).
 const START_STATS: Array[String] = ["start_level", "choice_count", "first_find"]
 ## Survivability (Player damage pipeline + Stage revive).
@@ -41,7 +42,7 @@ const WEAPON_STATS: Array[String] = [
 ## integer counters above are capped by their rank ladders instead.
 const CAPPED_STATS: Array[String] = [
 	"max_hp", "move_speed", "attack_damage", "attack_speed", "magnet_radius",
-	"gold_gain", "xp_gain", "damage_reduction", "hit_invuln",
+	"gold_gain", "xp_gain", "luck", "damage_reduction", "hit_invuln",
 	"burn_duration", "ward_radius"
 ]
 ## Sealed weapons must always need at least this many stacks to burst.

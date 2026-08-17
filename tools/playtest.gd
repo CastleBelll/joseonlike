@@ -25,6 +25,13 @@ extends Node
 ##   --meta=max      (N7-1) run with every 명부수 node at max rank, injected
 ##                   in memory only — the profile save is locked so the dev
 ##                   profile on disk is never polluted.
+##   --runs=<n>      (N4-9) n seeded free-play runs (seed, seed+1, …) on an
+##                   in-memory RETURNING profile, ending in a RARITY TABLE of
+##                   specials dropped and evolutions performed per run.
+##   --luck=max      (N4-9) only the 천운 node at max rank, in memory only —
+##                   isolates the luck stat's effect on special drops.
+##   --fresh         (N4-9) run on a brand-new in-memory profile: the FTUE
+##                   first-run guarantee path (scripted drops + free 개조).
 ## Screenshots are skipped in headless mode (no frames to grab).
 ## Every timing below derives from data/stages.json duration_sec/boss_at_sec/
 ## surge_at_sec — nothing here hardcodes the run length.
@@ -106,6 +113,12 @@ var _run_seed: int = 0  # 0 = unseeded (default free-play behaviour)
 var _speed: float = 1.0
 var _grants: Array[String] = []
 var _meta_max: bool = false
+# N4-9 rarity batch state.
+var _runs_total: int = 0
+var _run_index: int = 0
+var _luck_max: bool = false
+var _fresh: bool = false
+var _rarity_rows: Array[Dictionary] = []
 var _headless: bool = false
 var _damage_total: float = 0.0
 # N6-2: --idle holds the bot still; the opening must hurt it but not kill a
@@ -164,6 +177,8 @@ func _ready() -> void:
 		if _run_seed == 0:
 			_run_seed = DEFAULT_BATCH_SEED
 		_forced = BATCH_WEAPONS[0]
+	if _runs_total > 0 and _run_seed == 0:
+		_run_seed = DEFAULT_BATCH_SEED
 	_start_run()
 
 
@@ -188,17 +203,40 @@ func _parse_args() -> void:
 			_idle = true
 		elif arg == "--meta=max":
 			_meta_max = true
+		elif arg.begins_with("--runs="):
+			_runs_total = maxi(int(arg.get_slice("=", 1)), 0)
+		elif arg == "--luck=max":
+			_luck_max = true
+		elif arg == "--fresh":
+			_fresh = true
 
 
 ## Boot one run: fresh stage, seeded streams, forced/granted weapons, and the
 ## damage-total hooks the balance table reads.
 func _start_run() -> void:
 	_reset_run_metrics()
+	if _fresh and SaveService.instance != null:
+		# N4-9 FTUE probe: a brand-new profile, in memory only.
+		SaveService.instance.profile = SaveProfile.default_profile()
+		SaveService.instance._write_locked = true
+	elif _runs_total > 0 and SaveService.instance != null:
+		# N4-9 rarity batch: a RETURNING profile (runs_played > 0, FTUE spent)
+		# so the scripted first-run guarantees stay out of the measurement.
+		var returning: Dictionary = SaveProfile.default_profile()
+		(returning["stats"] as Dictionary)["runs_played"] = 1
+		returning[Ftue.FTUE_KEY] = {Ftue.MOVE_HINT_SEEN: true, Ftue.MOD_EXPLAINED: true}
+		SaveService.instance.profile = returning
+		SaveService.instance._write_locked = true
 	if _meta_max and SaveService.instance != null:
 		# In-memory maxed tree; the write lock keeps it off the dev's disk.
 		SaveService.instance.profile["meta_tree"] = MetaTree.maxed_state(
 			MetaTree.load_tree()
 		)
+		SaveService.instance._write_locked = true
+	elif _luck_max and SaveService.instance != null:
+		# N4-9: ONLY the luck node maxed, so the batch isolates its effect.
+		var maxed: Dictionary = MetaTree.maxed_state(MetaTree.load_tree())
+		SaveService.instance.profile["meta_tree"] = {"luck": int(maxed.get("luck", 0))}
 		SaveService.instance._write_locked = true
 	if _run_seed != 0:
 		seed(_run_seed)  # drives the stage's randi() field seed
@@ -517,7 +555,10 @@ func _pick_card() -> void:
 			_stage._popup.dismissed.emit()
 			return
 	else:
-		for wanted: String in [LevelUp.MOD_LABEL, LevelUp.GRADE_UP_LABEL, "Lv."]:
+		# N4-9: free-play priority mirrors an evolution-chasing player — the
+		# 개조 card first, then LEVEL investment (the level_required gate),
+		# then grade raises. Forced-build metrics (_choose_forced) unchanged.
+		for wanted: String in [LevelUp.MOD_LABEL, "Lv.", LevelUp.GRADE_UP_LABEL]:
 			for button: Button in buttons:
 				if _button_has_label(button, wanted):
 					chosen = button
@@ -616,6 +657,9 @@ func _finish() -> void:
 	print("PLAYTEST mod cards: offered on %d screens, taken %d at %s" % [
 		_mod_offers, _special_times.size(), str(_special_times)
 	])
+	print("PLAYTEST specials dropped: %d at %s" % [
+		_stage._special_drop_times.size(), str(_stage._special_drop_times)
+	])
 	print("PLAYTEST mod results offered as new weapon: %d" % _evo_violations)
 	print("PLAYTEST fps floor (whole run): %.0f" % (
 		_fps_min_all if _fps_min_all < 1e9 else 0.0
@@ -654,6 +698,22 @@ func _finish() -> void:
 			"fps_min": _fps_min_all if _fps_min_all < 1e9 else 0.0,
 			"final_build": str(_stage._owned_levels),
 		})
+	if _runs_total > 0:
+		_rarity_rows.append({
+			"seed": _run_seed,
+			"outcome": _stage._outcome,
+			"specials": _stage._special_drop_times.size(),
+			"offers": _mod_offers,
+			"evolutions": _special_times.size(),
+		})
+		if _run_index < _runs_total - 1:
+			_run_index += 1
+			_run_seed += 1
+			await _next_run()
+			return
+		_print_rarity_table()
+		get_tree().quit(0)
+		return
 	if _batch and _batch_index < BATCH_WEAPONS.size() - 1:
 		_batch_index += 1
 		_forced = BATCH_WEAPONS[_batch_index]
@@ -675,6 +735,35 @@ func _next_run() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_start_run()
+
+
+## N4-9 rarity evidence: per seeded free-play run, the specials that dropped
+## (boss trophy excluded) and the evolutions actually performed.
+func _print_rarity_table() -> void:
+	print("RARITY TABLE runs=%d base_seed=%d luck_max=%s" % [
+		_runs_total, _run_seed - _runs_total + 1, str(_luck_max)
+	])
+	print("| seed | outcome | specials | mod offers | evolutions |")
+	print("|---|---|---|---|---|")
+	var special_total: int = 0
+	var evo_total: int = 0
+	var runs_with_special: int = 0
+	var runs_with_evo: int = 0
+	for row: Dictionary in _rarity_rows:
+		print("| %d | %s | %d | %d | %d |" % [
+			int(row["seed"]), String(row["outcome"]), int(row["specials"]),
+			int(row["offers"]), int(row["evolutions"]),
+		])
+		special_total += int(row["specials"])
+		evo_total += int(row["evolutions"])
+		if int(row["specials"]) > 0:
+			runs_with_special += 1
+		if int(row["evolutions"]) > 0:
+			runs_with_evo += 1
+	print("RARITY totals: specials %d (%d/%d runs with any), evolutions %d (%d/%d runs)" % [
+		special_total, runs_with_special, _rarity_rows.size(),
+		evo_total, runs_with_evo, _rarity_rows.size(),
+	])
 
 
 ## The measurement table N4-3 tunes against. Columns per forced 5-minute run:

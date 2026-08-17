@@ -10,6 +10,7 @@
       "xp_gain": 0.24,
       "damage_reduction": 0.14,
       "hit_invuln": 0.2,
+      "luck": 0.5,
       "burn_duration": 0.5,
       "ward_radius": 0.24
     },
@@ -294,6 +295,29 @@
       "pos": [
         0.72,
         5
+      ]
+    },
+    {
+      "id": "luck",
+      "name_ko": "천운",
+      "name_en": "Heaven's Luck",
+      "icon": "thunder_stone",
+      "effect": {
+        "stat": "luck",
+        "per_rank": 0.25
+      },
+      "desc_ko": "특수 재료 발견 확률 +25%",
+      "desc_en": "Special material drop chance +25%",
+      "costs": [
+        750,
+        1250
+      ],
+      "requires": [
+        "long_breath"
+      ],
+      "pos": [
+        0.72,
+        6
       ]
     },
     {

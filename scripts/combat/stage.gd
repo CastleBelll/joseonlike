@@ -58,6 +58,9 @@ var _mods_data: Dictionary = {}
 var _loot_pool: NodePool
 var _loot_rng := RandomNumberGenerator.new()
 var _replaced_weapons: Array[String] = []
+# N4-9 rarity evidence: the run second each SPECIAL material dropped at —
+# the playtest harness reads this to prove the intended drop rate.
+var _special_drop_times: Array[float] = []
 
 # N3-8 feedback + N5-1 run flow state.
 var _feedback: Dictionary = {}
@@ -465,18 +468,22 @@ func _show_next_level_up() -> void:
 		_weapons_data, _passives_data, _owned_levels, _passive_stacks,
 		_owned_grades, _grades_config, _replaced_weapons
 	)
+	# N4-9: evolution is earned — the recipe's level_required gate applies from
+	# the second run on; the scripted first run keeps its teaching card free.
 	var mod_pool: Array[Dictionary] = LevelUp.mod_candidates(
-		_mods_data, _run_state.inventory, _owned_levels, _replaced_weapons
+		_mods_data, _run_state.inventory, _owned_levels, _replaced_weapons,
+		Ftue.is_first_run(_profile())
 	)
 	# N7-2 혜안: the choice_count meta bonus widens every level-up screen.
 	var choices: Array[Dictionary] = LevelUp.assemble(
 		pool, mod_pool, CHOICES_PER_LEVEL + int(_meta_bonus("choice_count")), _choice_rng
 	)
+	var masked: Array[String] = _unknown_mod_results(choices)
 	var cards: Array[Dictionary] = []
 	for choice: Dictionary in choices:
 		cards.append(LevelUp.as_card(
 			choice, _weapons_data, _passives_data, _owned_levels, _passive_stacks,
-			_owned_grades, _grades_config
+			_owned_grades, _grades_config, masked
 		))
 	# N6-1: the very first 개조 card a profile ever sees carries one extra
 	# explanation line — same card, same single tap, never again.
@@ -486,6 +493,25 @@ func _show_next_level_up() -> void:
 		if bool(explained["explained"]) and SaveService.instance != null:
 			SaveService.instance.mark_mod_explained()
 	_popup.open(POWER_UP_HEADER, cards, _owned_levels, _weapons_data)
+
+
+## N4-9 permanent knowledge: mod results this profile's 괴이록 has never
+## recorded stay ??? on the card — performing the evolution once makes the
+## recipe legible in every later run (knowledge, not power).
+func _unknown_mod_results(choices: Array[Dictionary]) -> Array[String]:
+	var known: Array = Bestiary.normalized_record(
+		_profile().get("bestiary")
+	)[Bestiary.KIND_WEAPONS]
+	var masked: Array[String] = []
+	for choice: Dictionary in choices:
+		if String(choice.get("kind", "")) != LevelUp.KIND_MOD:
+			continue
+		var result_id: String = String(
+			(choice.get("mod", {}) as Dictionary).get("result_weapon", "")
+		)
+		if not result_id.is_empty() and not known.has(result_id):
+			masked.append(result_id)
+	return masked
 
 
 func _on_choice_picked(payload: Dictionary) -> void:
@@ -680,11 +706,19 @@ func _load_json(path: String) -> Dictionary:
 ## the corpse so they never hide under the XP orb.
 func _spawn_loot(enemy: Enemy) -> void:
 	var table: Dictionary = _drop_tables.get(enemy.monster_id, {})
-	var drops: Array[String] = Loot.roll_drops(table, _loot_rng)
+	# N4-9 천운: the luck meta stat scales special-material odds only.
+	var drops: Array[String] = Loot.roll_drops(
+		table, _loot_rng, _loot_data, _meta_bonus("luck")
+	)
 	# N6-1 scripted first run: any overdue guarantee rides the next kill; a
 	# natural drop of the same loot earlier satisfies it via _first_run_log.
 	drops.append_array(Ftue.due_guarantees(_first_run_drops, _run_elapsed, _first_run_log))
 	for loot_id: String in drops:
+		# Boss drops land as the run ends — a trophy, not evolution currency —
+		# so the rarity metric counts only specials a build can still use.
+		if not enemy.is_boss \
+				and bool((_loot_data.get(loot_id, {}) as Dictionary).get("special", false)):
+			_special_drop_times.append(_run_elapsed)
 		var at: Vector2 = enemy.global_position
 		if Ftue.is_guaranteed(_first_run_drops, loot_id) and not _first_run_log.has(loot_id):
 			_first_run_log[loot_id] = _run_elapsed

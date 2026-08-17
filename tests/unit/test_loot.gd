@@ -70,6 +70,50 @@ func test_roll_certain_chance_always_drops() -> bool:
 	return true
 
 
+## N4-9 천운: luck scales SPECIAL chances only — a doubled 0.5 special becomes
+## certain, the ordinary drop next to it keeps its data rate.
+func test_luck_scales_special_chance_only() -> bool:
+	var table := {"drops": [
+		{"loot_id": "fire_stone", "chance": 0.5},
+		{"loot_id": "bamboo", "chance": 0.5},
+	]}
+	var rng := _rng()
+	var special_hits: int = 0
+	var common_hits: int = 0
+	for i: int in range(SAMPLE_ROLLS):
+		var dropped: Array[String] = Loot.roll_drops(table, rng, LOOT, 1.0)
+		if dropped.has("fire_stone"):
+			special_hits += 1
+		if dropped.has("bamboo"):
+			common_hits += 1
+	return (
+		special_hits == SAMPLE_ROLLS
+		and absf(float(common_hits) / float(SAMPLE_ROLLS) - 0.5) < CHANCE_TOLERANCE
+	)
+
+
+## Luck at any value must clamp at certainty, and zero luck must replay the
+## exact sequence of the plain roll (the seeded-replay contract holds).
+func test_luck_clamps_and_zero_is_identity() -> bool:
+	var table := {"drops": [
+		{"loot_id": "whetstone", "chance": 0.02},
+		{"loot_id": "bamboo", "chance": 0.3},
+	]}
+	var plain_rng := _rng()
+	var lucky_rng := _rng()
+	for i: int in range(200):
+		var plain: Array[String] = Loot.roll_drops(table, plain_rng)
+		var zero_luck: Array[String] = Loot.roll_drops(table, lucky_rng, LOOT, 0.0)
+		if plain != zero_luck:
+			return false
+	var certain := {"drops": [{"loot_id": "fire_stone", "chance": 0.4}]}
+	var rng := _rng()
+	for i: int in range(100):
+		if Loot.roll_drops(certain, rng, LOOT, 99.0) != ["fire_stone"]:
+			return false
+	return true
+
+
 func test_inventory_add_is_immutable_and_counts() -> bool:
 	var empty: Dictionary = {}
 	var one: Dictionary = Loot.add(empty, "bamboo")
