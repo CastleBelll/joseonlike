@@ -255,6 +255,9 @@ static func loot_rows(
 		var discovered: bool = discovered_ids.has(loot_id)
 		var lines: Array[String] = []
 		if discovered:
+			var desc: String = String(stats.get("desc_" + locale, stats.get("desc_ko", "")))
+			if not desc.is_empty():
+				lines.append(desc)
 			for mod_id: String in mods:
 				var mod: Dictionary = mods[mod_id]
 				if String(mod.get("loot_id", "")) != loot_id:
