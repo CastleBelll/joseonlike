@@ -51,10 +51,12 @@ const HINT_SHOT_AT_SEC := 0.6
 const OPENING_SHOT_PATH := "user://playtest_opening.png"
 const OPENING_SHOT_AT_SEC := 12.0
 const LOW_HP_SHOT_PATH := "user://playtest_low_hp.png"
-## N6-3: the post-popup grace blink right after a choice screen closes, and
-## the first heal landing (elite kill or health pickup).
-const GRACE_SHOT_PATH := "user://playtest_popup_grace.png"
+## N6-3: the first heal landing (elite kill or health pickup).
 const HEAL_SHOT_PATH := "user://playtest_heal.png"
+## N6-4 rush/level-up separation metric: the rush counts as "converged" the
+## first second this many enemies stand inside the radius around the player.
+const CONVERGE_RADIUS_PX := 250.0
+const CONVERGE_COUNT := 8
 ## N3-14 crowd metric: an enemy counts as "stacked" when another enemy's
 ## center sits closer than half the pair's combined contact radii.
 const OVERLAP_SAMPLE_SEC := 1.0
@@ -134,13 +136,17 @@ var _damage_total: float = 0.0
 # moving player. Both modes report first level-up time and 0-20s damage taken.
 var _idle: bool = false
 var _first_level_up_at: float = -1.0
-# N6-3: HP snapshots at the elite/boss beats (-1 = never reached), the
-# grace/heal screenshot latches, and the elite-kill count the heal budget prices.
+# N6-3: HP snapshots at the elite/boss beats (-1 = never reached), the heal
+# screenshot latch, and the elite-kill count the heal budget prices.
 var _hp_at_elite: float = -1.0
 var _hp_at_boss: float = -1.0
-var _grace_shot_done: bool = false
 var _heal_shot_done: bool = false
 var _elite_kills: int = 0
+# N6-4: rush-convergence timestamp, the first popup's close time, and how
+# many enemies stood near the player at that close (the ambush measure).
+var _converge_at: float = -1.0
+var _first_popup_closed_at: float = -1.0
+var _near_at_popup_close: int = -1
 var _damage_taken_open: float = 0.0
 var _prev_hp: float = 0.0
 var _opening_shot_done: bool = false
@@ -333,9 +339,11 @@ func _reset_run_metrics() -> void:
 	_first_level_up_at = -1.0
 	_hp_at_elite = -1.0
 	_hp_at_boss = -1.0
-	_grace_shot_done = false
 	_heal_shot_done = false
 	_elite_kills = 0
+	_converge_at = -1.0
+	_first_popup_closed_at = -1.0
+	_near_at_popup_close = -1
 	_damage_taken_open = 0.0
 	_opening_shot_done = false
 	_low_hp_shot_done = false
@@ -402,14 +410,6 @@ func _process(delta: float) -> void:
 	if not _opening_shot_done and elapsed >= OPENING_SHOT_AT_SEC:
 		_opening_shot_done = true
 		_capture(OPENING_SHOT_PATH)
-	# N6-3: the grace blink is only on right after a popup released the pause.
-	if not _grace_shot_done and not get_tree().paused and _first_level_up_at >= 0.0 \
-			and _player._bonus_invuln_left > 0.0:
-		_grace_shot_done = true
-		print("PLAYTEST grace active %.2fs after popup close at %.1fs" % [
-			_player._bonus_invuln_left, elapsed
-		])
-		_capture(GRACE_SHOT_PATH)
 	if not _heal_shot_done and _stage._heal_events > 0:
 		_heal_shot_done = true
 		_capture(HEAL_SHOT_PATH)
@@ -439,6 +439,7 @@ func _physics_process(delta: float) -> void:
 	if _stage._run_elapsed <= DAMAGE_WINDOW_SEC:
 		_damage_taken_open += hp_drop
 	_track_weapon_damage()
+	_track_convergence()
 	# N6-3: first sample at or past each beat second (physics cadence).
 	if _hp_at_elite < 0.0 and _stage._run_elapsed >= ELITE_SAMPLE_SEC:
 		_hp_at_elite = _player.hp
@@ -464,6 +465,25 @@ func _physics_process(delta: float) -> void:
 		_overlap_timer = OVERLAP_SAMPLE_SEC
 		_sample_overlap()
 	_steer()
+
+
+## N6-4: rush-convergence timestamp (first frame CONVERGE_COUNT enemies stand
+## within CONVERGE_RADIUS_PX) and the enemy pressure at the moment the first
+## popup releases the pause — the two beats the schedule must keep apart.
+func _track_convergence() -> void:
+	if _converge_at >= 0.0 and _first_popup_closed_at >= 0.0:
+		return
+	var near: int = 0
+	var reach_squared: float = CONVERGE_RADIUS_PX * CONVERGE_RADIUS_PX
+	for enemy: Enemy in _spawner.active_enemies():
+		if _player.global_position.distance_squared_to(enemy.global_position) <= reach_squared:
+			near += 1
+	if _converge_at < 0.0 and near >= CONVERGE_COUNT:
+		_converge_at = _stage._run_elapsed
+	if _first_popup_closed_at < 0.0 and _first_level_up_at >= 0.0 \
+			and not get_tree().paused:
+		_first_popup_closed_at = _stage._run_elapsed
+		_near_at_popup_close = near
 
 
 ## N4-3: every weapon node (including mod swaps appearing mid-run) reports
@@ -721,6 +741,10 @@ func _finish() -> void:
 		_stage._chest_counts.size(), str(_stage._chest_counts)
 	])
 	print("PLAYTEST first level-up: %.1fs (idle=%s)" % [_first_level_up_at, str(_idle)])
+	print("PLAYTEST rush converge: %.1fs (>=%d within %.0fpx); first popup closed %.1fs with %d near" % [
+		_converge_at, CONVERGE_COUNT, CONVERGE_RADIUS_PX,
+		_first_popup_closed_at, _near_at_popup_close
+	])
 	print("PLAYTEST damage taken 0-%.0fs: %.1f (hp now %.1f/%.1f)" % [
 		DAMAGE_WINDOW_SEC, _damage_taken_open, _player.hp, _player.hp_max
 	])

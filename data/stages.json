@@ -10,7 +10,7 @@
       "start_sec": 250,
       "ramp_sec": 20,
       "hp_mult_max": 3.0,
-      "damage_mult_max": 2.8,
+      "damage_mult_max": 2.5,
       "speed_mult_max": 1.6
     },
     "first_run_drops": [
@@ -43,10 +43,10 @@
         "interval_sec": 0.7
       },
       {
-        "at_sec": 12,
+        "at_sec": 17,
         "monster_id": "forest_goblin",
         "count": 10,
-        "interval_sec": 0.8
+        "interval_sec": 0.7
       },
       {
         "at_sec": 30,

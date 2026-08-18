@@ -2585,3 +2585,111 @@ nuke caps boss 2400→2250 / elite 510→360), ten-weapon builds untouched
 (no weapon data changed), evolution gating (0 leak violations), meta
 effects, bestiary, boss, result and autosave exercised by the seeded runs
 with no new errors.
+
+---
+
+# N6-4 — Grace withdrawn; floating joystick; weapons never hold fire (2026-08-18)
+
+Owner rejected the N6-3 post-popup grace while it was in flight: a choice
+screen already stops the whole tree — a full stop is the right model, and
+invulnerability on top of a full stop is the wrong fix. This pass removes
+that decision and lands the actual asks. Everything else N6-3 shipped
+(recovery loop, elite heal, break-table retune, instrumentation) stays.
+
+## Grace removal + enrage back to 2.5
+
+- `effects.json hit_feedback.popup_grace_sec` deleted; the popup-close
+  grant in `Stage._advance_popup_queue` deleted; validator field list
+  updated. The timed-shield plumbing stays untouched — `CombatMath.
+  grace_extend/grace_tick` and `Player._bonus_invuln_left` are what 축지's
+  `invulnerable_sec` and 회생부's `invuln_sec` run on; the unit tests were
+  relabeled to that contract (one rename: …across_consecutive_grants).
+- `soft_enrage.damage_mult_max` 2.8 → 2.5. The 2.8 bump existed only to
+  offset the grace (with grace, metamax-nopick was unlosable at 2.5 —
+  12/12 survivals). Re-measured without grace at 2.5, headless 8x,
+  seeds 20260814..19: **metamax nopick 1 defeat / 6** (279.5s, hp at boss
+  19.2; survivors scrape timeout at 19–117/138 hp) — matches the N4-8-era
+  guard standard (~1-in-8 deaths, death reachable). Plain nopick defeat
+  219.1s; idle probe dead 32.8s; normal bot victory 275.5s. 2.5 confirmed.
+
+## Rush convergence vs first level-up (the problem the grace papered over)
+
+Second opening pulse moved out of the level-up freeze: wave 2
+`12s 10@0.8` → `17s 10@0.7`. Wave 1 (0s 14@0.7 — the QA-3-confirmed 0:10
+tension) untouched. Opening validator still green: 14 + 5 spawns inside
+the 20s window = 19 ≥ 18; first-level XP scheduled well before 40s.
+
+Measured, rendered 1x, seed 20260814 (playtest `rush converge` = first
+moment ≥8 enemies stand within 250px; `near` = enemies within 250px when
+the first popup releases the pause):
+
+| metric | BEFORE (wave2@12s) | AFTER (wave2@17s) |
+|---|---|---|
+| first level-up | 19.2s | 21.9s |
+| first popup closed | 19.6s | 22.4s |
+| enemies near at close | 11 | 9 |
+| wave-2 ring arrival (spawn+~10.9s walk-in) | ~23–30s (on the close) | ~28–34s (**~5.5s after the close**) |
+| outcome / surge fps | victory 268.4s / min 59 avg 60 | victory 269.4s / min 60 avg 60 |
+
+The freeze now sits in the gap between wave 1 (engaged, thinning) and
+wave 2's converging ring instead of exactly on the ring's arrival. Honest
+residual: the kiting bot still had 9 wave-1 stragglers within 250px at
+close (they are chasing singles, not a fresh surround); 0–30s damage for
+the normal bot is 0.0 both before and after. The idle probe now takes
+108.0 damage in 0–30s (was 102.0 — wave 2's earlier interval lands one
+extra hit inside the window) and still dies at 32.8s: the opening remains
+lethal to a standing player.
+
+## Floating joystick (N3-1 fixed pad retired)
+
+A touch anywhere in the play area anchors the stick origin at the touch
+point; dragging clamps the knob to the 60px base radius; release hides the
+live stick and zeroes output. The resting pad still draws in the old
+bottom-left rect as an affordance hint — kept because the FTUE move hint
+anchors to that rect and a fresh player needs a visible "movement lives
+here" cue; the live stick replaces it the moment a thumb lands anywhere.
+HUD buttons keep tap priority (`CombatHud.blocks_point` walks the live
+button tree; the joystick refuses those touches), only the captured finger
+index can move or release the stick (second finger on an active cannot
+cancel movement), keyboard/WASD unchanged. Pure statics `TouchJoystick.
+knob_offset/output_vector` + 5 unit tests; runtime proof in
+tools/n64_check.tscn (anchored at (400,350) → output (0.707, 0.707),
+second finger on a button left movement intact, release → ZERO).
+
+## Uniform targeting fallback (N3-15 "hold fire" retired)
+
+`CombatMath.fallback_aim`: nearest visible enemy in range → nearest
+visible destructible → the player's facing direction (last_move_direction,
+default RIGHT) at max range. Applied through one shared resolver in
+AutoWeapon for every targeting mechanic — projectiles (straight/pierce/
+explosion/chain/curse), 석장 melee arc, and 결계 ward placement; summon/
+shockwave/orbit never targeted and are unchanged. No per-weapon special
+cases; projectiles still expire off the view rect + margin. The enemy scan
+short-circuits before the breakable sweep, so the common case (enemy on
+screen) pays nothing new. 5 unit tests (enemy priority, breakable
+fallback, offscreen/out-of-range skip, facing fallback, zero-vector
+facing). Runtime proof (n64_check, zero enemies on the field): standing
+next to props facing AWAY, field prop hp 1414 → 1403; with every prop
+smashed and nothing in view, projectile heading (0.0, -1.0) matches
+facing UP. Side effect, reported: the normal bot's prop breaks per run
+rose 5–8 → 16 (weapons now chip props whenever no enemy is visible),
+which feeds the N5-5 break table more often; heals stay bounded by the
+same break-share validator and the full-HP no-op rule.
+
+## Screenshots (captures/n6-4/)
+
+- floating stick anchored upper-right at (400,350): n64_joystick_floating.png
+- weapon shooting a destructible, zero enemies: n64_target_breakable.png
+- firing forward with nothing in view: n64_fire_forward.png
+- opening/surge/result regression frames: playtest_opening.png,
+  playtest_surge.png, playtest_result.png
+
+## Regression
+
+327/327 unit tests PASS (317 prior + 5 fallback + 5 joystick), validate_data
+PASS (15 files), headless import clean. Rendered 1x run: victory 269.4s,
+boss killed, surge fps min 60 avg 60 over 1749 samples (N3-18 baseline),
+chests 6 opened, evolution leak 0, autosave banked. n64_check PASS headless
+and rendered. Recovery loop intact: elite_heal and break-table data
+untouched; headless normal run landed 2 heals / 27hp (the rendered bot took
+zero damage, so its heals no-op at full HP by design).

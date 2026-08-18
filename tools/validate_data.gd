@@ -26,7 +26,7 @@ const ORB_FIELDS: Array[String] = [
 const HIT_FEEDBACK_FIELDS: Array[String] = [
 	"enemy_flash_sec", "knockback_speed_px_s", "knockback_decay_px_s2",
 	"boss_knockback_scale", "death_puff_sec", "death_puff_radius_scale",
-	"player_vignette_sec", "popup_grace_sec"
+	"player_vignette_sec"
 ]
 # N3-17 weapon effect contract (data/effects.json weapon_effects): every
 # timing/distance the code-side weapon visuals consume.

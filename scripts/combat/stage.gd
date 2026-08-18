@@ -210,6 +210,11 @@ func _ready() -> void:
 		_active_cooldowns[String(active.get("id", ""))] = 0.0
 	_hud.build_actives(_actives)
 	_hud.active_pressed.connect(_on_active_pressed)
+	# N6-4 floating joystick: HUD buttons keep tap priority over the stick.
+	# The level-up popup needs no entry here — it only ever opens while the
+	# tree is paused, which stops the joystick's _input entirely; a future
+	# unpaused popup would need its buttons covered by blocks_point too.
+	_joystick.blocks_touch = _hud.blocks_point
 	_refresh_progress_hud()
 	# N7-2 조기 수행: a banked head start grants its levels — and their power-up
 	# screens — right now, before the first wave lands.
@@ -685,12 +690,6 @@ func _advance_popup_queue() -> void:
 	_chest_batch_total = 0
 	_chest_batch_index = 0
 	_popup.close()
-	# N6-3 post-popup grace: resuming from a choice screen must never be an
-	# ambush — a short contact shield (existing invuln blink telegraphs it).
-	# Granted only when an actual pause is being released, once per queue
-	# drain; grace_extend refreshes, never stacks (CombatMath rule).
-	if get_tree().paused:
-		_player.grant_invulnerability(float(_feedback.get("popup_grace_sec", 0.0)))
 	get_tree().paused = false
 
 

@@ -159,7 +159,7 @@ func set_invuln_scale(scale: float) -> void:
 	_invuln_window = load_hit_invuln_sec() * maxf(scale, 1.0)
 
 
-## 축지 (N4-4b) and the N6-3 post-popup grace: a timed shield on top of the
+## 축지 (N4-4b) and the 회생부 revive (N7-2): a timed shield on top of the
 ## post-hit i-frames; repeats refresh, never shorten or stack. The same alpha
 ## flash telegraphs it.
 func grant_invulnerability(duration: float) -> void:
