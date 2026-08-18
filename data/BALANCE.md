@@ -2693,3 +2693,74 @@ chests 6 opened, evolution leak 0, autosave banked. n64_check PASS headless
 and rendered. Recovery loop intact: elite_heal and break-table data
 untouched; headless normal run landed 2 heals / 27hp (the rendered bot took
 zero damage, so its heals no-op at full HP by design).
+## N6-5 — Monsters stop dropping gold; the economy re-anchors on deliberate sources (2026-08-18)
+
+**Owner direction (confirmed): killing a monster gives XP and loot rolls, not
+coins.** All 23 `gold_drop` fields left `monsters.json`; `Enemy.derive_elite_stats`
+no longer derives one; `validate_data` now FAILS any monster entry that
+re-introduces `gold_drop`, so the removal cannot silently come back.
+
+**The boss's 150 stays a boss-kill reward, moved to `stages.json
+bamboo_forest.boss_gold` (validator: positive, required per stage).** Chosen
+over a guaranteed boss chest for one mechanical reason: the boss kill ends the
+run in the same call (`Stage._on_enemy_killed` → `_end_run`), so a chest
+spawned there could never be walked to or opened. Direct payout keeps the
+payoff; per-stage data keeps it tunable.
+
+### Remaining sources, retuned up (they now carry the run)
+
+| source | before | after |
+|---|---|---|
+| break gold pickup (`pickups.json gold.amount`) | 12 | **40** |
+| full-HP health conversion (`health.full_hp_gold`) | 10 | **25** |
+| dry-pool chest fallback (`chest.fallback_gold`) | 40 | **60** |
+| salvage common / uncommon / rare / epic (`loot.json`) | 2 / 4 / 8 / 15 | **5 / 10 / 18 / 32** |
+| boss kill (`stages.json boss_gold`) | 150 (as gold_drop) | **150** (unchanged value, new home) |
+
+### Meta tree rescaled to the new income
+
+Every cost ladder scaled to ~47% of N7-2 (two rounding-safe passes, 5냥 steps,
+strict per-rank increase and prereq-cost rules preserved — `MetaTree.data_issues`
+still enforces both):
+
+| scope | N7-2 | N6-5 |
+|---|---|---|
+| shared trunk (13 nodes) | 11,980냥 | **6,545냥** |
+| taoist branch (5 nodes) | 3,010냥 | **1,400냥** |
+| **taoist-relevant total** | **14,990냥** | **7,945냥** |
+| roots (철골 / 질풍보 rank 1) | 60 / 70 | **30 / 35** |
+
+### Income, measured after the change (seed-controlled autoplay, 10x, declutter landed)
+
+| run | seed | outcome | gold banked | breaks |
+|---|---|---|---|---|
+| normal bot | 1 | victory (timeout, boss 18hp left) | 155 | 1 |
+| normal bot | 7 | defeat 193.7s | 50 | 0 |
+| normal bot | 42 | victory (boss killed) | 440 | 9 |
+| normal bot | 99 | victory (timeout) | 25 | 0 |
+| normal bot | 123 | victory (timeout) | 75 | 2 |
+| normal bot | 20260814 | victory (boss killed) | 380 | 7 |
+| deliberately bad (--nopick) | 99 | defeat 178.8s | 15 | 0 |
+
+Shape: a boss-kill victory pays 380-440냥 (150 boss + breaks + salvage), a
+timeout victory without the kill pays 25-155냥, a defeat 15-50냥. Blended over
+the seven measured runs: **~163냥/run** → 7,945 / 163 ≈ **49 runs to max** on
+the bot. The bot undersells real income on two axes (it never aims at pots
+deliberately, and it killed the boss in only 2 of 5 victories), so the human
+estimate sits **~35-49 runs — inside the 30-50 target**, with the first root
+rank still affordable after one or two losing runs. Watch item: if a future
+sweep shows boss-kill rate near 100%, re-check the blend — every win at 380+
+would pull runs-to-max under 25.
+
+### Breaks per run after the declutter (N6-5 part 4)
+
+Solids 60 → **40**, decor 110 → **48**, grouped into **9 seeded cluster discs
+(r=170px, centers ≥420px apart, outside the spawn ring)** with open lanes
+between; ground variant tiles 10-20% → **4.0-5.3% measured** (threshold 0.27 →
+0.42) and variants now draw at **0.55 alpha over the base tile** so the floor
+recedes. Breakables still spawn ~27 of the 40 solids (weight share) —
+**breaks per run measured 0-9, mean ≈2.7** across the seven runs above,
+versus ~16 before (a number the owner already called high). The gold value
+per break (12→40) is sized so the fewer, deliberate breaks still pay; if the
+recovery loop starves in play (health pickups ride the same table), raise
+`solid_count` or the health share before touching the cluster layout.

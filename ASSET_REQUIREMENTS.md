@@ -44,7 +44,9 @@ Members:   ward circle ground decal + placement flash, fire variant (화염 결�
 Used by:   weapons.json gyeolgye / hwayeom_gyeolgye (N4-4b)
 Fallback:  palette-token rotating sigil — dashed ring + eight-point star (scripts/combat/ward.gd, N3-18)
 
-[MISSING] summon_sinjang
+[MISSING] summon_sinjang (priority raised N6-5 — QA-3 called this the most
+           unfinished-looking thing in the game; N6-5 re-checked every pack
+           in the 2026-08-18 drop and none carries a usable humanoid body)
 Size:      40x40 logical frames (16x export blocks, like the taoist)
 Members:   idle + 4-frame walk, right-facing (left is mirrored), thunder tint variant
 Used by:   weapons.json sinjang / noe_sinjang (N4-4b)
@@ -172,24 +174,25 @@ Fallback:  IN USE — the entry's real art self-modulated to INK reads as a
 ```
 
 ```
-[MISSING] reward_chest (N5-5)
+[MISSING] reward_chest (N5-5, priority raised N6-5)
 Size:      ~20x16px logical in-world sprite (closed + open frame; a short
            3-4 frame open burst is a plus)
 Used by:   elite reward chest entity (scripts/combat/chest.gd)
 Fallback:  IN USE — code-drawn wood box with gold clasp + pulsing gold
-           glow. Reads, but a real chest sprite is the payoff moment and
-           deserves art.
+           glow. N6-5 checked every owner pack in new_asset/ (Trap and
+           Weapon, Pixel UI pack 3, 500 Bullet, Effect Asset, Retro
+           Impact, Holy Spell): no chest sprite exists in any of them.
+           HEADLINE REWARD — first pick for the next generation task.
 ```
 
 ```
-[MISSING] pickup_set (N5-5)
-Size:      ~14px logical in-world sprites, 4 members: coin (엽전), health
-           (medicine pouch/herb), nuke (talisman bomb/spark), magnet
-           (lodestone)
+[MISSING] pickup_magnet (N5-5, narrowed N6-5)
+Size:      ~14px logical in-world sprite: magnet (lodestone)
 Used by:   prop-break pickups (scripts/combat/pickup.gd)
-Fallback:  IN USE — code-drawn glyph discs (gold coin w/ square hole,
-           green cross, vermilion burst star, blue horseshoe). Shape+color
-           per DESIGN.md §2.
+Fallback:  IN USE — code-drawn blue horseshoe disc. N6-5 wired the other
+           three kinds from real art (coin = asset/ui/hud/coin.png reuse,
+           health = Pixel UI pack 3 heart, nuke = Trap and Weapon bomb via
+           asset/pickups/build_assets.py); no pack has anything magnet-like.
 ```
 
 ```

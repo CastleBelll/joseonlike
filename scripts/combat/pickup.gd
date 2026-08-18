@@ -12,6 +12,20 @@ const CROSS_ARM := 4.0
 const CROSS_THICK := 3.0
 const SPARK_POINTS := 4
 
+## N6-5 real art per kind, drawn 1:1 at the source's native pixel size so the
+## scale stays honest against the 38px character. Gold reuses the HUD 엽전
+## glyph (16 logical px at 16x export — drawn at 16px, an exact NEAREST
+## downscale); health/heart and nuke/bomb come from the owner packs via
+## asset/pickups/build_assets.py. A missing file falls back to the N5-5
+## code-drawn shape — art never blocks the feature. Magnet has no pack art
+## (ASSET_REQUIREMENTS.md) and stays code-drawn.
+const KIND_TEXTURES: Dictionary = {
+	Pickups.KIND_GOLD: "res://asset/ui/hud/coin.png",
+	Pickups.KIND_HEALTH: "res://asset/pickups/health.png",
+	Pickups.KIND_NUKE: "res://asset/pickups/nuke.png",
+}
+const GOLD_DRAW_PX := 16.0
+
 var kind: String = Pickups.KIND_GOLD
 
 
@@ -20,10 +34,24 @@ func launch_pickup(
 ) -> void:
 	launch(at, 0, player, orb_config)
 	kind = pickup_kind
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	queue_redraw()
 
 
+## Centered sprite draw; gold downscales to its logical 16px, the rest are 1:1.
+func _draw_kind_texture(path: String) -> void:
+	var texture: Texture2D = load(path)
+	var size: Vector2 = texture.get_size()
+	if kind == Pickups.KIND_GOLD:
+		size = Vector2(GOLD_DRAW_PX, GOLD_DRAW_PX)
+	draw_texture_rect(texture, Rect2(-size / 2.0, size), false)
+
+
 func _draw() -> void:
+	var texture_path: String = String(KIND_TEXTURES.get(kind, ""))
+	if not texture_path.is_empty() and ResourceLoader.exists(texture_path, "Texture2D"):
+		_draw_kind_texture(texture_path)
+		return
 	match kind:
 		Pickups.KIND_GOLD:
 			# 엽전: gold disc with the square hole.

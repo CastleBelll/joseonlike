@@ -6,6 +6,8 @@ Every asset under `asset/` must have a row here before it ships. No row, no comm
 |---|---|---|---|---|
 | `asset/font/neodgm.ttf` (Neo둥근모) | https://github.com/neodgm/neodgm v1.530 | SIL OFL 1.1 | Credit in-game before release (RZ) | 2026-08-14 (relocated) |
 | `asset/effect/blink_puff.png` | Owner-dropped pack `new_asset/Retro Impact Effect Pack 5` (sheet A, row 23; desaturated for engine tinting). explosion/strike_flash sheets dropped N3-18 — back to code-drawn | **UNCONFIRMED** — no license file shipped inside the pack; owner must confirm terms before release | Unknown until confirmed | 2026-08-15 |
+| `asset/pickups/health.png` | Owner-dropped pack `new_asset/Pixel UI pack 3` (00.png red heart; night-tinted via asset/pickups/build_assets.py) | **UNCONFIRMED** — no license file shipped inside the pack; owner must confirm terms before release | Unknown until confirmed | 2026-08-18 (N6-5) |
+| `asset/pickups/nuke.png` | Owner-dropped pack `new_asset/Trap and Weapon` (Bomb.png frame 0; night-tinted via asset/pickups/build_assets.py) | **UNCONFIRMED** — no license file shipped inside the pack; owner must confirm terms before release | Unknown until confirmed | 2026-08-18 (N6-5) |
 
 ## Rules
 
