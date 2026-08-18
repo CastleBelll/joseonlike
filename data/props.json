@@ -195,6 +195,66 @@
       "shape": "rect",
       "texture": "res://asset/stages/bamboo_forest/decor/fog_wisp.png",
       "placeholder": "fog"
+    },
+    "campfire": {
+      "size": [
+        40.0,
+        40.0
+      ],
+      "collision": [
+        -10.0,
+        -12.0,
+        20.0,
+        12.0
+      ],
+      "solid": true,
+      "weight": 1.5,
+      "shape": "round",
+      "texture": "res://asset/stages/bamboo_forest/props/campfire.png",
+      "placeholder": "rock",
+      "breakable": {
+        "hp": 1.0
+      }
+    },
+    "anvil": {
+      "size": [
+        36.0,
+        36.0
+      ],
+      "collision": [
+        -12.0,
+        -12.0,
+        24.0,
+        12.0
+      ],
+      "solid": true,
+      "weight": 1.5,
+      "shape": "rect",
+      "texture": "res://asset/stages/bamboo_forest/props/anvil.png",
+      "placeholder": "rock",
+      "breakable": {
+        "hp": 1.0
+      }
+    },
+    "stone_marker": {
+      "size": [
+        44.0,
+        44.0
+      ],
+      "collision": [
+        -10.0,
+        -14.0,
+        20.0,
+        14.0
+      ],
+      "solid": true,
+      "weight": 2.0,
+      "shape": "rect",
+      "texture": "res://asset/stages/bamboo_forest/props/stone_marker.png",
+      "placeholder": "rock",
+      "breakable": {
+        "hp": 1.0
+      }
     }
   }
 }
