@@ -27,9 +27,9 @@ static func can_hit(time_since_last_hit: float, cooldown: float) -> bool:
 	return time_since_last_hit >= cooldown
 
 
-## N6-3 timed-shield rule (post-popup grace, 축지, revive): a new grant only
-## ever EXTENDS the remaining window to its own duration — grants never sum,
-## so consecutive popup closes cannot stack grace on top of grace.
+## N6-3 timed-shield rule (축지 blink, 회생부 revive): a new grant only ever
+## EXTENDS the remaining window to its own duration — grants never sum, so
+## repeated casts cannot stack shield on top of shield.
 static func grace_extend(left: float, grant: float) -> float:
 	return maxf(left, grant)
 
@@ -117,6 +117,38 @@ static func nearest_visible_index(
 			best = i
 			best_distance_squared = distance_squared
 	return best
+
+
+## N6-4 uniform aim fallback for every targeting weapon: nearest visible
+## enemy in range first, else nearest visible destructible, else a point at
+## max range along the player's facing direction (weapons never go silent —
+## destructibles are targets too, and an empty view still fires forward).
+## Returns {"kind": "enemy"|"breakable"|"facing", "index": int, "point": Vector2};
+## index is -1 for the facing fallback.
+static func fallback_aim(
+	from: Vector2,
+	camera_center: Vector2,
+	view_size: Vector2,
+	margin: float,
+	enemies: Array[Vector2],
+	breakables: Array[Vector2],
+	max_range: float,
+	facing_direction: Vector2
+) -> Dictionary:
+	var enemy_index: int = nearest_visible_index(
+		from, camera_center, view_size, margin, enemies, max_range
+	)
+	if enemy_index >= 0:
+		return {"kind": "enemy", "index": enemy_index, "point": enemies[enemy_index]}
+	var break_index: int = nearest_visible_index(
+		from, camera_center, view_size, margin, breakables, max_range
+	)
+	if break_index >= 0:
+		return {"kind": "breakable", "index": break_index, "point": breakables[break_index]}
+	var direction: Vector2 = facing_direction.normalized()
+	if direction == Vector2.ZERO:
+		direction = Vector2.RIGHT  # never fired a zero-length aim
+	return {"kind": "facing", "index": -1, "point": from + direction * max_range}
 
 
 static func projectile_position(

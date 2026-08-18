@@ -3,10 +3,12 @@ extends Node2D
 ## Data-driven auto-attack (N3-3, archetypes N4-4a): one node drives every
 ## taoist weapon mechanic from data/weapons.json via its "mechanic" field —
 ## straight throw, pierce line, impact explosion, chain jumps, melee arc
-## swing, and orbiting DoT orbs. Projectile mechanics fire the shared pooled
-## Projectile at the nearest live enemy that is visible on screen (view rect
-## + _targeting.view_margin_px) AND within the weapon's own range_px (N3-15);
-## no visible target holds the shot ready. All balance numbers come from data.
+## swing, and orbiting DoT orbs. Targeting mechanics aim through the shared
+## N6-4 fallback chain (CombatMath.fallback_aim): the nearest live enemy that
+## is visible on screen (view rect + _targeting.view_margin_px) AND within
+## the weapon's own range_px (N3-15), else the nearest visible destructible,
+## else the player's facing direction — a weapon never holds its shot.
+## All balance numbers come from data.
 
 signal hit_landed(amount: float, at: Vector2, boss_hit: bool)
 
@@ -236,39 +238,30 @@ func _physics_process(delta: float) -> void:
 		return
 	match _mechanic:
 		MECHANIC_WARD:
-			if _try_place_ward():
-				_cooldown_left = _cooldown
+			_place_ward()
 		MECHANIC_SUMMON:
 			_spawn_summon()
-			_cooldown_left = _cooldown
 		MECHANIC_SHOCKWAVE:
 			_pulse_shockwave()
-			_cooldown_left = _cooldown
 		_:
-			if _try_fire():
-				_cooldown_left = _cooldown  # no target keeps the shot ready, VS-style
+			_fire()
+	_cooldown_left = _cooldown
 
 
-func _try_fire() -> bool:
+func _fire() -> void:
 	var enemies: Array[Enemy] = _spawner.active_enemies()
 	var positions: Array[Vector2] = []
 	for enemy: Enemy in enemies:
 		positions.append(enemy.global_position)
-	# Player position approximates the smoothed camera center, same tradeoff
-	# as the spawner (N3-4).
-	var index: int = CombatMath.nearest_visible_index(
-		_player.global_position, _player.global_position, get_viewport_rect().size,
-		_view_margin, positions, _range
-	)
-	if index < 0:
-		return false
+	var aim: Dictionary = _fallback_aim(positions)
 	if _mechanic == MECHANIC_MELEE_ARC:
-		return _fire_arc(enemies, positions, index)
+		_fire_arc(enemies, positions, aim["point"] as Vector2)
+		return
 	var direction: Vector2 = CombatMath.chase_direction(
-		_player.global_position, positions[index]
+		_player.global_position, aim["point"] as Vector2
 	)
 	if direction == Vector2.ZERO:
-		direction = Vector2.RIGHT  # enemy exactly on the player; any heading hits
+		direction = Vector2.RIGHT  # target exactly on the player; any heading hits
 	# N4-8 multishot: projectile mechanics fire projectile_count shots fanned
 	# around the aim; count 1 keeps the exact single-shot behaviour.
 	for shot_direction: Vector2 in WeaponMath.fan_directions(
@@ -279,14 +272,13 @@ func _try_fire() -> bool:
 			_player.global_position, shot_direction, _speed, _damage, _spawner,
 			_player, _tint(), _view_margin, _shot_config
 		)
-	return true
 
 
-## 석장 (N4-4a): one swing centered on the nearest visible enemy — everything
-## whose body reaches into the arc takes damage and a boosted shove.
-func _fire_arc(enemies: Array[Enemy], positions: Array[Vector2], index: int) -> bool:
+## 석장 (N4-4a): one swing centered on the aim point — everything whose body
+## reaches into the arc takes damage and a boosted shove.
+func _fire_arc(enemies: Array[Enemy], positions: Array[Vector2], aim_point: Vector2) -> void:
 	var origin: Vector2 = _player.global_position
-	var aim: float = (positions[index] - origin).angle()
+	var aim: float = (aim_point - origin).angle()
 	var arc_rad: float = deg_to_rad(float(_arc.get("angle_deg", 0.0)))
 	var knockback: float = float(_arc.get("knockback_scale", 1.0))
 	var radii: Array[float] = []
@@ -318,7 +310,6 @@ func _fire_arc(enemies: Array[Enemy], positions: Array[Vector2], index: int) -> 
 	):
 		if _spawner.breakables[i].alive():
 			_spawner.breakables[i].take_weapon_damage(_damage)
-	return true
 
 
 ## 혼불 (N4-4a): orbs ride a ring around the player; contact deals the weapon
@@ -371,19 +362,19 @@ func _process_orbit(delta: float) -> void:
 		hit_landed.emit(_damage, hit_at, boss_hit)
 
 
-## 결계 (N4-4b): drop a pooled ward on the nearest visible enemy — same
-## on-screen targeting contract as every projectile weapon. No target holds
-## the placement ready.
-func _try_place_ward() -> bool:
-	var index: int = _nearest_visible()
-	if index < 0:
-		return false
+## 결계 (N4-4b): drop a pooled ward on the aim point — the same N6-4
+## fallback chain every targeting weapon uses, so an empty view still plants
+## the ward along the player's heading.
+func _place_ward() -> void:
+	var enemies: Array[Enemy] = _spawner.active_enemies()
+	var positions: Array[Vector2] = []
+	for enemy: Enemy in enemies:
+		positions.append(enemy.global_position)
 	var ward: Ward = _ward_pool.acquire()
 	ward.arm(
-		_spawner.active_enemies()[index].global_position, _spawner, _ward,
+		_fallback_aim(positions)["point"] as Vector2, _spawner, _ward,
 		_damage, _stats.get("on_hit_status", {}), _tint()
 	)
-	return true
 
 
 ## 신장 (N4-4b): one general at a time, raised at the master's side.
@@ -443,15 +434,31 @@ func _pulse_shockwave() -> void:
 			breakable.take_weapon_damage(_damage)
 
 
-## Shared on-screen targeting (N3-15) for non-projectile placements.
-func _nearest_visible() -> int:
-	var enemies: Array[Enemy] = _spawner.active_enemies()
-	_positions.clear()
-	for enemy: Enemy in enemies:
-		_positions.append(enemy.global_position)
-	return CombatMath.nearest_visible_index(
-		_player.global_position, _player.global_position, get_viewport_rect().size,
-		_view_margin, _positions, _range
+## Shared N6-4 aim resolution: visible enemy in range → visible destructible
+## → facing direction. Player position approximates the smoothed camera
+## center, same tradeoff as the spawner (N3-4); facing falls back through
+## last_move_direction so a standstill still fires toward the sprite's side.
+func _fallback_aim(enemy_positions: Array[Vector2]) -> Dictionary:
+	var view_size: Vector2 = get_viewport_rect().size
+	var enemy_index: int = CombatMath.nearest_visible_index(
+		_player.global_position, _player.global_position, view_size,
+		_view_margin, enemy_positions, _range
+	)
+	if enemy_index >= 0:
+		return {
+			"kind": "enemy", "index": enemy_index,
+			"point": enemy_positions[enemy_index],
+		}
+	# Only an empty view pays for the breakable sweep — with an enemy on
+	# screen (the overwhelmingly common case) the scan above already answered.
+	var break_positions: Array[Vector2] = []
+	for breakable: Breakable in _spawner.breakables:
+		if breakable.alive():
+			break_positions.append(breakable.global_position)
+	return CombatMath.fallback_aim(
+		_player.global_position, _player.global_position, view_size,
+		_view_margin, enemy_positions, break_positions, _range,
+		_player.last_move_direction
 	)
 
 

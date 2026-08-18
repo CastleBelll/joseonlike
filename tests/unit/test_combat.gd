@@ -217,7 +217,9 @@ func test_magnet_pull_points_orb_at_player() -> bool:
 	return direction.distance_to(Vector2.LEFT) < EPSILON
 
 
-# N6-3 post-popup grace window (data/effects.json hit_feedback.popup_grace_sec).
+# N6-3 timed-shield window (축지 blink invulnerable_sec, 회생부 revive
+# invuln_sec). N6-4 removed the popup-close grant; the helpers stay because
+# the actives legitimately need them.
 const GRACE := 1.5
 
 
@@ -232,9 +234,9 @@ func test_grace_activates_and_expires() -> bool:
 	return left == 0.0  # expired — and clamped, never negative
 
 
-func test_grace_does_not_stack_across_consecutive_popups() -> bool:
-	# Two popup closes back to back: the second grant refreshes the window to
-	# GRACE, it must never sum to 2x GRACE.
+func test_grace_does_not_stack_across_consecutive_grants() -> bool:
+	# Two grants back to back (blink cast twice): the second refreshes the
+	# window to GRACE, it must never sum to 2x GRACE.
 	var left: float = CombatMath.grace_extend(0.0, GRACE)
 	left = CombatMath.grace_tick(left, 0.5)
 	left = CombatMath.grace_extend(left, GRACE)
@@ -242,5 +244,60 @@ func test_grace_does_not_stack_across_consecutive_popups() -> bool:
 
 
 func test_grace_grant_never_shortens_longer_shield() -> bool:
-	# A live longer shield (축지, revive) survives a popup-close grant.
+	# A live longer shield (revive) survives a shorter grant (blink).
 	return absf(CombatMath.grace_extend(3.0, GRACE) - 3.0) < EPSILON
+
+
+# N6-4 uniform aim fallback: enemy → destructible → facing direction.
+
+
+func test_fallback_aim_prefers_visible_enemy() -> bool:
+	var enemies: Array[Vector2] = [Vector2(100.0, 0.0)]
+	var breakables: Array[Vector2] = [Vector2(50.0, 0.0)]
+	var aim: Dictionary = CombatMath.fallback_aim(
+		Vector2.ZERO, Vector2.ZERO, VIEW, 0.0, enemies, breakables, 200.0, Vector2.RIGHT
+	)
+	# A nearer destructible never outranks a live visible enemy.
+	return String(aim["kind"]) == "enemy" and int(aim["index"]) == 0 \
+		and (aim["point"] as Vector2) == Vector2(100.0, 0.0)
+
+
+func test_fallback_aim_targets_breakable_when_no_enemy() -> bool:
+	var enemies: Array[Vector2] = []
+	var breakables: Array[Vector2] = [Vector2(120.0, 40.0), Vector2(30.0, 0.0)]
+	var aim: Dictionary = CombatMath.fallback_aim(
+		Vector2.ZERO, Vector2.ZERO, VIEW, 0.0, enemies, breakables, 200.0, Vector2.RIGHT
+	)
+	return String(aim["kind"]) == "breakable" and int(aim["index"]) == 1 \
+		and (aim["point"] as Vector2) == Vector2(30.0, 0.0)
+
+
+func test_fallback_aim_skips_offscreen_and_out_of_range_enemy() -> bool:
+	# Enemy outside the view rect and a second one beyond weapon range: both
+	# disqualify, so the chain falls through to the visible destructible.
+	var enemies: Array[Vector2] = [Vector2(2000.0, 0.0), Vector2(190.0, 0.0)]
+	var breakables: Array[Vector2] = [Vector2(60.0, 0.0)]
+	var aim: Dictionary = CombatMath.fallback_aim(
+		Vector2.ZERO, Vector2.ZERO, VIEW, 0.0, enemies, breakables, 150.0, Vector2.RIGHT
+	)
+	return String(aim["kind"]) == "breakable" and int(aim["index"]) == 0
+
+
+func test_fallback_aim_fires_facing_when_nothing_in_view() -> bool:
+	var none: Array[Vector2] = []
+	var aim: Dictionary = CombatMath.fallback_aim(
+		Vector2(10.0, 20.0), Vector2(10.0, 20.0), VIEW, 0.0, none, none, 150.0,
+		Vector2.UP
+	)
+	return String(aim["kind"]) == "facing" and int(aim["index"]) == -1 \
+		and ((aim["point"] as Vector2) - Vector2(10.0, -130.0)).length() < EPSILON
+
+
+func test_fallback_aim_zero_facing_defaults_right() -> bool:
+	# A run that never moved has last_move_direction defaulted, but a zero
+	# vector from any future caller must still produce a real heading.
+	var none: Array[Vector2] = []
+	var aim: Dictionary = CombatMath.fallback_aim(
+		Vector2.ZERO, Vector2.ZERO, VIEW, 0.0, none, none, 100.0, Vector2.ZERO
+	)
+	return ((aim["point"] as Vector2) - Vector2(100.0, 0.0)).length() < EPSILON
