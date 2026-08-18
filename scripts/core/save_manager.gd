@@ -87,6 +87,11 @@ func mark_mod_explained() -> void:
 	save_profile()
 
 
+func mark_guide_seen() -> void:
+	profile = Ftue.mark_guide_seen(profile)
+	save_profile()
+
+
 ## N5-4 괴이록: the first sighting of a kind/id persists the moment it
 ## happens (mid-run), so the record survives death and crashes alike — that
 ## is the point of the record (GDD §31). Repeats are no-ops with no IO.

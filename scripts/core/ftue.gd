@@ -9,14 +9,37 @@ extends RefCounted
 const FTUE_KEY := "ftue"
 const MOVE_HINT_SEEN := "move_hint_seen"
 const MOD_EXPLAINED := "mod_explained"
+const GUIDE_SEEN := "guide_seen"
 
 ## The one allowed tutorial line (GDD §28): rides on the first 개조 card,
 ## never a popup, never a second line.
 const MOD_EXPLAIN_LINE := "첫 개조! 재료로 무기를 바꾼다"
 
+## N9-4 first-boot guide (owner direction): 우치 narrates the basics over
+## the DESIGN.md §3 NPC dialogue panel before the first run starts. One
+## page per tap; shown exactly once per profile.
+const GUIDE_PAGES: Array[Dictionary] = [
+	{
+		"name": "우치",
+		"text": "정령왕의 저주가 짙군... 숲 전체가 영원한 밤에 잠겼어.\n놈을 봉인하려면 우선 살아남아야 한다.",
+	},
+	{
+		"name": "우치",
+		"text": "화면 아무 곳이나 끌면 움직인다.\n술법은 저절로 나간다 — 나는 자리만 잘 잡으면 돼.",
+	},
+	{
+		"name": "우치",
+		"text": "괴이를 잡으면 기가 모인다.\n기가 차오르면 새 술법을 고르거나 강화할 수 있지.",
+	},
+	{
+		"name": "우치",
+		"text": "5분을 버티면 정령왕이 모습을 드러낸다.\n놈을 봉인해야 이 밤이 걷힌다. 가자.",
+	},
+]
+
 
 static func default_flags() -> Dictionary:
-	return {MOVE_HINT_SEEN: false, MOD_EXPLAINED: false}
+	return {MOVE_HINT_SEEN: false, MOD_EXPLAINED: false, GUIDE_SEEN: false}
 
 
 ## First run = the profile has never finished a run. The scripted first-run
@@ -44,6 +67,14 @@ static func should_show_move_hint(profile: Dictionary) -> bool:
 ## hint can never return across runs or relaunches.
 static func mark_move_hint_seen(profile: Dictionary) -> Dictionary:
 	return _with_flag(profile, MOVE_HINT_SEEN)
+
+
+static func should_show_guide(profile: Dictionary) -> bool:
+	return not _flag(profile, GUIDE_SEEN)
+
+
+static func mark_guide_seen(profile: Dictionary) -> Dictionary:
+	return _with_flag(profile, GUIDE_SEEN)
 
 
 static func should_explain_mod(profile: Dictionary) -> bool:

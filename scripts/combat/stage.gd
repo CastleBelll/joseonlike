@@ -241,6 +241,15 @@ func _ready() -> void:
 		_move_hint.name = "MoveHint"
 		_move_hint.target = _joystick
 		$Hud.add_child(_move_hint)
+	# N9-4 first-boot guide: 우치 narrates the basics over a paused tree
+	# before the first wave; the move hint takes over on dismissal.
+	if Ftue.is_first_run(profile) and Ftue.should_show_guide(profile):
+		var guide := GuideDialog.new()
+		guide.name = "GuideDialog"
+		add_child(guide)
+		guide.finished.connect(_on_guide_finished.bind(guide))
+		get_tree().paused = true
+		guide.open(Ftue.GUIDE_PAGES)
 	# N7-2 첫 인연: every run guarantees one special material early, through the
 	# same guarantee pipeline the FTUE table uses (data timing, run-seeded pick).
 	if int(_meta_bonus("first_find")) >= 1:
@@ -295,6 +304,14 @@ func _dismiss_move_hint() -> void:
 	_move_hint = null
 	if SaveService.instance != null:
 		SaveService.instance.mark_move_hint_seen()
+
+
+## N9-4: guide dismissed — unpause, persist the one-shot flag, free the node.
+func _on_guide_finished(guide: GuideDialog) -> void:
+	get_tree().paused = false
+	if SaveService.instance != null:
+		SaveService.instance.mark_guide_seen()
+	guide.queue_free()
 
 
 ## N5-4 괴이록 funnel: null-guarded so demo tools without the autoload run;
