@@ -14,18 +14,36 @@
   },
   "props": {
     "bamboo_clump_small": {
-      "size": [24.0, 40.0],
-      "collision": [-8.0, -14.0, 16.0, 14.0],
+      "size": [
+        24.0,
+        40.0
+      ],
+      "collision": [
+        -8.0,
+        -14.0,
+        16.0,
+        14.0
+      ],
       "solid": true,
       "weight": 5.0,
       "shape": "rect",
       "texture": "res://asset/stages/bamboo_forest/props/bamboo_clump_small.png",
       "placeholder": "bamboo",
-      "breakable": {"hp": 25.0}
+      "breakable": {
+        "hp": 1.0
+      }
     },
     "bamboo_clump_large": {
-      "size": [40.0, 56.0],
-      "collision": [-13.0, -18.0, 26.0, 18.0],
+      "size": [
+        40.0,
+        56.0
+      ],
+      "collision": [
+        -13.0,
+        -18.0,
+        26.0,
+        18.0
+      ],
       "solid": true,
       "weight": 2.0,
       "shape": "rect",
@@ -33,18 +51,36 @@
       "placeholder": "bamboo"
     },
     "rock_small": {
-      "size": [20.0, 16.0],
-      "collision": [-8.0, -12.0, 16.0, 12.0],
+      "size": [
+        20.0,
+        16.0
+      ],
+      "collision": [
+        -8.0,
+        -12.0,
+        16.0,
+        12.0
+      ],
       "solid": true,
       "weight": 3.0,
       "shape": "round",
       "texture": "res://asset/stages/bamboo_forest/props/rock_small.png",
       "placeholder": "rock",
-      "breakable": {"hp": 45.0}
+      "breakable": {
+        "hp": 1.0
+      }
     },
     "rock_large": {
-      "size": [32.0, 26.0],
-      "collision": [-12.0, -18.0, 24.0, 18.0],
+      "size": [
+        32.0,
+        26.0
+      ],
+      "collision": [
+        -12.0,
+        -18.0,
+        24.0,
+        18.0
+      ],
       "solid": true,
       "weight": 1.5,
       "shape": "round",
@@ -52,7 +88,10 @@
       "placeholder": "rock"
     },
     "water_puddle": {
-      "size": [40.0, 28.0],
+      "size": [
+        40.0,
+        28.0
+      ],
       "solid": false,
       "weight": 1.5,
       "shape": "round",
@@ -60,18 +99,36 @@
       "placeholder": "water"
     },
     "fallen_log": {
-      "size": [48.0, 20.0],
-      "collision": [-20.0, -12.0, 40.0, 12.0],
+      "size": [
+        48.0,
+        20.0
+      ],
+      "collision": [
+        -20.0,
+        -12.0,
+        40.0,
+        12.0
+      ],
       "solid": true,
       "weight": 1.5,
       "shape": "rect",
       "texture": "res://asset/stages/bamboo_forest/props/fallen_log.png",
       "placeholder": "log",
-      "breakable": {"hp": 60.0}
+      "breakable": {
+        "hp": 1.0
+      }
     },
     "stone_lantern": {
-      "size": [20.0, 36.0],
-      "collision": [-6.0, -14.0, 12.0, 14.0],
+      "size": [
+        20.0,
+        36.0
+      ],
+      "collision": [
+        -6.0,
+        -14.0,
+        12.0,
+        14.0
+      ],
       "solid": true,
       "weight": 0.5,
       "shape": "rect",
@@ -79,8 +136,16 @@
       "placeholder": "lantern"
     },
     "shrine_post": {
-      "size": [16.0, 40.0],
-      "collision": [-5.0, -12.0, 10.0, 12.0],
+      "size": [
+        16.0,
+        40.0
+      ],
+      "collision": [
+        -5.0,
+        -12.0,
+        10.0,
+        12.0
+      ],
       "solid": true,
       "weight": 0.5,
       "shape": "rect",
@@ -88,7 +153,10 @@
       "placeholder": "shrine"
     },
     "grass_tuft": {
-      "size": [12.0, 10.0],
+      "size": [
+        12.0,
+        10.0
+      ],
       "solid": false,
       "weight": 6.0,
       "shape": "rect",
@@ -96,7 +164,10 @@
       "placeholder": "grass"
     },
     "fern": {
-      "size": [16.0, 14.0],
+      "size": [
+        16.0,
+        14.0
+      ],
       "solid": false,
       "weight": 3.0,
       "shape": "rect",
@@ -104,7 +175,10 @@
       "placeholder": "fern"
     },
     "pebbles": {
-      "size": [14.0, 8.0],
+      "size": [
+        14.0,
+        8.0
+      ],
       "solid": false,
       "weight": 3.0,
       "shape": "round",
@@ -112,7 +186,10 @@
       "placeholder": "pebble"
     },
     "fog_wisp": {
-      "size": [48.0, 24.0],
+      "size": [
+        48.0,
+        24.0
+      ],
       "solid": false,
       "weight": 1.0,
       "shape": "rect",
