@@ -39,8 +39,14 @@ const TIER_LABELS := {
 }
 
 
+const VIEWED_KEY := "viewed"
+
+
 static func default_record() -> Dictionary:
-	return {KIND_MONSTERS: [], KIND_LOOT: [], KIND_WEAPONS: [], "unseen": 0}
+	return {
+		KIND_MONSTERS: [], KIND_LOOT: [], KIND_WEAPONS: [], "unseen": 0,
+		VIEWED_KEY: {KIND_MONSTERS: [], KIND_LOOT: [], KIND_WEAPONS: []},
+	}
 
 
 ## Coerces any payload (JSON round-trip, hand-edited file) into the record
@@ -61,6 +67,19 @@ static func normalized_record(raw: Variant) -> Dictionary:
 					ids.append(id)
 		record[kind] = ids
 	record["unseen"] = maxi(int(source_dict.get("unseen", 0)), 0)
+	# N9-11 NEW badge: per-kind viewed lists, same garbage-proof coercion.
+	var viewed_source: Variant = source_dict.get(VIEWED_KEY)
+	var viewed_dict: Dictionary = viewed_source if viewed_source is Dictionary else {}
+	var viewed: Dictionary = record[VIEWED_KEY]
+	for kind: String in KINDS:
+		var ids: Array[String] = []
+		var source: Variant = viewed_dict.get(kind)
+		if source is Array:
+			for entry: Variant in source as Array:
+				var id: String = String(entry)
+				if not id.is_empty() and not ids.has(id):
+					ids.append(id)
+		viewed[kind] = ids
 	return record
 
 
@@ -79,6 +98,34 @@ static func record_discovery(profile: Dictionary, kind: String, id: String) -> D
 	record["unseen"] = int(record["unseen"]) + 1
 	next["bestiary"] = record
 	return {"profile": next, "new": true}
+
+
+## N9-11 NEW badge: folds a batch of ids into the kind's viewed list.
+## Pure and idempotent — changed=false means every id was already viewed
+## and the caller skips the disk write.
+static func mark_viewed(profile: Dictionary, kind: String, ids: Array) -> Dictionary:
+	if kind not in KINDS or ids.is_empty():
+		return {"profile": profile, "changed": false}
+	var record: Dictionary = normalized_record(profile.get("bestiary"))
+	var viewed: Array = (record[VIEWED_KEY] as Dictionary)[kind]
+	var changed: bool = false
+	for entry: Variant in ids:
+		var id: String = String(entry)
+		if not id.is_empty() and not viewed.has(id):
+			viewed.append(id)
+			changed = true
+	if not changed:
+		return {"profile": profile, "changed": false}
+	var next: Dictionary = profile.duplicate(true)
+	next["bestiary"] = record
+	return {"profile": next, "changed": true}
+
+
+## An entry is NEW while discovered but never rendered in its tab.
+static func is_new(record: Dictionary, kind: String, id: String) -> bool:
+	var clean: Dictionary = normalized_record(record)
+	return (clean[kind] as Array).has(id) \
+		and not ((clean[VIEWED_KEY] as Dictionary)[kind] as Array).has(id)
 
 
 ## Opening the 괴이록 retires the camp hint; changed=false means no write.
@@ -211,7 +258,9 @@ static func monster_rows(
 	roster: Array[Dictionary], monsters: Dictionary, stages: Dictionary,
 	record: Dictionary, locale: String
 ) -> Array[Dictionary]:
-	var discovered_ids: Array = normalized_record(record)[KIND_MONSTERS]
+	var clean: Dictionary = normalized_record(record)
+	var discovered_ids: Array = clean[KIND_MONSTERS]
+	var viewed_ids: Array = (clean[VIEWED_KEY] as Dictionary)[KIND_MONSTERS]
 	var rows: Array[Dictionary] = []
 	for entry: Dictionary in roster:
 		var monster_id: String = String(entry["id"])
@@ -232,6 +281,7 @@ static func monster_rows(
 		rows.append({
 			"id": monster_id,
 			"discovered": discovered,
+			"is_new": discovered and not viewed_ids.has(monster_id),
 			"name": masked_name(monster, discovered, locale),
 			"lines": lines,
 			"pill": UiLocale.text("bestiary.boss") if discovered and bool(entry["boss"]) else "",
@@ -249,6 +299,7 @@ static func loot_rows(
 ) -> Array[Dictionary]:
 	var clean: Dictionary = normalized_record(record)
 	var discovered_ids: Array = clean[KIND_LOOT]
+	var viewed_ids: Array = (clean[VIEWED_KEY] as Dictionary)[KIND_LOOT]
 	var rows: Array[Dictionary] = []
 	for loot_id: String in roster_ids:
 		var stats: Dictionary = loot.get(loot_id, {})
@@ -269,6 +320,7 @@ static func loot_rows(
 		rows.append({
 			"id": loot_id,
 			"discovered": discovered,
+			"is_new": discovered and not viewed_ids.has(loot_id),
 			"name": masked_name(stats, discovered, locale),
 			"lines": lines,
 			"pill": _tier_label(String(stats.get("tier", "")), locale) if discovered else "",
@@ -285,6 +337,7 @@ static func weapon_rows(
 ) -> Array[Dictionary]:
 	var clean: Dictionary = normalized_record(record)
 	var discovered_ids: Array = clean[KIND_WEAPONS]
+	var viewed_ids: Array = (clean[VIEWED_KEY] as Dictionary)[KIND_WEAPONS]
 	var rows: Array[Dictionary] = []
 	for weapon_id: String in roster_ids:
 		var stats: Dictionary = weapons.get(weapon_id, {})
@@ -302,6 +355,7 @@ static func weapon_rows(
 		rows.append({
 			"id": weapon_id,
 			"discovered": discovered,
+			"is_new": discovered and not viewed_ids.has(weapon_id),
 			"name": masked_name(stats, discovered, locale),
 			"lines": lines,
 			"pill": "",

@@ -92,6 +92,15 @@ func mark_guide_seen() -> void:
 	save_profile()
 
 
+## N9-11 NEW badge: rendering a bestiary tab marks its discovered entries
+## viewed; no-op (no IO) when nothing was new.
+func mark_bestiary_viewed(kind: String, ids: Array) -> void:
+	var result: Dictionary = Bestiary.mark_viewed(profile, kind, ids)
+	if bool(result["changed"]):
+		profile = result["profile"]
+		save_profile()
+
+
 ## N5-4 괴이록: the first sighting of a kind/id persists the moment it
 ## happens (mid-run), so the record survives death and crashes alike — that
 ## is the point of the record (GDD §31). Repeats are no-ops with no IO.

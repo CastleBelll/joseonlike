@@ -41,6 +41,20 @@ func build_ui() -> void:
 	background.color = UiPalette.NIGHT
 	background.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(background)
+	# N9-12: the composited village backdrop (title production layers under
+	# a NIGHT scrim) sits over the flat fill; the ColorRect stays as the
+	# fallback ground if the art is ever missing.
+	var backdrop_path: String = "res://asset/camp/backdrop.png"
+	if ResourceLoader.exists(backdrop_path, "Texture2D"):
+		var art := TextureRect.new()
+		art.name = "BackdropArt"
+		art.texture = load(backdrop_path)
+		art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		art.stretch_mode = TextureRect.STRETCH_SCALE
+		art.set_anchors_preset(Control.PRESET_FULL_RECT)
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(art)
 
 	var margin := MarginContainer.new()
 	margin.name = "Layout"

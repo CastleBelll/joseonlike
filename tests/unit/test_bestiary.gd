@@ -318,6 +318,44 @@ func test_screen_builds_with_mixed_record() -> bool:
 	return passed
 
 
+## N9-11 NEW badge: mark_viewed is a pure idempotent fold and is_new flips
+## exactly on the viewed transition; old records without a viewed block
+## backfill through normalized_record.
+func test_mark_viewed_fold_and_is_new() -> bool:
+	var profile: Dictionary = {"bestiary": {Bestiary.KIND_MONSTERS: ["forest_goblin"]}}
+	if not Bestiary.is_new(profile["bestiary"], Bestiary.KIND_MONSTERS, "forest_goblin"):
+		return false
+	# Undiscovered ids are never NEW.
+	if Bestiary.is_new(profile["bestiary"], Bestiary.KIND_MONSTERS, "forest_spirit"):
+		return false
+	var marked: Dictionary = Bestiary.mark_viewed(
+		profile, Bestiary.KIND_MONSTERS, ["forest_goblin"]
+	)
+	if not bool(marked["changed"]):
+		return false
+	var next: Dictionary = marked["profile"]
+	if Bestiary.is_new(next["bestiary"], Bestiary.KIND_MONSTERS, "forest_goblin"):
+		return false
+	# Idempotent: a second fold reports no change and skips the write.
+	var again: Dictionary = Bestiary.mark_viewed(
+		next, Bestiary.KIND_MONSTERS, ["forest_goblin"]
+	)
+	return not bool(again["changed"]) and not profile["bestiary"].has(Bestiary.VIEWED_KEY)
+
+
+func test_rows_carry_is_new_flag() -> bool:
+	var record: Dictionary = {
+		Bestiary.KIND_LOOT: ["bamboo", "whetstone"],
+		Bestiary.VIEWED_KEY: {Bestiary.KIND_LOOT: ["bamboo"]},
+	}
+	var loot: Dictionary = _load_json("res://data/loot.json")
+	var ids: Array[String] = ["bamboo", "whetstone", "cinnabar"]
+	var rows: Array[Dictionary] = Bestiary.loot_rows(ids, loot, {}, {}, record, "ko")
+	return not bool(rows[0]["is_new"]) \
+		and bool(rows[1]["is_new"]) \
+		and not bool(rows[2]["is_new"])
+
+
 static func _load_json(path: String) -> Dictionary:
 	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if data is not Dictionary:

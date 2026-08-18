@@ -220,8 +220,18 @@ func _refresh() -> void:
 			rows = Bestiary.loot_rows(loot_ids, _loot, _mods, _weapons, _record, locale)
 		Bestiary.KIND_WEAPONS:
 			rows = Bestiary.weapon_rows(weapon_ids, _weapons, _mods, _record, locale)
+	var fresh_ids: Array[String] = []
 	for row: Dictionary in rows:
 		_rows_box.add_child(_build_row(row))
+		if bool(row.get("is_new", false)):
+			fresh_ids.append(String(row["id"]))
+	# N9-11: this render consumed the NEW state — the badge shows exactly
+	# once per entry; the list just built keeps its badges until re-render.
+	if not fresh_ids.is_empty() and SaveService.instance != null:
+		SaveService.instance.mark_bestiary_viewed(_tab, fresh_ids)
+		_record = Bestiary.normalized_record(
+			SaveService.instance.profile.get("bestiary", {})
+		)
 
 
 ## One full-width row card (DESIGN.md §3 선택 카드 문법): icon well left,
@@ -262,6 +272,23 @@ func _build_row(row: Dictionary) -> Control:
 		line_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		texts.add_child(line_label)
 	content.add_child(texts)
+
+	# N9-11: a freshly discovered entry wears a SUCCESS-green NEW pill until
+	# its first render; sits left of the tier/boss pill when both exist.
+	if bool(row.get("is_new", false)):
+		var new_pill := PanelContainer.new()
+		new_pill.name = "NewPill"
+		new_pill.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		var new_box := StyleBoxFlat.new()
+		new_box.bg_color = UiPalette.SUCCESS
+		new_box.set_corner_radius_all(TIER_PILL_CORNER_RADIUS)
+		new_box.content_margin_left = TIER_PILL_PADDING_X
+		new_box.content_margin_right = TIER_PILL_PADDING_X
+		new_box.content_margin_top = TIER_PILL_PADDING_Y
+		new_box.content_margin_bottom = TIER_PILL_PADDING_Y
+		new_pill.add_theme_stylebox_override("panel", new_box)
+		new_pill.add_child(_label("NEW", UiPalette.FONT_SIZE_LABEL, UiPalette.INK))
+		content.add_child(new_pill)
 
 	var pill_text: String = String(row["pill"])
 	if not pill_text.is_empty():

@@ -118,14 +118,11 @@ Fallback:  wood-styled text button "설정"/"Settings"
 ```
 
 ```
-[MISSING] camp_backdrop (N5-3)
-Size:      540x960 full-bleed (2x export like the title layers)
-Members:   night village/base-camp scene behind the camp UI — hanok buildings
-           for 괴이록/무기 도감/훈련장/지역 선택 spots, lantern accents;
-           optional per-building sign art once interiors exist
-Used by:   scenes/camp.tscn (scripts/ui/camp_screen.gd)
-Fallback:  NIGHT background + NIGHT_BROWN stats card + CARD_BG building spot
-           buttons (palette tokens only)
+[DELIVERED N9-12] camp_backdrop — asset/camp/backdrop.png (1080x1920,
+           composited in asset/camp/build_backdrop.py from the N1-2-REVISED
+           production title layers under a NIGHT scrim gradient), wired in
+           scripts/ui/camp_screen.gd over the kept NIGHT fallback fill.
+           Bespoke per-building sign art stays a future nice-to-have.
 ```
 
 ```
