@@ -128,7 +128,8 @@ func test_grade_up_card_shows_next_grade_and_real_numbers() -> bool:
 	var choice := {"kind": LevelUp.KIND_GRADE_UP, "id": "talisman"}
 	var pill: String = LevelUp.grade_text(choice, WEAPONS, {}, GRADES)
 	var desc: String = LevelUp.describe(choice, WEAPONS, {}, {"talisman": 1}, {}, {}, GRADES)
-	return pill == "희귀" and desc == "등급 일반→희귀 · 피해 12→24"
+	var mechanic_line: String = Bestiary.mechanic_line("straight", "ko")
+	return pill == "희귀" and desc == "%s · 등급 일반→희귀 · 피해 12→24" % mechanic_line
 
 
 func test_weapon_up_description_reflects_run_grade() -> bool:
@@ -136,7 +137,8 @@ func test_weapon_up_description_reflects_run_grade() -> bool:
 	var desc: String = LevelUp.describe(
 		choice, WEAPONS, {}, {"talisman": 1}, {}, {"talisman": "rare"}, GRADES
 	)
-	return desc == "피해 24→30 · 쿨다운 0.6초→0.5초"
+	var mechanic_line: String = Bestiary.mechanic_line("straight", "ko")
+	return desc == "%s · 피해 24→30 · 쿨다운 0.6초→0.5초" % mechanic_line
 
 
 func test_elite_stats_derive_from_base() -> bool:

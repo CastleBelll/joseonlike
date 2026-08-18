@@ -398,15 +398,17 @@ func test_describe_weapon_up_shows_real_numbers() -> bool:
 	var choice := {"kind": LevelUp.KIND_WEAPON_UP, "id": "talisman"}
 	var at_1: String = LevelUp.describe(choice, WEAPONS, {}, {"talisman": 1}, {})
 	var at_2: String = LevelUp.describe(choice, WEAPONS, {}, {"talisman": 2}, {})
+	var mechanic_line: String = Bestiary.mechanic_line("straight", "ko")
 	return (
-		at_1 == "피해 12→15 · 쿨다운 1.2초→1.15초"
-		and at_2 == "피해 15→18 · 쿨다운 1.15초→1.1초"
+		at_1 == "%s · 피해 12→15 · 쿨다운 1.2초→1.15초" % mechanic_line
+		and at_2 == "%s · 피해 15→18 · 쿨다운 1.15초→1.1초" % mechanic_line
 	)
 
 
 func test_describe_new_weapon_shows_base_stats() -> bool:
 	var choice := {"kind": LevelUp.KIND_NEW_WEAPON, "id": "bow"}
-	return LevelUp.describe(choice, WEAPONS, {}, {}, {}) == "새 무기 — 피해 10 · 쿨다운 0.9초"
+	var mechanic_line: String = Bestiary.mechanic_line("straight", "ko")
+	return LevelUp.describe(choice, WEAPONS, {}, {}, {}) == "%s — 피해 10 · 쿨다운 0.9초" % mechanic_line
 
 
 func test_describe_passive_percent_at_several_stacks() -> bool:

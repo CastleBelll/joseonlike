@@ -248,6 +248,13 @@ static func runtime_can_fire(stats: Dictionary) -> bool:
 	return true
 
 
+## Plain-language mechanic line (reuses Bestiary.MECHANIC_LINES — owner
+## report: level-up cards were pure numbers, no reminder of what a weapon
+## you already own actually does once your build has several of them).
+static func _weapon_mechanic_line(stats: Dictionary) -> String:
+	return Bestiary.mechanic_line(String(stats.get("mechanic", "straight")), "ko")
+
+
 ## Mechanic fragment for cards (N4-4a), real numbers from data — how this
 ## weapon hits, plus any status/seal branch. Empty for a plain straight throw.
 static func mechanic_text(stats: Dictionary) -> String:
@@ -490,7 +497,7 @@ static func describe(
 			var stats: Dictionary = weapons.get(id, {})
 			var level: int = int(owned_levels.get(id, 1))
 			var grade: String = current_grade(id, weapons, owned_grades)
-			var line: String = "피해 %s→%s · 쿨다운 %s초→%s초" % [
+			var numbers: String = "피해 %s→%s · 쿨다운 %s초→%s초" % [
 				_fmt(WeaponGrade.stat_at(stats, "damage", level, grade, grades)),
 				_fmt(WeaponGrade.stat_at(stats, "damage", level + 1, grade, grades)),
 				_fmt(WeaponGrade.stat_at(stats, "cooldown_sec", level, grade, grades)),
@@ -499,13 +506,19 @@ static func describe(
 			# N4-8: a level that crosses a milestone sells the mechanic change,
 			# not just the numbers — that IS the reason to pick this card.
 			var extra: String = milestone_text(milestone_delta(stats, level + 1))
-			return line if extra.is_empty() else "%s · %s%s" % [line, MILESTONE_MARK, extra]
+			if not extra.is_empty():
+				return "%s · %s%s" % [numbers, MILESTONE_MARK, extra]
+			# No milestone this level — lead with the plain-language mechanic
+			# reminder instead (owner report: pure numbers read as noise once
+			# a build has several weapons and you forget which does what).
+			return "%s · %s" % [_weapon_mechanic_line(stats), numbers]
 		KIND_GRADE_UP:
 			var stats: Dictionary = weapons.get(id, {})
 			var level: int = int(owned_levels.get(id, 1))
 			var grade: String = current_grade(id, weapons, owned_grades)
 			var raised: String = WeaponGrade.next(WeaponGrade.ladder(grades), grade)
-			return "등급 %s→%s · 피해 %s→%s" % [
+			return "%s · 등급 %s→%s · 피해 %s→%s" % [
+				_weapon_mechanic_line(stats),
 				String(GRADE_KO.get(grade, DEFAULT_GRADE_KO)),
 				String(GRADE_KO.get(raised, DEFAULT_GRADE_KO)),
 				_fmt(WeaponGrade.stat_at(stats, "damage", level, grade, grades)),
@@ -544,12 +557,14 @@ static func describe(
 			return line if extra.is_empty() else "%s · %s" % [line, extra]
 		KIND_NEW_WEAPON:
 			var stats: Dictionary = weapons.get(id, {})
-			var line: String = "새 무기 — 피해 %s · 쿨다운 %s초" % [
+			# The plain-language mechanic line now covers what mechanic_text's
+			# raw numbers used to be the ONLY explanation for — keeping both
+			# doubled the card length for no added clarity.
+			return "%s — 피해 %s · 쿨다운 %s초" % [
+				_weapon_mechanic_line(stats),
 				_fmt(float(stats.get("damage", 0.0))),
 				_fmt(float(stats.get("cooldown_sec", 0.0))),
 			]
-			var extra: String = mechanic_text(stats)
-			return line if extra.is_empty() else "%s · %s" % [line, extra]
 		KIND_PASSIVE:
 			var passive: Dictionary = passives.get(id, {})
 			var per_stack: float = float(passive.get("per_stack", 0.0))
