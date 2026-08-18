@@ -479,8 +479,11 @@ func _execute_burst(active: Dictionary) -> void:
 
 
 func _on_orb_collected(orb: XpOrb) -> void:
-	# N7-2 문리: the xp_gain meta bonus scales every orb at pickup.
-	_run_state.add_xp(int(round(float(orb.xp_value) * (1.0 + _meta_bonus("xp_gain")))))
+	# N7-2 문리 + N9-3 passive: xp_gain meta and passive bonuses both scale
+	# every orb at pickup through the same multiplier.
+	_run_state.add_xp(int(round(
+		float(orb.xp_value) * (1.0 + _meta_bonus("xp_gain") + _passive_bonus("xp_gain"))
+	)))
 	_refresh_progress_hud()
 	_orb_pool.release(orb)
 
@@ -767,8 +770,9 @@ func _refresh_weapon_scales() -> void:
 	var cooldown_scale: float = 1.0 / (
 		1.0 + _passive_bonus("attack_speed") + _meta_bonus("attack_speed")
 	)
+	var speed_scale: float = 1.0 + _passive_bonus("projectile_speed")
 	for weapon: AutoWeapon in _weapon_nodes.values():
-		weapon.set_scales(damage_scale, cooldown_scale)
+		weapon.set_scales(damage_scale, cooldown_scale, speed_scale)
 
 
 func _load_json(path: String) -> Dictionary:
@@ -783,9 +787,10 @@ func _load_json(path: String) -> Dictionary:
 ## the corpse so they never hide under the XP orb.
 func _spawn_loot(enemy: Enemy) -> void:
 	var table: Dictionary = _drop_tables.get(enemy.monster_id, {})
-	# N4-9 천운: the luck meta stat scales special-material odds only.
+	# N4-9 천운 + N9-3 행운 passive: both luck sources scale special-material
+	# odds only, through the same capped multiplier inside Loot.roll_drops.
 	var drops: Array[String] = Loot.roll_drops(
-		table, _loot_rng, _loot_data, _meta_bonus("luck")
+		table, _loot_rng, _loot_data, _meta_bonus("luck") + _passive_bonus("luck")
 	)
 	# N6-1 scripted first run: any overdue guarantee rides the next kill; a
 	# natural drop of the same loot earlier satisfies it via _first_run_log.

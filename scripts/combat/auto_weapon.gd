@@ -71,6 +71,7 @@ var _grade: String = ""
 var _grades: Dictionary = {}
 var _damage_scale: float = 1.0
 var _cooldown_scale: float = 1.0
+var _speed_scale: float = 1.0
 var _damage: float = 0.0
 var _cooldown: float = 0.0
 var _speed: float = 0.0
@@ -160,10 +161,15 @@ func set_grade(grade: String) -> void:
 
 
 ## N3-6 passives: run-wide damage multiplier and cooldown multiplier
-## (attack speed as 1 / (1 + bonus), computed by the stage).
-func set_scales(damage_scale: float, cooldown_scale: float) -> void:
+## (attack speed as 1 / (1 + bonus), computed by the stage). N9-3 adds a
+## projectile-speed multiplier for the 신속 투사 passive; melee/field
+## mechanics keep speed 0 so it is naturally a no-op for them.
+func set_scales(
+	damage_scale: float, cooldown_scale: float, speed_scale: float = 1.0
+) -> void:
 	_damage_scale = damage_scale
 	_cooldown_scale = cooldown_scale
+	_speed_scale = speed_scale
 	_recompute()
 
 
@@ -173,7 +179,7 @@ func _recompute() -> void:
 	# N4-8: fold the current level's milestone deltas in first, so every
 	# consumer below reads the effective mechanic numbers, not the level-1 base.
 	_stats = LevelUp.stats_at_level(_base_stats, _level)
-	_speed = float(_stats.get("speed", 0.0))
+	_speed = float(_stats.get("speed", 0.0)) * _speed_scale
 	_range = float(_stats.get("range_px", 0.0))
 	_lifesteal = float(_stats.get("lifesteal", 0.0))
 	_shot_config = _build_shot_config()
