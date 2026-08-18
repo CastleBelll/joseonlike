@@ -10,7 +10,9 @@ const RING_SAMPLES := 16
 # Documented curve (data/BALANCE.md, N4-2b 5-minute rescale):
 # xp_to_next(L) = round(6 * 1.5^(L-1)).
 const XP_BASE := 6.0
-const XP_GROWTH := 1.5
+## N9-19: softened from 1.5 — at 1.5 a 7-minute run capped around level 5,
+## so weapon levels (and every evolution gate) were unreachable.
+const XP_GROWTH := 1.28
 
 
 func test_damage_application_reduces_hp() -> bool:
@@ -178,8 +180,8 @@ func test_projectile_travels_straight() -> bool:
 
 func test_xp_to_next_matches_documented_curve() -> bool:
 	var level_1: bool = RunState.xp_to_next(1, XP_BASE, XP_GROWTH) == 6
-	var level_5: bool = RunState.xp_to_next(5, XP_BASE, XP_GROWTH) == 30
-	var level_19: bool = RunState.xp_to_next(19, XP_BASE, XP_GROWTH) == 8867
+	var level_5: bool = RunState.xp_to_next(5, XP_BASE, XP_GROWTH) == 16
+	var level_19: bool = RunState.xp_to_next(19, XP_BASE, XP_GROWTH) == 510
 	return level_1 and level_5 and level_19
 
 
@@ -194,9 +196,9 @@ func test_apply_xp_single_level_up_carries_remainder() -> bool:
 
 
 func test_apply_xp_multiple_levels_from_one_grant() -> bool:
-	# Costs from level 1: 6, 9, 14, 20 → 49 spent, 1 left at level 5.
+	# Costs from level 1: 6, 8, 10, 13 → 37 spent, 13 left at level 5.
 	var result: Dictionary = RunState.apply_xp(1, 0, 50, XP_BASE, XP_GROWTH)
-	return int(result["level"]) == 5 and int(result["xp"]) == 1
+	return int(result["level"]) == 5 and int(result["xp"]) == 13
 
 
 func test_run_state_curve_reads_progression_json() -> bool:

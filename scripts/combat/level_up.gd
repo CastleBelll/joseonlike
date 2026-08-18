@@ -37,7 +37,7 @@ const UNKNOWN_RESULT := "???"
 const OFFERABLE_PASSIVES: Array[String] = [
 	"attack_damage", "attack_speed", "move_speed", "max_hp", "magnet_radius",
 	"xp_gain", "luck", "projectile_speed", "defense", "projectile_count",
-	"crit_chance"
+	"crit_chance", "crit_damage"
 ]
 
 ## Mechanics the AutoWeapon runtime implements (N4-4a); a data entry with an

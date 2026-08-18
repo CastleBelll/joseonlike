@@ -951,12 +951,14 @@ func _refresh_weapon_scales() -> void:
 	)
 	var speed_scale: float = 1.0 + _passive_bonus("projectile_speed")
 	var extra_projectiles: int = int(round(_passive_bonus("projectile_count")))
-	# N9-18 치명타: chance from stacks, fixed x2 damage on a crit.
+	# N9-18/N9-19 치명타: chance from 치명타 확률, multiplier from the base
+	# x2 plus every 치명 일격 stack.
 	var crit_chance: float = _passive_bonus("crit_chance")
+	var crit_multiplier: float = CRIT_MULTIPLIER + _passive_bonus("crit_damage")
 	for weapon: AutoWeapon in _weapon_nodes.values():
 		weapon.set_scales(damage_scale, cooldown_scale, speed_scale)
 		weapon.set_extra_projectiles(extra_projectiles)
-		weapon.set_crit(crit_chance, CRIT_MULTIPLIER)
+		weapon.set_crit(crit_chance, crit_multiplier)
 
 
 func _load_json(path: String) -> Dictionary:

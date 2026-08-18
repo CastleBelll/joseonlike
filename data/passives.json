@@ -24,8 +24,8 @@
     "name_ko": "치명타 확률",
     "name_en": "Crit Chance",
     "stat": "crit_chance",
-    "per_stack": 0.04,
-    "max_stacks": 5
+    "per_stack": 0.05,
+    "max_stacks": 6
   },
   "max_hp": {
     "name_ko": "최대 체력",
@@ -110,5 +110,12 @@
     "stat": "seal_haste",
     "per_stack": 1.0,
     "max_stacks": 2
+  },
+  "crit_damage": {
+    "name_ko": "치명 일격",
+    "name_en": "Crit Damage",
+    "stat": "crit_damage",
+    "per_stack": 0.25,
+    "max_stacks": 4
   }
 }

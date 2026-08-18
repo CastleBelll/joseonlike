@@ -3,19 +3,19 @@
     "weapon_id": "sword",
     "loot_id": "whetstone",
     "result_weapon": "sharp_sword",
-    "level_required": 3
+    "level_required": 5
   },
   "ghost_sword_mod": {
     "weapon_id": "sword",
     "loot_id": "ghost_iron",
     "result_weapon": "ghost_sword",
-    "level_required": 3
+    "level_required": 5
   },
   "flame_sword_mod": {
     "weapon_id": "sword",
     "loot_id": "fire_spirit_stone",
     "result_weapon": "flame_sword",
-    "level_required": 3
+    "level_required": 5
   },
   "fire_talisman_mod": {
     "weapon_id": "old_talisman",
@@ -87,13 +87,13 @@
     "weapon_id": "sharp_sword",
     "loot_id": "whetstone",
     "result_weapon": "twin_sword",
-    "level_required": 3
+    "level_required": 5
   },
   "divine_bow_mod": {
     "weapon_id": "bow",
     "loot_id": "cinnabar",
     "result_weapon": "divine_bow",
-    "level_required": 3
+    "level_required": 5
   },
   "hwabu_mod": {
     "weapon_id": "fire_talisman",

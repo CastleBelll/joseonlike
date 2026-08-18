@@ -71,6 +71,9 @@
       },
       "8": {
         "projectile_count": 1
+      },
+      "5": {
+        "pierce": 1
       }
     }
   },
@@ -106,6 +109,9 @@
         "projectile_count": 1
       },
       "8": {
+        "projectile_count": 1
+      },
+      "5": {
         "projectile_count": 1
       }
     }
@@ -174,7 +180,10 @@
       },
       "8": {
         "projectile_count": 1,
-        "pierce_retention": 0.05
+        "pierce_retention": 0.02
+      },
+      "5": {
+        "pierce_retention": 0.03
       }
     }
   },
@@ -249,6 +258,11 @@
       },
       "8": {
         "projectile_count": 1
+      },
+      "5": {
+        "explosion": {
+          "radius_px": 15.0
+        }
       }
     }
   },
@@ -331,6 +345,11 @@
           "jumps": 2,
           "falloff": 0.05
         }
+      },
+      "5": {
+        "chain": {
+          "jumps": 1
+        }
       }
     }
   },
@@ -410,8 +429,13 @@
       },
       "8": {
         "arc": {
-          "angle_deg": 140.0,
+          "angle_deg": 100.0,
           "knockback_scale": 0.5
+        }
+      },
+      "5": {
+        "arc": {
+          "angle_deg": 40.0
         }
       }
     }
@@ -597,6 +621,11 @@
           "duration_sec": 1.0,
           "radius_px": 25.0
         }
+      },
+      "5": {
+        "ward": {
+          "duration_sec": 0.6
+        }
       }
     }
   },
@@ -681,6 +710,11 @@
         "summon": {
           "lifetime_sec": 6.0
         }
+      },
+      "5": {
+        "summon": {
+          "lifetime_sec": 3.0
+        }
       }
     }
   },
@@ -763,6 +797,11 @@
         "shockwave": {
           "radius_px": 35.0,
           "knockback_scale": 0.8
+        }
+      },
+      "5": {
+        "shockwave": {
+          "radius_px": 15.0
         }
       }
     }
@@ -852,6 +891,11 @@
           "spread_count": 2,
           "dps": 3.0
         }
+      },
+      "5": {
+        "on_hit_status": {
+          "spread_count": 1
+        }
       }
     }
   },
@@ -917,7 +961,12 @@
     },
     "evolves_to": "twin_sword",
     "evolution_only": false,
-    "sprite": "res://asset/weapon/icons/sword.png"
+    "sprite": "res://asset/weapon/icons/sword.png",
+    "milestones": {
+      "5": {
+        "pierce": 1
+      }
+    }
   },
   "twin_sword": {
     "name_ko": "쌍환도",
@@ -957,7 +1006,12 @@
       "cooldown_sec": -0.04
     },
     "evolution_only": true,
-    "sprite": "res://asset/weapon/icons/sharp_sword.png"
+    "sprite": "res://asset/weapon/icons/sharp_sword.png",
+    "milestones": {
+      "5": {
+        "pierce": 1
+      }
+    }
   },
   "ghost_sword": {
     "name_ko": "귀철도",
@@ -1020,7 +1074,12 @@
     },
     "evolves_to": "divine_bow",
     "evolution_only": false,
-    "sprite": "res://asset/weapon/icons/bow.png"
+    "sprite": "res://asset/weapon/icons/bow.png",
+    "milestones": {
+      "5": {
+        "projectile_count": 1
+      }
+    }
   },
   "divine_bow": {
     "name_ko": "신궁",

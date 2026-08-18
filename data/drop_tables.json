@@ -2,7 +2,7 @@
   "_config": {
     "special_chance_max": {
       "trash": 0.005,
-      "elite": 0.12,
+      "elite": 0.4,
       "boss": 2.0
     }
   },
@@ -50,19 +50,23 @@
       },
       {
         "loot_id": "fire_spirit_stone",
-        "chance": 0.08
+        "chance": 0.18
       },
       {
         "loot_id": "cinnabar",
-        "chance": 0.02
+        "chance": 0.07
       },
       {
         "loot_id": "thunder_stone",
-        "chance": 0.01
+        "chance": 0.05
       },
       {
         "loot_id": "ghost_iron",
-        "chance": 0.01
+        "chance": 0.04
+      },
+      {
+        "loot_id": "dokkaebi_flame",
+        "chance": 0.06
       }
     ]
   },

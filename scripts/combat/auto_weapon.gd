@@ -420,7 +420,8 @@ func _place_ward() -> void:
 	var ward: Ward = _ward_pool.acquire()
 	ward.arm(
 		_fallback_aim(positions)["point"] as Vector2, _spawner, _ward,
-		_damage, _stats.get("on_hit_status", {}), _tint()
+		_damage, _stats.get("on_hit_status", {}), _tint(),
+		_crit_chance, _crit_multiplier
 	)
 
 

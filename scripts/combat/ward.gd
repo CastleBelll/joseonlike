@@ -36,6 +36,8 @@ var _spin: float = 0.0
 ## N3-17: seconds since the last damage tick, drawn as an expanding pulse ring
 ## so the ward visibly "works" on every bite. Past the pulse window nothing
 ## redraws.
+var _crit_chance: float = 0.0
+var _crit_multiplier: float = 1.0
 var _pulse_age: float = INF
 var _caught: Array[Enemy] = []  # per-tick scratch, reused without alloc
 var _positions: Array[Vector2] = []
@@ -52,16 +54,22 @@ func _ready() -> void:
 
 ## (Re)arms a pooled instance; first tick lands on the next physics frame so
 ## dropping a ward on a pack bites immediately.
+## N9-19: crit rolls per TICK (owner direction) — the ward is a slow drip,
+## so a crit on a single tick reads as a spike, not a damage explosion.
 func arm(
 	at: Vector2,
 	spawner: Spawner,
 	ward_config: Dictionary,
 	damage: float,
 	status: Dictionary,
-	color: Color
+	color: Color,
+	crit_chance: float = 0.0,
+	crit_multiplier: float = 1.0
 ) -> void:
 	global_position = at
 	_spawner = spawner
+	_crit_chance = crit_chance
+	_crit_multiplier = crit_multiplier
 	_radius = float(ward_config.get("radius_px", 0.0))
 	_tick_sec = float(ward_config.get("tick_sec", 0.5))
 	_slow_scale = float(ward_config.get("slow_scale", 1.0))
@@ -122,8 +130,12 @@ func _tick() -> void:
 			)
 		var at: Vector2 = enemy.global_position
 		var boss_hit: bool = enemy.is_boss
-		enemy.take_damage(_damage)
-		ticked.emit(_damage, at, boss_hit)
+		# N9-19: one crit roll per enemy per tick.
+		var tick_damage: float = _damage
+		if _crit_chance > 0.0 and randf() < _crit_chance:
+			tick_damage *= _crit_multiplier
+		enemy.take_damage(tick_damage)
+		ticked.emit(tick_damage, at, boss_hit)
 
 
 ## N9-5c 결계 look: the authored 부적진 texture (Sigil child) carries the
