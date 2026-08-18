@@ -14,6 +14,8 @@ const STRINGS := {
 	"select.locked": {"ko": "잠김", "en": "Locked"},
 	"select.back": {"ko": "나가기", "en": "Back"},
 	"settings.title": {"ko": "설정", "en": "Settings"},
+	"settings.tab_game": {"ko": "게임", "en": "Game"},
+	"settings.tab_audio": {"ko": "오디오", "en": "Audio"},
 	"settings.master_volume": {"ko": "전체 음량", "en": "Master Volume"},
 	"settings.music_volume": {"ko": "음악", "en": "Music"},
 	"settings.effects_volume": {"ko": "효과음", "en": "Effects"},

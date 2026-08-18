@@ -1,8 +1,10 @@
 class_name SettingsPopup
 extends CanvasLayer
 ## Title-screen settings popup (N5-2): chrome paper panel (lattice corners
-## baked in, N3-13), three volume sliders (master/music/effects) and a
-## 한국어/English toggle. Every change applies immediately through the
+## baked in, N3-13), split into 게임/오디오 tabs (N1-2-REVISED — owner
+## report: the close button spilled past the panel with all rows stacked
+## in one column). 게임 holds joystick opacity + language; 오디오 holds the
+## three volume sliders. Every change applies immediately through the
 ## SaveManager autoload; sliders persist on drag end, the toggle right away.
 ## One wood CTA closes it — no quit button anywhere (mobile).
 
@@ -10,8 +12,9 @@ signal locale_changed
 
 const LAYER_ABOVE_TITLE := 10
 const PANEL_MARGIN_X := 48.0
-# N6-5: grew from 480 to fit the fourth slider row (joystick opacity).
-const PANEL_HEIGHT := 570.0
+## Tall enough for the 오디오 tab (3 slider rows), the taller of the two:
+## header 72 + margins 64 + tab bar 48 + 3 rows (72 each) + close 64 + gaps.
+const PANEL_HEIGHT := 560.0
 const HEADER_HEIGHT := 72.0
 const BODY_MARGIN := 32.0
 const ROW_HEIGHT := 56.0
@@ -20,6 +23,13 @@ const CTA_HEIGHT := 64.0
 const TOGGLE_WIDTH := 160.0
 const TRACK_RADIUS := 4
 const TRACK_MARGIN := 4.0
+const TAB_HEIGHT := 48.0
+const TAB_CORNER_RADIUS := 10
+const TAB_BORDER_WIDTH := 2
+
+const TAB_GAME := "game"
+const TAB_AUDIO := "audio"
+const TAB_ORDER: Array[String] = [TAB_GAME, TAB_AUDIO]
 
 ## Locale display names are intentionally not localized — each language shows
 ## its own name so the toggle stays readable in either state.
@@ -30,6 +40,9 @@ var _header_label: Label
 var _row_labels: Dictionary = {}
 var _language_button: Button
 var _close_button: Button
+var _tab_buttons: Dictionary = {}
+var _tab_pages: Dictionary = {}
+var _active_tab: String = TAB_GAME
 
 
 func _ready() -> void:
@@ -95,6 +108,8 @@ func _refresh_texts() -> void:
 		(_row_labels[key] as Label).text = UiLocale.text("settings." + String(key))
 	_language_button.text = String(LOCALE_NAMES[String(SaveService.instance.get_setting("locale"))])
 	_close_button.text = UiLocale.text("settings.close")
+	(_tab_buttons[TAB_GAME] as Button).text = UiLocale.text("settings.tab_game")
+	(_tab_buttons[TAB_AUDIO] as Button).text = UiLocale.text("settings.tab_audio")
 
 
 func _make_header() -> Control:
@@ -119,14 +134,29 @@ func _make_body() -> Control:
 	body.offset_right = -BODY_MARGIN
 	body.offset_top = HEADER_HEIGHT
 	body.offset_bottom = -BODY_MARGIN
-	for key: String in SaveProfile.VOLUME_KEYS:
-		body.add_child(_make_slider_row(key))
+
+	body.add_child(_make_tab_bar())
+
+	var game_page := VBoxContainer.new()
+	game_page.name = "GamePage"
+	game_page.add_theme_constant_override("separation", UiPalette.SPACE_MD)
 	# N6-5: joystick opacity slider — floored so the stick can never be
 	# dragged fully invisible by accident.
-	body.add_child(_make_slider_row(
+	game_page.add_child(_make_slider_row(
 		SaveProfile.JOYSTICK_OPACITY_KEY, SaveProfile.JOYSTICK_OPACITY_MIN
 	))
-	body.add_child(_make_language_row())
+	game_page.add_child(_make_language_row())
+	body.add_child(game_page)
+	_tab_pages[TAB_GAME] = game_page
+
+	var audio_page := VBoxContainer.new()
+	audio_page.name = "AudioPage"
+	audio_page.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+	for key: String in SaveProfile.VOLUME_KEYS:
+		audio_page.add_child(_make_slider_row(key))
+	body.add_child(audio_page)
+	_tab_pages[TAB_AUDIO] = audio_page
+
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_child(spacer)
@@ -136,7 +166,56 @@ func _make_body() -> Control:
 	WoodButton.apply(_close_button)
 	_close_button.pressed.connect(_on_close_pressed)
 	body.add_child(_close_button)
+
+	_select_tab(_active_tab)
 	return body
+
+
+## Owner report: 게임/오디오 rows all in one column pushed the close button
+## past the panel edge. Splitting into two pill tabs (bestiary_screen.gd's
+## pattern) keeps each page short enough to fit, and groups related
+## settings instead of one long list.
+func _make_tab_bar() -> Control:
+	var bar := HBoxContainer.new()
+	bar.name = "TabBar"
+	bar.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	for tab: String in TAB_ORDER:
+		var button := Button.new()
+		button.name = "Tab_" + tab
+		button.custom_minimum_size = Vector2(0.0, TAB_HEIGHT)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_color_override("font_color", UiPalette.WOOD_TEXT)
+		button.add_theme_color_override("font_hover_color", UiPalette.WOOD_TEXT)
+		button.add_theme_color_override("font_pressed_color", UiPalette.WOOD_TEXT)
+		button.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
+		button.pressed.connect(_on_tab_pressed.bind(tab))
+		bar.add_child(button)
+		_tab_buttons[tab] = button
+	return bar
+
+
+func _on_tab_pressed(tab: String) -> void:
+	_select_tab(tab)
+
+
+func _select_tab(tab: String) -> void:
+	_active_tab = tab
+	for key: String in _tab_pages.keys():
+		(_tab_pages[key] as Control).visible = key == tab
+	for key: String in _tab_buttons.keys():
+		var button: Button = _tab_buttons[key]
+		var style := _tab_box(key == tab)
+		for state: String in ["normal", "hover", "pressed", "focus"]:
+			button.add_theme_stylebox_override(state, style)
+
+
+func _tab_box(selected: bool) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = UiPalette.WOOD if selected else UiPalette.PAPER_CARD
+	box.border_color = UiPalette.GOLD if selected else UiPalette.WOOD_BORDER
+	box.set_border_width_all(TAB_BORDER_WIDTH)
+	box.set_corner_radius_all(TAB_CORNER_RADIUS)
+	return box
 
 
 func _make_slider_row(key: String, min_value: float = 0.0) -> Control:
