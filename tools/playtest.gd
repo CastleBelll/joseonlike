@@ -51,6 +51,10 @@ const HINT_SHOT_AT_SEC := 0.6
 const OPENING_SHOT_PATH := "user://playtest_opening.png"
 const OPENING_SHOT_AT_SEC := 12.0
 const LOW_HP_SHOT_PATH := "user://playtest_low_hp.png"
+## N6-3: the post-popup grace blink right after a choice screen closes, and
+## the first heal landing (elite kill or health pickup).
+const GRACE_SHOT_PATH := "user://playtest_popup_grace.png"
+const HEAL_SHOT_PATH := "user://playtest_heal.png"
 ## N3-14 crowd metric: an enemy counts as "stacked" when another enemy's
 ## center sits closer than half the pair's combined contact radii.
 const OVERLAP_SAMPLE_SEC := 1.0
@@ -64,7 +68,12 @@ const TIMEOUT_GRACE_SEC := 90.0
 const MOVE_ACTIONS: Array[String] = ["move_left", "move_right", "move_up", "move_down"]
 ## N6-2 opening metrics: damage-taken window and the standing-still bot's
 ## early stop (the opening is proven by then; a full idle run adds nothing).
-const DAMAGE_WINDOW_SEC := 20.0
+## N6-3 widened to 30s: the first level-up popup (~23s) and the rush
+## convergence both sit inside the measured window.
+const DAMAGE_WINDOW_SEC := 30.0
+## N6-3 recovery evidence: player HP sampled at the first-elite second and at
+## the boss spawn second (mirrors the shipped 120s elite wave).
+const ELITE_SAMPLE_SEC := 120.0
 const IDLE_QUIT_SEC := 45.0
 ## N4-3: the ten base taoist weapons a run can start on (non-evolution_only).
 const BATCH_WEAPONS: Array[String] = [
@@ -125,6 +134,13 @@ var _damage_total: float = 0.0
 # moving player. Both modes report first level-up time and 0-20s damage taken.
 var _idle: bool = false
 var _first_level_up_at: float = -1.0
+# N6-3: HP snapshots at the elite/boss beats (-1 = never reached), the
+# grace/heal screenshot latches, and the elite-kill count the heal budget prices.
+var _hp_at_elite: float = -1.0
+var _hp_at_boss: float = -1.0
+var _grace_shot_done: bool = false
+var _heal_shot_done: bool = false
+var _elite_kills: int = 0
 var _damage_taken_open: float = 0.0
 var _prev_hp: float = 0.0
 var _opening_shot_done: bool = false
@@ -261,6 +277,12 @@ func _start_run() -> void:
 	_spawner.burn_damaged.connect(
 		func(amount: float, _at: Vector2) -> void: _damage_total += amount
 	)
+	# N6-3: elite kills price the run's heal budget (Pickups.heal_budget).
+	_spawner.enemy_killed.connect(
+		func(enemy: Enemy) -> void:
+			if enemy.is_elite:
+				_elite_kills += 1
+	)
 	# N6-1: hold the bot still until the hint shot lands (no hint = no hold).
 	_hint_shown = _stage._move_hint != null
 	_hint_shot_done = not _hint_shown
@@ -309,6 +331,11 @@ func _reset_run_metrics() -> void:
 	_overlap_timer = 0.0
 	_damage_total = 0.0
 	_first_level_up_at = -1.0
+	_hp_at_elite = -1.0
+	_hp_at_boss = -1.0
+	_grace_shot_done = false
+	_heal_shot_done = false
+	_elite_kills = 0
 	_damage_taken_open = 0.0
 	_opening_shot_done = false
 	_low_hp_shot_done = false
@@ -375,6 +402,17 @@ func _process(delta: float) -> void:
 	if not _opening_shot_done and elapsed >= OPENING_SHOT_AT_SEC:
 		_opening_shot_done = true
 		_capture(OPENING_SHOT_PATH)
+	# N6-3: the grace blink is only on right after a popup released the pause.
+	if not _grace_shot_done and not get_tree().paused and _first_level_up_at >= 0.0 \
+			and _player._bonus_invuln_left > 0.0:
+		_grace_shot_done = true
+		print("PLAYTEST grace active %.2fs after popup close at %.1fs" % [
+			_player._bonus_invuln_left, elapsed
+		])
+		_capture(GRACE_SHOT_PATH)
+	if not _heal_shot_done and _stage._heal_events > 0:
+		_heal_shot_done = true
+		_capture(HEAL_SHOT_PATH)
 	if not _low_hp_shot_done and _player != null and CombatMath.is_low_hp(
 		_player.hp, _player.hp_max, _low_hp_threshold
 	):
@@ -401,6 +439,11 @@ func _physics_process(delta: float) -> void:
 	if _stage._run_elapsed <= DAMAGE_WINDOW_SEC:
 		_damage_taken_open += hp_drop
 	_track_weapon_damage()
+	# N6-3: first sample at or past each beat second (physics cadence).
+	if _hp_at_elite < 0.0 and _stage._run_elapsed >= ELITE_SAMPLE_SEC:
+		_hp_at_elite = _player.hp
+	if _hp_at_boss < 0.0 and _stage._run_elapsed >= _boss_at:
+		_hp_at_boss = _player.hp
 	if _stage._outcome != RunFlow.OUTCOME_NONE:
 		_release_moves()
 		return
@@ -680,6 +723,17 @@ func _finish() -> void:
 	print("PLAYTEST first level-up: %.1fs (idle=%s)" % [_first_level_up_at, str(_idle)])
 	print("PLAYTEST damage taken 0-%.0fs: %.1f (hp now %.1f/%.1f)" % [
 		DAMAGE_WINDOW_SEC, _damage_taken_open, _player.hp, _player.hp_max
+	])
+	print("PLAYTEST hp at %.0fs elite: %.1f, at boss %.0fs: %.1f (max %.1f)" % [
+		ELITE_SAMPLE_SEC, _hp_at_elite, _boss_at, _hp_at_boss, _player.hp_max
+	])
+	# N6-3 recovery evidence: heals actually landed vs the budget the data
+	# prices for this run's measured breaks and elite kills.
+	var budget_hp: float = Pickups.heal_budget(
+		_stage._pickups_data, breaks_total, _elite_kills
+	) * _player.hp_max
+	print("PLAYTEST heals: %d landed for %.1f hp (budget %.1f hp at %d breaks, %d elite kills)" % [
+		_stage._heal_events, _stage._heal_total, budget_hp, breaks_total, _elite_kills
 	])
 	if _stage._outcome == RunFlow.OUTCOME_DEFEAT:
 		print("PLAYTEST death cause: %s" % RunFlow.death_cause_text(_player.last_hit_source))

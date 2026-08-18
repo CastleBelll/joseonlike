@@ -2479,3 +2479,109 @@ clean. Seeded runs exercised props blocking (unchanged collision), ground
 rendering, separation, targeting, loot auto-collect, level-up/mod cards
 (0 evolution-leak violations), meta effects, bestiary recording, boss,
 result and autosave with no new errors.
+
+---
+
+# N6-3 — Post-popup grace + earned recovery (2026-08-18, QA-3 findings 1·2)
+
+Two owner-confirmed problems: the first level-up popup (~0:23 at human pace)
+lands exactly on the opening-rush convergence, so resuming from the choice
+screen was an ambush; and the only heal in the game was a 5.8% destructible
+roll (~once per winning run), so opening damage persisted as a slow death
+sentence to the 2:00 elite.
+
+## Post-popup contact grace (data-driven)
+
+- `effects.json hit_feedback.popup_grace_sec: 1.5` — granted in
+  `Stage._advance_popup_queue` at the moment a released pause resumes play,
+  i.e. after ANY choice screen (level-up, chest reward, and every future
+  popup that goes through the queue). Telegraphed by the existing
+  invulnerability alpha blink.
+- Non-exploitable by construction: granted once per queue drain (consecutive
+  queued screens = one grant at the final close), `CombatMath.grace_extend`
+  refreshes to at most the full window (maxf, never sums), and the pause
+  freezes the countdown so nothing carries into or stacks across popups.
+  Pure helpers `grace_extend`/`grace_tick` unit-tested (activation, expiry,
+  non-stacking, longer-shield precedence).
+- Rendered evidence (seed 20260814, 1x): first popup closed at ~25s — the
+  QA-3 ambush moment — with the grace shield active right after close
+  (captures/n6-3/playtest_popup_grace.png).
+- Opening pulses: left as shipped (0s 14@0.7s + 12s 10@0.8s). The grace
+  decouples the decision moment from the danger peak without touching the
+  rush; retiming waves risked the QA-3-confirmed 0:10 tension and the
+  validator's opening contract (≥18 spawns in 20s) leaves no room for a
+  later second pulse. Idle-probe damage is byte-identical before/after
+  (102.0 in 0-30s, death 33.2s) — the opening still hurts exactly as much.
+
+## Earned recovery (two sources, both rewards)
+
+- Break table health weight 6 → 10 (nothing 50 → 46): health now 10% of
+  rolls; plain share 84% still over the 0.8 validator floor.
+- NEW `pickups.json elite_heal.hp_ratio: 0.15` — killing an elite refunds
+  15% max HP through the shared heal path (float label + green pulse).
+  Chosen over the other candidate sources because the 2:00 elite is exactly
+  where accumulated opening damage used to become lethal: beating the run's
+  set-piece fight IS the recovery valve, it needs zero new UI, its budget is
+  hard-bounded by the elite schedule (6 kills max), and it is a reward for
+  engaging the scariest enemy — never a passive drip. Validator contract:
+  hp_ratio in (0, 0.5]. Runtime proof: pickup_check elite probe 50.4 →
+  69.3 hp (exactly +15% of 126).
+- `Pickups.heal_budget(pickups, breaks, elite_kills)` prices a run's
+  expected healing (break health share x pickup ratio + elite kills x
+  elite ratio); unit-tested and printed by the playtest harness.
+
+## Intended vs measured heal budget
+
+Intended: up to ~1.05x max HP per full clear, all earned — 6 elite kills =
+0.90x, plus ~0.025x per prop break (10% share x 25% heal). A run that skips
+elites and breaks nothing still heals zero — recovery is opt-in risk.
+
+Measured (seed 20260814, 8x headless, final data):
+
+| metric | BEFORE | AFTER |
+|---|---|---|
+| normal bot outcome | victory 264.9s | victory 270.8s |
+| damage taken 0-30s (normal) | 0.0 | 30.0 |
+| damage taken 0-30s (idle probe) | 102.0, dead 33.2s | 102.0, dead 33.2s |
+| heals landed / hp | 0 / 0.0 | 6 / 113.4 (budget 161.3) |
+| hp at 2:00 elite | 96.0/126 | 96.0/150 |
+| hp at boss (4:00) | 96.0/126 (flat — no path back) | 122.4/150 (recovered) |
+| first level-up (rendered 1x) | ~23s (QA-3) | 24.7s (unchanged) |
+| surge fps (rendered 1x) | min 59 avg 60 (N5-5) | min 60 avg 60 (1563 samples) |
+
+The before-row bot never bled in its 0-30s window (perfect kiting); the
+idle probe is the honest opening-damage measure and is unchanged. The
+after-run shows the intended arc: hurt before the elite (96/150), earned
+back to 122.4/150 by the boss through elite heals + health pickups.
+
+## Guard: bad builds and maxed meta must still lose
+
+The grace measurably buffs deliberately-bad builds too — with it, the
+maxed-meta nopick probe stopped dying at enrage damage 2.5x (12/12 timeout
+survivals across seeds where the pre-change config still produced deaths).
+Compensation: `soft_enrage.damage_mult_max 2.5 → 2.8` — the bite lands in
+exactly the 250s+ window where that probe used to die, and a winning build
+barely meets it (boss dead ~271s at full-recovery HP).
+
+Verified at final data: plain nopick defeat 293.3s; maxed-meta nopick
+defeat observed 260.5s (outcomes at a fixed seed are timing-noisy — the
+probe still wins some repeats, matching the N4-8 1-in-8 standard, but death
+remains reachable); idle probe dead 33.2s; normal bot victory 270.8s with
+the boss killed.
+
+## Screenshots (captures/n6-3/)
+
+- grace shield right after the popup closes: playtest_popup_grace.png
+- heal collected (회복 +32 label + green pulse): pickup_check_pickup_health.png
+- elite heal probe frame: pickup_check_elite_heal.png
+- opening rush / surge regression frames: playtest_opening.png, playtest_surge.png
+
+## Regression
+
+317/317 unit tests PASS (311 prior + 6 new), validate_data PASS (break-table
+share rule included), headless import clean. pickup_check full tour green
+(all five pickup kinds, full-HP gold conversion 12→22, chest 1/5 sequences,
+nuke caps boss 2400→2250 / elite 510→360), ten-weapon builds untouched
+(no weapon data changed), evolution gating (0 leak violations), meta
+effects, bestiary, boss, result and autosave exercised by the seeded runs
+with no new errors.

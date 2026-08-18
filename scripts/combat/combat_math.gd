@@ -27,6 +27,18 @@ static func can_hit(time_since_last_hit: float, cooldown: float) -> bool:
 	return time_since_last_hit >= cooldown
 
 
+## N6-3 timed-shield rule (post-popup grace, 축지, revive): a new grant only
+## ever EXTENDS the remaining window to its own duration — grants never sum,
+## so consecutive popup closes cannot stack grace on top of grace.
+static func grace_extend(left: float, grant: float) -> float:
+	return maxf(left, grant)
+
+
+## Countdown for the same window; never goes below zero.
+static func grace_tick(left: float, delta: float) -> float:
+	return maxf(left - delta, 0.0)
+
+
 ## Zero when already on target so a stacked enemy does not jitter.
 static func chase_direction(from: Vector2, to: Vector2) -> Vector2:
 	return (to - from).normalized() if from != to else Vector2.ZERO

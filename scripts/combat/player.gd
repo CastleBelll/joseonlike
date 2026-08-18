@@ -123,7 +123,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_time_since_hit += delta
-	_bonus_invuln_left = maxf(_bonus_invuln_left - delta, 0.0)
+	_bonus_invuln_left = CombatMath.grace_tick(_bonus_invuln_left, delta)
 	var move_input: Vector2 = joystick_input
 	if move_input == Vector2.ZERO:
 		move_input = Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -159,10 +159,11 @@ func set_invuln_scale(scale: float) -> void:
 	_invuln_window = load_hit_invuln_sec() * maxf(scale, 1.0)
 
 
-## 축지 (N4-4b): a timed shield on top of the post-hit i-frames; repeats
-## refresh, never shorten. The same alpha flash telegraphs it.
+## 축지 (N4-4b) and the N6-3 post-popup grace: a timed shield on top of the
+## post-hit i-frames; repeats refresh, never shorten or stack. The same alpha
+## flash telegraphs it.
 func grant_invulnerability(duration: float) -> void:
-	_bonus_invuln_left = maxf(_bonus_invuln_left, duration)
+	_bonus_invuln_left = CombatMath.grace_extend(_bonus_invuln_left, duration)
 
 
 ## Returns true when the hit landed; false while the invulnerability window

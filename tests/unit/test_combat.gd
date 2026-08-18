@@ -215,3 +215,32 @@ func test_magnet_speed_accelerates_and_caps() -> bool:
 func test_magnet_pull_points_orb_at_player() -> bool:
 	var direction: Vector2 = CombatMath.chase_direction(Vector2(50.0, 0.0), Vector2.ZERO)
 	return direction.distance_to(Vector2.LEFT) < EPSILON
+
+
+# N6-3 post-popup grace window (data/effects.json hit_feedback.popup_grace_sec).
+const GRACE := 1.5
+
+
+func test_grace_activates_and_expires() -> bool:
+	var left: float = CombatMath.grace_extend(0.0, GRACE)
+	if absf(left - GRACE) > EPSILON:
+		return false
+	left = CombatMath.grace_tick(left, 1.0)
+	if absf(left - (GRACE - 1.0)) > EPSILON or left <= 0.0:
+		return false
+	left = CombatMath.grace_tick(left, 1.0)
+	return left == 0.0  # expired — and clamped, never negative
+
+
+func test_grace_does_not_stack_across_consecutive_popups() -> bool:
+	# Two popup closes back to back: the second grant refreshes the window to
+	# GRACE, it must never sum to 2x GRACE.
+	var left: float = CombatMath.grace_extend(0.0, GRACE)
+	left = CombatMath.grace_tick(left, 0.5)
+	left = CombatMath.grace_extend(left, GRACE)
+	return absf(left - GRACE) < EPSILON
+
+
+func test_grace_grant_never_shortens_longer_shield() -> bool:
+	# A live longer shield (축지, revive) survives a popup-close grant.
+	return absf(CombatMath.grace_extend(3.0, GRACE) - 3.0) < EPSILON

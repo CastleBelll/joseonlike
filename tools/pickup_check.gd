@@ -83,16 +83,19 @@ func _process(delta: float) -> void:
 			_attract()
 		6:
 			await _shot("pickup_magnet")
+			_elite_heal_probe()
+		7:
+			await _shot("elite_heal")
 			_force_chest_weights({"1": 100.0})
 			_spawn_chest()
-		7:
+		8:
 			await _chest_sequence("chest_1")
 			_force_chest_weights({"5": 100.0})
 			_spawn_chest()
-		8:
+		9:
 			await _chest_sequence("chest_5")
 			_nuke_cap_probe()
-		9:
+		10:
 			await _shot("nuke_boss_cap")
 			print("PICKUP CHECK done")
 			get_tree().quit(0)
@@ -102,7 +105,22 @@ func _process(delta: float) -> void:
 
 
 func _step_is_chest() -> bool:
-	return _step >= 7
+	return _step >= 8
+
+
+## N6-3 proof: an elite kill at reduced HP heals the data elite_heal slice
+## through the shared heal path (float label + green pulse); the chest the
+## elite drops is independent and stays where it fell.
+func _elite_heal_probe() -> void:
+	var spawner: Spawner = _stage.get_node("World/Spawner")
+	var elite: Enemy = spawner._spawn_one("bamboo_brute_elite")
+	elite.global_position = _player.global_position + Vector2(90.0, 0.0)
+	_player.hp = _player.hp_max * HEALTH_TEST_HP_RATIO
+	var before: float = _player.hp
+	elite.take_damage(elite.hp + 1.0)
+	print("PICKUP elite heal: hp %.1f -> %.1f (max %.1f)" % [
+		before, _player.hp, _player.hp_max
+	])
 
 
 ## Edge-case proof: a nuke with the boss and an elite alive on screen — both

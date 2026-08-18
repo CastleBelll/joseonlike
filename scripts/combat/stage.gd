@@ -80,6 +80,9 @@ var _chest_batch_index: int = 0
 var _chest_showing: bool = false
 var _break_stats: Dictionary = {}
 var _chest_counts: Array[int] = []
+# N6-3 recovery evidence (harness reads them): every landed heal, any source.
+var _heal_events: int = 0
+var _heal_total: float = 0.0
 
 # N3-8 feedback + N5-1 run flow state.
 var _feedback: Dictionary = {}
@@ -339,6 +342,11 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 			enemy.global_position, _player,
 			float((_pickups_data.get("chest", {}) as Dictionary).get("open_radius_px", 0.0))
 		)
+		# N6-3 earned recovery: beating the run's set-piece fight refunds a
+		# slice of max HP — a reward for engaging the elite, never a drip.
+		_heal_player(float(
+			(_pickups_data.get("elite_heal", {}) as Dictionary).get("hp_ratio", 0.0)
+		))
 	if enemy.is_boss:
 		_boss = null
 		_hud.hide_boss_bar()
@@ -677,6 +685,12 @@ func _advance_popup_queue() -> void:
 	_chest_batch_total = 0
 	_chest_batch_index = 0
 	_popup.close()
+	# N6-3 post-popup grace: resuming from a choice screen must never be an
+	# ambush — a short contact shield (existing invuln blink telegraphs it).
+	# Granted only when an actual pause is being released, once per queue
+	# drain; grace_extend refreshes, never stacks (CombatMath rule).
+	if get_tree().paused:
+		_player.grant_invulnerability(float(_feedback.get("popup_grace_sec", 0.0)))
 	get_tree().paused = false
 
 
@@ -859,10 +873,20 @@ func _collect_health() -> void:
 		var gained: int = _add_gold(int(health.get("full_hp_gold", 0)))
 		_float_label("엽전 +%d" % gained)
 		return
-	var heal: float = _player.hp_max * float(health.get("hp_ratio", 0.0))
-	_player.hp = minf(_player.hp + heal, _player.hp_max)
+	_heal_player(float(health.get("hp_ratio", 0.0)))
+
+
+## N6-3 single heal path (health pickup, elite kill): ratio of max HP, capped
+## at full, with the float label + green pulse so the heal reads in a crowd
+## (N3-18 grammar). Already-full or zero-ratio heals do nothing silently.
+func _heal_player(hp_ratio: float) -> void:
+	if hp_ratio <= 0.0 or _player.hp >= _player.hp_max:
+		return
+	var heal: float = minf(_player.hp_max * hp_ratio, _player.hp_max - _player.hp)
+	_player.hp += heal
+	_heal_events += 1
+	_heal_total += heal
 	_float_label("회복 +%d" % int(round(heal)))
-	# Green pulse on the player: the heal reads even in a crowd (N3-18 grammar).
 	var puff: DeathPuff = _puff_pool.acquire()
 	puff.puff(
 		_player.global_position, Player.CONTACT_RADIUS * 2.0,

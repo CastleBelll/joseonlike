@@ -59,6 +59,29 @@ static func roll_chest_count(
 	return int(counts[StageField.pick_weighted(weights, rng.randf())])
 
 
+## N6-3 heal-budget math: the expected max-HP fraction of healing one run
+## offers — break_table health share x breaks x health ratio, plus one
+## elite_heal per elite kill. Counts are the caller's (schedule or measured),
+## so the same function prices both the intended and the actual budget.
+static func heal_budget(pickups: Dictionary, breaks: int, elite_kills: int) -> float:
+	var table: Array = pickups.get("break_table", [])
+	var total: float = 0.0
+	var health_weight: float = 0.0
+	for entry: Variant in table:
+		if entry is not Dictionary:
+			continue
+		var weight: float = float((entry as Dictionary).get("weight", 0.0))
+		total += weight
+		if String((entry as Dictionary).get("kind", "")) == KIND_HEALTH:
+			health_weight = weight
+	var health_share: float = health_weight / total if total > 0.0 else 0.0
+	var pickup_ratio: float = float((pickups.get("health", {}) as Dictionary).get("hp_ratio", 0.0))
+	var elite_ratio: float = float(
+		(pickups.get("elite_heal", {}) as Dictionary).get("hp_ratio", 0.0)
+	)
+	return float(breaks) * health_share * pickup_ratio + float(elite_kills) * elite_ratio
+
+
 ## The damage one nuke deals to one enemy: the full data damage for trash,
 ## the capped value for elites and the boss so the payoff can never one-shot
 ## a set-piece fight.
@@ -128,6 +151,13 @@ static func _effect_issues(pickups: Dictionary, issues: Array[String]) -> void:
 		issues.append("health.hp_ratio must be in (0, 1]")
 	if int(health.get("full_hp_gold", 0)) <= 0:
 		issues.append("health.full_hp_gold must be positive")
+	# N6-3 elite-kill heal: a reward slice, never a full refill — capped below
+	# the pickup heal wouldn't be wrong, but the hard contract is (0, 0.5].
+	var elite_ratio: float = float(
+		(pickups.get("elite_heal", {}) as Dictionary).get("hp_ratio", 0.0)
+	)
+	if elite_ratio <= 0.0 or elite_ratio > 0.5:
+		issues.append("elite_heal.hp_ratio must be in (0, 0.5]")
 	var nuke: Dictionary = pickups.get("nuke", {})
 	if float(nuke.get("damage", 0.0)) <= 0.0:
 		issues.append("nuke.damage must be positive")

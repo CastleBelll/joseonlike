@@ -8,7 +8,8 @@
     "death_puff_radius_scale": 1.6,
     "player_vignette_sec": 0.35,
     "low_hp_threshold": 0.25,
-    "low_hp_pulse_sec": 0.9
+    "low_hp_pulse_sec": 0.9,
+    "popup_grace_sec": 1.5
   },
   "separation": {
     "weight": 2.0,

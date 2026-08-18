@@ -21,6 +21,7 @@ static func _fixture() -> Dictionary:
 		"_rules": {"plain_share_min": 0.8},
 		"gold": {"amount": 12},
 		"health": {"hp_ratio": 0.25, "full_hp_gold": 10},
+		"elite_heal": {"hp_ratio": 0.15},
 		"nuke": {"damage": 999.0, "elite_boss_damage": 150.0, "ring_radius_px": 320.0},
 		"magnet": {"ring_radius_px": 120.0},
 		"chest": {
@@ -132,6 +133,28 @@ func test_elite_derivation_marks_is_elite() -> bool:
 	var derived: Dictionary = Enemy.derive_elite_stats(base, {"hp_mult": 6.0})
 	return bool(derived.get("is_elite", false)) \
 		and is_equal_approx(float(derived["hp"]), 510.0)
+
+
+func test_heal_budget_prices_breaks_and_elite_kills() -> bool:
+	# Fixture: health share 6/100, pickup ratio 0.25, elite ratio 0.15.
+	# 10 breaks -> 10 * 0.06 * 0.25 = 0.15; 6 elites -> 6 * 0.15 = 0.9.
+	var budget: float = Pickups.heal_budget(_fixture(), 10, 6)
+	return is_equal_approx(budget, 0.15 + 0.9)
+
+
+func test_heal_budget_zero_on_empty_data() -> bool:
+	return Pickups.heal_budget({}, 10, 6) == 0.0
+
+
+func test_data_issues_rejects_bad_elite_heal() -> bool:
+	var missing: Dictionary = _fixture().duplicate(true)
+	(missing as Dictionary).erase("elite_heal")
+	if Pickups.data_issues(missing, LUCK_CAP).is_empty():
+		return false
+	var refill: Dictionary = _fixture().duplicate(true)
+	# A kill heal above half the bar stops being a slice and becomes a refill.
+	((refill["elite_heal"] as Dictionary))["hp_ratio"] = 0.6
+	return not Pickups.data_issues(refill, LUCK_CAP).is_empty()
 
 
 func test_breakable_props_are_solid_with_positive_hp() -> bool:
