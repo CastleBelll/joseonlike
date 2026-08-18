@@ -35,9 +35,9 @@
       "desc_ko": "최대 체력 +5%",
       "desc_en": "Max HP +5%",
       "costs": [
-        30,
-        45,
-        80
+        40,
+        90,
+        240
       ],
       "requires": [],
       "pos": [
@@ -57,8 +57,8 @@
       "desc_ko": "이동 속도 +3%",
       "desc_en": "Move speed +3%",
       "costs": [
-        35,
-        55
+        45,
+        110
       ],
       "requires": [],
       "pos": [
@@ -78,9 +78,9 @@
       "desc_ko": "공격력 +4%",
       "desc_en": "Attack damage +4%",
       "costs": [
-        50,
         90,
-        150
+        220,
+        450
       ],
       "requires": [
         "iron_bones"
@@ -102,8 +102,8 @@
       "desc_ko": "획득 반경 +15%",
       "desc_en": "Pickup radius +15%",
       "costs": [
-        40,
-        70
+        75,
+        180
       ],
       "requires": [
         "wind_steps"
@@ -125,9 +125,9 @@
       "desc_ko": "공격 속도 +4%",
       "desc_en": "Attack speed +4%",
       "costs": [
-        75,
-        130,
-        215
+        150,
+        340,
+        650
       ],
       "requires": [
         "sharp_talisman"
@@ -149,9 +149,9 @@
       "desc_ko": "엽전 획득 +10%",
       "desc_en": "Coin gain +10%",
       "costs": [
-        85,
-        140,
-        240
+        170,
+        380,
+        720
       ],
       "requires": [
         "soul_pull"
@@ -173,7 +173,7 @@
       "desc_ko": "2레벨에서 출정 (시작 시 파워 업 1회)",
       "desc_en": "Start at level 2 (one power-up at run start)",
       "costs": [
-        235
+        700
       ],
       "requires": [
         "quick_hands"
@@ -195,9 +195,9 @@
       "desc_ko": "경험치 획득 +8%",
       "desc_en": "XP gain +8%",
       "costs": [
-        100,
-        175,
-        295
+        200,
+        450,
+        880
       ],
       "requires": [
         "coin_eye"
@@ -219,7 +219,7 @@
       "desc_ko": "레벨 업 선택지 +1장 (3장 → 4장)",
       "desc_en": "One extra level-up card (3 → 4)",
       "costs": [
-        420
+        1300
       ],
       "requires": [
         "head_start"
@@ -241,7 +241,7 @@
       "desc_ko": "매 출정 45초 내 특수 재료 1개 보장",
       "desc_en": "One special material guaranteed within 45s each run",
       "costs": [
-        305
+        900
       ],
       "requires": [
         "insight"
@@ -263,8 +263,8 @@
       "desc_ko": "받는 피해 -5%",
       "desc_en": "Damage taken -5%",
       "costs": [
-        440,
-        610
+        1400,
+        2000
       ],
       "requires": [
         "fourth_card"
@@ -286,8 +286,8 @@
       "desc_ko": "피격 후 무적 시간 +10%",
       "desc_en": "Post-hit invulnerability +10%",
       "costs": [
-        325,
-        515
+        950,
+        1550
       ],
       "requires": [
         "first_find"
@@ -309,8 +309,8 @@
       "desc_ko": "특수 재료 발견 확률 +25%",
       "desc_en": "Special material drop chance +25%",
       "costs": [
-        355,
-        585
+        1050,
+        1750
       ],
       "requires": [
         "long_breath"
@@ -332,7 +332,7 @@
       "desc_ko": "출정당 1회, 죽음 대신 체력 30%로 회생",
       "desc_en": "Once per run, revive at 30% HP instead of dying",
       "costs": [
-        655
+        2000
       ],
       "requires": [
         "stone_skin",
@@ -356,8 +356,8 @@
       "desc_ko": "화상 지속 시간 +25%",
       "desc_en": "Burn duration +25%",
       "costs": [
-        95,
-        155
+        200,
+        420
       ],
       "requires": [],
       "pos": [
@@ -378,8 +378,8 @@
       "desc_ko": "결계 반경 +12%",
       "desc_en": "Ward radius +12%",
       "costs": [
-        110,
-        185
+        230,
+        480
       ],
       "requires": [],
       "pos": [
@@ -400,8 +400,8 @@
       "desc_ko": "뇌부 계열 연쇄 도약 +1회",
       "desc_en": "Thunder charm chain jumps +1",
       "costs": [
-        125,
-        210
+        260,
+        550
       ],
       "requires": [
         "burn_mastery"
@@ -424,7 +424,7 @@
       "desc_ko": "혼불 계열 선회 구슬 +1개",
       "desc_en": "Soul flame orbs +1",
       "costs": [
-        240
+        620
       ],
       "requires": [
         "ward_wide"
@@ -447,7 +447,7 @@
       "desc_ko": "봉인 폭발에 필요한 중첩 -1",
       "desc_en": "Seal stacks needed to burst -1",
       "costs": [
-        280
+        750
       ],
       "requires": [
         "chain_reach",
@@ -471,8 +471,8 @@
       "desc_ko": "공격력 +4%",
       "desc_en": "Attack damage +4%",
       "costs": [
-        100,
-        180
+        210,
+        440
       ],
       "requires": [],
       "pos": [
@@ -493,7 +493,7 @@
       "desc_ko": "받는 피해 -4%",
       "desc_en": "Damage taken -4%",
       "costs": [
-        210
+        540
       ],
       "requires": [
         "hwando_hone"
@@ -516,8 +516,8 @@
       "desc_ko": "이동 속도 +3%",
       "desc_en": "Move speed +3%",
       "costs": [
-        95,
-        155
+        200,
+        420
       ],
       "requires": [],
       "pos": [
@@ -538,7 +538,7 @@
       "desc_ko": "공격 속도 +4%",
       "desc_en": "Attack speed +4%",
       "costs": [
-        195
+        500
       ],
       "requires": [
         "wind_read"
