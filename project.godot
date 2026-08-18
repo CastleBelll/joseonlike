@@ -24,6 +24,7 @@ SaveManager="*res://scripts/core/save_manager.gd"
 
 window/size/viewport_width=540
 window/size/viewport_height=960
+window/size/resizable=false
 window/stretch/mode="viewport"
 window/stretch/aspect="expand"
 window/handheld/orientation=1
