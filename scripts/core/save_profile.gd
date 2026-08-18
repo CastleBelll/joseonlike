@@ -14,6 +14,13 @@ const MAX_GOLD := 999999999
 
 const VOLUME_KEYS: Array[String] = ["master_volume", "music_volume", "effects_volume"]
 
+## N6-5 joystick opacity: scales the stick's draw alphas. Floor 0.2 so a
+## stray drag can never make the control invisible; lowering it IS allowed,
+## just never to zero.
+const JOYSTICK_OPACITY_KEY := "joystick_opacity"
+const JOYSTICK_OPACITY_MIN := 0.2
+const JOYSTICK_OPACITY_MAX := 1.0
+
 
 static func default_profile() -> Dictionary:
 	return {
@@ -24,6 +31,7 @@ static func default_profile() -> Dictionary:
 			"master_volume": 1.0,
 			"music_volume": 1.0,
 			"effects_volume": 1.0,
+			"joystick_opacity": JOYSTICK_OPACITY_MAX,
 			"locale": UiLocale.DEFAULT_LOCALE,
 		},
 		"stats": {
@@ -125,6 +133,10 @@ static func clamp_settings(settings: Dictionary) -> Dictionary:
 	var result: Dictionary = {}
 	for key: String in VOLUME_KEYS:
 		result[key] = clampf(float(settings.get(key, defaults[key])), 0.0, 1.0)
+	result[JOYSTICK_OPACITY_KEY] = clampf(
+		float(settings.get(JOYSTICK_OPACITY_KEY, defaults[JOYSTICK_OPACITY_KEY])),
+		JOYSTICK_OPACITY_MIN, JOYSTICK_OPACITY_MAX
+	)
 	var locale: String = String(settings.get("locale", ""))
 	result["locale"] = locale if locale in SUPPORTED_LOCALES else String(defaults["locale"])
 	return result

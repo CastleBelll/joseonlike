@@ -10,7 +10,8 @@ signal locale_changed
 
 const LAYER_ABOVE_TITLE := 10
 const PANEL_MARGIN_X := 48.0
-const PANEL_HEIGHT := 480.0
+# N6-5: grew from 480 to fit the fourth slider row (joystick opacity).
+const PANEL_HEIGHT := 570.0
 const HEADER_HEIGHT := 72.0
 const BODY_MARGIN := 32.0
 const ROW_HEIGHT := 56.0
@@ -120,6 +121,11 @@ func _make_body() -> Control:
 	body.offset_bottom = -BODY_MARGIN
 	for key: String in SaveProfile.VOLUME_KEYS:
 		body.add_child(_make_slider_row(key))
+	# N6-5: joystick opacity slider — floored so the stick can never be
+	# dragged fully invisible by accident.
+	body.add_child(_make_slider_row(
+		SaveProfile.JOYSTICK_OPACITY_KEY, SaveProfile.JOYSTICK_OPACITY_MIN
+	))
 	body.add_child(_make_language_row())
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -133,7 +139,7 @@ func _make_body() -> Control:
 	return body
 
 
-func _make_slider_row(key: String) -> Control:
+func _make_slider_row(key: String, min_value: float = 0.0) -> Control:
 	var row := VBoxContainer.new()
 	row.name = key.to_pascal_case()
 	row.add_theme_constant_override("separation", UiPalette.SPACE_XS)
@@ -142,7 +148,7 @@ func _make_slider_row(key: String) -> Control:
 	row.add_child(name_label)
 	var slider := HSlider.new()
 	slider.name = "Slider"
-	slider.min_value = 0.0
+	slider.min_value = min_value
 	slider.max_value = 1.0
 	slider.step = SLIDER_STEP
 	slider.value = float(SaveService.instance.get_setting(key))

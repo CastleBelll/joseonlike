@@ -101,6 +101,13 @@ const WEAPON_GHOST := Color("#b07ee0")
 ## and the boss silhouette so a cursed field reads at a glance.
 const WEAPON_CURSE := Color("#d967c9")
 
+# N6-5 floating joystick: neutral overlay-control tones — ink-based base,
+# desaturated light ring/knob. Deliberately NOT the wood family so the stick
+# reads as a transient touch overlay, never as a wooden button.
+const JOYSTICK_BASE := Color("#1d2024")
+const JOYSTICK_RING := Color("#8d949c")
+const JOYSTICK_KNOB := Color("#d4d8dc")
+
 # Spacing scale (4/8pt grid).
 const SPACE_XS := 4
 const SPACE_SM := 8

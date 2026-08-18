@@ -83,14 +83,31 @@ func _release() -> void:
 	queue_redraw()
 
 
+## N6-5: the persisted joystick_opacity setting scales every draw alpha —
+## read at draw time so a settings change applies live, no wiring needed.
+## Node-free tools and tests (no autoload) fall back to full opacity.
+func _opacity() -> float:
+	if SaveService.instance == null:
+		return SaveProfile.JOYSTICK_OPACITY_MAX
+	return clampf(
+		float(SaveService.instance.get_setting(SaveProfile.JOYSTICK_OPACITY_KEY)),
+		SaveProfile.JOYSTICK_OPACITY_MIN, SaveProfile.JOYSTICK_OPACITY_MAX
+	)
+
+
 func _draw() -> void:
 	# Resting hint at the home rect while untouched; the live stick draws at
 	# the actual touch origin anywhere on screen (no clip_contents, so drawing
-	# outside this control's rect is fine).
+	# outside this control's rect is fine). N6-5: neutral overlay tones — the
+	# wood family is reserved for real buttons.
+	var opacity: float = _opacity()
 	var center: Vector2 = size / 2.0 if _touch_index == -1 else _origin - global_position
-	draw_circle(center, BASE_RADIUS, Color(UiPalette.NIGHT_BROWN, BASE_ALPHA))
+	draw_circle(center, BASE_RADIUS, Color(UiPalette.JOYSTICK_BASE, BASE_ALPHA * opacity))
 	draw_arc(
 		center, BASE_RADIUS - RING_WIDTH / 2.0, 0.0, TAU, RING_POINT_COUNT,
-		Color(UiPalette.WOOD_BORDER, RING_ALPHA), RING_WIDTH
+		Color(UiPalette.JOYSTICK_RING, RING_ALPHA * opacity), RING_WIDTH
 	)
-	draw_circle(center + _knob_offset, KNOB_RADIUS, Color(UiPalette.WOOD, KNOB_ALPHA))
+	draw_circle(
+		center + _knob_offset, KNOB_RADIUS,
+		Color(UiPalette.JOYSTICK_KNOB, KNOB_ALPHA * opacity)
+	)

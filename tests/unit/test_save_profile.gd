@@ -54,6 +54,16 @@ func test_clamp_settings_bounds_volumes() -> bool:
 		and float(clamped["effects_volume"]) == 0.5
 
 
+func test_clamp_settings_floors_joystick_opacity() -> bool:
+	# N6-5: opacity clamps to [0.2, 1.0] and defaults to full when absent.
+	var low: Dictionary = SaveProfile.clamp_settings({"joystick_opacity": 0.0})
+	var high: Dictionary = SaveProfile.clamp_settings({"joystick_opacity": 3.0})
+	var absent: Dictionary = SaveProfile.clamp_settings({})
+	return float(low["joystick_opacity"]) == SaveProfile.JOYSTICK_OPACITY_MIN \
+		and float(high["joystick_opacity"]) == SaveProfile.JOYSTICK_OPACITY_MAX \
+		and float(absent["joystick_opacity"]) == SaveProfile.JOYSTICK_OPACITY_MAX
+
+
 func test_clamp_settings_rejects_unknown_locale() -> bool:
 	var clamped: Dictionary = SaveProfile.clamp_settings({"locale": "fr"})
 	return clamped["locale"] == UiLocale.DEFAULT_LOCALE \

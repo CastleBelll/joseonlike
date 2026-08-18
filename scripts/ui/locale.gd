@@ -17,6 +17,7 @@ const STRINGS := {
 	"settings.master_volume": {"ko": "전체 음량", "en": "Master Volume"},
 	"settings.music_volume": {"ko": "음악", "en": "Music"},
 	"settings.effects_volume": {"ko": "효과음", "en": "Effects"},
+	"settings.joystick_opacity": {"ko": "조이스틱 불투명도", "en": "Joystick Opacity"},
 	"settings.language": {"ko": "언어", "en": "Language"},
 	"settings.close": {"ko": "닫기", "en": "Close"},
 	"meta.title": {"ko": "명부수", "en": "Myeongbusu"},
