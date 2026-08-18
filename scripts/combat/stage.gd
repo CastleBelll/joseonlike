@@ -37,6 +37,11 @@ var _passives_data: Dictionary = {}
 var _owned_levels: Dictionary = {}
 var _passive_stacks: Dictionary = {}
 var _weapon_categories: Array = []
+# N9-6 infinite field: chunk streaming state.
+var _field_seed: int = 0
+var _props_catalog: Dictionary = {}
+var _field_config: Dictionary = {}
+var _generated_chunks: Dictionary = {}
 # N7-1: the capped permanent 명부수 bonus, computed ONCE in _ready — the only
 # meta input the run ever reads, so tree effects cannot double-apply.
 var _meta_effects: Dictionary = {}
@@ -126,7 +131,9 @@ func _ready() -> void:
 		float(field_config.get("width_px", 0.0)),
 		float(field_config.get("height_px", 0.0))
 	)
-	_player.bounds = Rect2(-_ground_size / 2.0, _ground_size)
+	# N9-6 infinite field: no bounds — the ground already follows the camera
+	# (N3-16) and props stream in per chunk as the player travels.
+	_player.bounds = Rect2()
 	# randi() is auto-seeded per process start, so every run scatters a fresh
 	# field layout; tests drive StageField.generate with fixed seeds instead.
 	# Ground and props share one seed so a run's tiles and prop scatter match.
@@ -135,6 +142,17 @@ func _ready() -> void:
 	_field.build(
 		props_config.get("props", {}) as Dictionary, field_config, _decor_layer, field_seed
 	)
+	_field_seed = field_seed
+	_props_catalog = props_config.get("props", {})
+	_field_config = field_config
+	# The origin field's footprint counts as already generated: any chunk it
+	# overlaps must never re-scatter on top of the N6-5 origin layout.
+	var origin := Rect2(-_ground_size / 2.0, _ground_size)
+	var from_chunk: Vector2i = Vector2i((origin.position / StageField.CHUNK_PX).floor())
+	var to_chunk: Vector2i = Vector2i((origin.end / StageField.CHUNK_PX).ceil())
+	for cx: int in range(from_chunk.x, to_chunk.x):
+		for cy: int in range(from_chunk.y, to_chunk.y):
+			_generated_chunks[Vector2i(cx, cy)] = true
 	_player.died.connect(_on_player_died)
 	_player.hit_taken.connect(_on_player_hit)
 	_spawner.setup(_player)
@@ -288,6 +306,7 @@ func _physics_process(delta: float) -> void:
 		_dismiss_move_hint()
 	_run_elapsed += delta
 	_refresh_hp_hud()
+	_stream_field_chunks()
 	if _duration_sec > 0.0 and _run_elapsed >= _duration_sec:
 		_end_run(RunFlow.resolve_outcome(false, false, true))
 	if _boss != null and not CombatMath.is_dead(_boss.hp):
@@ -299,6 +318,29 @@ func _physics_process(delta: float) -> void:
 		_hud.set_active_cooldown(active_id, ActiveSkill.cooldown_fraction(
 			left, float(active.get("cooldown_sec", 0.0))
 		))
+
+
+## N9-6 infinite field: generate the player's chunk neighborhood on demand.
+## One chunk per frame at most — a sprint across fresh ground amortizes the
+## scatter cost instead of hitching on a 3x3 burst.
+func _stream_field_chunks() -> void:
+	if _props_catalog.is_empty():
+		return
+	var player_chunk: Vector2i = Vector2i(
+		(_player.global_position / StageField.CHUNK_PX).floor()
+	)
+	for dx: int in range(-1, 2):
+		for dy: int in range(-1, 2):
+			var chunk: Vector2i = player_chunk + Vector2i(dx, dy)
+			if _generated_chunks.has(chunk):
+				continue
+			_generated_chunks[chunk] = true
+			var fresh: Array[Breakable] = _field.add_chunk(
+				_props_catalog, _field_config, _decor_layer, _field_seed, chunk
+			)
+			for breakable: Breakable in fresh:
+				breakable.broke.connect(_on_breakable_broke)
+			return  # at most one chunk per physics frame
 
 
 ## First movement input retires the hint for good (N6-1): the flag persists

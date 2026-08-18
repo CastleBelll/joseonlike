@@ -184,6 +184,55 @@ static func _solid_fits(
 var breakables: Array[Breakable] = []
 
 
+## N9-6 infinite field: the world grows chunk by chunk as the player travels.
+## Chunk placements are seeded per (field_seed, chunk coordinate), so a run's
+## world is identical no matter which direction is explored first.
+const CHUNK_PX := 1024.0
+
+
+## Seeded placements for one CHUNK_PX-square chunk (chunk coordinate in
+## chunk units). Cluster and prop counts scale with the chunk's share of the
+## origin field's area, so density stays the N6-5 declutter target.
+static func chunk_placements(
+	catalog: Dictionary, field: Dictionary, field_seed: int, chunk: Vector2i
+) -> Array[Dictionary]:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([field_seed, chunk.x, chunk.y])
+	var origin_area: float = (
+		float(field.get("width_px", 0.0)) * float(field.get("height_px", 0.0))
+	)
+	var share: float = CHUNK_PX * CHUNK_PX / maxf(origin_area, 1.0)
+	var radius: float = float(field.get("cluster_radius_px", 0.0))
+	var separation: float = float(field.get("cluster_min_gap_px", 0.0))
+	var attempts: int = int(field.get("max_attempts_per_prop", 1))
+	var rect := Rect2(Vector2(chunk) * CHUNK_PX, Vector2(CHUNK_PX, CHUNK_PX))
+	var anchors: Array[Vector2] = []
+	for i: int in range(maxi(1, roundi(float(field.get("cluster_count", 0)) * share))):
+		for attempt: int in range(attempts):
+			var pos := Vector2(
+				rng.randf_range(rect.position.x + radius, rect.end.x - radius),
+				rng.randf_range(rect.position.y + radius, rect.end.y - radius)
+			)
+			var clear: bool = true
+			for anchor: Vector2 in anchors:
+				if pos.distance_to(anchor) < separation:
+					clear = false
+					break
+			if clear:
+				anchors.append(pos)
+				break
+	var placements: Array[Dictionary] = []
+	_scatter(
+		placements, catalog, field, rng, anchors, true,
+		maxi(1, roundi(float(field.get("solid_count", 0)) * share))
+	)
+	_scatter(
+		placements, catalog, field, rng, anchors, false,
+		maxi(1, roundi(float(field.get("decor_count", 0)) * share))
+	)
+	return placements
+
+
 ## Instantiates the generated layout: solid props become Y-sorted StaticBody2D
 ## children of this node (Breakable bodies when the data says so), decor
 ## becomes plain visuals under `decor_parent`.
@@ -192,7 +241,26 @@ func build(
 ) -> void:
 	y_sort_enabled = true
 	breakables = []
-	for placement: Dictionary in generate(catalog, field, field_seed):
+	_instantiate(generate(catalog, field, field_seed), catalog, decor_parent)
+
+
+## N9-6: adds one chunk's props to the live field. Returns the breakables
+## created for it so the stage can wire their broke signals.
+func add_chunk(
+	catalog: Dictionary, field: Dictionary, decor_parent: Node2D,
+	field_seed: int, chunk: Vector2i
+) -> Array[Breakable]:
+	var before: int = breakables.size()
+	_instantiate(
+		chunk_placements(catalog, field, field_seed, chunk), catalog, decor_parent
+	)
+	return breakables.slice(before)
+
+
+func _instantiate(
+	placements: Array[Dictionary], catalog: Dictionary, decor_parent: Node2D
+) -> void:
+	for placement: Dictionary in placements:
 		var prop: Dictionary = catalog[placement["id"]]
 		var pos: Vector2 = placement["position"]
 		if bool(placement["solid"]):

@@ -26,6 +26,34 @@ func test_same_seed_reproduces_identical_layout() -> bool:
 	return true
 
 
+## N9-6 infinite field: a chunk's scatter is a pure function of
+## (field_seed, chunk) and every placement stays inside the chunk's rect
+## (cluster discs are margin-inset, so anchor+radius never leaves it).
+func test_chunk_placements_reproducible_and_bounded() -> bool:
+	var config: Dictionary = _config()
+	var catalog: Dictionary = config.get("props", {})
+	var field: Dictionary = config.get("field", {})
+	var chunk := Vector2i(3, -2)
+	var first: Array[Dictionary] = StageField.chunk_placements(catalog, field, SEED_A, chunk)
+	var second: Array[Dictionary] = StageField.chunk_placements(catalog, field, SEED_A, chunk)
+	if first.size() != second.size() or first.is_empty():
+		return false
+	var rect := Rect2(
+		Vector2(chunk) * StageField.CHUNK_PX,
+		Vector2(StageField.CHUNK_PX, StageField.CHUNK_PX)
+	)
+	for i: int in range(first.size()):
+		if first[i]["position"] != second[i]["position"] or first[i]["id"] != second[i]["id"]:
+			return false
+		if not rect.has_point(first[i]["position"]):
+			return false
+	# A neighbouring chunk must not replay the same layout.
+	var other: Array[Dictionary] = StageField.chunk_placements(
+		catalog, field, SEED_A, chunk + Vector2i.RIGHT
+	)
+	return other.is_empty() or other[0]["position"] != first[0]["position"]
+
+
 func test_different_seeds_produce_different_layouts() -> bool:
 	var config: Dictionary = _config()
 	var a: Array[Dictionary] = StageField.generate(config["props"], config["field"], SEED_A)
