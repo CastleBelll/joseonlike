@@ -73,6 +73,8 @@ var _damage_scale: float = 1.0
 var _cooldown_scale: float = 1.0
 var _speed_scale: float = 1.0
 var _extra_projectiles: int = 0
+var _crit_chance: float = 0.0
+var _crit_multiplier: float = 1.0
 var _damage: float = 0.0
 var _cooldown: float = 0.0
 var _speed: float = 0.0
@@ -186,6 +188,21 @@ func set_extra_projectiles(count: int) -> void:
 	_recompute()
 
 
+## N9-18 치명타 확률: run-wide crit chance/multiplier from passives. Rolled
+## per shot in _roll_damage so every mechanic — projectile, arc, ward tick,
+## orbit graze — crits through one path.
+func set_crit(chance: float, multiplier: float) -> void:
+	_crit_chance = chance
+	_crit_multiplier = multiplier
+
+
+## Damage for one hit, with the crit roll folded in.
+func _roll_damage() -> float:
+	if _crit_chance > 0.0 and randf() < _crit_chance:
+		return _damage * _crit_multiplier
+	return _damage
+
+
 func _recompute() -> void:
 	if _base_stats.is_empty():
 		return
@@ -297,7 +314,7 @@ func _fire() -> void:
 	):
 		var projectile: Projectile = _pool.acquire()
 		projectile.launch(
-			_player.global_position, shot_direction, _speed, _damage, _spawner,
+			_player.global_position, shot_direction, _speed, _roll_damage(), _spawner,
 			_player, _tint(), _view_margin, _shot_config
 		)
 
@@ -321,9 +338,10 @@ func _fire_arc(enemies: Array[Enemy], positions: Array[Vector2], aim_point: Vect
 			continue
 		var hit_at: Vector2 = enemy.global_position
 		var boss_hit: bool = enemy.is_boss
-		enemy.take_damage(_damage, CombatMath.chase_direction(origin, hit_at), knockback)
-		_after_hit(_damage)
-		hit_landed.emit(_damage, hit_at, boss_hit)
+		var arc_damage: float = _roll_damage()
+		enemy.take_damage(arc_damage, CombatMath.chase_direction(origin, hit_at), knockback)
+		_after_hit(arc_damage)
+		hit_landed.emit(arc_damage, hit_at, boss_hit)
 	_arc_flash.flash(
 		origin, aim, arc_rad, _range, _tint(), WeaponEffects.value("arc_sweep_sec")
 	)
@@ -385,8 +403,9 @@ func _process_orbit(delta: float) -> void:
 				float(status.get("duration_sec", 0.0)),
 				float(status.get("spread_radius_px", 0.0))
 			)
-		enemy.take_damage(_damage, CombatMath.chase_direction(_player.global_position, hit_at))
-		_after_hit(_damage)
+		var orb_damage: float = _roll_damage()
+		enemy.take_damage(orb_damage, CombatMath.chase_direction(_player.global_position, hit_at))
+		_after_hit(orb_damage)
 		hit_landed.emit(_damage, hit_at, boss_hit)
 
 

@@ -16,6 +16,8 @@ const POWER_UP_HEADER := "파워 업!"
 ## reads as a counted sequence, not an endless wall.
 const CHEST_HEADER := "보물 상자! (%d/%d)"
 const LOOT_SCATTER_PX := 14.0
+## N9-18 치명타 확률: a crit deals double damage.
+const CRIT_MULTIPLIER := 2.0
 
 @onready var _player: Player = $World/Player
 @onready var _joystick: TouchJoystick = $Hud/VirtualJoystick
@@ -949,9 +951,12 @@ func _refresh_weapon_scales() -> void:
 	)
 	var speed_scale: float = 1.0 + _passive_bonus("projectile_speed")
 	var extra_projectiles: int = int(round(_passive_bonus("projectile_count")))
+	# N9-18 치명타: chance from stacks, fixed x2 damage on a crit.
+	var crit_chance: float = _passive_bonus("crit_chance")
 	for weapon: AutoWeapon in _weapon_nodes.values():
 		weapon.set_scales(damage_scale, cooldown_scale, speed_scale)
 		weapon.set_extra_projectiles(extra_projectiles)
+		weapon.set_crit(crit_chance, CRIT_MULTIPLIER)
 
 
 func _load_json(path: String) -> Dictionary:
@@ -1013,11 +1018,45 @@ func _on_loot_collected(orb: XpOrb) -> void:
 	if Loot.is_material_useful(loot_id, _mods_data, _owned_levels, _replaced_weapons):
 		_run_state.inventory = Loot.add(_run_state.inventory, loot_id)
 		if bool(stats.get("special", false)):
-			_float_label("%s 획득" % String(stats.get("name_ko", loot_id)))
+			# N9-18 (owner report: "도깨비불을 얻었는데 진화가 안 나온다"):
+			# a special material is banked long before its recipe unlocks —
+			# the card needs the BASE weapon at level_required. Say which
+			# level is still missing instead of a silent "획득".
+			_float_label(_material_cue(loot_id, String(stats.get("name_ko", loot_id))))
 		return
 	var gained: int = _add_gold(Loot.salvage_gold(_loot_data, loot_id))
 	if bool(stats.get("special", false)):
 		_float_label("+%d냥" % gained)
+
+
+## N9-18: cue text for a banked special material — either "ready" or the
+## exact base weapon + level the evolution card is still waiting on. Picks
+## the closest recipe (fewest levels missing) when several match.
+func _material_cue(loot_id: String, loot_name: String) -> String:
+	var best_gap: int = -1
+	var best_line: String = ""
+	for mod_id: String in _mods_data:
+		var mod: Dictionary = _mods_data[mod_id]
+		if String(mod.get("loot_id", "")) != loot_id:
+			continue
+		var base_id: String = String(mod.get("weapon_id", ""))
+		var result_id: String = String(mod.get("result_weapon", ""))
+		if not _owned_levels.has(base_id):
+			continue
+		if _owned_levels.has(result_id) or _replaced_weapons.has(result_id):
+			continue
+		var need: int = int(mod.get("level_required", 1))
+		var gap: int = need - int(_owned_levels[base_id])
+		if gap <= 0:
+			return "%s · 개조 준비 완료!" % loot_name
+		if best_gap < 0 or gap < best_gap:
+			best_gap = gap
+			best_line = "%s · %s Lv.%d에서 개조" % [
+				loot_name,
+				String((_weapons_data.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
+				need,
+			]
+	return best_line if not best_line.is_empty() else "%s 획득" % loot_name
 
 
 ## N5-5 destructible feedback: the shared pooled puff at the prop's footprint,
