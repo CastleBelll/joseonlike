@@ -21,8 +21,8 @@ func test_card_model_from_taoist_data() -> bool:
 		"taoist", characters["taoist"], "taoist"
 	)
 	return (
-		model["name"] == "도사"
-		and model["hanja"] == "道士"
+		model["name"] == "운택"
+		and model["hanja"] == "雲澤"
 		and not String(model["title"]).is_empty()
 		and String(model["quote"]).begins_with("\"")
 		and String(model["quote"]).ends_with("\"")

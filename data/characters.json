@@ -1,10 +1,12 @@
 {
   "taoist": {
-    "name_ko": "도사",
-    "name_en": "Taoist",
-    "name_hanja": "道士",
+    "name_ko": "운택",
+    "name_en": "Untaek",
+    "name_hanja": "雲澤",
     "title_ko": "요괴를 봉인하는 술사",
     "title_en": "Sealer of Wicked Spirits",
+    "backstory_ko": "어린 시절 괴이의 저주로 마을이 불탔다. 유일한 생존자인 그는 그 길을 막기 위해 술법을 배웠다. 이제 그는 괴이 현상이 벌어진 곳마다 찾아가 봉인의 부적을 남긴다.",
+    "backstory_en": "A childhood curse from a yokai burned his village to ash. The sole survivor, he studied Taoism to prevent such tragedies. Now he travels to sites of supernatural disturbances, leaving sealing talismans in his wake.",
     "quote_ko": "부적 한 장이면, 백귀도 길을 비켜 가는 법이지.",
     "quote_en": "One talisman is enough to part a hundred ghosts.",
     "accent": "taoist_blue",
@@ -68,7 +70,7 @@
     "hit_invuln_sec": 0.8,
     "starting_weapon": "bow",
     "unlock": { "type": "gold", "cost": 500 },
-    "unlock_text_ko": "엽전 500냥으로 해금",
+    "unlock_text_ko": "엽전 500으로 해금",
     "unlock_text_en": "Unlocks for 500 coins"
   }
 }
