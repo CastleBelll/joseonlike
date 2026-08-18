@@ -122,6 +122,39 @@ EFFECT_OUT = Path(__file__).resolve().parents[1] / "effect"
 PICKUP_OUT = Path(__file__).resolve().parents[1] / "pickups"
 
 
+def build_sinjang() -> Image.Image:
+    """20x32 spirit-general (신장) facing right, drawn in luminance so the
+    engine modulate colors it (taoist blue base, lightning tint variant).
+    Silhouette: helmet with a crest, broad-shouldered robe tapering to a
+    spectral wisp tail, one bright eye, a held blade at the front."""
+    img = Image.new("RGBA", (20, 32), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+
+    def px(x: int, y: int, v: int, a: int = 255) -> None:
+        d.point((x, y), fill=lum(v, a))
+
+    # spectral wisp tail (bottom, fading)
+    d.polygon([(7, 31), (13, 31), (14, 26), (6, 26)], fill=lum(120, 170))
+    d.rectangle([8, 29, 11, 31], fill=lum(100, 120))
+    # robe body — broad shoulders tapering down
+    d.polygon([(4, 12), (15, 12), (14, 27), (5, 27)], fill=lum(185))
+    d.line([9, 13, 9, 26], fill=lum(150))  # robe fold
+    # shoulder guards
+    d.rectangle([2, 12, 5, 15], fill=lum(220))
+    d.rectangle([14, 12, 17, 15], fill=lum(220))
+    # head + helmet
+    d.rectangle([6, 5, 13, 11], fill=lum(200))
+    d.rectangle([5, 4, 14, 6], fill=lum(235))     # helm brim
+    d.rectangle([9, 1, 10, 4], fill=lum(245))     # crest
+    # face shadow + bright eye (facing right)
+    d.rectangle([7, 7, 13, 10], fill=lum(90))
+    d.rectangle([11, 8, 12, 9], fill=lum(255))
+    # blade held forward (right side)
+    d.rectangle([16, 14, 17, 24], fill=lum(240))
+    px(16, 13, 255)
+    return img
+
+
 def build_chest() -> Image.Image:
     """22x18 elite reward chest: dark chest wood, brass fittings, lock plate
     (반닫이 silhouette — was the code-drawn placeholder, N5-5)."""
@@ -216,6 +249,7 @@ if __name__ == "__main__":
     EFFECT_OUT.mkdir(parents=True, exist_ok=True)
     build_wisp().save(OUT / "honbul_wisp.png")
     build_sigil().save(OUT / "ward_sigil.png")
+    build_sinjang().save(OUT / "sinjang.png")
     build_hit_paper().save(EFFECT_OUT / "hit_paper.png")
     build_hit_phoenix().save(EFFECT_OUT / "hit_phoenix.png")
     PICKUP_OUT.mkdir(parents=True, exist_ok=True)

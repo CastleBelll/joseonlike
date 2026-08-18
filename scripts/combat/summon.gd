@@ -10,8 +10,6 @@ signal struck(amount: float, at: Vector2, boss_hit: bool)
 signal expired(summon: Summon)
 
 const CONTACT_RADIUS := 12.0
-const BODY_SIZE := Vector2(20.0, 32.0)
-const EYE_SIZE := 4.0
 ## Stop this close to the player when heeling, so the general hovers at the
 ## master's side instead of vibrating on top of it.
 const HEEL_DISTANCE_PX := 48.0
@@ -172,19 +170,26 @@ class StrikeFlash:
 
 ## Placeholder art: tinted robed silhouette with an ink outline and a paper
 ## eye band — palette tokens only; real art in ASSET_REQUIREMENTS.md.
+## N9-8: the authored spirit-general sprite (luminance, modulated by the
+## weapon color — taoist blue base, lightning tint for 뇌정 신장) replaces
+## the QA-3 "blue rectangle". The parent still flips scale.x for facing.
 class SummonVisual:
 	extends Node2D
 
+	const SPRITE_PATH := "res://asset/weapon/fx/sinjang.png"
+
 	var color: Color = UiPalette.ACCENT_TAOIST
 
+	var _sprite: Sprite2D
+
+	func _ready() -> void:
+		_sprite = Sprite2D.new()
+		_sprite.texture = load(SPRITE_PATH)
+		_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		add_child(_sprite)
+
 	func _draw() -> void:
-		var rect := Rect2(-Summon.BODY_SIZE / 2.0, Summon.BODY_SIZE)
-		draw_rect(rect, UiPalette.INK)
-		draw_rect(rect.grow(-1.0), color)
-		draw_rect(
-			Rect2(
-				Vector2(Summon.BODY_SIZE.x * 0.1, -Summon.BODY_SIZE.y * 0.3),
-				Vector2(Summon.EYE_SIZE, Summon.EYE_SIZE)
-			),
-			UiPalette.PAPER
-		)
+		# queue_redraw() from arm() lands here; the sprite needs the fresh
+		# tint, not a canvas draw.
+		if _sprite != null:
+			_sprite.modulate = color

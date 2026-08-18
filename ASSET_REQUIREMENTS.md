@@ -44,13 +44,11 @@ Members:   ward circle ground decal + placement flash, fire variant (화염 결�
 Used by:   weapons.json gyeolgye / hwayeom_gyeolgye (N4-4b)
 Fallback:  palette-token rotating sigil — dashed ring + eight-point star (scripts/combat/ward.gd, N3-18)
 
-[MISSING] summon_sinjang (priority raised N6-5 — QA-3 called this the most
-           unfinished-looking thing in the game; N6-5 re-checked every pack
-           in the 2026-08-18 drop and none carries a usable humanoid body)
-Size:      40x40 logical frames (16x export blocks, like the taoist)
-Members:   idle + 4-frame walk, right-facing (left is mirrored), thunder tint variant
-Used by:   weapons.json sinjang / noe_sinjang (N4-4b)
-Fallback:  palette-token robed silhouette (scripts/combat/summon.gd)
+[DELIVERED N9-8] summon_sinjang — asset/weapon/fx/sinjang.png (20x32,
+           authored in asset/weapon/build_fx.py: helmed spirit-general in
+           luminance, engine-modulated for the thunder variant), wired in
+           scripts/combat/summon.gd. Idle/walk animation frames remain a
+           nice-to-have for a future art pass.
 
 [MISSING] fx_jineon_shockwave
 Size:      ~270x270 px expanding ring
