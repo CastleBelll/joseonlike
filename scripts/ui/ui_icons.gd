@@ -7,6 +7,7 @@ extends RefCounted
 
 const WEAPON_ICON_DIR := "res://asset/ui/weapon_icons"
 const LOOT_ICON_DIR := "res://asset/ui/loot_icons"
+const PASSIVE_ICON_DIR := "res://asset/ui/passive_icons"
 const HUD_ICON_DIR := "res://asset/ui/hud"
 const CHROME_DIR := "res://asset/ui/chrome"
 
@@ -31,6 +32,10 @@ static func weapon_icon(weapon_id: String) -> Texture2D:
 
 static func loot_icon(loot_id: String) -> Texture2D:
 	return _icon(LOOT_ICON_DIR, loot_id)
+
+
+static func passive_icon(passive_id: String) -> Texture2D:
+	return _icon(PASSIVE_ICON_DIR, passive_id)
 
 
 static func hud_icon(icon_name: String) -> Texture2D:

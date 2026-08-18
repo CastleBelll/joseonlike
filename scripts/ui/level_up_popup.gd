@@ -209,7 +209,8 @@ func _make_card(display: Dictionary, card_width: float, card_height: float) -> B
 	card.add_child(_make_icon_well(
 		name_text,
 		String(display.get("icon_weapon_id", "")),
-		String(display.get("icon_loot_id", ""))
+		String(display.get("icon_loot_id", "")),
+		String(display.get("icon_passive_id", ""))
 	))
 	var label_text: String = String(display.get("well_label", ""))
 	var well_label := _label(
@@ -322,7 +323,10 @@ func _root_size() -> Vector2:
 	)
 
 
-func _make_icon_well(name_text: String, weapon_icon_id: String, loot_icon_id: String) -> Panel:
+func _make_icon_well(
+	name_text: String, weapon_icon_id: String, loot_icon_id: String,
+	passive_icon_id: String = ""
+) -> Panel:
 	var well := Panel.new()
 	well.position = Vector2(WELL_MARGIN, WELL_MARGIN)
 	well.size = Vector2(WELL_SIZE, WELL_SIZE)
@@ -331,7 +335,11 @@ func _make_icon_well(name_text: String, weapon_icon_id: String, loot_icon_id: St
 	style.bg_color = UiPalette.INK
 	style.set_corner_radius_all(WELL_CORNER)
 	well.add_theme_stylebox_override("panel", style)
+	# N9-10b: passive cards get their stat glyphs — the letter fallback
+	# only remains for ids without art.
 	var icon: Texture2D = UiIcons.weapon_icon(weapon_icon_id)
+	if icon == null:
+		icon = UiIcons.passive_icon(passive_icon_id)
 	if icon != null:
 		var rect: TextureRect = UiIcons.icon_rect(icon, WELL_ICON_SIZE)
 		rect.position = Vector2.ONE * ((WELL_SIZE - WELL_ICON_SIZE) / 2.0)

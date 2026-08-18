@@ -962,7 +962,7 @@ func _on_loot_collected(orb: XpOrb) -> void:
 		return
 	var gained: int = _add_gold(Loot.salvage_gold(_loot_data, loot_id))
 	if bool(stats.get("special", false)):
-		_float_label("엽전 +%d" % gained)
+		_float_label("+%d냥" % gained)
 
 
 ## N5-5 destructible feedback: the shared pooled puff at the prop's footprint,
@@ -994,7 +994,7 @@ func _on_pickup_collected(orb: XpOrb) -> void:
 			var gained: int = _add_gold(
 				int((_pickups_data.get("gold", {}) as Dictionary).get("amount", 0))
 			)
-			_float_label("엽전 +%d" % gained)
+			_float_label("+%d냥" % gained)
 		Pickups.KIND_HEALTH:
 			_collect_health()
 		Pickups.KIND_NUKE:
@@ -1007,7 +1007,7 @@ func _collect_health() -> void:
 	var health: Dictionary = _pickups_data.get("health", {})
 	if _player.hp >= _player.hp_max:
 		var gained: int = _add_gold(int(health.get("full_hp_gold", 0)))
-		_float_label("엽전 +%d" % gained)
+		_float_label("+%d냥" % gained)
 		return
 	_heal_player(float(health.get("hp_ratio", 0.0)))
 
@@ -1114,7 +1114,7 @@ func _show_next_chest_reward() -> void:
 		var gained: int = _add_gold(
 			int((_pickups_data.get("chest", {}) as Dictionary).get("fallback_gold", 0))
 		)
-		_float_label("엽전 +%d" % gained)
+		_float_label("+%d냥" % gained)
 		_advance_popup_queue()
 		return
 	get_tree().paused = true

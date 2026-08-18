@@ -645,6 +645,10 @@ static func as_card(
 		"grade_id": grade_id(choice, weapons, owned_grades, grades),
 		"icon_weapon_id": icon_id,
 		"icon_loot_id": icon_loot_id(choice),
+		"icon_passive_id": (
+			String(choice.get("id", ""))
+			if String(choice.get("kind", "")) == KIND_PASSIVE else ""
+		),
 		"payload": choice,
 	}
 

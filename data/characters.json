@@ -84,7 +84,7 @@
       "type": "gold",
       "cost": 500
     },
-    "unlock_text_ko": "엽전 500으로 해금",
+    "unlock_text_ko": "500냥으로 해금",
     "unlock_text_en": "Unlocks for 500 coins",
     "weapon_categories": [
       "ranged"
