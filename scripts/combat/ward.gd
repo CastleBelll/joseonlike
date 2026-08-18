@@ -11,12 +11,10 @@ signal finished(ward: Ward)
 const FILL_ALPHA := 0.1
 const RING_WIDTH := 2.5
 const RING_POINTS := 40
-## N3-18 sigil look: dashed outer ring + an inner square frame rotated as a
-## diamond (팔괘-style 진). Dash count and the inner ratio are style, the spin
-## speed comes from data (weapon_effects.ward_spin_deg_s).
+## N9-5 sigil look: double boundary ring + rotating radial rune ticks.
+## Tick count and the inner-ring ratio are style, the spin speed comes from
+## data (weapon_effects.ward_spin_deg_s).
 const DASH_COUNT := 12
-## Lit share of each dash slot.
-const DASH_FILL := 0.6
 const SIGIL_RATIO := 0.62
 const SIGIL_WIDTH := 2.0
 const SIGIL_ALPHA := 0.7
@@ -113,23 +111,33 @@ func _tick() -> void:
 		ticked.emit(_damage, at, boss_hit)
 
 
-## N3-18 결계 look: the N3-17 plain circle read as a debug range ring. Now a
-## slowly rotating formation — dashed outer ring, counter-rotating inner
-## diamond frame, soft fill — plus the N3-17 tick pulse (a ring expanding to
-## the edge and fading over ward_pulse_sec after every landed damage tick).
-## Still all palette-token code drawing; real ground-sigil art stays wanted in
+## N9-5 결계 look (owner report: the N3-18 rotating octagram read as an odd
+## sci-fi circle, not a 결계): two solid concentric rings with short radial
+## rune ticks slowly rotating between them — the classic 도교 boundary-circle
+## silhouette — over the soft fill, plus the N3-17 tick pulse (a ring
+## expanding to the edge after every landed damage tick). Still all
+## palette-token code drawing; real ground-sigil art stays wanted in
 ## ASSET_REQUIREMENTS.md.
 func _draw() -> void:
 	draw_circle(Vector2.ZERO, _radius, Color(_color, FILL_ALPHA))
+	# Outer boundary: one solid ring.
+	draw_arc(Vector2.ZERO, _radius, 0.0, TAU, RING_POINTS, _color, RING_WIDTH)
+	# Inner boundary: thinner, quieter ring.
+	draw_arc(
+		Vector2.ZERO, _radius * SIGIL_RATIO, 0.0, TAU, RING_POINTS,
+		Color(_color, SIGIL_ALPHA), SIGIL_WIDTH
+	)
+	# Rune ticks between the rings, rotating with the ward's spin.
 	var slot: float = TAU / float(DASH_COUNT)
+	var inner: float = _radius * (SIGIL_RATIO + 0.08)
+	var outer: float = _radius * 0.92
 	for i: int in range(DASH_COUNT):
-		var from: float = _spin + slot * float(i)
-		draw_arc(
-			Vector2.ZERO, _radius, from, from + slot * DASH_FILL, 6,
-			_color, RING_WIDTH
+		var angle: float = _spin + slot * float(i)
+		var direction: Vector2 = Vector2.from_angle(angle)
+		draw_line(
+			direction * inner, direction * outer,
+			Color(_color, SIGIL_ALPHA), SIGIL_WIDTH
 		)
-	_draw_sigil_square(-_spin)
-	_draw_sigil_square(-_spin + TAU / 8.0)
 	var pulse_sec: float = WeaponEffects.value("ward_pulse_sec")
 	if _pulse_age >= pulse_sec or pulse_sec <= 0.0:
 		return
@@ -138,14 +146,3 @@ func _draw() -> void:
 		Vector2.ZERO, _radius * progress, 0.0, TAU, RING_POINTS,
 		Color(_color, 1.0 - progress), RING_WIDTH * 1.5
 	)
-
-
-## One rotated square of the inner formation; two of them 45° apart make the
-## eight-pointed 진 frame.
-func _draw_sigil_square(phase: float) -> void:
-	var reach: float = _radius * SIGIL_RATIO
-	var color := Color(_color, SIGIL_ALPHA)
-	for i: int in range(4):
-		var a: Vector2 = Vector2.from_angle(phase + TAU * float(i) / 4.0) * reach
-		var b: Vector2 = Vector2.from_angle(phase + TAU * float(i + 1) / 4.0) * reach
-		draw_line(a, b, color, SIGIL_WIDTH)
