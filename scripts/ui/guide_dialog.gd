@@ -15,6 +15,9 @@ signal page_shown(await_action: String)
 
 const LAYER_ABOVE_HUD := 12
 const PANEL_MARGIN := 16.0
+## N9-16: lifted off the bottom edge — it sat on the joystick zone and read
+## as glued to the frame (owner report).
+const PANEL_BOTTOM_MARGIN := 120.0
 const PANEL_HEIGHT := 190.0
 const PANEL_CORNER := 12
 const PANEL_BORDER_WIDTH := 2
@@ -56,8 +59,8 @@ func _ready() -> void:
 	panel.anchor_bottom = 1.0
 	panel.offset_left = PANEL_MARGIN
 	panel.offset_right = -PANEL_MARGIN
-	panel.offset_top = -(PANEL_HEIGHT + PANEL_MARGIN)
-	panel.offset_bottom = -PANEL_MARGIN
+	panel.offset_top = -(PANEL_HEIGHT + PANEL_BOTTOM_MARGIN)
+	panel.offset_bottom = -PANEL_BOTTOM_MARGIN
 	blocker.add_child(panel)
 
 	var row := HBoxContainer.new()

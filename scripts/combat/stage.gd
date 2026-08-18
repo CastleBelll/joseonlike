@@ -261,15 +261,19 @@ func _ready() -> void:
 		_guarantee_offset_px = float(
 			(stage_entry.get("opening", {}) as Dictionary).get("guarantee_offset_px", 0.0)
 		)
-	if Ftue.should_show_move_hint(profile):
-		_move_hint = MoveHint.new()
-		_move_hint.name = "MoveHint"
-		_move_hint.target = _joystick
-		$Hud.add_child(_move_hint)
+	# N9-16: the guide teaches movement itself, so its own '움직여보자' page
+	# owns that moment — the chevron hint would show behind the dialogue
+	# (owner report). It arms only when the guide is NOT running, and
+	# _on_guide_finished arms it afterwards if the flag is still unseen.
+	var guide_running: bool = (
+		Ftue.is_first_run(profile) and Ftue.should_show_guide(profile)
+	)
+	if Ftue.should_show_move_hint(profile) and not guide_running:
+		_arm_move_hint()
 	# N9-4 first-boot guide, interactive since N9-14: tap-through pages
 	# pause the tree; await pages (move / active press) unpause it and
 	# highlight the control until the player actually does the thing.
-	if Ftue.is_first_run(profile) and Ftue.should_show_guide(profile):
+	if guide_running:
 		_guide = GuideDialog.new()
 		_guide.name = "GuideDialog"
 		add_child(_guide)
@@ -309,9 +313,12 @@ func _physics_process(delta: float) -> void:
 	)
 	if _move_hint != null and moving:
 		_dismiss_move_hint()
-	# N9-14: the guide's "움직여봐" page advances on real movement.
+	# N9-14: the guide's "움직여봐" page advances on real movement. N9-16:
+	# doing it there retires the standalone hint too — the lesson landed.
 	if _guide != null and moving:
 		_guide.notify_action(Ftue.AWAIT_MOVE)
+		if SaveService.instance != null and Ftue.should_show_move_hint(_profile()):
+			SaveService.instance.mark_move_hint_seen()
 	_run_elapsed += delta
 	_refresh_hp_hud()
 	_stream_field_chunks()
@@ -374,6 +381,13 @@ func _on_guide_page_shown(await_action: String) -> void:
 		_guide_ring = null
 
 
+func _arm_move_hint() -> void:
+	_move_hint = MoveHint.new()
+	_move_hint.name = "MoveHint"
+	_move_hint.target = _joystick
+	$Hud.add_child(_move_hint)
+
+
 ## N9-4: guide dismissed — unpause, persist the one-shot flag, free the node.
 func _on_guide_finished() -> void:
 	get_tree().paused = false
@@ -385,6 +399,10 @@ func _on_guide_finished() -> void:
 	if _guide != null:
 		_guide.queue_free()
 		_guide = null
+	# N9-16: the guide's move page already taught this; the hint only
+	# returns if that page somehow never retired the flag.
+	if _move_hint == null and Ftue.should_show_move_hint(_profile()):
+		_arm_move_hint()
 
 
 ## N5-4 괴이록 funnel: null-guarded so demo tools without the autoload run;
