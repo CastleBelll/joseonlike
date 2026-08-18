@@ -28,9 +28,13 @@ const VIEW_MARGIN_PX := 64.0
 ## Density noise: high frequency relative to the field so patches span a
 ## handful of tiles ("large soft patches"), not single scattered cells.
 const DENSITY_FREQUENCY := 0.09
-## Calibrated so ~10-20% of tiles clear the density threshold (see
-## tests/unit/test_ground_layer.gd for the measured bound).
-const DENSITY_THRESHOLD := 0.27
+## N6-5 quiet floor: raised from 0.27 (~10-20% variant tiles) so only ~4-8%
+## of tiles clear the threshold — the floor recedes, the props carry the eye
+## (see tests/unit/test_ground_layer.gd for the measured bound).
+const DENSITY_THRESHOLD := 0.42
+## N6-5 contrast cut: variants draw OVER the base tile at partial alpha
+## instead of replacing it, so every patch sits closer to the base tone.
+const VARIANT_ALPHA := 0.55
 ## Much lower frequency so one patch reads as one variant flavor, not a
 ## jumble of three.
 const TYPE_FREQUENCY := 0.015
@@ -149,13 +153,16 @@ func _draw() -> void:
 		draw_rect(window_rect(_window), UiPalette.FOREST_GROUND)
 		return
 	var tile_size := Vector2(TILE_SIZE_PX, TILE_SIZE_PX)
+	var variant_tint := Color(1.0, 1.0, 1.0, VARIANT_ALPHA)
 	for row: int in range(_window.position.y, _window.end.y):
 		for col: int in range(_window.position.x, _window.end.x):
 			var variant: int = tile_variant(_density_noise, _type_noise, col, row)
-			var texture: Texture2D = _base_texture
-			if variant >= 0 and _variant_textures[variant] != null:
-				texture = _variant_textures[variant]
 			var center: Vector2 = Vector2(float(col), float(row)) * TILE_SIZE_PX + tile_size / 2.0
 			draw_set_transform(center, tile_rotation(_seed, col, row), Vector2.ONE)
-			draw_texture_rect(texture, Rect2(-tile_size / 2.0, tile_size), false)
+			draw_texture_rect(_base_texture, Rect2(-tile_size / 2.0, tile_size), false)
+			if variant >= 0 and _variant_textures[variant] != null:
+				draw_texture_rect(
+					_variant_textures[variant], Rect2(-tile_size / 2.0, tile_size),
+					false, variant_tint
+				)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

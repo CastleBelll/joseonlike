@@ -6,11 +6,10 @@ extends RefCounted
 
 const SEED_A := 12345
 const SEED_B := 54321
-## Loose bound around the task's "roughly 10-20%" target: real noise density
-## drifts a little seed to seed, so this checks the mechanism stays sparse,
-## not a tight calibration re-check (see tools/_tmp_density.gd for that).
-const MIN_DENSITY := 0.05
-const MAX_DENSITY := 0.30
+## N6-5 quiet-floor bound: measured 4.0-5.3% across three seeds at the 0.42
+## threshold — loose bound so the check pins "sparse", not one calibration.
+const MIN_DENSITY := 0.02
+const MAX_DENSITY := 0.10
 ## An i.i.d. per-tile scatter at ~15% density gives each variant tile only
 ## a ~1-0.85^4=48% chance of touching another variant tile. Clustered noise
 ## patches push this well above that; this is the line that actually

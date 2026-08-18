@@ -43,6 +43,7 @@ const WEAPON_EFFECTS_FIELDS: Array[String] = [
 # N3-9 prop field contract (data/props.json).
 const PROP_FIELD_FIELDS: Array[String] = [
 	"width_px", "height_px", "edge_margin_px", "solid_count", "decor_count",
+	"cluster_count", "cluster_radius_px", "cluster_min_gap_px",
 	"min_gap_px", "spawn_clear_radius_px", "max_attempts_per_prop"
 ]
 const PROP_ALLOWED_KEYS: Array[String] = [

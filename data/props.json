@@ -3,8 +3,11 @@
     "width_px": 2048.0,
     "height_px": 2048.0,
     "edge_margin_px": 64.0,
-    "solid_count": 60,
-    "decor_count": 110,
+    "solid_count": 40,
+    "decor_count": 48,
+    "cluster_count": 9,
+    "cluster_radius_px": 170.0,
+    "cluster_min_gap_px": 420.0,
     "min_gap_px": 60.0,
     "spawn_clear_radius_px": 170.0,
     "max_attempts_per_prop": 24

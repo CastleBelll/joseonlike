@@ -89,6 +89,28 @@ func test_spawn_clear_radius_holds_no_solid() -> bool:
 	return true
 
 
+## N6-5 declutter: every prop must sit inside some cluster disc, so the field
+## keeps real open lanes between groves instead of a uniform sprinkle.
+func test_every_prop_lands_inside_a_cluster_disc() -> bool:
+	var config: Dictionary = _config()
+	var field: Dictionary = config["field"]
+	var radius: float = float(field["cluster_radius_px"])
+	var rng := RandomNumberGenerator.new()
+	rng.seed = SEED_A
+	var anchors: Array[Vector2] = StageField.cluster_anchors(field, rng)
+	if anchors.size() != int(field["cluster_count"]):
+		return false
+	for placement: Dictionary in StageField.generate(config["props"], field, SEED_A):
+		var inside: bool = false
+		for anchor: Vector2 in anchors:
+			if (placement["position"] as Vector2).distance_to(anchor) <= radius + DISTANCE_EPSILON:
+				inside = true
+				break
+		if not inside:
+			return false
+	return true
+
+
 func test_weighted_pick_respects_weights() -> bool:
 	var weights: Array[float] = [1.0, 3.0]
 	var rng := RandomNumberGenerator.new()
