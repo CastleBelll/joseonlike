@@ -790,6 +790,8 @@ func _passive_bonus(passive_id: String) -> float:
 
 
 ## N9-3e: live build snapshot for the pause overlay (CombatHud.build_provider).
+## N9-9 adds the evolution paths open to the current build — the owner
+## reported the talisman branch tree was invisible in-run.
 func _pause_build_summary() -> Dictionary:
 	var weapons: Array[Dictionary] = []
 	for weapon_id: String in _owned_levels:
@@ -809,7 +811,33 @@ func _pause_build_summary() -> Dictionary:
 			"stacks": stacks,
 			"max": int(passive.get("max_stacks", 0)),
 		})
-	return {"weapons": weapons, "passives": passives}
+	return {
+		"weapons": weapons, "passives": passives,
+		"evolutions": _evolution_lines(),
+	}
+
+
+## One line per recipe an OWNED weapon can still take: base → result with
+## the material's name and whether it is in the run inventory right now.
+func _evolution_lines() -> Array[String]:
+	var lines: Array[String] = []
+	for mod_id: String in _mods_data:
+		var mod: Dictionary = _mods_data[mod_id]
+		var base_id: String = String(mod.get("weapon_id", ""))
+		var result_id: String = String(mod.get("result_weapon", ""))
+		if not _owned_levels.has(base_id):
+			continue
+		if _owned_levels.has(result_id) or _replaced_weapons.has(result_id):
+			continue
+		var loot_id: String = String(mod.get("loot_id", ""))
+		var held: bool = int(_run_state.inventory.get(loot_id, 0)) > 0
+		lines.append("%s → %s · %s%s" % [
+			String((_weapons_data.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
+			String((_weapons_data.get(result_id, {}) as Dictionary).get("name_ko", result_id)),
+			String((_loot_data.get(loot_id, {}) as Dictionary).get("name_ko", loot_id)),
+			" ✓" if held else " 필요",
+		])
+	return lines
 
 
 func _meta_bonus(stat: String) -> float:

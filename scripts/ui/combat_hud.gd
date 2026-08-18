@@ -488,6 +488,21 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		var passive_rows: int = ceili(float(passives.size()) / float(BUILD_PASSIVE_COLUMNS))
 		extra_height += passive_rows * BUILD_PASSIVE_ROW_HEIGHT + UiPalette.SPACE_SM
 
+	# N9-9: evolution paths open to this build — base → result · material,
+	# ✓ when the material is already in the run inventory.
+	var evolutions: Array = summary.get("evolutions", [])
+	if not evolutions.is_empty():
+		var box := VBoxContainer.new()
+		box.name = "EvolutionLines"
+		var header := _label("개조 경로", UiPalette.FONT_SIZE_LABEL, UiPalette.VERMILION)
+		box.add_child(header)
+		for line_text: Variant in evolutions:
+			box.add_child(_label(
+				String(line_text), UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
+			))
+		_build_section.add_child(box)
+		extra_height += (evolutions.size() + 1) * BUILD_PASSIVE_ROW_HEIGHT + UiPalette.SPACE_SM
+
 	var half: float = (OVERLAY_PANEL_HEIGHT + extra_height) / 2.0
 	_pause_panel.offset_top = -half
 	_pause_panel.offset_bottom = half

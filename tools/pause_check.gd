@@ -28,6 +28,11 @@ func _ready() -> void:
 				{"name": "행운", "stacks": 4, "max": 5},
 				{"name": "경험치 획득", "stacks": 5, "max": 5},
 			],
+			"evolutions": [
+				"낡은 부적 → 뇌부 · 뇌정석 ✓",
+				"낡은 부적 → 살 · 도깨비불 필요",
+				"결계 → 화염 결계 · 화령석 필요",
+			],
 		}
 	hud._on_pause_pressed()
 	await RenderingServer.frame_post_draw
