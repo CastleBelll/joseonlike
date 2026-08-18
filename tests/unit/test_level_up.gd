@@ -431,7 +431,8 @@ func test_apply_weapon_up_bumps_exactly_that_weapon() -> bool:
 	var result: Dictionary = LevelUp.apply_choice(choice, {"talisman": 1, "bow": 2}, {"move_speed": 1})
 	var owned: Dictionary = result["owned_levels"]
 	var stacks: Dictionary = result["passive_stacks"]
-	return owned == {"talisman": 2, "bow": 2} and stacks == {"move_speed": 1}
+	# N9-20: a level card is worth LEVEL_STEP weapon levels.
+	return owned == {"talisman": 1 + LevelUp.LEVEL_STEP, "bow": 2} 		and stacks == {"move_speed": 1}
 
 
 func test_apply_new_weapon_adds_at_level_one() -> bool:

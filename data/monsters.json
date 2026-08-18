@@ -6,7 +6,7 @@
     "hp": 10.0,
     "damage": 5.0,
     "speed": 55.0,
-    "xp_drop": 1,
+    "xp_drop": 3,
     "behaviour": "chase",
     "collision_radius": 9.5,
     "sprite": "res://asset/monsters/forest_goblin"
@@ -18,7 +18,7 @@
     "hp": 16.0,
     "damage": 7.0,
     "speed": 40.0,
-    "xp_drop": 3,
+    "xp_drop": 7,
     "behaviour": "ranged",
     "collision_radius": 10.0,
     "sprite": "res://asset/monsters/forest_spirit"
@@ -30,7 +30,7 @@
     "hp": 105.0,
     "damage": 22.0,
     "speed": 70.0,
-    "xp_drop": 5,
+    "xp_drop": 13,
     "behaviour": "charger",
     "collision_radius": 18.5,
     "sprite": "res://asset/monsters/bamboo_brute"
