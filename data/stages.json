@@ -2,13 +2,13 @@
   "bamboo_forest": {
     "name_ko": "대나무 숲",
     "name_en": "Bamboo Forest",
-    "duration_sec": 300,
+    "duration_sec": 420,
     "boss_id": "bamboo_spirit_lord",
     "boss_gold": 150,
-    "boss_at_sec": 240,
-    "surge_at_sec": 210,
+    "boss_at_sec": 340,
+    "surge_at_sec": 300,
     "soft_enrage": {
-      "start_sec": 250,
+      "start_sec": 350,
       "ramp_sec": 20,
       "hp_mult_max": 3.0,
       "damage_mult_max": 2.5,
@@ -80,12 +80,6 @@
         "interval_sec": 2.0
       },
       {
-        "at_sec": 110,
-        "monster_id": "bamboo_brute_elite",
-        "count": 1,
-        "interval_sec": 1.0
-      },
-      {
         "at_sec": 120,
         "monster_id": "forest_goblin",
         "count": 16,
@@ -105,12 +99,6 @@
       },
       {
         "at_sec": 150,
-        "monster_id": "bamboo_brute",
-        "count": 6,
-        "interval_sec": 2.2
-      },
-      {
-        "at_sec": 150,
         "monster_id": "forest_goblin",
         "count": 18,
         "interval_sec": 1.0
@@ -122,67 +110,121 @@
         "interval_sec": 1.6
       },
       {
-        "at_sec": 170,
+        "at_sec": 150,
+        "monster_id": "bamboo_brute",
+        "count": 6,
+        "interval_sec": 2.2
+      },
+      {
+        "at_sec": 175,
         "monster_id": "bamboo_brute_elite",
         "count": 1,
         "interval_sec": 1.0
       },
       {
-        "at_sec": 180,
+        "at_sec": 190,
+        "monster_id": "forest_goblin",
+        "count": 20,
+        "interval_sec": 0.9
+      },
+      {
+        "at_sec": 190,
+        "monster_id": "forest_spirit",
+        "count": 11,
+        "interval_sec": 1.5
+      },
+      {
+        "at_sec": 210,
+        "monster_id": "bamboo_brute_elite",
+        "count": 1,
+        "interval_sec": 1.0
+      },
+      {
+        "at_sec": 210,
+        "monster_id": "bamboo_brute",
+        "count": 6,
+        "interval_sec": 2.0
+      },
+      {
+        "at_sec": 230,
         "monster_id": "forest_goblin",
         "count": 22,
         "interval_sec": 0.8
       },
       {
-        "at_sec": 180,
+        "at_sec": 230,
         "monster_id": "forest_spirit",
         "count": 12,
         "interval_sec": 1.4
       },
       {
-        "at_sec": 195,
+        "at_sec": 250,
         "monster_id": "bamboo_brute_elite",
         "count": 1,
         "interval_sec": 1.0
       },
       {
-        "at_sec": 210,
+        "at_sec": 270,
+        "monster_id": "forest_goblin",
+        "count": 26,
+        "interval_sec": 0.7
+      },
+      {
+        "at_sec": 270,
+        "monster_id": "forest_spirit",
+        "count": 14,
+        "interval_sec": 1.2
+      },
+      {
+        "at_sec": 270,
+        "monster_id": "bamboo_brute",
+        "count": 8,
+        "interval_sec": 1.6
+      },
+      {
+        "at_sec": 290,
+        "monster_id": "bamboo_brute_elite",
+        "count": 1,
+        "interval_sec": 1.0
+      },
+      {
+        "at_sec": 300,
         "monster_id": "forest_goblin",
         "count": 44,
         "interval_sec": 0.3
       },
       {
-        "at_sec": 210,
+        "at_sec": 300,
         "monster_id": "forest_spirit",
         "count": 26,
         "interval_sec": 0.55
       },
       {
-        "at_sec": 210,
+        "at_sec": 300,
         "monster_id": "bamboo_brute",
         "count": 14,
         "interval_sec": 0.9
       },
       {
-        "at_sec": 215,
+        "at_sec": 310,
         "monster_id": "bamboo_brute_elite",
         "count": 1,
         "interval_sec": 1.0
       },
       {
-        "at_sec": 230,
+        "at_sec": 325,
         "monster_id": "bamboo_brute_elite",
         "count": 1,
         "interval_sec": 1.0
       },
       {
-        "at_sec": 240,
+        "at_sec": 340,
         "monster_id": "forest_goblin",
         "count": 28,
         "interval_sec": 0.9
       },
       {
-        "at_sec": 240,
+        "at_sec": 340,
         "monster_id": "forest_spirit",
         "count": 12,
         "interval_sec": 1.2
