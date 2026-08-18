@@ -130,4 +130,8 @@ long-lived worktree teams.
 
 `CLAUDE.md` · `ARCHITECTURE.md` · `JOSEONLIKE_GDD.md` · `ROADMAP.md` · `TASKS.md` ·
 `ASSET_SPEC.md` · `ASSET_REQUIREMENTS.md` · `ASSET_LICENSES.md` · `data/BALANCE.md` ·
-`docs/CI.md` · the code · the git history. Nothing else.
+`docs/CI.md` · `docs/SESSION_STATE.md` · the code · the git history. Nothing else.
+
+A fresh session starts with [docs/SESSION_STATE.md](docs/SESSION_STATE.md): where the
+game is, how the owner wants the work run, what was in flight, and what the owner
+still has to decide.
