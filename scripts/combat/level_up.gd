@@ -70,6 +70,7 @@ const MILESTONE_LABELS: Dictionary = {
 	"arc.knockback_scale": "넉백 +%s배",
 	"orbit.speed_deg_s": "선회 속도 +%s",
 	"orbit.radius_px": "선회 반경 +%s",
+	"orbit.orb_radius_px": "구슬 크기 +%s",
 	"ward.radius_px": "장판 반경 +%s",
 	"ward.duration_sec": "장판 지속 +%s초",
 	"ward.slow_scale": "감속 강화",

@@ -470,7 +470,7 @@
     "orbit": {
       "radius_px": 90.0,
       "speed_deg_s": 170.0,
-      "orb_radius_px": 14.0
+      "orb_radius_px": 10.0
     },
     "max_level": 8,
     "per_level": {
@@ -487,19 +487,22 @@
       "3": {
         "projectile_count": 1,
         "orbit": {
-          "radius_px": 10.0
+          "radius_px": 10.0,
+          "orb_radius_px": 2.0
         }
       },
       "5": {
         "projectile_count": 1,
         "orbit": {
-          "radius_px": 10.0
+          "radius_px": 10.0,
+          "orb_radius_px": 2.0
         }
       },
       "8": {
         "projectile_count": 1,
         "orbit": {
-          "speed_deg_s": 40.0
+          "speed_deg_s": 40.0,
+          "orb_radius_px": 3.0
         }
       }
     }
@@ -520,7 +523,7 @@
     "orbit": {
       "radius_px": 98.0,
       "speed_deg_s": 190.0,
-      "orb_radius_px": 15.0
+      "orb_radius_px": 11.0
     },
     "max_level": 8,
     "per_level": {
@@ -537,19 +540,22 @@
       "3": {
         "projectile_count": 1,
         "orbit": {
-          "radius_px": 10.0
+          "radius_px": 10.0,
+          "orb_radius_px": 2.0
         }
       },
       "5": {
         "projectile_count": 1,
         "orbit": {
-          "radius_px": 10.0
+          "radius_px": 10.0,
+          "orb_radius_px": 2.0
         }
       },
       "8": {
         "projectile_count": 1,
         "orbit": {
-          "speed_deg_s": 40.0
+          "speed_deg_s": 40.0,
+          "orb_radius_px": 3.0
         }
       }
     }
