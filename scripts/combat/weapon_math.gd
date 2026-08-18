@@ -139,14 +139,19 @@ static func curse_spread_targets(
 ## Multishot fan (N4-8): `count` unit directions centered on `direction`,
 ## adjacent shots `spread_rad` apart. Count 1 is the unchanged single shot,
 ## so every existing single-projectile weapon keeps its exact behaviour.
+## N9-8b (owner report: with 2 shots the symmetric fan left NO shot on the
+## aim line, so the talisman stopped hitting what it aimed at): the first
+## shot always flies exactly along the aim; extras alternate right/left at
+## growing spread multiples (0, +s, -s, +2s, -2s ...).
 static func fan_directions(
 	direction: Vector2, count: int, spread_rad: float
 ) -> Array[Vector2]:
 	var shots: int = maxi(count, 1)
-	var directions: Array[Vector2] = []
-	var start: float = -spread_rad * float(shots - 1) / 2.0
-	for i: int in range(shots):
-		directions.append(direction.rotated(start + spread_rad * float(i)))
+	var directions: Array[Vector2] = [direction]
+	for i: int in range(1, shots):
+		var step: int = ceili(float(i) / 2.0)
+		var side: float = 1.0 if i % 2 == 1 else -1.0
+		directions.append(direction.rotated(side * spread_rad * float(step)))
 	return directions
 
 
