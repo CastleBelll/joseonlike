@@ -117,6 +117,9 @@ var _active_cooldowns: Dictionary = {}
 # returning profile) and the first-run guarantee table from stages.json —
 # _first_run_log maps each guaranteed loot_id to the second it first dropped.
 var _move_hint: MoveHint
+# N9-14 interactive guide: the dialog node and the actives highlight ring.
+var _guide: GuideDialog
+var _guide_ring: TutorialRing
 var _first_run_drops: Array = []
 var _first_run_log: Dictionary = {}
 # N6-2: a guaranteed first-run drop lands ahead of the player (data offset),
@@ -263,15 +266,16 @@ func _ready() -> void:
 		_move_hint.name = "MoveHint"
 		_move_hint.target = _joystick
 		$Hud.add_child(_move_hint)
-	# N9-4 first-boot guide: 우치 narrates the basics over a paused tree
-	# before the first wave; the move hint takes over on dismissal.
+	# N9-4 first-boot guide, interactive since N9-14: tap-through pages
+	# pause the tree; await pages (move / active press) unpause it and
+	# highlight the control until the player actually does the thing.
 	if Ftue.is_first_run(profile) and Ftue.should_show_guide(profile):
-		var guide := GuideDialog.new()
-		guide.name = "GuideDialog"
-		add_child(guide)
-		guide.finished.connect(_on_guide_finished.bind(guide))
-		get_tree().paused = true
-		guide.open(Ftue.GUIDE_PAGES)
+		_guide = GuideDialog.new()
+		_guide.name = "GuideDialog"
+		add_child(_guide)
+		_guide.finished.connect(_on_guide_finished)
+		_guide.page_shown.connect(_on_guide_page_shown)
+		_guide.open(Ftue.GUIDE_PAGES)
 	# N7-2 첫 인연: every run guarantees one special material early, through the
 	# same guarantee pipeline the FTUE table uses (data timing, run-seeded pick).
 	if int(_meta_bonus("first_find")) >= 1:
@@ -299,11 +303,15 @@ func _arm_first_find() -> void:
 
 func _physics_process(delta: float) -> void:
 	_player.joystick_input = _joystick.output
-	if _move_hint != null and (
+	var moving: bool = (
 		_joystick.output != Vector2.ZERO
 		or Input.get_vector("move_left", "move_right", "move_up", "move_down") != Vector2.ZERO
-	):
+	)
+	if _move_hint != null and moving:
 		_dismiss_move_hint()
+	# N9-14: the guide's "움직여봐" page advances on real movement.
+	if _guide != null and moving:
+		_guide.notify_action(Ftue.AWAIT_MOVE)
 	_run_elapsed += delta
 	_refresh_hp_hud()
 	_stream_field_chunks()
@@ -352,12 +360,31 @@ func _dismiss_move_hint() -> void:
 		SaveService.instance.mark_move_hint_seen()
 
 
+## N9-14: pause on tap-through pages, play on await pages; ring the
+## actives cluster while its press is awaited.
+func _on_guide_page_shown(await_action: String) -> void:
+	get_tree().paused = await_action.is_empty()
+	if await_action == Ftue.AWAIT_ACTIVE:
+		if _guide_ring == null:
+			_guide_ring = TutorialRing.new()
+			$Hud.add_child(_guide_ring)
+		_guide_ring.aim(_hud.actives_rect())
+	elif _guide_ring != null:
+		_guide_ring.queue_free()
+		_guide_ring = null
+
+
 ## N9-4: guide dismissed — unpause, persist the one-shot flag, free the node.
-func _on_guide_finished(guide: GuideDialog) -> void:
+func _on_guide_finished() -> void:
 	get_tree().paused = false
+	if _guide_ring != null:
+		_guide_ring.queue_free()
+		_guide_ring = null
 	if SaveService.instance != null:
 		SaveService.instance.mark_guide_seen()
-	guide.queue_free()
+	if _guide != null:
+		_guide.queue_free()
+		_guide = null
 
 
 ## N5-4 괴이록 funnel: null-guarded so demo tools without the autoload run;
@@ -472,6 +499,9 @@ func _on_active_pressed(active_id: String) -> void:
 			continue
 		_execute_active(active)
 		_active_cooldowns[active_id] = float(active.get("cooldown_sec", 0.0))
+		# N9-14: the guide's "눌러봐" page advances on a real cast.
+		if _guide != null:
+			_guide.notify_action(Ftue.AWAIT_ACTIVE)
 		return
 
 
@@ -609,6 +639,13 @@ func _show_next_level_up() -> void:
 			choice, _weapons_data, _passives_data, _owned_levels, _passive_stacks,
 			_owned_grades, _grades_config, masked
 		))
+	# N9-14: the first-ever level-up screen wears a tutorial header once —
+	# the popup itself IS the weapon-upgrade tutorial (owner direction).
+	var header: String = POWER_UP_HEADER
+	if Ftue.should_explain_level_up(_profile()):
+		header = Ftue.LEVELUP_EXPLAIN_HEADER
+		if SaveService.instance != null:
+			SaveService.instance.mark_level_up_explained()
 	# N6-1: the very first 개조 card a profile ever sees carries one extra
 	# explanation line — same card, same single tap, never again.
 	if Ftue.should_explain_mod(_profile()):
@@ -616,7 +653,7 @@ func _show_next_level_up() -> void:
 		cards = explained["cards"]
 		if bool(explained["explained"]) and SaveService.instance != null:
 			SaveService.instance.mark_mod_explained()
-	_popup.open(POWER_UP_HEADER, cards, _owned_levels, _weapons_data)
+	_popup.open(header, cards, _owned_levels, _weapons_data)
 
 
 ## N4-9 permanent knowledge: mod results this profile's 괴이록 has never

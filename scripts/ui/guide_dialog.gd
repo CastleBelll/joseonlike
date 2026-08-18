@@ -8,6 +8,10 @@ extends CanvasLayer
 ## Runs with PROCESS_MODE_ALWAYS so it works over a paused tree.
 
 signal finished
+## N9-14 interactive pages: fired whenever a new page shows, with its
+## "await" action ("" for tap-through pages) so the stage can unpause the
+## tree and aim the highlight.
+signal page_shown(await_action: String)
 
 const LAYER_ABOVE_HUD := 12
 const PANEL_MARGIN := 16.0
@@ -132,9 +136,32 @@ func _show_page() -> void:
 	_name_label.text = String(page.get("name", ""))
 	_body_label.text = String(page.get("text", ""))
 	_next_button.text = "가자" if _index == _pages.size() - 1 else "다음"
+	# N9-14: an await page hides the button — the ACTION advances it — and
+	# releases the input blocker so the player can actually play.
+	var await_action: String = String(page.get("await", ""))
+	_next_button.visible = await_action.is_empty()
+	(get_node("Blocker") as Control).mouse_filter = (
+		Control.MOUSE_FILTER_IGNORE if not await_action.is_empty()
+		else Control.MOUSE_FILTER_STOP
+	)
+	page_shown.emit(await_action)
+
+
+## N9-14: the stage reports gameplay actions; the matching await page
+## advances. Wrong/duplicate actions are ignored.
+func notify_action(action: String) -> void:
+	if not visible or _pages.is_empty():
+		return
+	if String(_pages[_index].get("await", "")) != action:
+		return
+	_advance()
 
 
 func _on_next_pressed() -> void:
+	_advance()
+
+
+func _advance() -> void:
 	_index += 1
 	if _index >= _pages.size():
 		visible = false

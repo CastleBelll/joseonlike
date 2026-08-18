@@ -108,6 +108,13 @@ func build_ui() -> void:
 	_build_pause_overlay()
 
 
+## N9-14 tutorial highlight: global rect of the actives cluster so the
+## guide can ring it. Zero rect when no actives exist.
+func actives_rect() -> Rect2:
+	var cluster: Control = get_node_or_null("ActiveCluster")
+	return cluster.get_global_rect() if cluster != null else Rect2()
+
+
 ## N6-4 floating joystick contract: true when the point lands on an
 ## interactive HUD button (actives, pause, info, overlay buttons), so the
 ## joystick never captures — and never swallows — those taps. Walks the live

@@ -92,6 +92,11 @@ func mark_guide_seen() -> void:
 	save_profile()
 
 
+func mark_level_up_explained() -> void:
+	profile = Ftue.mark_level_up_explained(profile)
+	save_profile()
+
+
 ## N9-11 NEW badge: rendering a bestiary tab marks its discovered entries
 ## viewed; no-op (no IO) when nothing was new.
 func mark_bestiary_viewed(kind: String, ids: Array) -> void:

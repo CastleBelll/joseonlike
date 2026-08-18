@@ -15,9 +15,12 @@ const GUIDE_SEEN := "guide_seen"
 ## never a popup, never a second line.
 const MOD_EXPLAIN_LINE := "첫 개조! 재료로 무기를 바꾼다"
 
-## N9-4 first-boot guide (owner direction): 우치 narrates the basics over
-## the DESIGN.md §3 NPC dialogue panel before the first run starts. One
-## page per tap; shown exactly once per profile.
+## N9-4 first-boot guide, made interactive in N9-14 (owner direction: no
+## monologue — highlight the control and make the player DO it). A page
+## with an "await" key hides the next button, lets the tree run and only
+## advances when the stage reports that action (GuideDialog.notify_action).
+const AWAIT_MOVE := "move"
+const AWAIT_ACTIVE := "active"
 const GUIDE_PAGES: Array[Dictionary] = [
 	{
 		"name": "우치",
@@ -25,25 +28,30 @@ const GUIDE_PAGES: Array[Dictionary] = [
 	},
 	{
 		"name": "우치",
-		"text": "화면 아무 곳이나 끌면 움직인다.\n술법은 저절로 나간다 — 나는 자리만 잘 잡으면 돼.",
+		"text": "먼저 움직여보자.\n화면 아무 곳이나 끌면 그쪽으로 걷는다. 해봐.",
+		"await": AWAIT_MOVE,
 	},
 	{
 		"name": "우치",
-		"text": "괴이를 잡으면 기가 모인다.\n기가 차오르면 새 술법을 고르거나 강화할 수 있지.",
+		"text": "좋아. 오른쪽 아래 빛나는 단추가 내 비장의 술법이다.\n축지는 위기 탈출, 벽사진은 사방 일소 — 하나 눌러봐.",
+		"await": AWAIT_ACTIVE,
 	},
 	{
 		"name": "우치",
-		"text": "오른쪽 아래 두 단추는 내 비장의 술법이다.\n축지는 위기 탈출, 벽사진은 사방을 쓸어버리는 한 방이지.",
-	},
-	{
-		"name": "우치",
-		"text": "정령왕은 때가 되면 모습을 드러낸다.\n놈을 봉인해야 이 밤이 걷힌다. 가자.",
+		"text": "공격은 저절로 나간다 — 자리만 잘 잡으면 돼.\n괴이를 잡아 기가 차면 새 술법을 고를 수 있다. 가자.",
 	},
 ]
 
+## N9-14: the first-ever level-up popup wears a tutorial header once.
+const LEVELUP_EXPLAINED := "levelup_explained"
+const LEVELUP_EXPLAIN_HEADER := "첫 파워 업! 하나를 골라 강해지자"
+
 
 static func default_flags() -> Dictionary:
-	return {MOVE_HINT_SEEN: false, MOD_EXPLAINED: false, GUIDE_SEEN: false}
+	return {
+		MOVE_HINT_SEEN: false, MOD_EXPLAINED: false, GUIDE_SEEN: false,
+		LEVELUP_EXPLAINED: false,
+	}
 
 
 ## First run = the profile has never finished a run. The scripted first-run
@@ -79,6 +87,14 @@ static func should_show_guide(profile: Dictionary) -> bool:
 
 static func mark_guide_seen(profile: Dictionary) -> Dictionary:
 	return _with_flag(profile, GUIDE_SEEN)
+
+
+static func should_explain_level_up(profile: Dictionary) -> bool:
+	return not _flag(profile, LEVELUP_EXPLAINED)
+
+
+static func mark_level_up_explained(profile: Dictionary) -> Dictionary:
+	return _with_flag(profile, LEVELUP_EXPLAINED)
 
 
 static func should_explain_mod(profile: Dictionary) -> bool:
