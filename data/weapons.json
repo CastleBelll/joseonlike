@@ -450,9 +450,9 @@
     "speed": 0.0,
     "range_px": 80.0,
     "orbit": {
-      "radius_px": 105.0,
+      "radius_px": 90.0,
       "speed_deg_s": 170.0,
-      "orb_radius_px": 16.0
+      "orb_radius_px": 14.0
     },
     "max_level": 8,
     "per_level": {
@@ -467,10 +467,16 @@
     },
     "milestones": {
       "3": {
-        "projectile_count": 1
+        "projectile_count": 1,
+        "orbit": {
+          "radius_px": 10.0
+        }
       },
       "5": {
-        "projectile_count": 1
+        "projectile_count": 1,
+        "orbit": {
+          "radius_px": 10.0
+        }
       },
       "8": {
         "projectile_count": 1,
@@ -494,9 +500,9 @@
     "speed": 0.0,
     "range_px": 90.0,
     "orbit": {
-      "radius_px": 115.0,
+      "radius_px": 98.0,
       "speed_deg_s": 190.0,
-      "orb_radius_px": 17.0
+      "orb_radius_px": 15.0
     },
     "max_level": 8,
     "per_level": {
@@ -511,10 +517,16 @@
     },
     "milestones": {
       "3": {
-        "projectile_count": 1
+        "projectile_count": 1,
+        "orbit": {
+          "radius_px": 10.0
+        }
       },
       "5": {
-        "projectile_count": 1
+        "projectile_count": 1,
+        "orbit": {
+          "radius_px": 10.0
+        }
       },
       "8": {
         "projectile_count": 1,
@@ -538,7 +550,7 @@
     "speed": 0.0,
     "range_px": 260.0,
     "ward": {
-      "radius_px": 85.0,
+      "radius_px": 60.0,
       "duration_sec": 3.5,
       "tick_sec": 0.6,
       "slow_scale": 0.6
@@ -559,7 +571,7 @@
       "8": {
         "ward": {
           "duration_sec": 1.0,
-          "radius_px": 15.0
+          "radius_px": 20.0
         }
       }
     }
@@ -578,7 +590,7 @@
     "speed": 0.0,
     "range_px": 260.0,
     "ward": {
-      "radius_px": 95.0,
+      "radius_px": 68.0,
       "duration_sec": 3.9,
       "tick_sec": 0.6,
       "slow_scale": 0.55
@@ -604,7 +616,7 @@
       "8": {
         "ward": {
           "duration_sec": 1.0,
-          "radius_px": 15.0
+          "radius_px": 20.0
         }
       }
     }
