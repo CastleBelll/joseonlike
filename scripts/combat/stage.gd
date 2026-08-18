@@ -215,6 +215,8 @@ func _ready() -> void:
 		_active_cooldowns[String(active.get("id", ""))] = 0.0
 	_hud.build_actives(_actives)
 	_hud.active_pressed.connect(_on_active_pressed)
+	# N9-3e: the pause overlay pulls the live build on every open.
+	_hud.build_provider = _pause_build_summary
 	# N6-4 floating joystick: HUD buttons keep tap priority over the stick.
 	# The level-up popup needs no entry here — it only ever opens while the
 	# tree is paused, which stops the joystick's _input entirely; a future
@@ -721,6 +723,29 @@ func _passive_bonus(passive_id: String) -> float:
 		(_passives_data.get(passive_id, {}) as Dictionary).get("per_stack", 0.0)
 	)
 	return per_stack * float(_passive_stacks.get(passive_id, 0))
+
+
+## N9-3e: live build snapshot for the pause overlay (CombatHud.build_provider).
+func _pause_build_summary() -> Dictionary:
+	var weapons: Array[Dictionary] = []
+	for weapon_id: String in _owned_levels:
+		weapons.append({
+			"id": weapon_id,
+			"name": String((_weapons_data.get(weapon_id, {}) as Dictionary).get("name_ko", weapon_id)),
+			"level": int(_owned_levels[weapon_id]),
+		})
+	var passives: Array[Dictionary] = []
+	for passive_id: String in _passive_stacks:
+		var stacks: int = int(_passive_stacks[passive_id])
+		if stacks <= 0:
+			continue
+		var passive: Dictionary = _passives_data.get(passive_id, {})
+		passives.append({
+			"name": String(passive.get("name_ko", passive_id)),
+			"stacks": stacks,
+			"max": int(passive.get("max_stacks", 0)),
+		})
+	return {"weapons": weapons, "passives": passives}
 
 
 func _meta_bonus(stat: String) -> float:

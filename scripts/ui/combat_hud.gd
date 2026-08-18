@@ -31,6 +31,13 @@ const CORNER_ICON_SIZE := 32.0
 const OVERLAY_PANEL_MARGIN_X := 64.0
 const OVERLAY_PANEL_HEIGHT := 260.0
 const OVERLAY_BUTTON_HEIGHT := 56.0
+# N9-3e pause build summary: weapon cells (icon + Lv) and passive lines.
+const BUILD_WEAPON_COLUMNS := 6
+const BUILD_CELL_SIZE := 52.0
+const BUILD_ICON_SIZE := 32.0
+const BUILD_CELL_HEIGHT := 66.0
+const BUILD_PASSIVE_COLUMNS := 2
+const BUILD_PASSIVE_ROW_HEIGHT := 26.0
 # N5-1 boss bar: thin strip across the very top, above the timer.
 const BOSS_BAR_TOP := 8.0
 const BOSS_BAR_HEIGHT := 6.0
@@ -56,7 +63,13 @@ var _level_label: Label
 var _kill_label: Label
 var _gold_label: Label
 var _pause_overlay: Control
+var _pause_panel: PanelContainer
+var _build_section: VBoxContainer
 var _resume_button: Button
+## Stage installs this; called on every pause open so the summary is always
+## the live build (no push-sync to drift). Returns
+## {"weapons": [{"id", "name", "level"}], "passives": [{"name", "stacks", "max"}]}.
+var build_provider: Callable
 var _boss_bar: ProgressBar
 var _vignette: DamageVignette
 var _screen_flash: ScreenFlash
@@ -405,9 +418,14 @@ func _build_pause_overlay() -> void:
 	var title := _label("일시 정지", UiPalette.FONT_SIZE_TITLE, UiPalette.VERMILION)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	layout.add_child(title)
+	_build_section = VBoxContainer.new()
+	_build_section.name = "BuildSummary"
+	_build_section.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	layout.add_child(_build_section)
 	_resume_button = _overlay_button("ResumeButton", "계속하기", _on_resume_pressed)
 	layout.add_child(_resume_button)
 	layout.add_child(_overlay_button("QuitButton", "타이틀로", _on_quit_pressed))
+	_pause_panel = panel
 	add_child(_pause_overlay)
 
 
@@ -423,8 +441,85 @@ func _overlay_button(button_name: String, text: String, handler: Callable) -> Bu
 
 func _on_pause_pressed() -> void:
 	get_tree().paused = true
+	if build_provider.is_valid():
+		_refresh_build_summary(build_provider.call())
 	_pause_overlay.visible = true
 	_resume_button.grab_focus()
+
+
+## Rebuilds the pause overlay's build rows and resizes the centered panel
+## deterministically from the row counts (GridContainer minimums are only
+## reliable after a layout pass, which a freshly shown overlay hasn't had).
+func _refresh_build_summary(summary: Dictionary) -> void:
+	for child: Node in _build_section.get_children():
+		child.queue_free()
+	var weapons: Array = summary.get("weapons", [])
+	var passives: Array = summary.get("passives", [])
+	var extra_height: float = 0.0
+
+	if not weapons.is_empty():
+		var grid := GridContainer.new()
+		grid.name = "WeaponGrid"
+		grid.columns = BUILD_WEAPON_COLUMNS
+		grid.add_theme_constant_override("h_separation", UiPalette.SPACE_SM)
+		grid.add_theme_constant_override("v_separation", UiPalette.SPACE_XS)
+		for entry: Dictionary in weapons:
+			grid.add_child(_build_weapon_cell(entry))
+		_build_section.add_child(grid)
+		var weapon_rows: int = ceili(float(weapons.size()) / float(BUILD_WEAPON_COLUMNS))
+		extra_height += weapon_rows * BUILD_CELL_HEIGHT + UiPalette.SPACE_SM
+
+	if not passives.is_empty():
+		var grid := GridContainer.new()
+		grid.name = "PassiveGrid"
+		grid.columns = BUILD_PASSIVE_COLUMNS
+		grid.add_theme_constant_override("h_separation", UiPalette.SPACE_MD)
+		for entry: Dictionary in passives:
+			var line := _label(
+				"%s Lv.%d/%d" % [
+					String(entry.get("name", "")),
+					int(entry.get("stacks", 0)), int(entry.get("max", 0)),
+				],
+				UiPalette.FONT_SIZE_LABEL, UiPalette.INK
+			)
+			line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			grid.add_child(line)
+		_build_section.add_child(grid)
+		var passive_rows: int = ceili(float(passives.size()) / float(BUILD_PASSIVE_COLUMNS))
+		extra_height += passive_rows * BUILD_PASSIVE_ROW_HEIGHT + UiPalette.SPACE_SM
+
+	var half: float = (OVERLAY_PANEL_HEIGHT + extra_height) / 2.0
+	_pause_panel.offset_top = -half
+	_pause_panel.offset_bottom = half
+
+
+## One weapon cell: dark icon well with the weapon icon (letter fallback for
+## ids without art) and an Lv.N line under it.
+func _build_weapon_cell(entry: Dictionary) -> Control:
+	var cell := VBoxContainer.new()
+	cell.add_theme_constant_override("separation", 2)
+	var well := PanelContainer.new()
+	well.custom_minimum_size = Vector2(BUILD_CELL_SIZE, BUILD_CELL_SIZE)
+	var well_style := StyleBoxFlat.new()
+	well_style.bg_color = UiPalette.NIGHT_BROWN
+	well_style.set_corner_radius_all(6)
+	well.add_theme_stylebox_override("panel", well_style)
+	var icon: Texture2D = UiIcons.weapon_icon(String(entry.get("id", "")))
+	if icon != null:
+		var rect: TextureRect = UiIcons.icon_rect(icon, BUILD_ICON_SIZE)
+		rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		well.add_child(rect)
+	else:
+		var glyph := _label(String(entry.get("name", "?")).left(1), UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_ON_DARK)
+		glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		well.add_child(glyph)
+	cell.add_child(well)
+	var level := _label("Lv.%d" % int(entry.get("level", 1)), UiPalette.FONT_SIZE_LABEL, UiPalette.INK)
+	level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cell.add_child(level)
+	return cell
 
 
 func _on_resume_pressed() -> void:
