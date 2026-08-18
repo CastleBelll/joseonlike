@@ -82,5 +82,23 @@
     "loot_id": "dokkaebi_flame",
     "result_weapon": "gwisal",
     "level_required": 3
+  },
+  "phoenix_talisman_mod": {
+    "weapon_id": "fire_talisman",
+    "loot_id": "dokkaebi_flame",
+    "result_weapon": "phoenix_talisman",
+    "level_required": 3
+  },
+  "twin_sword_mod": {
+    "weapon_id": "sharp_sword",
+    "loot_id": "whetstone",
+    "result_weapon": "twin_sword",
+    "level_required": 3
+  },
+  "divine_bow_mod": {
+    "weapon_id": "bow",
+    "loot_id": "cinnabar",
+    "result_weapon": "divine_bow",
+    "level_required": 3
   }
 }
