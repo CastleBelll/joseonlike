@@ -72,6 +72,7 @@ var _grades: Dictionary = {}
 var _damage_scale: float = 1.0
 var _cooldown_scale: float = 1.0
 var _speed_scale: float = 1.0
+var _extra_projectiles: int = 0
 var _damage: float = 0.0
 var _cooldown: float = 0.0
 var _speed: float = 0.0
@@ -178,12 +179,25 @@ func set_scales(
 	_recompute()
 
 
+## N9-3g 다중 투사 passive: flat projectile bonus folded into the effective
+## stats, so fans, orbits and every count consumer see it uniformly.
+func set_extra_projectiles(count: int) -> void:
+	_extra_projectiles = count
+	_recompute()
+
+
 func _recompute() -> void:
 	if _base_stats.is_empty():
 		return
 	# N4-8: fold the current level's milestone deltas in first, so every
 	# consumer below reads the effective mechanic numbers, not the level-1 base.
 	_stats = LevelUp.stats_at_level(_base_stats, _level)
+	if _extra_projectiles > 0:
+		# stats_at_level returns the ORIGINAL dict when the weapon has no
+		# milestones — copy before mutating or the bonus would corrupt
+		# _base_stats and compound on every recompute.
+		_stats = _stats.duplicate(true)
+		_stats["projectile_count"] = int(_stats.get("projectile_count", 1)) + _extra_projectiles
 	_speed = float(_stats.get("speed", 0.0)) * _speed_scale
 	_range = float(_stats.get("range_px", 0.0))
 	_lifesteal = float(_stats.get("lifesteal", 0.0))

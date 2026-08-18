@@ -13,7 +13,7 @@ const DEST_TITLE := "title"
 ## its screen lands (명부수 N7-1 done, 괴이록 N5-4, ...). A ready building
 ## carries the scene it routes to.
 const BUILDINGS: Array[Dictionary] = [
-	{"id": "meta", "label": "명부수", "ready": true, "scene": "res://scenes/meta_tree.tscn"},
+	{"id": "meta", "label": "수련", "ready": true, "scene": "res://scenes/meta_tree.tscn"},
 	{"id": "bestiary", "label": "괴이록", "ready": true, "scene": "res://scenes/bestiary.tscn"},
 	{"id": "weapon_codex", "label": "무기 도감", "ready": false},
 	{"id": "training", "label": "훈련장", "ready": false},

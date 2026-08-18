@@ -31,10 +31,12 @@ const UNKNOWN_RESULT := "???"
 ## that changes nothing would lie to the player.
 ## ponytail: whitelist, grows as stats get wired into combat.
 ## N9-3: xp_gain (orb pickup), luck (special-drop odds) and
-## projectile_speed (AutoWeapon speed scale) wired and offered.
+## projectile_speed (AutoWeapon speed scale) wired and offered; N9-3g adds
+## defense (damage-taken scale, floored) and projectile_count (flat bonus
+## folded into effective weapon stats).
 const OFFERABLE_PASSIVES: Array[String] = [
 	"attack_damage", "attack_speed", "move_speed", "max_hp", "magnet_radius",
-	"xp_gain", "luck", "projectile_speed"
+	"xp_gain", "luck", "projectile_speed", "defense", "projectile_count"
 ]
 
 ## Mechanics the AutoWeapon runtime implements (N4-4a); a data entry with an

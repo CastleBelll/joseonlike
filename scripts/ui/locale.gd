@@ -22,7 +22,7 @@ const STRINGS := {
 	"settings.joystick_opacity": {"ko": "조이스틱 불투명도", "en": "Joystick Opacity"},
 	"settings.language": {"ko": "언어", "en": "Language"},
 	"settings.close": {"ko": "닫기", "en": "Close"},
-	"meta.title": {"ko": "명부수", "en": "Myeongbusu"},
+	"meta.title": {"ko": "수련", "en": "Training"},
 	"meta.locked": {"ko": "잠김", "en": "Locked"},
 	"meta.max": {"ko": "최대", "en": "MAX"},
 	"meta.available": {"ko": "구매 가능", "en": "Available"},

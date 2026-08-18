@@ -201,9 +201,10 @@ func _ready() -> void:
 	var meta_hp_grant: float = Player.load_base_hp() * _meta_bonus("max_hp")
 	_player.hp += meta_hp_grant
 	_player.hp_max += meta_hp_grant
-	# N7-2 survivability nodes: capped damage reduction (철피) and the longer
-	# post-hit invulnerability window (긴 호흡), each applied exactly once.
-	_player.set_damage_taken_scale(1.0 - _meta_bonus("damage_reduction"))
+	# N7-2 survivability nodes: the longer post-hit invulnerability window
+	# (긴 호흡) applies exactly once; damage reduction moved into
+	# _refresh_run_scalars (N9-3g) because the 방비 passive now joins it and
+	# passive stacks change mid-run.
 	_player.set_invuln_scale(1.0 + _meta_bonus("hit_invuln"))
 	_popup = LevelUpPopup.new()
 	_popup.picked.connect(_on_choice_picked)
@@ -783,6 +784,11 @@ func _refresh_run_scalars() -> void:
 	_player.set_speed_scale(
 		1.0 + _passive_bonus("move_speed") + _meta_bonus("move_speed")
 	)
+	# N9-3g 방비 passive joins the 철피 meta reduction; floored at taking 50%
+	# so no future stat combo can approach immunity.
+	_player.set_damage_taken_scale(maxf(
+		1.0 - _meta_bonus("damage_reduction") - _passive_bonus("defense"), 0.5
+	))
 	_orb_config = _orb_config_base.duplicate()
 	_orb_config["magnet_radius_px"] = (
 		float(_orb_config_base.get("magnet_radius_px", 0.0))
@@ -796,8 +802,10 @@ func _refresh_weapon_scales() -> void:
 		1.0 + _passive_bonus("attack_speed") + _meta_bonus("attack_speed")
 	)
 	var speed_scale: float = 1.0 + _passive_bonus("projectile_speed")
+	var extra_projectiles: int = int(round(_passive_bonus("projectile_count")))
 	for weapon: AutoWeapon in _weapon_nodes.values():
 		weapon.set_scales(damage_scale, cooldown_scale, speed_scale)
+		weapon.set_extra_projectiles(extra_projectiles)
 
 
 func _load_json(path: String) -> Dictionary:
