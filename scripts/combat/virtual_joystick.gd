@@ -2,9 +2,10 @@ class_name TouchJoystick
 extends Control
 ## Floating touch joystick (N6-4; fixed bottom-left pad until N3-1). A touch
 ## anywhere in the play area anchors the stick origin at the touch point and
-## drags from there; releasing hides it. The resting pad keeps drawing inside
-## this control's rect as the affordance hint — the FTUE move hint points at
-## it, so a fresh player still sees where movement lives. Named TouchJoystick
+## drags from there; releasing hides it. N9-15: the resting pad no longer
+## draws at all — the stick is invisible until a drag starts (owner
+## direction), and the FTUE move hint still anchors to this control's rect.
+## Named TouchJoystick
 ## because Godot 4.7 ships a native VirtualJoystick class. Listens in _input
 ## so a drag that leaves the origin keeps working; touches are never consumed,
 ## and only the captured finger index moves the stick, so a second finger on
@@ -96,12 +97,16 @@ func _opacity() -> float:
 
 
 func _draw() -> void:
-	# Resting hint at the home rect while untouched; the live stick draws at
-	# the actual touch origin anywhere on screen (no clip_contents, so drawing
-	# outside this control's rect is fine). N6-5: neutral overlay tones — the
-	# wood family is reserved for real buttons.
+	# N9-15 (owner direction): nothing renders while untouched — the stick
+	# appears only under an active drag, at the actual touch origin anywhere
+	# on screen (no clip_contents, so drawing outside this control's rect is
+	# fine). The FTUE move hint anchors to this control's RECT, not to any
+	# drawn pad, so it still points at the right place.
+	# N6-5: neutral overlay tones — the wood family is reserved for real buttons.
+	if _touch_index == -1:
+		return
 	var opacity: float = _opacity()
-	var center: Vector2 = size / 2.0 if _touch_index == -1 else _origin - global_position
+	var center: Vector2 = _origin - global_position
 	draw_circle(center, BASE_RADIUS, Color(UiPalette.JOYSTICK_BASE, BASE_ALPHA * opacity))
 	draw_arc(
 		center, BASE_RADIUS - RING_WIDTH / 2.0, 0.0, TAU, RING_POINT_COUNT,
