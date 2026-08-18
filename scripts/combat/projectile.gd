@@ -35,6 +35,7 @@ var _damage: float = 0.0
 var _view_margin: float = 0.0
 var _spawner: Spawner
 var _player: Player
+var _sprite: Sprite2D
 var _paper: ColorRect
 var _seal_mark: ColorRect
 # N4-4a mechanic state, armed per launch from the AutoWeapon shot config.
@@ -61,6 +62,10 @@ var _touched: Array[Enemy] = []  # per-frame scratch, reused without alloc
 
 
 func _ready() -> void:
+	_sprite = Sprite2D.new()
+	_sprite.name = "TravelSprite"
+	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(_sprite)
 	_paper = ColorRect.new()
 	_paper.name = "Paper"
 	_paper.color = UiPalette.PAPER
@@ -73,24 +78,32 @@ func _ready() -> void:
 	_trail.name = "Trail"
 	add_child(_trail)
 	_apply_shape(paper_size())
+	_set_travel_art("")
+
+
+## Travel art is optional by contract: bad or absent data keeps the original
+## paper/blade ColorRect path rather than turning a projectile invisible.
+static func travel_available(path: String) -> bool:
+	return not path.is_empty() and ResourceLoader.exists(path, "Texture2D")
 
 
 ## `config` arms the N4-4a mechanics; an empty dict keeps the plain N3-3 shot:
 ## {"pierce": int, "explosion_radius": float, "chain": {jumps, falloff,
-## range_px}, "status": Dictionary, "seal": Dictionary, "size": Vector2}.
+## range_px}, "status": Dictionary, "seal": Dictionary, "size": Vector2,
+## "travel_sprite": String}.
 func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 		spawner: Spawner, player: Player, tint: Color = UiPalette.PAPER,
 		view_margin: float = 0.0, config: Dictionary = {}) -> void:
 	global_position = from
 	_velocity = direction * speed
-	# The talisman's long side leads the flight direction.
-	rotation = direction.angle() + PI / 2.0
 	_damage = damage
 	_view_margin = view_margin
 	_spawner = spawner
 	_player = player
 	# N4-1: modded weapons tint the paper so a transformation reads on field.
 	_paper.color = tint
+	_set_travel_art(String(config.get("travel_sprite", "")))
+	_aim_visual(direction)
 	_pierce_left = int(config.get("pierce", 0))
 	_pierce_retention = float(config.get("pierce_retention", 1.0))
 	_explosion_radius = float(config.get("explosion_radius", 0.0))
@@ -125,7 +138,7 @@ func _physics_process(delta: float) -> void:
 		)
 		if direction != Vector2.ZERO:
 			_velocity = direction * _velocity.length()
-			rotation = direction.angle() + PI / 2.0
+			_aim_visual(direction)
 	global_position += _velocity * delta
 	_trail.record(global_position, delta)
 	# N5-5: a shot passing over a destructible prop chips it. Free of pierce
@@ -264,7 +277,18 @@ func _jump_chain(from: Vector2) -> void:
 	if direction == Vector2.ZERO:
 		direction = Vector2.RIGHT
 	_velocity = direction * _velocity.length()
-	rotation = direction.angle() + PI / 2.0
+	_aim_visual(direction)
+
+
+func _set_travel_art(path: String) -> void:
+	_sprite.texture = load(path) if travel_available(path) else null
+	_sprite.visible = _sprite.texture != null
+	_paper.visible = not _sprite.visible
+
+
+func _aim_visual(direction: Vector2) -> void:
+	# Pack cells face right; the procedural paper is authored vertically.
+	rotation = direction.angle() if _sprite.visible else direction.angle() + PI / 2.0
 
 
 func _apply_shape(size: Vector2) -> void:

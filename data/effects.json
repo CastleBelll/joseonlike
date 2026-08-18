@@ -48,6 +48,26 @@
       "file": "res://asset/effect/blink_puff.png",
       "fps": 24.0,
       "logical_px": 56.0
+    },
+    "hit_fire": {
+      "file": "res://asset/effect/hit_fire.png",
+      "fps": 32.0,
+      "logical_px": 32.0
+    },
+    "hit_lightning": {
+      "file": "res://asset/effect/hit_lightning.png",
+      "fps": 36.0,
+      "logical_px": 28.0
+    },
+    "hit_curse": {
+      "file": "res://asset/effect/hit_curse.png",
+      "fps": 30.0,
+      "logical_px": 30.0
+    },
+    "hit_neutral": {
+      "file": "res://asset/effect/hit_neutral.png",
+      "fps": 32.0,
+      "logical_px": 26.0
     }
   }
 }

@@ -96,6 +96,8 @@ var _orbs: Array[Node2D] = []
 var _orb_recent: Dictionary = {}
 var _arc_flash: ArcFlash
 var _flash_pool: NodePool
+var _impact_effect: String = ""
+var _impact_pool: NodePool
 # N3-17 effect state: chain-jump bolts and the shockwave camera thump.
 var _bolt_pool: NodePool
 var _nudge_left: float = 0.0
@@ -124,6 +126,9 @@ func setup(
 		return
 	weapon_id = id
 	_base_stats = MetaTree.modified_weapon_stats(weapons[id], meta_effects)
+	_impact_effect = String(_base_stats.get("hit_effect", ""))
+	if EffectSprite.available(_impact_effect):
+		_impact_pool = NodePool.new(self, _create_impact_sprite)
 	_grades = WeaponGrade.config(weapons)
 	_grade = String(_base_stats.get("grade", ""))
 	var targeting: Dictionary = (weapons as Dictionary).get("_targeting", {})
@@ -208,6 +213,9 @@ func _recompute() -> void:
 ## cooldown move with levels/grades/passives).
 func _build_shot_config() -> Dictionary:
 	var config: Dictionary = {}
+	var travel_sprite: String = String(_stats.get("travel_sprite", ""))
+	if not travel_sprite.is_empty():
+		config["travel_sprite"] = travel_sprite
 	if _stats.has("on_hit_status"):
 		config["status"] = _stats.get("on_hit_status", {})
 	if _stats.has("on_hit_seal"):
@@ -506,15 +514,27 @@ func _tint() -> Color:
 
 func _create_projectile() -> Projectile:
 	var projectile := Projectile.new()
-	projectile.hit_landed.connect(
-		func(amount: float, at: Vector2, boss_hit: bool) -> void:
-			_after_hit(amount)
-			hit_landed.emit(amount, at, boss_hit)
-	)
+	projectile.hit_landed.connect(_on_projectile_hit)
 	projectile.exploded.connect(_on_projectile_exploded)
 	projectile.chained.connect(_on_projectile_chained)
 	projectile.finished.connect(_on_projectile_finished)
 	return projectile
+
+
+func _on_projectile_hit(amount: float, at: Vector2, boss_hit: bool) -> void:
+	_after_hit(amount)
+	if _impact_pool != null:
+		var sprite: EffectSprite = _impact_pool.acquire()
+		sprite.play_effect(_impact_effect, at, 0.0, Color.WHITE)
+	hit_landed.emit(amount, at, boss_hit)
+
+
+func _create_impact_sprite() -> EffectSprite:
+	var sprite := EffectSprite.new()
+	sprite.finished_effect.connect(
+		func(done: EffectSprite) -> void: _impact_pool.release(done)
+	)
+	return sprite
 
 
 func _on_projectile_exploded(at: Vector2, radius: float) -> void:

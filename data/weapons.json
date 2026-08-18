@@ -42,6 +42,8 @@
   "old_talisman": {
     "name_ko": "낡은 부적",
     "name_en": "Old Talisman",
+    "travel_sprite": "res://asset/weapon/travel/old_talisman.png",
+    "hit_effect": "hit_neutral",
     "category": "spiritual",
     "grade": "common",
     "mechanic": "straight",
@@ -75,6 +77,8 @@
   "fire_talisman": {
     "name_ko": "화염 부적",
     "name_en": "Fire Talisman",
+    "travel_sprite": "res://asset/weapon/travel/fire_talisman.png",
+    "hit_effect": "hit_fire",
     "category": "spiritual",
     "grade": "rare",
     "damage": 14.0,
@@ -109,6 +113,8 @@
   "phoenix_talisman": {
     "name_ko": "봉황 부적",
     "name_en": "Phoenix Talisman",
+    "travel_sprite": "res://asset/weapon/travel/phoenix_talisman.png",
+    "hit_effect": "hit_fire",
     "category": "spiritual",
     "grade": "epic",
     "damage": 16.0,
@@ -142,6 +148,8 @@
   "beopgeom": {
     "name_ko": "법검",
     "name_en": "Ritual Sword",
+    "travel_sprite": "res://asset/weapon/travel/beopgeom.png",
+    "hit_effect": "hit_neutral",
     "category": "spiritual",
     "grade": "common",
     "mechanic": "pierce",
@@ -173,6 +181,8 @@
   "bongmageom": {
     "name_ko": "봉마검",
     "name_en": "Sealing Sword",
+    "travel_sprite": "res://asset/weapon/travel/bongmageom.png",
+    "hit_effect": "hit_neutral",
     "category": "spiritual",
     "grade": "epic",
     "mechanic": "pierce",
@@ -209,6 +219,8 @@
   "hwabu": {
     "name_ko": "화부",
     "name_en": "Fire Charm",
+    "travel_sprite": "res://asset/weapon/travel/hwabu.png",
+    "hit_effect": "hit_fire",
     "category": "spiritual",
     "grade": "common",
     "mechanic": "explosion",
@@ -243,6 +255,8 @@
   "hwaryeongbu": {
     "name_ko": "화령부",
     "name_en": "Fire Spirit Charm",
+    "travel_sprite": "res://asset/weapon/travel/hwaryeongbu.png",
+    "hit_effect": "hit_fire",
     "category": "spiritual",
     "grade": "epic",
     "mechanic": "explosion",
@@ -283,6 +297,8 @@
   "noebu": {
     "name_ko": "뇌부",
     "name_en": "Thunder Charm",
+    "travel_sprite": "res://asset/weapon/travel/noebu.png",
+    "hit_effect": "hit_lightning",
     "category": "spiritual",
     "grade": "common",
     "mechanic": "chain",
@@ -321,6 +337,8 @@
   "noejeongbu": {
     "name_ko": "뇌정부",
     "name_en": "Thunderbolt Charm",
+    "travel_sprite": "res://asset/weapon/travel/noejeongbu.png",
+    "hit_effect": "hit_lightning",
     "category": "spiritual",
     "grade": "epic",
     "mechanic": "chain",
@@ -791,6 +809,8 @@
   "sal": {
     "name_ko": "살",
     "name_en": "Hex Bolt",
+    "travel_sprite": "res://asset/weapon/travel/sal.png",
+    "hit_effect": "hit_curse",
     "category": "spiritual",
     "grade": "common",
     "mechanic": "curse",
@@ -832,6 +852,8 @@
   "gwisal": {
     "name_ko": "귀살",
     "name_en": "Ghost Hex",
+    "travel_sprite": "res://asset/weapon/travel/gwisal.png",
+    "hit_effect": "hit_curse",
     "category": "spiritual",
     "grade": "epic",
     "mechanic": "curse",

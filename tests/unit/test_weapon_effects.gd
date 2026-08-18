@@ -26,10 +26,11 @@ func test_config_has_every_field() -> bool:
 
 
 func test_sprite_effects_resolve() -> bool:
-	# N3-17 art integration, trimmed N3-18: only the blink mist still ships as
-	# a sheet — explosion and summon strike went back to parametric drawing.
+	# N9-3f adds elemental hit strips beside the retained blink mist.
 	var passed: bool = true
-	for effect_id: String in ["blink_puff"]:
+	for effect_id: String in [
+		"blink_puff", "hit_fire", "hit_lightning", "hit_curse", "hit_neutral",
+	]:
 		var config: Dictionary = WeaponEffects.sprite_config(effect_id)
 		if not EffectSprite.available(effect_id):
 			push_error("test_weapon_effects: sprite effect unavailable: " + effect_id)
@@ -38,6 +39,33 @@ func test_sprite_effects_resolve() -> bool:
 		if float(config.get("fps", 0.0)) <= 0.0 or float(config.get("logical_px", 0.0)) <= 0.0:
 			push_error("test_weapon_effects: bad sprite numbers for " + effect_id)
 			passed = false
+	return passed
+
+
+func test_projectile_travel_art_resolves_with_missing_fallback() -> bool:
+	var weapons: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string("res://data/weapons.json")
+	)
+	if weapons is not Dictionary:
+		push_error("test_weapon_effects: weapons.json did not parse")
+		return false
+	var passed: bool = true
+	for weapon_id: String in [
+		"old_talisman", "fire_talisman", "phoenix_talisman", "beopgeom",
+		"bongmageom", "hwabu", "hwaryeongbu", "noebu", "noejeongbu",
+		"sal", "gwisal",
+	]:
+		var path: String = String(
+			(weapons[weapon_id] as Dictionary).get("travel_sprite", "")
+		)
+		if not Projectile.travel_available(path):
+			push_error("test_weapon_effects: travel art unavailable: " + weapon_id)
+			passed = false
+	# False is the gate into the procedural fallback, not an error condition.
+	passed = passed and not Projectile.travel_available("")
+	passed = passed and not Projectile.travel_available(
+		"res://asset/weapon/travel/missing.png"
+	)
 	return passed
 
 

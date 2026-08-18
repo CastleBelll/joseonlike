@@ -60,9 +60,9 @@ Fallback:  reused DeathPuff disc flash
 
 [MISSING] fx_sal_curse_mark
 Size:      ~16x16 px overhead mark
-Members:   cursed-enemy marker + projectile talisman variant
+Members:   cursed-enemy marker (projectile variant shipped N9-3f)
 Used by:   weapons.json sal / gwisal (N4-4b)
-Fallback:  curse-tinted projectile paper; no on-enemy marker yet
+Fallback:  no on-enemy marker yet
 
 [MISSING] ui_active_buttons
 Size:      64x64 px each
@@ -75,13 +75,11 @@ Fallback:  wood-token drawn discs with the skill name
 ## Missing
 
 ```
-[MISSING] old_talisman travel art + xp orb sprite (AC-4)
-Size:      talisman ~8x14 px rotated to flight direction; orb ~10x10 px
-Members:   res://asset/weapon/travel/old_talisman.png,
-           res://asset/drop/xp_orb.png (idle, optional 2-frame shimmer)
-Used by:   N3-3 auto-attack projectile, N3-5 XP drop (scripts/combat/projectile.gd,
-           scripts/combat/xp_orb.gd)
-Fallback:  code-drawn paper ColorRect + vermilion seal / cyan-green draw_circle orb
+[MISSING] xp orb sprite (AC-4)
+Size:      orb ~10x10 px
+Members:   res://asset/drop/xp_orb.png (idle, optional 2-frame shimmer)
+Used by:   N3-5 XP drop (scripts/combat/xp_orb.gd)
+Fallback:  cyan-green draw_circle orb
 ```
 
 Satisfied by the AC-3 icon set + N3-13 wiring (asset/ui, scripts/ui/ui_icons.gd):
@@ -92,17 +90,13 @@ thunder_stone, mod weapon icons, weapon card icons and combat HUD icons are
 cleared; what remains of those wants is below.
 
 ```
-[MISSING] taoist archetype weapon FIELD art (N4-4a): travel/impact sprites for
-          hwabu, noebu, seokjang, honbul, beopgeom, hwaryeongbu, noejeongbu,
-          bongmageom, ghost_staff, flame_honbul (icons shipped in AC-3)
-Size:      charm travel sprites ~8x14, sword-qi blade ~6x26, staff swing arc
-           sheet, soul-flame orb ~10x10 (2-frame flicker), explosion burst
-           sheet ~3 frames
+[MISSING] taoist archetype non-projectile FIELD art (N4-4a): seokjang,
+          honbul, ghost_staff, flame_honbul (projectile travel + elemental hit
+          sprites shipped N9-3f; icons shipped in AC-3)
+Size:      staff swing arc sheet, soul-flame orb ~10x10 (2-frame flicker)
 Used by:   N4-4a weapon mechanics (scripts/combat/auto_weapon.gd,
            projectile.gd)
-Fallback:  palette-token placeholders per weapon — tinted paper/blade rects
-           (WEAPON_FIRE/LIGHTNING/SEAL), WOOD/WEAPON_GHOST arc strokes,
-           WEAPON_SOUL orbs, WEAPON_FIRE ring flash
+Fallback:  palette-token WOOD/WEAPON_GHOST arc strokes and WEAPON_SOUL orbs
 ```
 
 ```

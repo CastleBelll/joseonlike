@@ -190,7 +190,9 @@ func _check_combat_cross_references() -> void:
 	_require_positive_numbers(
 		effects.get("weapon_effects", {}), WEAPON_EFFECTS_FIELDS, "effects.weapon_effects"
 	)
-	_check_sprite_effects(effects.get("sprite_effects", {}) as Dictionary)
+	var sprite_effects: Dictionary = effects.get("sprite_effects", {})
+	_check_sprite_effects(sprite_effects)
+	_check_weapon_art(weapons, sprite_effects)
 	_check_props()
 	_check_loot(monsters, weapons, stages)
 	_check_meta_tree()
@@ -731,6 +733,23 @@ func _check_sprite_effects(sprites: Dictionary) -> void:
 		var file: String = String(entry.get("file", ""))
 		if not FileAccess.file_exists(file):
 			_fail("effects.sprite_effects.%s file missing: %s" % [effect_id, file])
+
+
+## N9-3f optional projectile art contract. Optional is intentional: weapons
+## without these keys keep Projectile's procedural paper/blade fallback.
+func _check_weapon_art(weapons: Dictionary, sprite_effects: Dictionary) -> void:
+	for weapon_id: String in weapons:
+		if weapon_id.begins_with("_"):
+			continue
+		var weapon: Dictionary = weapons[weapon_id]
+		if weapon.has("travel_sprite"):
+			var travel: String = String(weapon.get("travel_sprite", ""))
+			if travel.is_empty() or not FileAccess.file_exists(travel):
+				_fail("weapons.%s.travel_sprite file missing: %s" % [weapon_id, travel])
+		if weapon.has("hit_effect"):
+			var hit_effect: String = String(weapon.get("hit_effect", ""))
+			if not sprite_effects.has(hit_effect):
+				_fail("weapons.%s.hit_effect unknown: %s" % [weapon_id, hit_effect])
 
 
 ## N5-5 pickup/chest contract: the pure Pickups.data_issues rules (table
