@@ -48,7 +48,6 @@ var _explosion_radius: float = 0.0
 var _chain_jumps_left: int = 0
 var _chain_falloff: float = 1.0
 var _chain_range: float = 0.0
-var _chain_target: Enemy
 ## N3-17: previous chain hit position — the next hit draws a bolt from here.
 var _chain_prev := Vector2.INF
 var _status: Dictionary = {}
@@ -112,7 +111,6 @@ func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 	_chain_jumps_left = int(chain.get("jumps", 0))
 	_chain_falloff = float(chain.get("falloff", 1.0))
 	_chain_range = float(chain.get("range_px", 0.0))
-	_chain_target = null
 	_chain_prev = Vector2.INF
 	_status = config.get("status", {})
 	_seal = config.get("seal", {})
@@ -130,15 +128,6 @@ func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 
 
 func _physics_process(delta: float) -> void:
-	# A live chain leg re-aims every frame so the jump actually connects even
-	# while the target keeps walking.
-	if _chain_target != null and not CombatMath.is_dead(_chain_target.hp):
-		var direction: Vector2 = CombatMath.chase_direction(
-			global_position, _chain_target.global_position
-		)
-		if direction != Vector2.ZERO:
-			_velocity = direction * _velocity.length()
-			_aim_visual(direction)
 	global_position += _velocity * delta
 	_trail.record(global_position, delta)
 	# N5-5: a shot passing over a destructible prop chips it. Free of pierce
@@ -171,7 +160,11 @@ func _physics_process(delta: float) -> void:
 			finished.emit(self)
 			return
 		if _chain_jumps_left > 0:
-			_jump_chain(hit_at)
+			# N9-5d (owner report): the chain resolves INSTANTLY — every jump
+			# lands this frame and every bolt leg flashes at once, instead of
+			# the shot physically flying leg by leg.
+			_resolve_chain(hit_at)
+			finished.emit(self)
 			return
 		if _pierce_left > 0:
 			_pierce_left -= 1
@@ -256,28 +249,30 @@ func _explode(at: Vector2) -> void:
 			))
 
 
-## 뇌부 (N4-4a): bounce to the nearest fresh enemy in chain range with the
-## data falloff applied, or finish when the crowd runs out.
-func _jump_chain(from: Vector2) -> void:
+## 뇌부 (N4-4a, instant since N9-5d): walk the whole chain in one frame —
+## nearest fresh enemy in range from the last hit, data falloff per leg,
+## stopping when the jumps or the crowd run out. _strike draws each bolt
+## leg through _chain_prev, so the full chain flashes at once.
+func _resolve_chain(from: Vector2) -> void:
 	var enemies: Array[Enemy] = _spawner.active_enemies()
 	var positions: Array[Vector2] = []
-	var exclude: Array[int] = []
-	for i: int in range(enemies.size()):
-		positions.append(enemies[i].global_position)
-		if _struck.has(enemies[i].get_instance_id()):
-			exclude.append(i)
-	var index: int = WeaponMath.chain_next_index(from, positions, exclude, _chain_range)
-	if index < 0:
-		finished.emit(self)
-		return
-	_chain_jumps_left -= 1
-	_damage *= _chain_falloff
-	_chain_target = enemies[index]
-	var direction: Vector2 = CombatMath.chase_direction(from, positions[index])
-	if direction == Vector2.ZERO:
-		direction = Vector2.RIGHT
-	_velocity = direction * _velocity.length()
-	_aim_visual(direction)
+	for enemy: Enemy in enemies:
+		positions.append(enemy.global_position)
+	while _chain_jumps_left > 0:
+		var exclude: Array[int] = []
+		for i: int in range(enemies.size()):
+			if _struck.has(enemies[i].get_instance_id()):
+				exclude.append(i)
+		var index: int = WeaponMath.chain_next_index(from, positions, exclude, _chain_range)
+		if index < 0:
+			return
+		_chain_jumps_left -= 1
+		_damage *= _chain_falloff
+		if not CombatMath.is_dead(enemies[index].hp):
+			_strike(enemies[index], _damage)
+		else:
+			_struck[enemies[index].get_instance_id()] = true
+		from = positions[index]
 
 
 func _set_travel_art(path: String) -> void:

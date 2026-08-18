@@ -168,15 +168,11 @@ Fallback:  IN USE — the entry's real art self-modulated to INK reads as a
 ```
 
 ```
-[MISSING] reward_chest (N5-5, priority raised N6-5)
-Size:      ~20x16px logical in-world sprite (closed + open frame; a short
-           3-4 frame open burst is a plus)
-Used by:   elite reward chest entity (scripts/combat/chest.gd)
-Fallback:  IN USE — code-drawn wood box with gold clasp + pulsing gold
-           glow. N6-5 checked every owner pack in new_asset/ (Trap and
-           Weapon, Pixel UI pack 3, 500 Bullet, Effect Asset, Retro
-           Impact, Holy Spell): no chest sprite exists in any of them.
-           HEADLINE REWARD — first pick for the next generation task.
+[DELIVERED N9-5d] reward_chest — asset/pickups/chest.png (22x18, authored
+           in asset/weapon/build_fx.py: 반닫이 silhouette, brass fittings
+           + lock plate), wired in scripts/combat/chest.gd over the kept
+           gold pulse. A dedicated open-animation frame set remains a
+           nice-to-have for a future art pass.
 ```
 
 ```

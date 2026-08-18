@@ -118,10 +118,111 @@ def _draw_bar(
         )
 
 
+EFFECT_OUT = Path(__file__).resolve().parents[1] / "effect"
+PICKUP_OUT = Path(__file__).resolve().parents[1] / "pickups"
+
+
+def build_chest() -> Image.Image:
+    """22x18 elite reward chest: dark chest wood, brass fittings, lock plate
+    (반닫이 silhouette — was the code-drawn placeholder, N5-5)."""
+    img = Image.new("RGBA", (22, 18), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    ink = (26, 22, 19, 255)
+    wood = (110, 67, 34, 255)
+    wood_dark = (78, 46, 22, 255)
+    brass = (255, 217, 74, 255)
+    brass_dim = (196, 154, 61, 255)
+    # body + outline
+    d.rectangle([1, 4, 20, 16], fill=wood, outline=ink)
+    # lid band
+    d.rectangle([1, 4, 20, 8], fill=wood_dark, outline=ink)
+    # brass corner fittings
+    for x in (2, 18):
+        d.rectangle([x, 5, x + 1, 7], fill=brass_dim)
+        d.rectangle([x, 13, x + 1, 15], fill=brass_dim)
+    # brass mid straps
+    d.line([5, 4, 5, 16], fill=brass_dim)
+    d.line([16, 4, 16, 16], fill=brass_dim)
+    # lock plate + hasp
+    d.rectangle([9, 7, 12, 12], fill=brass, outline=ink)
+    d.rectangle([10, 9, 11, 10], fill=ink)
+    # wood grain
+    d.line([3, 11, 4, 11], fill=wood_dark)
+    d.line([13, 14, 15, 14], fill=wood_dark)
+    return img
+
+
+def build_hit_paper() -> Image.Image:
+    """4-frame 32px strip: hanji shreds + ink flecks scattering (낡은 부적)."""
+    frames = 4
+    size = 32
+    strip = Image.new("RGBA", (frames * size, size), (0, 0, 0, 0))
+    cream = (240, 228, 196, 255)
+    ink = (26, 22, 19, 255)
+    shreds = [
+        (1.00, 0.30, 3), (0.55, 0.80, 2), (0.15, 0.55, 3), (0.72, 0.05, 2),
+        (0.35, 0.95, 2), (0.88, 0.62, 3), (0.05, 0.15, 2), (0.62, 0.40, 2),
+    ]
+    for f in range(frames):
+        d = ImageDraw.Draw(strip)
+        cx = f * size + size / 2
+        cy = size / 2
+        spread = 4.0 + 9.0 * f / (frames - 1)
+        alpha = int(255 * (1.0 - 0.65 * f / (frames - 1)))
+        for i, (ang_share, tilt, shred_len) in enumerate(shreds):
+            angle = math.tau * ang_share
+            x = cx + math.cos(angle) * spread
+            y = cy + math.sin(angle) * spread
+            color = (*cream[:3], alpha) if i % 3 else (*ink[:3], alpha)
+            d.rectangle([x, y, x + shred_len, y + 1 + int(tilt * 2)], fill=color)
+    return strip
+
+
+def build_hit_phoenix() -> Image.Image:
+    """5-frame 48px strip: gold-red wing burst sweeping up (봉황 부적)."""
+    frames = 5
+    size = 48
+    strip = Image.new("RGBA", (frames * size, size), (0, 0, 0, 0))
+    gold = (255, 217, 74)
+    orange = (255, 130, 50)
+    red = (200, 50 , 30)
+    for f in range(frames):
+        d = ImageDraw.Draw(strip)
+        cx = f * size + size / 2
+        cy = size / 2 + 4
+        t = f / (frames - 1)
+        alpha = int(255 * (1.0 - 0.7 * t))
+        wing_reach = 6.0 + 16.0 * t
+        lift = 4.0 + 10.0 * t
+        for side in (-1.0, 1.0):
+            for k, (color, w) in enumerate(((red, 5), (orange, 3), (gold, 2))):
+                d.arc(
+                    [
+                        cx + side * wing_reach - wing_reach, cy - lift - wing_reach,
+                        cx + side * wing_reach + wing_reach, cy - lift + wing_reach,
+                    ],
+                    200 if side < 0 else 270, 340 if side < 0 else 50,
+                    fill=(*color, alpha), width=w - k // 2,
+                )
+        core_r = 5.0 * (1.0 - t) + 1.0
+        d.ellipse([cx - core_r, cy - core_r, cx + core_r, cy + core_r], fill=(*gold, alpha))
+        if f < 2:
+            d.ellipse([cx - 2, cy - 2, cx + 2, cy + 2], fill=(255, 255, 240, alpha))
+    return strip
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
+    EFFECT_OUT.mkdir(parents=True, exist_ok=True)
     build_wisp().save(OUT / "honbul_wisp.png")
     build_sigil().save(OUT / "ward_sigil.png")
+    build_hit_paper().save(EFFECT_OUT / "hit_paper.png")
+    build_hit_phoenix().save(EFFECT_OUT / "hit_phoenix.png")
+    PICKUP_OUT.mkdir(parents=True, exist_ok=True)
+    build_chest().save(PICKUP_OUT / "chest.png")
     for name in ("honbul_wisp.png", "ward_sigil.png"):
         with Image.open(OUT / name) as done:
+            print(name, done.size)
+    for name in ("hit_paper.png", "hit_phoenix.png"):
+        with Image.open(EFFECT_OUT / name) as done:
             print(name, done.size)

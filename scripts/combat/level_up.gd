@@ -104,7 +104,8 @@ static func candidates(
 	passive_stacks: Dictionary,
 	owned_grades: Dictionary = {},
 	grades: Dictionary = {},
-	replaced: Array = []
+	replaced: Array = [],
+	allowed_categories: Array = []
 ) -> Array[Dictionary]:
 	var pool: Array[Dictionary] = []
 	var rungs: Array[String] = WeaponGrade.ladder(grades)
@@ -124,6 +125,13 @@ static func candidates(
 			if not rungs.is_empty() and not WeaponGrade.is_top(rungs, current):
 				pool.append({"kind": KIND_GRADE_UP, "id": weapon_id})
 		elif not bool(stats.get("evolution_only", false)) and runtime_can_fire(stats):
+			# N9-5d weapon identity (GDD §3, owner report: the taoist was
+			# offered the 각궁): a NEW weapon must belong to the character's
+			# weapon_categories. Owned weapons upgrade regardless — identity
+			# is enforced at acquisition, never retroactively.
+			if not allowed_categories.is_empty() \
+					and not allowed_categories.has(String(stats.get("category", ""))):
+				continue
 			pool.append({"kind": KIND_NEW_WEAPON, "id": weapon_id})
 	for passive_id: String in passives:
 		if not OFFERABLE_PASSIVES.has(passive_id):

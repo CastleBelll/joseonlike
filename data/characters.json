@@ -15,7 +15,9 @@
     "base_speed": 90.0,
     "hit_invuln_sec": 0.8,
     "starting_weapon": "old_talisman",
-    "unlock": { "type": "default" },
+    "unlock": {
+      "type": "default"
+    },
     "actives": [
       {
         "id": "chukji",
@@ -35,6 +37,9 @@
         "radius_px": 220.0,
         "damage": 250.0
       }
+    ],
+    "weapon_categories": [
+      "spiritual"
     ]
   },
   "warrior": {
@@ -51,9 +56,15 @@
     "base_speed": 80.0,
     "hit_invuln_sec": 0.8,
     "starting_weapon": "sword",
-    "unlock": { "type": "achievement", "achievement_id": "goblin_hunter" },
+    "unlock": {
+      "type": "achievement",
+      "achievement_id": "goblin_hunter"
+    },
     "unlock_text_ko": "업적 '도깨비 사냥꾼' 달성 시 해금",
-    "unlock_text_en": "Unlocks with the 'Goblin Hunter' achievement"
+    "unlock_text_en": "Unlocks with the 'Goblin Hunter' achievement",
+    "weapon_categories": [
+      "melee"
+    ]
   },
   "archer": {
     "name_ko": "궁수",
@@ -69,8 +80,14 @@
     "base_speed": 100.0,
     "hit_invuln_sec": 0.8,
     "starting_weapon": "bow",
-    "unlock": { "type": "gold", "cost": 500 },
+    "unlock": {
+      "type": "gold",
+      "cost": 500
+    },
     "unlock_text_ko": "엽전 500으로 해금",
-    "unlock_text_en": "Unlocks for 500 coins"
+    "unlock_text_en": "Unlocks for 500 coins",
+    "weapon_categories": [
+      "ranged"
+    ]
   }
 }

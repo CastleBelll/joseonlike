@@ -36,6 +36,7 @@ var _weapons_data: Dictionary = {}
 var _passives_data: Dictionary = {}
 var _owned_levels: Dictionary = {}
 var _passive_stacks: Dictionary = {}
+var _weapon_categories: Array = []
 # N7-1: the capped permanent 명부수 bonus, computed ONCE in _ready — the only
 # meta input the run ever reads, so tree effects cannot double-apply.
 var _meta_effects: Dictionary = {}
@@ -211,6 +212,9 @@ func _ready() -> void:
 	_popup.dismissed.connect(_on_popup_dismissed)
 	add_child(_popup)
 	_hud.set_gold(0)  # run gold; banked into the profile at run end (N5-2)
+	# N9-5d weapon identity: the level-up pool only offers new weapons from
+	# the selected character's categories (도사 gets no 각궁).
+	_weapon_categories = Player.load_weapon_categories()
 	_actives = Player.load_actives()
 	for active: Dictionary in _actives:
 		_active_cooldowns[String(active.get("id", ""))] = 0.0
@@ -544,7 +548,7 @@ func _show_next_level_up() -> void:
 	get_tree().paused = true
 	var pool: Array[Dictionary] = LevelUp.candidates(
 		_weapons_data, _passives_data, _owned_levels, _passive_stacks,
-		_owned_grades, _grades_config, _replaced_weapons
+		_owned_grades, _grades_config, _replaced_weapons, _weapon_categories
 	)
 	# N4-9: evolution is earned — the recipe's level_required gate applies from
 	# the second run on; the scripted first run keeps its teaching card free.
@@ -1020,19 +1024,22 @@ func _on_chest_opened(chest: Chest) -> void:
 
 ## One chest reward screen: a single card drawn fresh through the level-up
 ## pool machinery (same legality rules — dedupe, evolution_only, replaced
-## exclusions). A dry pool pays out the data fallback gold instead.
+## exclusions). N9-5d (owner direction): chests only STRENGTHEN what the
+## build already has — weapon level/grade raises and passives; new weapons
+## and 개조 stay level-up exclusives. A dry pool pays out the data
+## fallback gold instead.
 func _show_next_chest_reward() -> void:
 	_chest_pending -= 1
 	_chest_batch_index += 1
 	var pool: Array[Dictionary] = LevelUp.candidates(
 		_weapons_data, _passives_data, _owned_levels, _passive_stacks,
-		_owned_grades, _grades_config, _replaced_weapons
+		_owned_grades, _grades_config, _replaced_weapons, _weapon_categories
 	)
-	var mod_pool: Array[Dictionary] = LevelUp.mod_candidates(
-		_mods_data, _run_state.inventory, _owned_levels, _replaced_weapons,
-		Ftue.is_first_run(_profile())
-	)
-	var rewards: Array[Dictionary] = LevelUp.assemble(pool, mod_pool, 1, _choice_rng)
+	var owned_only: Array[Dictionary] = []
+	for choice: Dictionary in pool:
+		if String(choice.get("kind", "")) != LevelUp.KIND_NEW_WEAPON:
+			owned_only.append(choice)
+	var rewards: Array[Dictionary] = LevelUp.assemble(owned_only, [], 1, _choice_rng)
 	if rewards.is_empty():
 		var gained: int = _add_gold(
 			int((_pickups_data.get("chest", {}) as Dictionary).get("fallback_gold", 0))

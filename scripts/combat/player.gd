@@ -82,6 +82,19 @@ static func load_starting_weapon() -> String:
 	return String((data[character_id] as Dictionary).get("starting_weapon", ""))
 
 
+## N9-5d weapon identity (GDD §3): the selected character's weapon
+## categories — the level-up pool only offers NEW weapons from these.
+## Empty (missing data) means no filter, never an empty pool.
+static func load_weapon_categories() -> Array:
+	var character_id: String = _character_id()
+	var text: String = FileAccess.get_file_as_string(CHARACTERS_PATH)
+	var data: Variant = JSON.parse_string(text)
+	if data is not Dictionary or not (data as Dictionary).has(character_id):
+		push_error("player: cannot read '%s' from %s" % [character_id, CHARACTERS_PATH])
+		return []
+	return (data[character_id] as Dictionary).get("weapon_categories", [])
+
+
 ## N4-4b: the selected character's active skills (empty for characters that
 ## have none yet — the HUD then shows no active buttons).
 static func load_actives() -> Array[Dictionary]:
