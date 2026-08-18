@@ -81,6 +81,14 @@ const LOOT_EPIC := Color("#a86fd6")
 const LOOT_MYTHIC := GOLD
 const LOOT_CORE := Color("#ffffff")
 
+# QA-3 grade pill tints (words stay the primary signal, DESIGN.md §2):
+# dark enough for the white PILL_TEXT, hue-separated per ladder rung.
+const GRADE_COMMON := VERMILION
+const GRADE_UNCOMMON := Color("#3e7a2e")
+const GRADE_RARE := Color("#35619e")
+const GRADE_EPIC := Color("#6a4399")
+const GRADE_MYTHIC := Color("#8a6a12")
+
 # N4-1 modded-weapon projectile tints so a transformation reads on the field.
 const WEAPON_FIRE := Color("#ff8a3c")
 const WEAPON_LIGHTNING := Color("#8ad2ff")

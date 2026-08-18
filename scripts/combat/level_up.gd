@@ -19,6 +19,7 @@ const GRADE_KO := {
 	"epic": "영웅", "mythic": "신화"
 }
 const DEFAULT_GRADE_KO := "일반"
+const DEFAULT_GRADE_ID := "common"
 const GRADE_UP_LABEL := "등급↑"
 const MOD_LABEL := "변신!"
 const MOD_NAME := "개조"
@@ -417,28 +418,38 @@ static func mod_carried_grade(
 	)
 
 
-## Grade pill text — always words, never colour alone (DESIGN.md §2).
+## Resolved grade key for a card — drives the pill tint (QA-3); the words on
+## the pill stay the primary signal, never colour alone (DESIGN.md §2).
 ## Passives carry no grade in data and read as common. Weapons show their
 ## run grade; a grade-up card shows the grade it grants (N4-2).
-static func grade_text(
+static func grade_id(
 	choice: Dictionary,
 	weapons: Dictionary,
 	owned_grades: Dictionary = {},
 	grades: Dictionary = {}
 ) -> String:
 	if String(choice.get("kind", "")) == KIND_PASSIVE:
-		return DEFAULT_GRADE_KO
+		return DEFAULT_GRADE_ID
 	if String(choice.get("kind", "")) == KIND_MOD:
 		# The pill shows the RESULT weapon's grade after the carry (N4-6).
-		var carried: String = mod_carried_grade(
+		return mod_carried_grade(
 			choice.get("mod", {}) as Dictionary, weapons, owned_grades, grades
 		)
-		return String(GRADE_KO.get(carried, DEFAULT_GRADE_KO))
 	var id: String = String(choice.get("id", ""))
 	var grade: String = current_grade(id, weapons, owned_grades)
 	if String(choice.get("kind", "")) == KIND_GRADE_UP:
 		grade = WeaponGrade.next(WeaponGrade.ladder(grades), grade)
-	return String(GRADE_KO.get(grade, DEFAULT_GRADE_KO))
+	return grade
+
+
+## Grade pill text — the localized word for grade_id.
+static func grade_text(
+	choice: Dictionary,
+	weapons: Dictionary,
+	owned_grades: Dictionary = {},
+	grades: Dictionary = {}
+) -> String:
+	return String(GRADE_KO.get(grade_id(choice, weapons, owned_grades, grades), DEFAULT_GRADE_KO))
 
 
 ## Small label under the icon well: next level for anything already owned,
@@ -576,9 +587,9 @@ static func icon_loot_id(choice: Dictionary) -> String:
 
 
 ## Display dict for the shared paper-panel card component (LevelUpPopup.open):
-## {"name", "desc", "well_label", "grade", "icon_weapon_id", "icon_loot_id",
-## "payload"} — payload is the raw choice routed back through the popup's
-## picked signal.
+## {"name", "desc", "well_label", "grade", "grade_id", "icon_weapon_id",
+## "icon_loot_id", "payload"} — payload is the raw choice routed back through
+## the popup's picked signal.
 static func as_card(
 	choice: Dictionary,
 	weapons: Dictionary,
@@ -602,6 +613,7 @@ static func as_card(
 		),
 		"well_label": well_label(choice, owned_levels, passive_stacks),
 		"grade": grade_text(choice, weapons, owned_grades, grades),
+		"grade_id": grade_id(choice, weapons, owned_grades, grades),
 		"icon_weapon_id": icon_id,
 		"icon_loot_id": icon_loot_id(choice),
 		"payload": choice,

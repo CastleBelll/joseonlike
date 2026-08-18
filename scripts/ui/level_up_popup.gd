@@ -14,6 +14,14 @@ signal dismissed
 
 const NEW_LABEL := "신규!"
 const TRANSFORM_LABEL := "변신!"
+## QA-3: pill tint per grade ladder rung; unknown ids fall back to common.
+const GRADE_PILL_COLORS := {
+	"common": UiPalette.GRADE_COMMON,
+	"uncommon": UiPalette.GRADE_UNCOMMON,
+	"rare": UiPalette.GRADE_RARE,
+	"epic": UiPalette.GRADE_EPIC,
+	"mythic": UiPalette.GRADE_MYTHIC,
+}
 
 const LAYER_ABOVE_HUD := 10
 const PANEL_MARGIN_X := 24.0
@@ -231,7 +239,9 @@ func _make_card(display: Dictionary, card_width: float, card_height: float) -> B
 		card_width - TEXT_LEFT - WELL_MARGIN, card_height - DESC_TOP - DESC_BOTTOM_PAD
 	)
 	card.add_child(desc_label)
-	card.add_child(_make_grade_pill(String(display.get("grade", ""))))
+	card.add_child(_make_grade_pill(
+		String(display.get("grade", "")), String(display.get("grade_id", ""))
+	))
 	return card
 
 
@@ -344,7 +354,7 @@ func _make_icon_well(name_text: String, weapon_icon_id: String, loot_icon_id: St
 	return well
 
 
-func _make_grade_pill(text: String) -> Panel:
+func _make_grade_pill(text: String, grade_id: String) -> Panel:
 	var pill := Panel.new()
 	pill.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	pill.offset_left = -(PILL_SIZE.x + PILL_MARGIN)
@@ -353,7 +363,7 @@ func _make_grade_pill(text: String) -> Panel:
 	pill.offset_bottom = PILL_MARGIN + PILL_SIZE.y
 	pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var style := StyleBoxFlat.new()
-	style.bg_color = UiPalette.VERMILION
+	style.bg_color = GRADE_PILL_COLORS.get(grade_id, UiPalette.GRADE_COMMON) as Color
 	style.set_corner_radius_all(int(PILL_SIZE.y / 2.0))
 	pill.add_theme_stylebox_override("panel", style)
 	var label := _label(text, UiPalette.FONT_SIZE_LABEL, UiPalette.PILL_TEXT)

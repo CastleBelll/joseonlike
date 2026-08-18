@@ -460,6 +460,18 @@ func test_grade_pill_text_from_data() -> bool:
 	return common == "일반" and rare == "희귀" and epic == "영웅" and passive == "일반"
 
 
+func test_grade_id_matches_pill_text_source() -> bool:
+	# Arrange: the same choices the pill-text test reads.
+	var weapon := {"kind": LevelUp.KIND_NEW_WEAPON, "id": "bow"}
+	var passive := {"kind": LevelUp.KIND_PASSIVE, "id": "attack_damage"}
+	# Act
+	var rare: String = LevelUp.grade_id(weapon, WEAPONS)
+	var common: String = LevelUp.grade_id(passive, WEAPONS)
+	var display: Dictionary = LevelUp.as_card(weapon, WEAPONS, PASSIVES, {}, {})
+	# Assert: the id drives the pill tint and rides along on the display dict.
+	return rare == "rare" and common == "common" and String(display.get("grade_id", "")) == "rare"
+
+
 func test_well_label_next_level_and_new() -> bool:
 	var up := {"kind": LevelUp.KIND_WEAPON_UP, "id": "talisman"}
 	var fresh := {"kind": LevelUp.KIND_NEW_WEAPON, "id": "bow"}
