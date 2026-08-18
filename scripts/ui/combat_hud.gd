@@ -95,6 +95,25 @@ func build_ui() -> void:
 	_build_pause_overlay()
 
 
+## N6-4 floating joystick contract: true when the point lands on an
+## interactive HUD button (actives, pause, info, overlay buttons), so the
+## joystick never captures — and never swallows — those taps. Walks the live
+## tree instead of a hand-kept list so future buttons are covered for free.
+func blocks_point(point: Vector2) -> bool:
+	return _hits_button(self, point)
+
+
+func _hits_button(node: Node, point: Vector2) -> bool:
+	for child: Node in node.get_children():
+		if child is Button and (child as Button).is_visible_in_tree() \
+				and not (child as Button).disabled \
+				and (child as Button).get_global_rect().has_point(point):
+			return true
+		if _hits_button(child, point):
+			return true
+	return false
+
+
 func set_level(level: int) -> void:
 	_level_label.text = "Lv.%d" % level
 
