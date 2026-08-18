@@ -1,142 +1,252 @@
-"""Passive stat icons (N9-10b): 32px-grid pixel glyphs exported 16x to
-512px, matching the weapon-icon convention (asset/ui/weapon_icons). One
-bold shape per stat on the dark card well; ink outline, palette fills.
-Replaces the N3-13 letter-glyph fallback for every OFFERABLE passive.
+"""Passive stat icons (N9-10b, redrawn N9-13): hand-mapped 16x16 pixel
+glyphs (1px ink outline, 2-tone fills with a shade edge) exported 32x to
+512px. The first pass used PIL shape primitives at 32px and read as
+broken/mismatched on the card wells (owner report) — explicit pixel maps
+give clean, chunky glyphs that sit with the game's pixel art.
+
+Legend: . transparent / K ink / W white / P paper / G gold / g gold shade
+V vermilion / v vermilion shade / S steel / s steel shade / B blue /
+b blue shade / N green / n green shade / O wood / o wood shade
 """
 from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 OUT = Path(__file__).resolve().parent
-GRID = 32
-SCALE = 16
+SCALE = 32
 
-INK = (26, 22, 19, 255)
-STEEL = (214, 220, 228, 255)
-GOLD = (255, 217, 74, 255)
-VERMILION = (191, 64, 42, 255)
-WOOD = (226, 160, 87, 255)
-GREEN = (88, 216, 88, 255)
-BLUE = (110, 170, 230, 255)
-PAPER = (240, 228, 196, 255)
-
-
-def canvas() -> tuple:
-    img = Image.new("RGBA", (GRID, GRID), (0, 0, 0, 0))
-    return img, ImageDraw.Draw(img)
-
-
-def attack_damage() -> Image.Image:
-    img, d = canvas()
-    d.polygon([(8, 24), (22, 6), (26, 10), (12, 28)], fill=STEEL, outline=INK)
-    d.line([6, 22, 12, 28], fill=GOLD, width=3)
-    d.rectangle([4, 26, 8, 30], fill=WOOD, outline=INK)
-    return img
-
-
-def attack_speed() -> Image.Image:
-    img, d = canvas()
-    for x in (6, 14, 22):
-        d.polygon([(x, 8), (x + 7, 16), (x, 24), (x + 3, 16)], fill=VERMILION, outline=INK)
-    return img
-
-
-def move_speed() -> Image.Image:
-    img, d = canvas()
-    d.polygon([(14, 6), (26, 16), (14, 26), (18, 16)], fill=GREEN, outline=INK)
-    for y in (10, 16, 22):
-        d.line([4, y, 11, y], fill=GREEN, width=2)
-    return img
-
-
-def max_hp() -> Image.Image:
-    img, d = canvas()
-    d.ellipse([5, 6, 16, 17], fill=VERMILION, outline=INK)
-    d.ellipse([16, 6, 27, 17], fill=VERMILION, outline=INK)
-    d.polygon([(6, 14), (26, 14), (16, 28)], fill=VERMILION, outline=INK)
-    d.rectangle([8, 12, 24, 15], fill=VERMILION)
-    d.ellipse([9, 8, 13, 12], fill=(230, 120, 100, 255))
-    return img
-
-
-def magnet_radius() -> Image.Image:
-    img, d = canvas()
-    d.arc([6, 4, 26, 24], 180, 360, fill=INK, width=8)
-    d.arc([8, 6, 24, 22], 180, 360, fill=VERMILION, width=4)
-    d.rectangle([6, 14, 12, 26], fill=VERMILION, outline=INK)
-    d.rectangle([20, 14, 26, 26], fill=VERMILION, outline=INK)
-    d.rectangle([6, 22, 12, 26], fill=STEEL, outline=INK)
-    d.rectangle([20, 22, 26, 26], fill=STEEL, outline=INK)
-    return img
-
-
-def xp_gain() -> Image.Image:
-    img, d = canvas()
-    d.polygon(
-        [(16, 3), (19, 12), (28, 12), (21, 18), (24, 28),
-         (16, 22), (8, 28), (11, 18), (4, 12), (13, 12)],
-        fill=GOLD, outline=INK,
-    )
-    return img
-
-
-def luck() -> Image.Image:
-    img, d = canvas()
-    for cx, cy in ((11, 11), (21, 11), (11, 21), (21, 21)):
-        d.ellipse([cx - 6, cy - 6, cx + 6, cy + 6], fill=GREEN, outline=INK)
-    d.rectangle([14, 14, 18, 18], fill=GREEN)
-    d.line([16, 20, 20, 29], fill=INK, width=2)
-    return img
-
-
-def projectile_speed() -> Image.Image:
-    img, d = canvas()
-    d.polygon([(6, 20), (20, 6), (26, 12), (12, 26)], fill=BLUE, outline=INK)
-    d.polygon([(20, 6), (27, 5), (26, 12)], fill=STEEL, outline=INK)
-    for y in (24, 28):
-        d.line([3, y, 10, y], fill=BLUE, width=2)
-    return img
-
-
-def defense() -> Image.Image:
-    img, d = canvas()
-    d.polygon(
-        [(16, 3), (28, 8), (28, 17), (16, 29), (4, 17), (4, 8)],
-        fill=STEEL, outline=INK,
-    )
-    d.polygon([(16, 7), (24, 10), (24, 16), (16, 24), (8, 16), (8, 10)], fill=BLUE)
-    return img
-
-
-def projectile_count() -> Image.Image:
-    img, d = canvas()
-    for sx, sy in ((6, 24), (13, 26), (20, 24)):
-        d.polygon(
-            [(sx, sy), (sx + 6, sy - 18), (sx + 9, sy - 15), (sx + 3, sy + 3)],
-            fill=PAPER, outline=INK,
-        )
-    return img
-
+COLORS = {
+    ".": None,
+    "K": (26, 22, 19, 255),
+    "W": (255, 255, 250, 255),
+    "P": (240, 228, 196, 255),
+    "G": (255, 217, 74, 255),
+    "g": (196, 154, 61, 255),
+    "V": (216, 90, 60, 255),
+    "v": (160, 48, 32, 255),
+    "S": (214, 220, 228, 255),
+    "s": (150, 158, 170, 255),
+    "B": (110, 170, 230, 255),
+    "b": (66, 110, 170, 255),
+    "N": (110, 220, 110, 255),
+    "n": (58, 150, 70, 255),
+    "O": (226, 160, 87, 255),
+    "o": (150, 96, 46, 255),
+}
 
 ICONS = {
-    "attack_damage": attack_damage,
-    "attack_speed": attack_speed,
-    "move_speed": move_speed,
-    "max_hp": max_hp,
-    "magnet_radius": magnet_radius,
-    "xp_gain": xp_gain,
-    "luck": luck,
-    "projectile_speed": projectile_speed,
-    "defense": defense,
-    "projectile_count": projectile_count,
+    # 공격력: upright sword — steel blade, gold guard, wood grip.
+    "attack_damage": [
+        ".......KK.......",
+        "......KWSK......",
+        "......KWSK......",
+        "......KWSK......",
+        "......KWSK......",
+        "......KWSK......",
+        "......KWSK......",
+        "......KWSK......",
+        "......KWsK......",
+        "...KKKKWsKKKK...",
+        "...KGGGGGGGgK...",
+        "...KKKKOoKKKK...",
+        "......KOoK......",
+        "......KOoK......",
+        ".....KGGgK......",
+        ".....KKKKK......",
+    ],
+    # 공격 속도: double chevron dash.
+    "attack_speed": [
+        "................",
+        "..KK......KK....",
+        "..KVK.....KVK...",
+        "..KVVK....KVVK..",
+        "...KVVK....KVVK.",
+        "....KVVK....KVVK",
+        ".....KVVK....KVK",
+        "......KVK....KK.",
+        "......KVK....KK.",
+        ".....KVVK....KVK",
+        "....KVVK....KVVK",
+        "...KVVK....KVVK.",
+        "..KVVK....KVVK..",
+        "..KVK.....KVK...",
+        "..KK......KK....",
+        "................",
+    ],
+    # 이동 속도: wind-swept boot dash (three speed lines + forward wedge).
+    "move_speed": [
+        "................",
+        "................",
+        "........KKK.....",
+        "........KNNK....",
+        ".KKKKK..KNNNK...",
+        ".KnnnK..KNNNNK..",
+        ".KKKKK..KNNNNNK.",
+        "........KNNNNNNK",
+        "........KNNNNNNK",
+        ".KKKKK..KNNNNNK.",
+        ".KnnnK..KNNNNK..",
+        ".KKKKK..KNNNK...",
+        "........KNNK....",
+        "........KKK.....",
+        "................",
+        "................",
+    ],
+    # 최대 체력: classic pixel heart with a highlight.
+    "max_hp": [
+        "................",
+        "..KKK....KKK....",
+        ".KVVVK..KVVVK...",
+        "KVWVVVKKVVVVVK..",
+        "KVWVVVVVVVVVVK..",
+        "KVVVVVVVVVVVVK..",
+        "KVVVVVVVVVVVvK..",
+        ".KVVVVVVVVVvK...",
+        "..KVVVVVVVvK....",
+        "...KVVVVVvK.....",
+        "....KVVVvK......",
+        ".....KVvK.......",
+        "......KvK.......",
+        ".......K........",
+        "................",
+        "................",
+    ],
+    # 획득 반경: U-magnet, steel tips.
+    "magnet_radius": [
+        "................",
+        "...KKK....KKK...",
+        "..KSSSK..KSSSK..",
+        "..KSSSK..KSSSK..",
+        "..KKKKK..KKKKK..",
+        "..KVVVK..KVVVK..",
+        "..KVVVK..KVVVK..",
+        "..KVVVK..KVVVK..",
+        "..KVVVK..KVVVK..",
+        "..KVVvKKKKvVVK..",
+        "..KVVvvVVvvVVK..",
+        "...KVvVVVVvVK...",
+        "....KvVVVVvK....",
+        ".....KKKKKK.....",
+        "................",
+        "................",
+    ],
+    # 경험치 획득: four-point star, gold with shade.
+    "xp_gain": [
+        "................",
+        ".......KK.......",
+        ".......KGK......",
+        "......KGGK......",
+        "......KGGgK.....",
+        ".KKKKKGGGGKKKKK.",
+        "..KGGGGWGGGGGgK.",
+        "...KGGGWGGGGgK..",
+        "...KGGGGGGGgK...",
+        "..KGGGGGGGGGgK..",
+        ".KKKKKGGGGKKKKK.",
+        "......KGGgK.....",
+        "......KGGK......",
+        ".......KGK......",
+        ".......KK.......",
+        "................",
+    ],
+    # 행운: four-leaf clover + stem.
+    "luck": [
+        "................",
+        "...KKK...KKK....",
+        "..KNNNK.KNNNK...",
+        ".KNWNNNKNNNNNK..",
+        ".KNNNNNKNNNNnK..",
+        ".KNNNNNKNNNnK...",
+        "..KNNNKKKNnK....",
+        "...KKKNNNKK.....",
+        "..KKKNNNKKKK....",
+        ".KNNNNNKNNNNK...",
+        ".KNNNNNKNNNNnK..",
+        ".KNNNnNKNNNNnK..",
+        "..KNnK..KNnnK...",
+        "...KK..KKnK.....",
+        "......KKK.......",
+        "................",
+    ],
+    # 신속 투사: right arrow + speed lines.
+    "projectile_speed": [
+        "................",
+        "................",
+        "..........KK....",
+        "..........KBK...",
+        "KKKKK.....KBBK..",
+        "KbbbK.....KBBBK.",
+        "KKKKKKKKKKKBBBK.",
+        "KBBBBBBBBBBBBBBK",
+        "KBBBBBBBBBBBBBBK",
+        "KKKKKKKKKKKBBBK.",
+        "KbbbK.....KBBBK.",
+        "KKKKK.....KBBK..",
+        "..........KBK...",
+        "..........KK....",
+        "................",
+        "................",
+    ],
+    # 방비: shield, steel rim + blue face.
+    "defense": [
+        "................",
+        "..KKKKKKKKKKK...",
+        ".KSSSSSSSSSSSK..",
+        ".KSBBBBBBBBBSK..",
+        ".KSBBWBBBBBBSK..",
+        ".KSBBBBBBBBBSK..",
+        ".KSBBBBBBBBbSK..",
+        ".KSBBBBBBBBbSK..",
+        "..KSBBBBBBbSK...",
+        "..KSBBBBBBbSK...",
+        "...KSBBBBbSK....",
+        "....KSBBbSK.....",
+        ".....KSbSK......",
+        "......KSK.......",
+        ".......K........",
+        "................",
+    ],
+    # 다중 투사: three upward talisman darts.
+    "projectile_count": [
+        "................",
+        ".......KK.......",
+        "..KK..KPPK..KK..",
+        ".KPPK.KPPK.KPPK.",
+        ".KPPK.KPPK.KPPK.",
+        ".KPPK.KPPK.KPPK.",
+        ".KPPK.KPPK.KPPK.",
+        ".KPPK.KPPK.KPPK.",
+        ".KPpK.KPpK.KPpK.",
+        ".KPpK.KPpK.KPpK.",
+        ".KVvK.KVvK.KVvK.",
+        ".KKKK.KKKK.KKKK.",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
 }
+# 'p' shade for paper used in projectile_count.
+COLORS["p"] = (204, 190, 158, 255)
+
+
+def build(name: str, rows: list) -> None:
+    size = len(rows)
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    px = img.load()
+    for y, row in enumerate(rows):
+        assert len(row) == size, f"{name} row {y} width {len(row)}"
+        for x, ch in enumerate(row):
+            color = COLORS[ch]
+            if color is not None:
+                px[x, y] = color
+    img.resize((size * SCALE, size * SCALE), Image.NEAREST).save(OUT / f"{name}.png")
 
 
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, fn in ICONS.items():
-        big = fn().resize((GRID * SCALE, GRID * SCALE), Image.NEAREST)
-        big.save(OUT / f"{name}.png")
+    for name, rows in ICONS.items():
+        build(name, rows)
         print(name)
