@@ -1,29 +1,33 @@
 class_name TitleScreen
 extends Control
 ## Title screen layout (N1-1) with the N1-2 art layers, DESIGN.md §4.
-## Sky and village are full-bleed 540x960 textures exported at 2x; the
-## signboard logo carries the lettering baked per locale (asset/title/README.md).
+## Sky and village are full-bleed 540x960 textures exported at 2x. The logo
+## is set as glowing text (not a baked signboard image) so it re-flows with
+## locale instantly and can carry a live pulse animation.
 ## "start" routes to the stage scene (N3-1); other targets do not exist yet,
 ## so their presses only emit menu_selected.
 
 signal menu_selected(id: String)
 
 const STAGE_SCENE := "res://scenes/stage.tscn"
-const SELECT_SCENE := "res://scenes/character_select.tscn"
 const CAMP_SCENE := "res://scenes/camp.tscn"
 
 const SKY_TEXTURE := "res://asset/title/bg_sky.png"
 const VILLAGE_TEXTURE := "res://asset/title/bg_village.png"
-const LOGO_TEXTURES: Dictionary = {
-	"ko": "res://asset/title/logo_ko.png",
-	"en": "res://asset/title/logo_en.png",
-}
-# Logical placement from asset/title/build_assets.py's preview composition.
-const LOGO_POSITION := Vector2(60, 90)
-const LOGO_SIZE := Vector2(420, 200)
+
+# Owner direction: logo sits lower than the moon, clear of the rooftops.
+const LOGO_TOP_OFFSET := 240.0
+const LOGO_HEIGHT := 96.0
+const LOGO_FONT_SIZE := 56
+const LOGO_OUTLINE_SIZE := 9
+const LOGO_GLOW_OUTLINE_SIZE := 20
+const LOGO_GLOW_ALPHA_MIN := 0.12
+const LOGO_GLOW_ALPHA_MAX := 0.42
+const LOGO_PULSE_SEC := 1.8
 
 const MENU_WIDTH_RATIO := 0.85
-const MENU_BUTTON_HEIGHT := 64
+const MENU_BUTTON_HEIGHT := 72
+const MENU_BUTTON_FONT_SIZE := 26
 const MENU_BOTTOM_MARGIN := 48
 const UTILITY_BUTTON_SIZE := 48
 
@@ -64,8 +68,6 @@ func _on_menu_selected(id: String) -> void:
 			if routed != SaveService.instance.selected_character():
 				SaveService.instance.set_selected_character(routed)
 		get_tree().change_scene_to_file(STAGE_SCENE)
-	elif id == "select_character":
-		get_tree().change_scene_to_file(SELECT_SCENE)
 	elif id == "settings" and _settings_popup != null:
 		_settings_popup.open()
 
@@ -73,13 +75,11 @@ func _on_menu_selected(id: String) -> void:
 ## Re-applies every locale-sensitive text in place; called when the settings
 ## popup toggles the language so the change shows immediately.
 func refresh_texts() -> void:
-	(get_node("Logo") as TextureRect).texture = load(_logo_texture_path())
+	var game_name: String = UiLocale.text("title.game_name")
+	(get_node("Logo") as Label).text = game_name
+	(get_node("LogoGlow") as Label).text = game_name
 	var settings_button: Button = get_node("CornerUtilities/SettingsButton")
-	settings_button.text = UiLocale.text("title.settings")
 	settings_button.tooltip_text = UiLocale.text("title.settings")
-	var select_button: Button = get_node("CornerUtilities/SelectCharacterButton")
-	select_button.text = UiLocale.text("title.select_character")
-	select_button.tooltip_text = UiLocale.text("title.select_character")
 	var stack: VBoxContainer = get_node("MenuButtons")
 	var defs: Array[Dictionary] = menu_button_defs()
 	for i: int in range(mini(defs.size(), stack.get_child_count())):
@@ -105,11 +105,63 @@ func _build_background() -> void:
 	add_child(village)
 
 
+## Builds the glowing title text: a soft wide-outline glow layer behind a
+## crisp gold label on top, both centered in a full-width band under the
+## moon. The glow layer's outline alpha is pulsed in _animate_logo to read
+## as a slow breathing light instead of a static signboard.
 func _build_logo() -> void:
-	var logo: TextureRect = _pixel_texture_rect("Logo", _logo_texture_path())
-	logo.position = LOGO_POSITION
-	logo.size = LOGO_SIZE
+	var game_name: String = UiLocale.text("title.game_name")
+
+	var glow := _logo_label("LogoGlow", game_name)
+	glow.add_theme_color_override("font_color", Color(0, 0, 0, 0))
+	glow.add_theme_color_override("font_outline_color", UiPalette.GOLD)
+	glow.add_theme_constant_override("outline_size", LOGO_GLOW_OUTLINE_SIZE)
+	add_child(glow)
+
+	var logo := _logo_label("Logo", game_name)
+	logo.add_theme_color_override("font_color", UiPalette.GOLD)
+	logo.add_theme_color_override("font_outline_color", UiPalette.INK)
+	logo.add_theme_constant_override("outline_size", LOGO_OUTLINE_SIZE)
+	logo.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.6))
+	logo.add_theme_constant_override("shadow_offset_x", 0)
+	logo.add_theme_constant_override("shadow_offset_y", 4)
 	add_child(logo)
+
+	_animate_logo(glow)
+
+
+func _logo_label(node_name: String, text: String) -> Label:
+	var label := Label.new()
+	label.name = node_name
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	label.offset_top = LOGO_TOP_OFFSET
+	label.offset_bottom = LOGO_TOP_OFFSET + LOGO_HEIGHT
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", LOGO_FONT_SIZE)
+	return label
+
+
+## Slow breathing glow: the wide-outline layer's alpha eases between a faint
+## and a bright state on an infinite loop (owner direction: "약간 애니메이션").
+## No-op outside the SceneTree so the headless build_ui() test stays pure.
+func _animate_logo(glow: Label) -> void:
+	if not is_inside_tree():
+		return
+	var tween := create_tween()
+	tween.set_loops()
+	tween.tween_method(
+		func(a: float) -> void:
+			glow.add_theme_color_override("font_outline_color", Color(UiPalette.GOLD, a)),
+		LOGO_GLOW_ALPHA_MIN, LOGO_GLOW_ALPHA_MAX, LOGO_PULSE_SEC
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_method(
+		func(a: float) -> void:
+			glow.add_theme_color_override("font_outline_color", Color(UiPalette.GOLD, a)),
+		LOGO_GLOW_ALPHA_MAX, LOGO_GLOW_ALPHA_MIN, LOGO_PULSE_SEC
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 ## The art is exported at 2x logical size; forcing the rect to the logical
@@ -124,10 +176,10 @@ func _pixel_texture_rect(node_name: String, texture_path: String) -> TextureRect
 	return rect
 
 
-static func _logo_texture_path() -> String:
-	return String(LOGO_TEXTURES.get(UiLocale.current_locale, LOGO_TEXTURES[UiLocale.DEFAULT_LOCALE]))
-
-
+## Owner direction: settings is icon-only (no wood-button chrome), matching
+## the flat corner-icon pattern already used by CombatHud's pause button.
+## 수행자 선택 is no longer offered from the title — returning players reach
+## it from the base camp (Camp.destination_after_title routes them there).
 func _build_utilities() -> void:
 	var row := HBoxContainer.new()
 	row.name = "CornerUtilities"
@@ -136,25 +188,14 @@ func _build_utilities() -> void:
 
 	var settings := Button.new()
 	settings.name = "SettingsButton"
-	settings.text = UiLocale.text("title.settings")
+	settings.flat = true
 	settings.tooltip_text = UiLocale.text("title.settings")
 	settings.custom_minimum_size = Vector2(UTILITY_BUTTON_SIZE, UTILITY_BUTTON_SIZE)
-	WoodButton.apply(settings)
-	settings.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
+	var icon: TextureRect = UiIcons.icon_rect(UiIcons.hud_icon("settings"), UTILITY_BUTTON_SIZE * 0.6)
+	icon.set_anchors_preset(Control.PRESET_CENTER)
+	settings.add_child(icon)
 	settings.pressed.connect(func() -> void: menu_selected.emit("settings"))
 	row.add_child(settings)
-
-	# N2-1 secondary affordance: the single-primary-button rule (N5-2) keeps
-	# 수행자 선택 out of the menu stack, so it lives in the utility corner.
-	var select_character := Button.new()
-	select_character.name = "SelectCharacterButton"
-	select_character.text = UiLocale.text("title.select_character")
-	select_character.tooltip_text = UiLocale.text("title.select_character")
-	select_character.custom_minimum_size = Vector2(0, UTILITY_BUTTON_SIZE)
-	WoodButton.apply(select_character)
-	select_character.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
-	select_character.pressed.connect(func() -> void: menu_selected.emit("select_character"))
-	row.add_child(select_character)
 	add_child(row)
 
 
@@ -177,6 +218,9 @@ func _build_menu() -> void:
 		button.text = def["label"]
 		button.custom_minimum_size = Vector2(0, MENU_BUTTON_HEIGHT)
 		WoodButton.apply(button)
+		# Owner direction: the sole CTA reads bigger and bolder than the
+		# shared WoodButton default (body-text sized, meant for dense rows).
+		button.add_theme_font_size_override("font_size", MENU_BUTTON_FONT_SIZE)
 		button.pressed.connect(func() -> void: menu_selected.emit(id))
 		stack.add_child(button)
 	add_child(stack)

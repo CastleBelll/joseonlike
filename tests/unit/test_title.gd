@@ -40,21 +40,23 @@ func test_title_builds_menu_from_locale() -> bool:
 	return passed
 
 
-func test_title_logo_texture_follows_locale() -> bool:
-	# N1-2: the signboard logo is baked art per locale, swapped by refresh_texts.
+func test_title_logo_text_follows_locale() -> bool:
+	# N1-2-REVISED: the logo is glowing text (not a baked signboard image),
+	# so both the crisp label and its glow layer must re-flow on locale swap.
 	var scene: PackedScene = load(TITLE_SCENE)
 	var title: TitleScreen = scene.instantiate()
 	title.build_ui()
-	var logo: TextureRect = title.get_node("Logo")
+	var logo: Label = title.get_node("Logo")
+	var glow: Label = title.get_node("LogoGlow")
 
 	var original_locale: String = UiLocale.current_locale
 	UiLocale.current_locale = "en"
 	title.refresh_texts()
-	var en_texture: Texture2D = logo.texture
+	var en_text: String = logo.text
 	UiLocale.current_locale = "ko"
 	title.refresh_texts()
-	var passed: bool = logo.texture != null and en_texture != null \
-		and logo.texture != en_texture
+	var passed: bool = not en_text.is_empty() and not logo.text.is_empty() \
+		and logo.text != en_text and glow.text == logo.text
 
 	UiLocale.current_locale = original_locale
 	title.free()
