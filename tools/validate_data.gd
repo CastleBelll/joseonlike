@@ -103,6 +103,10 @@ func _check_combat_cross_references() -> void:
 	var stages: Dictionary = _load(DATA_DIR + "/stages.json")
 	var characters: Dictionary = _load(DATA_DIR + "/characters.json")
 	for monster_id: String in monsters:
+		# N6-5: monsters pay XP and loot only — gold comes from destructibles,
+		# chests and the stage's boss_gold. A resurrected gold_drop field FAILS.
+		if (monsters[monster_id] as Dictionary).has("gold_drop"):
+			_fail("monsters.%s defines gold_drop — monsters no longer drop gold (N6-5)" % monster_id)
 		if (monsters[monster_id] as Dictionary).has("elite_of"):
 			_check_elite(monsters, monster_id)
 			continue
@@ -117,6 +121,8 @@ func _check_combat_cross_references() -> void:
 		var boss_at: float = float(stage.get("boss_at_sec", 0.0))
 		if boss_at <= 0.0 or boss_at > float(stage.get("duration_sec", 0.0)):
 			_fail("stages.%s.boss_at_sec missing or outside duration_sec" % stage_id)
+		# N6-5: the boss-kill payout replaced the boss's gold_drop.
+		_require_positive_numbers(stage, ["boss_gold"], "stages." + stage_id)
 		_require_positive_numbers(
 			stage.get("spawning", {}), SPAWNING_FIELDS, "stages.%s.spawning" % stage_id
 		)

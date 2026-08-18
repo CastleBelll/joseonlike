@@ -6,7 +6,6 @@
     "damage": 6.0,
     "speed": 55.0,
     "xp_drop": 1,
-    "gold_drop": 1,
     "behaviour": "chase",
     "collision_radius": 9.5,
     "sprite": "res://asset/monsters/forest_goblin"
@@ -18,7 +17,6 @@
     "damage": 5.0,
     "speed": 40.0,
     "xp_drop": 5,
-    "gold_drop": 2,
     "behaviour": "ranged",
     "collision_radius": 10.0,
     "sprite": "res://asset/monsters/forest_spirit"
@@ -30,7 +28,6 @@
     "damage": 18.0,
     "speed": 70.0,
     "xp_drop": 8,
-    "gold_drop": 4,
     "behaviour": "charger",
     "collision_radius": 18.5,
     "sprite": "res://asset/monsters/bamboo_brute"
@@ -52,7 +49,6 @@
     "damage": 35.0,
     "speed": 50.0,
     "xp_drop": 200,
-    "gold_drop": 150,
     "behaviour": "boss",
     "collision_radius": 33.5,
     "sprite": "res://asset/monsters/bamboo_spirit_lord"
@@ -64,7 +60,6 @@
     "damage": 10.0,
     "speed": 58.0,
     "xp_drop": 2,
-    "gold_drop": 2,
     "behaviour": "chase",
     "collision_radius": 13.5
   },
@@ -75,7 +70,6 @@
     "damage": 6.0,
     "speed": 68.0,
     "xp_drop": 2,
-    "gold_drop": 2,
     "behaviour": "swarm",
     "collision_radius": 14.0
   },
@@ -86,7 +80,6 @@
     "damage": 9.0,
     "speed": 75.0,
     "xp_drop": 2,
-    "gold_drop": 2,
     "behaviour": "chase",
     "collision_radius": 21.0
   },
@@ -97,7 +90,6 @@
     "damage": 8.0,
     "speed": 38.0,
     "xp_drop": 8,
-    "gold_drop": 3,
     "behaviour": "ranged",
     "collision_radius": 9.0
   },
@@ -108,7 +100,6 @@
     "damage": 29.0,
     "speed": 65.0,
     "xp_drop": 13,
-    "gold_drop": 6,
     "behaviour": "charger",
     "collision_radius": 20.5
   },
@@ -119,7 +110,6 @@
     "damage": 56.0,
     "speed": 52.0,
     "xp_drop": 320,
-    "gold_drop": 240,
     "behaviour": "boss",
     "collision_radius": 25.5
   },
@@ -130,7 +120,6 @@
     "damage": 12.0,
     "speed": 40.0,
     "xp_drop": 12,
-    "gold_drop": 5,
     "behaviour": "ranged",
     "collision_radius": 23.5
   },
@@ -141,7 +130,6 @@
     "damage": 14.0,
     "speed": 50.0,
     "xp_drop": 2,
-    "gold_drop": 2,
     "behaviour": "chase",
     "collision_radius": 23.5
   },
@@ -152,7 +140,6 @@
     "damage": 47.0,
     "speed": 72.0,
     "xp_drop": 21,
-    "gold_drop": 11,
     "behaviour": "charger",
     "collision_radius": 25.5
   },
@@ -163,7 +150,6 @@
     "damage": 12.0,
     "speed": 15.0,
     "xp_drop": 12,
-    "gold_drop": 5,
     "behaviour": "ranged",
     "collision_radius": 9.0
   },
@@ -174,7 +160,6 @@
     "damage": 12.0,
     "speed": 58.0,
     "xp_drop": 2,
-    "gold_drop": 2,
     "behaviour": "chase",
     "collision_radius": 14.0
   },
@@ -185,7 +170,6 @@
     "damage": 84.0,
     "speed": 48.0,
     "xp_drop": 480,
-    "gold_drop": 360,
     "behaviour": "boss",
     "collision_radius": 26.0
   },
@@ -196,7 +180,6 @@
     "damage": 17.0,
     "speed": 44.0,
     "xp_drop": 17,
-    "gold_drop": 7,
     "behaviour": "ranged",
     "collision_radius": 13.0
   },
@@ -207,7 +190,6 @@
     "damage": 17.0,
     "speed": 55.0,
     "xp_drop": 17,
-    "gold_drop": 7,
     "behaviour": "ranged",
     "collision_radius": 17.0
   },
@@ -218,7 +200,6 @@
     "damage": 20.0,
     "speed": 80.0,
     "xp_drop": 3,
-    "gold_drop": 3,
     "behaviour": "chase",
     "collision_radius": 14.5
   },
@@ -229,7 +210,6 @@
     "damage": 14.0,
     "speed": 70.0,
     "xp_drop": 3,
-    "gold_drop": 3,
     "behaviour": "swarm",
     "collision_radius": 18.5
   },
@@ -240,7 +220,6 @@
     "damage": 61.0,
     "speed": 65.0,
     "xp_drop": 27,
-    "gold_drop": 14,
     "behaviour": "charger",
     "collision_radius": 20.5
   },
@@ -251,7 +230,6 @@
     "damage": 119.0,
     "speed": 55.0,
     "xp_drop": 680,
-    "gold_drop": 510,
     "behaviour": "boss",
     "collision_radius": 29.5
   }

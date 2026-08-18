@@ -8,7 +8,7 @@
       "craft"
     ],
     "special": false,
-    "salvage_gold": 2
+    "salvage_gold": 5
   },
   "tough_fiber": {
     "name_ko": "질긴 섬유",
@@ -19,7 +19,7 @@
       "craft"
     ],
     "special": false,
-    "salvage_gold": 2
+    "salvage_gold": 5
   },
   "beast_fang": {
     "name_ko": "짐승의 이빨",
@@ -30,7 +30,7 @@
       "bleed"
     ],
     "special": false,
-    "salvage_gold": 2
+    "salvage_gold": 5
   },
   "talisman_paper": {
     "name_ko": "부적지",
@@ -40,7 +40,7 @@
       "spiritual"
     ],
     "special": false,
-    "salvage_gold": 2
+    "salvage_gold": 5
   },
   "wonhon_shard": {
     "name_ko": "원혼 조각",
@@ -51,7 +51,7 @@
       "curse"
     ],
     "special": false,
-    "salvage_gold": 4
+    "salvage_gold": 10
   },
   "dokkaebi_flame": {
     "name_ko": "도깨비불",
@@ -62,7 +62,7 @@
       "soul"
     ],
     "special": true,
-    "salvage_gold": 4
+    "salvage_gold": 10
   },
   "whetstone": {
     "name_ko": "숫돌",
@@ -72,7 +72,7 @@
       "melee"
     ],
     "special": true,
-    "salvage_gold": 8
+    "salvage_gold": 18
   },
   "ghost_iron": {
     "name_ko": "귀철",
@@ -83,7 +83,7 @@
       "curse"
     ],
     "special": true,
-    "salvage_gold": 15
+    "salvage_gold": 32
   },
   "cinnabar": {
     "name_ko": "주사",
@@ -94,7 +94,7 @@
       "seal"
     ],
     "special": true,
-    "salvage_gold": 8
+    "salvage_gold": 18
   },
   "thunder_stone": {
     "name_ko": "뇌정석",
@@ -105,7 +105,7 @@
       "spiritual"
     ],
     "special": true,
-    "salvage_gold": 15
+    "salvage_gold": 32
   },
   "fire_spirit_stone": {
     "name_ko": "화령석",
@@ -115,6 +115,6 @@
       "fire"
     ],
     "special": true,
-    "salvage_gold": 15
+    "salvage_gold": 32
   }
 }

@@ -458,15 +458,17 @@ func test_screen_cta_refuses_purchase_without_gold() -> bool:
 	screen._on_cta_pressed()
 	var passed: bool = int(screen._profile["gold"]) == 0 \
 		and (screen._profile["meta_tree"] as Dictionary).is_empty()
-	# With gold, the same tap buys rank 1 and the pill reflects the spend.
+	# With gold, the same tap buys rank 1 and the pill reflects the spend —
+	# expected remainder derives from data so a cost retune cannot break this.
+	var rank_cost: int = MetaTree.next_cost(MetaTree.node(MetaTree.load_tree(), "iron_bones"), 0)
 	screen._profile["gold"] = 100
 	screen._on_cta_pressed()
-	passed = passed and int(screen._profile["gold"]) == 40 \
+	passed = passed and int(screen._profile["gold"]) == 100 - rank_cost \
 		and MetaTree.rank_of(screen._profile["meta_tree"], "iron_bones") == 1
 	# Deselect: the CTA can never act on a stale selection (edge #13).
 	screen._on_canvas_input(_click())
 	screen._on_cta_pressed()
-	passed = passed and int(screen._profile["gold"]) == 40
+	passed = passed and int(screen._profile["gold"]) == 100 - rank_cost
 	if not passed:
 		push_error("test_meta_tree: screen purchase flow leaked state")
 	screen.free()

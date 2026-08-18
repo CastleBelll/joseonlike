@@ -4,6 +4,7 @@
     "name_en": "Bamboo Forest",
     "duration_sec": 300,
     "boss_id": "bamboo_spirit_lord",
+    "boss_gold": 150,
     "boss_at_sec": 240,
     "surge_at_sec": 210,
     "soft_enrage": {

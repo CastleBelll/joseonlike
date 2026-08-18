@@ -50,7 +50,6 @@ static func derive_elite_stats(base: Dictionary, elite: Dictionary) -> Dictionar
 	derived["speed"] = float(base.get("speed", 0.0)) * float(elite.get("speed_mult", 1.0))
 	derived["collision_radius"] = float(base.get("collision_radius", 10.0)) * size_mult
 	derived["xp_drop"] = int(round(float(base.get("xp_drop", 0)) * reward_mult))
-	derived["gold_drop"] = int(round(float(base.get("gold_drop", 0)) * reward_mult))
 	derived["size_scale"] = size_mult
 	derived["name_ko"] = String(elite.get("name_ko", base.get("name_ko", "")))
 	derived["name_en"] = String(elite.get("name_en", base.get("name_en", "")))
@@ -66,7 +65,6 @@ var name_ko := ""
 var hp: float = 0.0
 var contact_radius: float = 0.0
 var xp_drop: int = 0
-var gold_drop: int = 0
 var is_boss: bool = false
 ## N5-5: set for "elite_of" variants (derive_elite_stats) — chest drop + nuke cap.
 var is_elite: bool = false
@@ -166,7 +164,6 @@ func setup(
 	_speed = float(stats.get("speed", 0.0))
 	contact_radius = float(stats.get("collision_radius", 10.0))
 	xp_drop = int(stats.get("xp_drop", 0))
-	gold_drop = int(stats.get("gold_drop", 0))
 	is_boss = String(stats.get("behaviour", "")) == "boss"
 	is_elite = bool(stats.get("is_elite", false))
 	_size_scale = float(stats.get("size_scale", 1.0))

@@ -92,6 +92,10 @@ var _burst_ring_pool: NodePool
 # N3-17 art integration: pooled sprite puffs for 축지 when the sheet shipped.
 var _fx_pool: NodePool
 var _gold: int = 0
+# N6-5: monsters no longer drop gold — the boss-kill reward from stages.json
+# is the single kill-paid gold source left; everything else is destructibles,
+# chests and salvage.
+var _boss_gold: int = 0
 var _run_elapsed: float = 0.0
 var _duration_sec: float = 0.0
 var _boss: Enemy
@@ -142,6 +146,7 @@ func _ready() -> void:
 	_feedback = _load_json(Spawner.EFFECTS_PATH).get("hit_feedback", {})
 	var stage_entry: Dictionary = _load_json(Spawner.STAGES_PATH).get(Spawner.STAGE_ID, {})
 	_duration_sec = float(stage_entry.get("duration_sec", 0.0))
+	_boss_gold = int(stage_entry.get("boss_gold", 0))
 	_puff_pool = NodePool.new(self, _create_puff)
 	_burst_ring_pool = NodePool.new(self, _create_burst_ring)
 	if EffectSprite.available("blink_puff"):
@@ -329,7 +334,6 @@ func _on_player_hit() -> void:
 func _on_enemy_killed(enemy: Enemy) -> void:
 	_kills += 1
 	_record_discovery(Bestiary.KIND_MONSTERS, enemy.monster_id)
-	_add_gold(enemy.gold_drop)
 	_hud.set_kills(_kills)
 	var puff: DeathPuff = _puff_pool.acquire()
 	puff.puff(
@@ -353,6 +357,10 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 			(_pickups_data.get("elite_heal", {}) as Dictionary).get("hp_ratio", 0.0)
 		))
 	if enemy.is_boss:
+		# N6-5: the ONE monster that still pays gold — a deliberate boss-kill
+		# reward from stage data, paid directly because the kill ends the run
+		# this same call (a spawned chest could never be opened).
+		_add_gold(_boss_gold)
 		_boss = null
 		_hud.hide_boss_bar()
 		_end_run(RunFlow.resolve_outcome(false, true, false), true)

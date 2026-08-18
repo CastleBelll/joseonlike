@@ -21,7 +21,7 @@ const WEAPONS := {
 }
 const BRUTE := {
 	"name_ko": "죽림 거한", "hp": 85.0, "damage": 18.0, "speed": 70.0,
-	"xp_drop": 8, "gold_drop": 4, "behaviour": "charger",
+	"xp_drop": 8, "behaviour": "charger",
 	"collision_radius": 18.5, "sprite": "res://asset/monsters/bamboo_brute",
 }
 const ELITE := {
@@ -147,7 +147,7 @@ func test_elite_stats_derive_from_base() -> bool:
 		and is_equal_approx(float(derived["speed"]), 59.5)
 		and is_equal_approx(float(derived["collision_radius"]), 29.6)
 		and int(derived["xp_drop"]) == 48
-		and int(derived["gold_drop"]) == 24
+		and not derived.has("gold_drop")  # N6-5: monsters never carry gold
 		and is_equal_approx(float(derived["size_scale"]), 1.6)
 		and String(derived["name_ko"]) == "정예 죽림 거한"
 	)

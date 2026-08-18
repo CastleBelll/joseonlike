@@ -10,11 +10,11 @@
     "plain_share_min": 0.8
   },
   "gold": {
-    "amount": 12
+    "amount": 40
   },
   "health": {
     "hp_ratio": 0.25,
-    "full_hp_gold": 10
+    "full_hp_gold": 25
   },
   "elite_heal": {
     "hp_ratio": 0.15
@@ -31,6 +31,6 @@
     "open_radius_px": 26.0,
     "weights": {"1": 70.0, "3": 22.0, "5": 8.0},
     "luck_shift": {"1": 0.0, "3": 4.0, "5": 10.0},
-    "fallback_gold": 40
+    "fallback_gold": 60
   }
 }
