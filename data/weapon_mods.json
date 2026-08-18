@@ -21,67 +21,67 @@
     "weapon_id": "old_talisman",
     "loot_id": "fire_spirit_stone",
     "result_weapon": "fire_talisman",
-    "level_required": 5
+    "level_required": 3
   },
   "hwaryeongbu_mod": {
     "weapon_id": "hwabu",
     "loot_id": "fire_spirit_stone",
     "result_weapon": "hwaryeongbu",
-    "level_required": 5
+    "level_required": 3
   },
   "noejeongbu_mod": {
     "weapon_id": "noebu",
     "loot_id": "thunder_stone",
     "result_weapon": "noejeongbu",
-    "level_required": 5
+    "level_required": 3
   },
   "bongmageom_mod": {
     "weapon_id": "beopgeom",
     "loot_id": "cinnabar",
     "result_weapon": "bongmageom",
-    "level_required": 5
+    "level_required": 3
   },
   "ghost_staff_mod": {
     "weapon_id": "seokjang",
     "loot_id": "ghost_iron",
     "result_weapon": "ghost_staff",
-    "level_required": 5
+    "level_required": 3
   },
   "flame_honbul_mod": {
     "weapon_id": "honbul",
     "loot_id": "fire_spirit_stone",
     "result_weapon": "flame_honbul",
-    "level_required": 5
+    "level_required": 3
   },
   "hwayeom_gyeolgye_mod": {
     "weapon_id": "gyeolgye",
     "loot_id": "fire_spirit_stone",
     "result_weapon": "hwayeom_gyeolgye",
-    "level_required": 5
+    "level_required": 3
   },
   "noe_sinjang_mod": {
     "weapon_id": "sinjang",
     "loot_id": "thunder_stone",
     "result_weapon": "noe_sinjang",
-    "level_required": 5
+    "level_required": 3
   },
   "bongin_jineon_mod": {
     "weapon_id": "jineon",
     "loot_id": "cinnabar",
     "result_weapon": "bongin_jineon",
-    "level_required": 5
+    "level_required": 3
   },
   "gwisal_mod": {
     "weapon_id": "sal",
     "loot_id": "dokkaebi_flame",
     "result_weapon": "gwisal",
-    "level_required": 5
+    "level_required": 3
   },
   "phoenix_talisman_mod": {
     "weapon_id": "fire_talisman",
     "loot_id": "dokkaebi_flame",
     "result_weapon": "phoenix_talisman",
-    "level_required": 5
+    "level_required": 3
   },
   "twin_sword_mod": {
     "weapon_id": "sharp_sword",
@@ -99,18 +99,18 @@
     "weapon_id": "fire_talisman",
     "loot_id": "fire_spirit_stone",
     "result_weapon": "hwabu",
-    "level_required": 5
+    "level_required": 3
   },
   "noebu_mod": {
     "weapon_id": "old_talisman",
     "loot_id": "thunder_stone",
     "result_weapon": "noebu",
-    "level_required": 5
+    "level_required": 3
   },
   "sal_mod": {
     "weapon_id": "old_talisman",
     "loot_id": "dokkaebi_flame",
     "result_weapon": "sal",
-    "level_required": 5
+    "level_required": 3
   }
 }

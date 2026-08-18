@@ -31,7 +31,7 @@
       "guarantee_offset_px": 160.0
     },
     "spawning": {
-      "live_cap": 72,
+      "live_cap": 84,
       "spawn_margin_px": 48.0,
       "despawn_margin_px": 480.0,
       "contact_cooldown_sec": 1.0
@@ -40,56 +40,56 @@
       {
         "at_sec": 0,
         "monster_id": "forest_goblin",
-        "count": 14,
-        "interval_sec": 0.7
+        "count": 18,
+        "interval_sec": 0.59
       },
       {
         "at_sec": 17,
         "monster_id": "forest_goblin",
-        "count": 10,
-        "interval_sec": 0.7
+        "count": 12,
+        "interval_sec": 0.59
       },
       {
         "at_sec": 30,
         "monster_id": "forest_goblin",
-        "count": 12,
-        "interval_sec": 1.4
+        "count": 15,
+        "interval_sec": 1.19
       },
       {
         "at_sec": 60,
         "monster_id": "forest_goblin",
-        "count": 14,
-        "interval_sec": 1.4
+        "count": 18,
+        "interval_sec": 1.19
       },
       {
         "at_sec": 60,
-        "monster_id": "forest_spirit",
-        "count": 6,
-        "interval_sec": 2.2
-      },
-      {
-        "at_sec": 90,
-        "monster_id": "forest_goblin",
-        "count": 16,
-        "interval_sec": 1.2
-      },
-      {
-        "at_sec": 90,
         "monster_id": "forest_spirit",
         "count": 8,
-        "interval_sec": 2.0
+        "interval_sec": 1.87
+      },
+      {
+        "at_sec": 90,
+        "monster_id": "forest_goblin",
+        "count": 20,
+        "interval_sec": 1.02
+      },
+      {
+        "at_sec": 90,
+        "monster_id": "forest_spirit",
+        "count": 10,
+        "interval_sec": 1.7
       },
       {
         "at_sec": 120,
         "monster_id": "forest_goblin",
-        "count": 16,
-        "interval_sec": 1.1
+        "count": 20,
+        "interval_sec": 0.94
       },
       {
         "at_sec": 120,
         "monster_id": "forest_spirit",
-        "count": 9,
-        "interval_sec": 1.8
+        "count": 11,
+        "interval_sec": 1.53
       },
       {
         "at_sec": 140,
@@ -100,20 +100,20 @@
       {
         "at_sec": 150,
         "monster_id": "forest_goblin",
-        "count": 18,
-        "interval_sec": 1.0
+        "count": 22,
+        "interval_sec": 0.85
       },
       {
         "at_sec": 150,
         "monster_id": "forest_spirit",
-        "count": 10,
-        "interval_sec": 1.6
+        "count": 12,
+        "interval_sec": 1.36
       },
       {
         "at_sec": 150,
         "monster_id": "bamboo_brute",
-        "count": 6,
-        "interval_sec": 2.2
+        "count": 8,
+        "interval_sec": 1.87
       },
       {
         "at_sec": 175,
@@ -124,14 +124,14 @@
       {
         "at_sec": 190,
         "monster_id": "forest_goblin",
-        "count": 20,
-        "interval_sec": 0.9
+        "count": 25,
+        "interval_sec": 0.77
       },
       {
         "at_sec": 190,
         "monster_id": "forest_spirit",
-        "count": 11,
-        "interval_sec": 1.5
+        "count": 14,
+        "interval_sec": 1.27
       },
       {
         "at_sec": 210,
@@ -142,20 +142,20 @@
       {
         "at_sec": 210,
         "monster_id": "bamboo_brute",
-        "count": 6,
-        "interval_sec": 2.0
+        "count": 8,
+        "interval_sec": 1.7
       },
       {
         "at_sec": 230,
         "monster_id": "forest_goblin",
-        "count": 22,
-        "interval_sec": 0.8
+        "count": 28,
+        "interval_sec": 0.68
       },
       {
         "at_sec": 230,
         "monster_id": "forest_spirit",
-        "count": 12,
-        "interval_sec": 1.4
+        "count": 15,
+        "interval_sec": 1.19
       },
       {
         "at_sec": 250,
@@ -166,20 +166,20 @@
       {
         "at_sec": 270,
         "monster_id": "forest_goblin",
-        "count": 26,
-        "interval_sec": 0.7
+        "count": 32,
+        "interval_sec": 0.59
       },
       {
         "at_sec": 270,
         "monster_id": "forest_spirit",
-        "count": 14,
-        "interval_sec": 1.2
+        "count": 18,
+        "interval_sec": 1.02
       },
       {
         "at_sec": 270,
         "monster_id": "bamboo_brute",
-        "count": 8,
-        "interval_sec": 1.6
+        "count": 10,
+        "interval_sec": 1.36
       },
       {
         "at_sec": 290,
@@ -190,20 +190,20 @@
       {
         "at_sec": 300,
         "monster_id": "forest_goblin",
-        "count": 44,
-        "interval_sec": 0.3
+        "count": 55,
+        "interval_sec": 0.26
       },
       {
         "at_sec": 300,
         "monster_id": "forest_spirit",
-        "count": 26,
-        "interval_sec": 0.55
+        "count": 32,
+        "interval_sec": 0.47
       },
       {
         "at_sec": 300,
         "monster_id": "bamboo_brute",
-        "count": 14,
-        "interval_sec": 0.9
+        "count": 18,
+        "interval_sec": 0.77
       },
       {
         "at_sec": 310,
@@ -220,14 +220,14 @@
       {
         "at_sec": 340,
         "monster_id": "forest_goblin",
-        "count": 28,
-        "interval_sec": 0.9
+        "count": 35,
+        "interval_sec": 0.77
       },
       {
         "at_sec": 340,
         "monster_id": "forest_spirit",
-        "count": 12,
-        "interval_sec": 1.2
+        "count": 15,
+        "interval_sec": 1.02
       }
     ]
   }

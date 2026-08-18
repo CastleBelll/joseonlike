@@ -52,7 +52,7 @@ const PROJECTILE_MECHANICS: Array[String] = [
 ]
 ## At or past this pierce count the card reads "everything on the line".
 ## N9-20: weapon levels gained per level-up card.
-const LEVEL_STEP := 2
+const LEVEL_STEP := 1
 const PIERCE_ALL := 99
 
 ## N4-8 milestone vocabulary: every field a weapons.json "milestones" delta
@@ -241,9 +241,7 @@ static func apply_choice(
 	var id: String = String(choice.get("id", ""))
 	match String(choice.get("kind", "")):
 		KIND_WEAPON_UP:
-			# N9-20: a level card is worth TWO weapon levels. With picks spread
-			# across 3-4 weapons a +1 card left every weapon at 3-4 by run end,
-			# so the level-5 evolution gate was unreachable (measured).
+			# N9-21 (owner direction): one card = one weapon level.
 			owned[id] = int(owned.get(id, 0)) + LEVEL_STEP
 		KIND_NEW_WEAPON:
 			owned[id] = 1
