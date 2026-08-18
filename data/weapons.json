@@ -240,7 +240,7 @@
       "damage": 4.0,
       "cooldown_sec": -0.06
     },
-    "evolution_only": false,
+    "evolution_only": true,
     "milestones": {
       "3": {
         "explosion": {
@@ -319,7 +319,7 @@
       "damage": 3.2,
       "cooldown_sec": -0.05
     },
-    "evolution_only": false,
+    "evolution_only": true,
     "milestones": {
       "3": {
         "chain": {
@@ -832,7 +832,7 @@
       "damage": 2.8,
       "cooldown_sec": -0.06
     },
-    "evolution_only": false,
+    "evolution_only": true,
     "on_hit_status": {
       "id": "curse",
       "dps": 5.0,

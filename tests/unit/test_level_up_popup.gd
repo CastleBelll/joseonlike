@@ -138,7 +138,10 @@ func test_owned_strip_fits_at_max_owned_count() -> bool:
 		var stats: Dictionary = weapons[weapon_id]
 		if not bool(stats.get("evolution_only", false)) and LevelUp.runtime_can_fire(stats):
 			max_owned += 1
-	if max_owned < 9:
+	# N9-5e: 화부/뇌부/살 became evolution-only talisman branches, shrinking
+	# the offerable roster to 7 spiritual + the bow. The guard only proves
+	# the data still carries a multi-weapon roster worth wrap-testing.
+	if max_owned < 7:
 		push_error("test_level_up_popup: offerable weapon count fixture assumption broke")
 		return false
 	var root_width: float = float(

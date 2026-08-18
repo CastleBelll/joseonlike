@@ -77,10 +77,12 @@ const DAMAGE_WINDOW_SEC := 30.0
 ## the boss spawn second (mirrors the shipped 120s elite wave).
 const ELITE_SAMPLE_SEC := 120.0
 const IDLE_QUIT_SEC := 45.0
-## N4-3: the ten base taoist weapons a run can start on (non-evolution_only).
+## N4-3: the base taoist weapons a run can start on (non-evolution_only).
+## N9-5e: 화부/뇌부/살 became exclusive talisman branches (evolution_only),
+## so the startable roster is seven.
 const BATCH_WEAPONS: Array[String] = [
-	"old_talisman", "hwabu", "noebu", "seokjang", "honbul",
-	"beopgeom", "gyeolgye", "sinjang", "jineon", "sal",
+	"old_talisman", "seokjang", "honbul",
+	"beopgeom", "gyeolgye", "sinjang", "jineon",
 ]
 ## Fixed default so every batch weapon faces the same waves/drops/choices.
 const DEFAULT_BATCH_SEED := 20260814

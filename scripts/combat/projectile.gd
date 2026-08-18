@@ -254,7 +254,10 @@ func _explode(at: Vector2) -> void:
 ## stopping when the jumps or the crowd run out. _strike draws each bolt
 ## leg through _chain_prev, so the full chain flashes at once.
 func _resolve_chain(from: Vector2) -> void:
-	var enemies: Array[Enemy] = _spawner.active_enemies()
+	# Snapshot: active_enemies() is the spawner's LIVE array — a chain kill
+	# inside this loop releases the enemy and shrinks it, so indexing the
+	# original would go stale mid-walk (out-of-bounds observed in playtest).
+	var enemies: Array[Enemy] = _spawner.active_enemies().duplicate()
 	var positions: Array[Vector2] = []
 	for enemy: Enemy in enemies:
 		positions.append(enemy.global_position)

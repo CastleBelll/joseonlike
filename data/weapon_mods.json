@@ -23,12 +23,6 @@
     "result_weapon": "fire_talisman",
     "level_required": 3
   },
-  "fire_talisman_flame_mod": {
-    "weapon_id": "old_talisman",
-    "loot_id": "dokkaebi_flame",
-    "result_weapon": "fire_talisman",
-    "level_required": 3
-  },
   "hwaryeongbu_mod": {
     "weapon_id": "hwabu",
     "loot_id": "fire_spirit_stone",
@@ -99,6 +93,24 @@
     "weapon_id": "bow",
     "loot_id": "cinnabar",
     "result_weapon": "divine_bow",
+    "level_required": 3
+  },
+  "hwabu_mod": {
+    "weapon_id": "fire_talisman",
+    "loot_id": "fire_spirit_stone",
+    "result_weapon": "hwabu",
+    "level_required": 3
+  },
+  "noebu_mod": {
+    "weapon_id": "old_talisman",
+    "loot_id": "thunder_stone",
+    "result_weapon": "noebu",
+    "level_required": 3
+  },
+  "sal_mod": {
+    "weapon_id": "old_talisman",
+    "loot_id": "dokkaebi_flame",
+    "result_weapon": "sal",
     "level_required": 3
   }
 }
