@@ -668,11 +668,11 @@ class OrbVisual:
 	const GLOW_ALPHA := 0.22
 	const TRAIL_ALPHA := 0.3
 	const TRAIL_RADIUS_SCALE := 0.35
-	## Flame body lobes, bottom-up: each {offset_y as radius share, radius share}.
-	## Stacked shrinking discs read as a licking flame at 16px without a sheet.
-	const LOBES: Array[Vector2] = [
-		Vector2(0.25, 0.75), Vector2(-0.2, 0.55), Vector2(-0.6, 0.32)
-	]
+	## N9-5c: the orb body is the hand-drawn dokkaebi-fire wisp texture,
+	## authored in luminance so `color` (soul blue / fire orange / grade
+	## tint) modulates the hue. Visual height tracks the hit diameter.
+	const WISP_TEXTURE := "res://asset/weapon/fx/honbul_wisp.png"
+	const WISP_HEIGHT_SCALE := 2.6
 
 	var color: Color = UiPalette.WEAPON_SOUL
 	var radius: float = AutoWeapon.ORB_RADIUS_PX
@@ -681,10 +681,20 @@ class OrbVisual:
 	var _ages := PackedFloat32Array()
 	var _head: int = -1
 	var _count: int = 0
+	var _wisp: Sprite2D
 
 	func _init() -> void:
 		_trail.resize(TRAIL_CAPACITY)
 		_ages.resize(TRAIL_CAPACITY)
+
+	func _ready() -> void:
+		_wisp = Sprite2D.new()
+		_wisp.texture = load(WISP_TEXTURE)
+		_wisp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_wisp.modulate = color
+		var height: float = maxf(_wisp.texture.get_height(), 1.0)
+		_wisp.scale = Vector2.ONE * (radius * WISP_HEIGHT_SCALE / height)
+		add_child(_wisp)
 
 	## Parent AutoWeapon moves the orb in ITS _physics_process (parents run
 	## before children), so recording here always sees this frame's position.
@@ -710,10 +720,8 @@ class OrbVisual:
 				Color(color, TRAIL_ALPHA * fade)
 			)
 		# Glow stops exactly at the data hit radius: what glows is what hits.
+		# The wisp Sprite2D child carries the flame body (N9-5c).
 		draw_circle(Vector2.ZERO, radius, Color(color, GLOW_ALPHA))
-		for lobe: Vector2 in LOBES:
-			draw_circle(Vector2(0.0, lobe.x * radius), radius * lobe.y, color)
-		draw_circle(Vector2(0.0, radius * 0.1), radius * 0.35, UiPalette.LOOT_CORE)
 
 
 ## 석장 swing (N3-17): an animated sweep — the leading edge travels across the

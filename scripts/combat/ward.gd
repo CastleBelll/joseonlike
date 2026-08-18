@@ -11,13 +11,12 @@ signal finished(ward: Ward)
 const FILL_ALPHA := 0.1
 const RING_WIDTH := 2.5
 const RING_POINTS := 40
-## N9-5 sigil look: double boundary ring + rotating radial rune ticks.
-## Tick count and the inner-ring ratio are style, the spin speed comes from
-## data (weapon_effects.ward_spin_deg_s).
-const DASH_COUNT := 12
-const SIGIL_RATIO := 0.62
-const SIGIL_WIDTH := 2.0
-const SIGIL_ALPHA := 0.7
+## N9-5c: the formation is the authored 부적진 texture (double ring, eight
+## trigram clusters, center swirl), drawn in luminance and modulated by the
+## ward color. It rotates with _spin; only the soft fill and the damage-tick
+## pulse stay code-drawn.
+const SIGIL_TEXTURE := "res://asset/weapon/fx/ward_sigil.png"
+const SIGIL_ALPHA := 0.85
 ## The slow must outlive the gap between ticks or enemies stutter-step;
 ## twice the tick keeps it seamless while ending soon after the ward does.
 const SLOW_CARRY_SCALE := 2.0
@@ -40,6 +39,15 @@ var _spin: float = 0.0
 var _pulse_age: float = INF
 var _caught: Array[Enemy] = []  # per-tick scratch, reused without alloc
 var _positions: Array[Vector2] = []
+var _sigil: Sprite2D
+
+
+func _ready() -> void:
+	_sigil = Sprite2D.new()
+	_sigil.name = "Sigil"
+	_sigil.texture = load(SIGIL_TEXTURE)
+	_sigil.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(_sigil)
 
 
 ## (Re)arms a pooled instance; first tick lands on the next physics frame so
@@ -64,6 +72,11 @@ func arm(
 	_tick_timer = 0.0
 	_pulse_age = INF
 	_spin = 0.0
+	if _sigil != null:
+		var native: float = maxf(_sigil.texture.get_width(), 1.0)
+		_sigil.scale = Vector2.ONE * (_radius * 2.0 / native)
+		_sigil.modulate = Color(_color, SIGIL_ALPHA)
+		_sigil.rotation = 0.0
 	queue_redraw()
 
 
@@ -73,7 +86,9 @@ func _physics_process(delta: float) -> void:
 		finished.emit(self)
 		return
 	_spin += deg_to_rad(WeaponEffects.value("ward_spin_deg_s")) * delta
-	queue_redraw()  # the spinning sigil animates every frame while live
+	if _sigil != null:
+		_sigil.rotation = _spin
+	queue_redraw()  # fill + pulse ring animate while live
 	var pulse_sec: float = WeaponEffects.value("ward_pulse_sec")
 	if _pulse_age < pulse_sec:
 		_pulse_age += delta
@@ -111,33 +126,11 @@ func _tick() -> void:
 		ticked.emit(_damage, at, boss_hit)
 
 
-## N9-5 결계 look (owner report: the N3-18 rotating octagram read as an odd
-## sci-fi circle, not a 결계): two solid concentric rings with short radial
-## rune ticks slowly rotating between them — the classic 도교 boundary-circle
-## silhouette — over the soft fill, plus the N3-17 tick pulse (a ring
-## expanding to the edge after every landed damage tick). Still all
-## palette-token code drawing; real ground-sigil art stays wanted in
-## ASSET_REQUIREMENTS.md.
+## N9-5c 결계 look: the authored 부적진 texture (Sigil child) carries the
+## formation; here only the soft interior fill and the N3-17 damage-tick
+## pulse (a ring expanding to the edge) are code-drawn.
 func _draw() -> void:
 	draw_circle(Vector2.ZERO, _radius, Color(_color, FILL_ALPHA))
-	# Outer boundary: one solid ring.
-	draw_arc(Vector2.ZERO, _radius, 0.0, TAU, RING_POINTS, _color, RING_WIDTH)
-	# Inner boundary: thinner, quieter ring.
-	draw_arc(
-		Vector2.ZERO, _radius * SIGIL_RATIO, 0.0, TAU, RING_POINTS,
-		Color(_color, SIGIL_ALPHA), SIGIL_WIDTH
-	)
-	# Rune ticks between the rings, rotating with the ward's spin.
-	var slot: float = TAU / float(DASH_COUNT)
-	var inner: float = _radius * (SIGIL_RATIO + 0.08)
-	var outer: float = _radius * 0.92
-	for i: int in range(DASH_COUNT):
-		var angle: float = _spin + slot * float(i)
-		var direction: Vector2 = Vector2.from_angle(angle)
-		draw_line(
-			direction * inner, direction * outer,
-			Color(_color, SIGIL_ALPHA), SIGIL_WIDTH
-		)
 	var pulse_sec: float = WeaponEffects.value("ward_pulse_sec")
 	if _pulse_age >= pulse_sec or pulse_sec <= 0.0:
 		return

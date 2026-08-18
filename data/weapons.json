@@ -574,7 +574,7 @@
     "speed": 0.0,
     "range_px": 260.0,
     "ward": {
-      "radius_px": 60.0,
+      "radius_px": 45.0,
       "duration_sec": 3.5,
       "tick_sec": 0.6,
       "slow_scale": 0.6
@@ -595,7 +595,7 @@
       "8": {
         "ward": {
           "duration_sec": 1.0,
-          "radius_px": 20.0
+          "radius_px": 25.0
         }
       }
     }
@@ -614,7 +614,7 @@
     "speed": 0.0,
     "range_px": 260.0,
     "ward": {
-      "radius_px": 68.0,
+      "radius_px": 50.0,
       "duration_sec": 3.9,
       "tick_sec": 0.6,
       "slow_scale": 0.55
@@ -640,7 +640,7 @@
       "8": {
         "ward": {
           "duration_sec": 1.0,
-          "radius_px": 20.0
+          "radius_px": 25.0
         }
       }
     }
