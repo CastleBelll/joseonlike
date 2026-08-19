@@ -2959,3 +2959,67 @@ moved to `UiPalette.grade_color` now that two screens read it.
 `validate_data` requires each rung to grant something (`mult` or `add`) and
 whitelists `add` fields to the ones the runtime reads, so a typo fails CI
 rather than silently doing nothing.
+
+---
+
+# N9-29 — Every level grows the weapon's own kit (2026-08-19)
+
+Owner direction: each weapon should grow along its own identity — 살 spreading
+wider and to more targets, 뇌부 chaining further and to more, 화부 exploding
+bigger.
+
+The machinery for this already existed (`milestones`, N4-8) but only fired at
+levels 3, 5 and 8. Levels 2, 4, 6 and 7 moved damage and cooldown and nothing
+else, so most of a weapon's growth said nothing about what the weapon *is*.
+All 21 spiritual weapons now carry a milestone at **every level from 2 to 8**,
+each inside that weapon's own mechanic block.
+
+## End states, level 1 → maxed
+
+| Weapon | Grows |
+|---|---|
+| 살 / 귀살 | 전이 3→7 마리, 전파 반경 110→136, 저주 피해 5→9, 지속 4.0→4.5초 |
+| 뇌부 | 연쇄 3→7회, 사거리 150→185, 도약 유지 0.70→0.76 |
+| 뇌정부 | 연쇄 5→9회, 사거리 170→205, 감전 지속 1.5→2.3초 |
+| 화부 | 폭발 반경 90→132, 가장자리 피해 0.70→0.80 |
+| 화령부 | 폭발 반경 105→139, 화상 5→9, 화상 전파 90→110 |
+| 결계 | 반경 45→64, 지속 3.5→4.5초 |
+| 석장 | 원호 160→250°, 넉백 2.5→3.5 |
+| 혼불 | 구슬 2→4, 선회 170→197°/s, 구슬 크기 10→13.5 |
+| 신장 | 지속 11→15초, 이동 150→170, 공격 주기 0.65→0.55초 |
+| 진언 | 반경 130→168, 기절 0.8→1.2초 |
+| 법검 | 투사체 1→4, 관통 피해 유지 0.95→1.00 |
+| 낡은 부적 | 투사체 1→3, 관통 0→5 |
+
+## What the evolutions grow that their base does not
+
+The owner's description of 화부 growing 화상 데미지 and 뇌부 growing 감전 is
+actually a description of their EVOLUTIONS: 화부 has no burn block and 뇌부 has
+no shock block — 화령부 and 뇌정부 do. Each weapon therefore grows only inside
+the kit it actually owns, and the status growth belongs to the evolution. Doing
+otherwise would blur what the 개조 is for: if 화부 gained burn on its own, 화령부
+would stop being a different weapon.
+
+## Two traps found while authoring, and the guard that follows
+
+`_merge_delta` creates missing blocks and adds to `target.get(field, 0.0)`, so
+a milestone on a field whose runtime default is NOT zero misfires silently:
+
+- `projectile_count` defaults to 1. A weapon that does not declare it would
+  merge 0 + 1 = 1 — a milestone that changes nothing.
+- `pierce_retention` defaults to 1.0. Merging 0 + 0.05 = 0.05 would cut a
+  piercing weapon to 5% carry-through, a catastrophic nerf sold as an upgrade.
+
+Audited: no shipped weapon was caught by either (every weapon declares
+`projectile_count`, and only the two pierce weapons declare
+`pierce_retention`). The tables above stay inside the ranges the validator
+already guards — arc angle under 360, `pierce_retention` capped at exactly
+1.0 — and never touch `ward.slow_scale` or `on_hit_status.slow_scale`, where
+lower is stronger and an additive bonus would weaken the weapon.
+
+## Measured
+
+Tests 370/370, validate 17 files PASS. Three seeds: 2 victories (380.0s,
+404.1s), 1 defeat (270.5s) — the usual band, with no sign that seven
+milestones per weapon trivialises the run at the levels a bot actually reaches
+(3-6).

@@ -59,17 +59,26 @@
     "evolution_only": false,
     "sprite": "res://asset/weapon/icons/old_talisman.png",
     "milestones": {
+      "2": {
+        "pierce": 1
+      },
       "3": {
         "projectile_count": 1
+      },
+      "4": {
+        "pierce": 1
+      },
+      "5": {
+        "pierce": 1
       },
       "6": {
         "pierce": 1
       },
+      "7": {
+        "pierce": 1
+      },
       "8": {
         "projectile_count": 1
-      },
-      "5": {
-        "pierce": 1
       }
     }
   },
@@ -101,13 +110,34 @@
     },
     "sprite": "res://asset/weapon/icons/fire_talisman.png",
     "milestones": {
-      "3": {
-        "projectile_count": 1
+      "2": {
+        "on_hit_status": {
+          "dps": 1.0
+        }
       },
-      "8": {
-        "projectile_count": 1
+      "3": {
+        "pierce": 1
+      },
+      "4": {
+        "on_hit_status": {
+          "duration_sec": 0.5
+        }
       },
       "5": {
+        "projectile_count": 1
+      },
+      "6": {
+        "on_hit_status": {
+          "dps": 1.5
+        }
+      },
+      "7": {
+        "pierce": 1
+      },
+      "8": {
+        "on_hit_status": {
+          "dps": 2.0
+        },
         "projectile_count": 1
       }
     }
@@ -139,10 +169,34 @@
     },
     "sprite": "res://asset/weapon/icons/phoenix_talisman.png",
     "milestones": {
+      "2": {
+        "on_hit_status": {
+          "dps": 1.5
+        }
+      },
       "3": {
+        "pierce": 1
+      },
+      "4": {
+        "on_hit_status": {
+          "duration_sec": 0.5
+        }
+      },
+      "5": {
         "projectile_count": 1
       },
+      "6": {
+        "on_hit_status": {
+          "dps": 2.0
+        }
+      },
+      "7": {
+        "pierce": 1
+      },
       "8": {
+        "on_hit_status": {
+          "dps": 2.5
+        },
         "projectile_count": 1
       }
     }
@@ -171,15 +225,26 @@
     "sprite": "res://asset/weapon/icons/beopgeom.png",
     "pierce_retention": 0.95,
     "milestones": {
+      "2": {
+        "pierce_retention": 0.01
+      },
       "3": {
         "projectile_count": 1
       },
-      "8": {
-        "projectile_count": 1,
-        "pierce_retention": 0.02
+      "4": {
+        "pierce_retention": 0.01
       },
       "5": {
-        "pierce_retention": 0.03
+        "projectile_count": 1
+      },
+      "6": {
+        "pierce_retention": 0.01
+      },
+      "7": {
+        "projectile_count": 1
+      },
+      "8": {
+        "pierce_retention": 0.02
       }
     }
   },
@@ -210,14 +275,29 @@
     },
     "pierce_retention": 0.95,
     "milestones": {
+      "2": {
+        "pierce_retention": 0.01
+      },
       "3": {
         "projectile_count": 1
       },
-      "8": {
-        "projectile_count": 1,
+      "4": {
+        "pierce_retention": 0.01
+      },
+      "5": {
         "on_hit_seal": {
           "burst_at": -1
         }
+      },
+      "6": {
+        "projectile_count": 1
+      },
+      "7": {
+        "pierce_retention": 0.01
+      },
+      "8": {
+        "pierce_retention": 0.02,
+        "projectile_count": 1
       }
     }
   },
@@ -247,18 +327,38 @@
     },
     "evolution_only": true,
     "milestones": {
+      "2": {
+        "explosion": {
+          "radius_px": 10.0
+        }
+      },
       "3": {
         "explosion": {
-          "radius_px": 20.0
+          "radius_px": 10.0
+        }
+      },
+      "4": {
+        "explosion": {
+          "edge_falloff": 0.05
+        }
+      },
+      "5": {
+        "explosion": {
+          "radius_px": 12.0
+        }
+      },
+      "6": {
+        "explosion": {
+          "radius_px": 10.0
+        }
+      },
+      "7": {
+        "explosion": {
+          "edge_falloff": 0.05
         }
       },
       "8": {
         "projectile_count": 1
-      },
-      "5": {
-        "explosion": {
-          "radius_px": 15.0
-        }
       }
     }
   },
@@ -294,13 +394,41 @@
       "spread_radius_px": 90.0
     },
     "milestones": {
-      "3": {
+      "2": {
         "explosion": {
-          "radius_px": 20.0
+          "radius_px": 10.0
+        }
+      },
+      "3": {
+        "on_hit_status": {
+          "dps": 2.0
+        }
+      },
+      "4": {
+        "explosion": {
+          "edge_falloff": 0.05
+        }
+      },
+      "5": {
+        "explosion": {
+          "radius_px": 12.0
+        }
+      },
+      "6": {
+        "on_hit_status": {
+          "spread_radius_px": 20.0
+        }
+      },
+      "7": {
+        "explosion": {
+          "radius_px": 12.0
         }
       },
       "8": {
-        "projectile_count": 1
+        "projectile_count": 1,
+        "on_hit_status": {
+          "dps": 2.0
+        }
       }
     }
   },
@@ -331,20 +459,39 @@
     },
     "evolution_only": true,
     "milestones": {
+      "2": {
+        "chain": {
+          "range_px": 15.0
+        }
+      },
       "3": {
         "chain": {
           "jumps": 1
         }
       },
-      "8": {
+      "4": {
         "chain": {
-          "jumps": 2,
-          "falloff": 0.05
+          "falloff": 0.03
         }
       },
       "5": {
         "chain": {
           "jumps": 1
+        }
+      },
+      "6": {
+        "chain": {
+          "range_px": 20.0
+        }
+      },
+      "7": {
+        "chain": {
+          "falloff": 0.03
+        }
+      },
+      "8": {
+        "chain": {
+          "jumps": 2
         }
       }
     }
@@ -381,15 +528,39 @@
       "duration_sec": 1.5
     },
     "milestones": {
+      "2": {
+        "chain": {
+          "range_px": 15.0
+        }
+      },
       "3": {
         "chain": {
           "jumps": 1
         }
       },
+      "4": {
+        "on_hit_status": {
+          "duration_sec": 0.4
+        }
+      },
+      "5": {
+        "chain": {
+          "jumps": 1
+        }
+      },
+      "6": {
+        "chain": {
+          "range_px": 20.0
+        }
+      },
+      "7": {
+        "on_hit_status": {
+          "duration_sec": 0.4
+        }
+      },
       "8": {
         "chain": {
-          "jumps": 2,
-          "falloff": 0.05
+          "jumps": 2
         }
       }
     }
@@ -418,20 +589,40 @@
     },
     "evolution_only": false,
     "milestones": {
-      "3": {
+      "2": {
         "arc": {
-          "angle_deg": 60.0
+          "angle_deg": 15.0
         }
       },
-      "8": {
+      "3": {
         "arc": {
-          "angle_deg": 100.0,
-          "knockback_scale": 0.5
+          "knockback_scale": 0.3
+        }
+      },
+      "4": {
+        "arc": {
+          "angle_deg": 15.0
         }
       },
       "5": {
         "arc": {
-          "angle_deg": 40.0
+          "angle_deg": 20.0
+        }
+      },
+      "6": {
+        "arc": {
+          "knockback_scale": 0.3
+        }
+      },
+      "7": {
+        "arc": {
+          "angle_deg": 15.0
+        }
+      },
+      "8": {
+        "arc": {
+          "angle_deg": 25.0,
+          "knockback_scale": 0.4
         }
       }
     }
@@ -461,14 +652,39 @@
     "evolution_only": true,
     "lifesteal": 0.12,
     "milestones": {
+      "2": {
+        "arc": {
+          "angle_deg": 15.0
+        }
+      },
       "3": {
         "arc": {
-          "angle_deg": 50.0
+          "knockback_scale": 0.3
+        }
+      },
+      "4": {
+        "arc": {
+          "angle_deg": 15.0
+        }
+      },
+      "5": {
+        "arc": {
+          "angle_deg": 20.0
+        }
+      },
+      "6": {
+        "arc": {
+          "knockback_scale": 0.3
+        }
+      },
+      "7": {
+        "arc": {
+          "angle_deg": 15.0
         }
       },
       "8": {
         "arc": {
-          "angle_deg": 140.0,
+          "angle_deg": 25.0,
           "knockback_scale": 0.4
         }
       }
@@ -504,25 +720,38 @@
       "duration_sec": 2.0
     },
     "milestones": {
-      "3": {
-        "projectile_count": 1,
+      "2": {
         "orbit": {
-          "radius_px": 10.0,
-          "orb_radius_px": 2.0
+          "speed_deg_s": 12.0
+        }
+      },
+      "3": {
+        "orbit": {
+          "orb_radius_px": 1.5
+        }
+      },
+      "4": {
+        "on_hit_status": {
+          "dps": 1.0
         }
       },
       "5": {
-        "projectile_count": 1,
+        "projectile_count": 1
+      },
+      "6": {
         "orbit": {
-          "radius_px": 10.0,
-          "orb_radius_px": 2.0
+          "radius_px": 8.0
+        }
+      },
+      "7": {
+        "orbit": {
+          "speed_deg_s": 15.0
         }
       },
       "8": {
         "projectile_count": 1,
         "orbit": {
-          "speed_deg_s": 40.0,
-          "orb_radius_px": 3.0
+          "orb_radius_px": 2.0
         }
       }
     }
@@ -557,25 +786,38 @@
       "duration_sec": 3.0
     },
     "milestones": {
-      "3": {
-        "projectile_count": 1,
+      "2": {
         "orbit": {
-          "radius_px": 10.0,
-          "orb_radius_px": 2.0
+          "speed_deg_s": 12.0
+        }
+      },
+      "3": {
+        "orbit": {
+          "orb_radius_px": 1.5
+        }
+      },
+      "4": {
+        "on_hit_status": {
+          "dps": 1.5
         }
       },
       "5": {
-        "projectile_count": 1,
+        "projectile_count": 1
+      },
+      "6": {
         "orbit": {
-          "radius_px": 10.0,
-          "orb_radius_px": 2.0
+          "radius_px": 8.0
+        }
+      },
+      "7": {
+        "on_hit_status": {
+          "dps": 1.5
         }
       },
       "8": {
         "projectile_count": 1,
         "orbit": {
-          "speed_deg_s": 40.0,
-          "orb_radius_px": 3.0
+          "orb_radius_px": 2.0
         }
       }
     }
@@ -606,21 +848,39 @@
     },
     "evolution_only": false,
     "milestones": {
-      "3": {
+      "2": {
         "ward": {
-          "radius_px": 20.0,
-          "slow_scale": -0.1
+          "radius_px": 4.0
         }
       },
-      "8": {
+      "3": {
         "ward": {
-          "duration_sec": 1.0,
-          "radius_px": 25.0
+          "duration_sec": 0.3
+        }
+      },
+      "4": {
+        "ward": {
+          "radius_px": 4.0
         }
       },
       "5": {
         "ward": {
-          "duration_sec": 0.6
+          "duration_sec": 0.3
+        }
+      },
+      "6": {
+        "ward": {
+          "radius_px": 5.0
+        }
+      },
+      "7": {
+        "ward": {
+          "duration_sec": 0.4
+        }
+      },
+      "8": {
+        "ward": {
+          "radius_px": 6.0
         }
       }
     }
@@ -656,16 +916,39 @@
       "duration_sec": 2.0
     },
     "milestones": {
+      "2": {
+        "ward": {
+          "radius_px": 4.0
+        }
+      },
       "3": {
         "ward": {
-          "radius_px": 20.0,
-          "slow_scale": -0.1
+          "duration_sec": 0.3
+        }
+      },
+      "4": {
+        "on_hit_status": {
+          "dps": 1.5
+        }
+      },
+      "5": {
+        "ward": {
+          "duration_sec": 0.3
+        }
+      },
+      "6": {
+        "ward": {
+          "radius_px": 5.0
+        }
+      },
+      "7": {
+        "on_hit_status": {
+          "dps": 1.5
         }
       },
       "8": {
         "ward": {
-          "duration_sec": 1.0,
-          "radius_px": 25.0
+          "radius_px": 6.0
         }
       }
     }
@@ -696,20 +979,40 @@
     },
     "evolution_only": false,
     "milestones": {
-      "3": {
+      "2": {
         "summon": {
-          "attack_cooldown_sec": -0.15,
-          "speed": 30.0
+          "attack_cooldown_sec": -0.03
         }
       },
-      "8": {
+      "3": {
         "summon": {
-          "lifetime_sec": 6.0
+          "lifetime_sec": 1.0
+        }
+      },
+      "4": {
+        "summon": {
+          "speed": 10.0
         }
       },
       "5": {
         "summon": {
-          "lifetime_sec": 3.0
+          "lifetime_sec": 1.0
+        }
+      },
+      "6": {
+        "summon": {
+          "attack_cooldown_sec": -0.03
+        }
+      },
+      "7": {
+        "summon": {
+          "speed": 10.0
+        }
+      },
+      "8": {
+        "summon": {
+          "lifetime_sec": 2.0,
+          "attack_cooldown_sec": -0.04
         }
       }
     }
@@ -745,15 +1048,40 @@
       "duration_sec": 1.5
     },
     "milestones": {
+      "2": {
+        "summon": {
+          "attack_cooldown_sec": -0.03
+        }
+      },
       "3": {
         "summon": {
-          "attack_cooldown_sec": -0.1,
-          "speed": 30.0
+          "lifetime_sec": 1.0
+        }
+      },
+      "4": {
+        "on_hit_status": {
+          "duration_sec": 0.3
+        }
+      },
+      "5": {
+        "summon": {
+          "lifetime_sec": 1.0
+        }
+      },
+      "6": {
+        "summon": {
+          "attack_cooldown_sec": -0.03
+        }
+      },
+      "7": {
+        "on_hit_status": {
+          "duration_sec": 0.3
         }
       },
       "8": {
         "summon": {
-          "lifetime_sec": 6.0
+          "lifetime_sec": 2.0,
+          "attack_cooldown_sec": -0.04
         }
       }
     }
@@ -783,21 +1111,40 @@
     },
     "evolution_only": false,
     "milestones": {
-      "3": {
+      "2": {
         "shockwave": {
-          "radius_px": 25.0,
-          "stun_sec": 0.3
+          "radius_px": 8.0
         }
       },
-      "8": {
+      "3": {
         "shockwave": {
-          "radius_px": 35.0,
-          "knockback_scale": 0.8
+          "stun_sec": 0.1
+        }
+      },
+      "4": {
+        "shockwave": {
+          "radius_px": 8.0
         }
       },
       "5": {
         "shockwave": {
-          "radius_px": 15.0
+          "knockback_scale": 0.2
+        }
+      },
+      "6": {
+        "shockwave": {
+          "radius_px": 10.0
+        }
+      },
+      "7": {
+        "shockwave": {
+          "stun_sec": 0.1
+        }
+      },
+      "8": {
+        "shockwave": {
+          "radius_px": 12.0,
+          "stun_sec": 0.2
         }
       }
     }
@@ -831,18 +1178,40 @@
       "burst_damage_scale": 3.0
     },
     "milestones": {
+      "2": {
+        "shockwave": {
+          "radius_px": 8.0
+        }
+      },
       "3": {
         "shockwave": {
-          "radius_px": 20.0,
-          "stun_sec": 0.3
+          "stun_sec": 0.1
+        }
+      },
+      "4": {
+        "shockwave": {
+          "radius_px": 8.0
+        }
+      },
+      "5": {
+        "on_hit_seal": {
+          "burst_at": -1
+        }
+      },
+      "6": {
+        "shockwave": {
+          "radius_px": 10.0
+        }
+      },
+      "7": {
+        "shockwave": {
+          "stun_sec": 0.1
         }
       },
       "8": {
         "shockwave": {
-          "radius_px": 30.0
-        },
-        "on_hit_seal": {
-          "burst_at": -1
+          "radius_px": 12.0,
+          "stun_sec": 0.2
         }
       }
     }
@@ -876,21 +1245,40 @@
       "spread_count": 3
     },
     "milestones": {
-      "3": {
+      "2": {
         "on_hit_status": {
-          "spread_count": 1,
-          "spread_radius_px": 20.0
+          "spread_radius_px": 12.0
         }
       },
-      "8": {
+      "3": {
         "on_hit_status": {
-          "spread_count": 2,
-          "dps": 3.0
+          "spread_count": 1
+        }
+      },
+      "4": {
+        "on_hit_status": {
+          "duration_sec": 0.5
         }
       },
       "5": {
         "on_hit_status": {
           "spread_count": 1
+        }
+      },
+      "6": {
+        "on_hit_status": {
+          "spread_radius_px": 14.0
+        }
+      },
+      "7": {
+        "on_hit_status": {
+          "dps": 2.0
+        }
+      },
+      "8": {
+        "on_hit_status": {
+          "spread_count": 2,
+          "dps": 2.0
         }
       }
     }
@@ -924,16 +1312,40 @@
       "spread_count": 4
     },
     "milestones": {
+      "2": {
+        "on_hit_status": {
+          "spread_radius_px": 12.0
+        }
+      },
       "3": {
         "on_hit_status": {
-          "spread_count": 1,
-          "spread_radius_px": 20.0
+          "spread_count": 1
+        }
+      },
+      "4": {
+        "on_hit_status": {
+          "duration_sec": 0.5
+        }
+      },
+      "5": {
+        "on_hit_status": {
+          "spread_count": 1
+        }
+      },
+      "6": {
+        "on_hit_status": {
+          "spread_radius_px": 14.0
+        }
+      },
+      "7": {
+        "on_hit_status": {
+          "dps": 2.5
         }
       },
       "8": {
         "on_hit_status": {
           "spread_count": 2,
-          "dps": 3.0
+          "dps": 2.5
         }
       }
     }
