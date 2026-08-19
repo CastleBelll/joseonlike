@@ -129,6 +129,16 @@ func _field_passive_probe() -> void:
 		_player.global_position + Vector2(0.0, -40.0),
 		Pickups.KIND_PASSIVE, _player, _stage._orb_config, granted
 	)
+	# N9-57: place a SECOND one far off-screen first, so the same frame proves
+	# both halves of the feature — the badge you can see, and the arrow that
+	# says another one is out there.
+	var distant: Pickup = _stage._pickup_pool.acquire()
+	distant.launch_pickup(
+		_player.global_position + Vector2(1400.0, -900.0),
+		Pickups.KIND_PASSIVE, _player, _stage._orb_config, ids[0]
+	)
+	_stage._live_field_passives.append(distant)
+	_stage._refresh_markers()
 	# Captured BEFORE the magnet takes it: the point of the shot is what the
 	# thing looks like lying on the ground, which is the only state a player
 	# ever has to spot from a distance.

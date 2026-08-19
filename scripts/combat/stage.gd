@@ -77,6 +77,8 @@ var _live_field_passives: Array[Pickup] = []
 ## Lifetime count, for the harness: a run that places none has the feature
 ## switched off in all but name, and nothing else would say so.
 var _field_passives_placed: int = 0
+## N9-57: edge arrows for the drops that are deliberately off-screen.
+var _markers: OffscreenMarkers
 var _replaced_weapons: Array[String] = []
 # N4-9 rarity evidence: the run second each SPECIAL material dropped at —
 # the playtest harness reads this to prove the intended drop rate.
@@ -1388,6 +1390,7 @@ func _tick_field_passives(delta: float) -> void:
 			continue
 		kept.append(pickup)
 	_live_field_passives = kept
+	_refresh_markers()
 	_field_passive_wait -= delta
 	if _field_passive_wait > 0.0:
 		return
@@ -1430,6 +1433,20 @@ func _collect_field_passive(passive_id: String) -> void:
 	_refresh_run_scalars()
 	_refresh_weapon_scales()
 	_float_label("%s +1" % String(entry.get("name_ko", passive_id)))
+
+
+## N9-57 (owner: "무언가가 있다는 화살표 표시나 이런게 필요할거고"). Points at
+## every field passive that is currently off-screen. Built lazily so a harness
+## that never places one never pays for the node.
+func _refresh_markers() -> void:
+	if _markers == null:
+		_markers = OffscreenMarkers.new()
+		_markers.name = "OffscreenMarkers"
+		$Hud.add_child(_markers)
+	var positions: Array[Vector2] = []
+	for pickup: Pickup in _live_field_passives:
+		positions.append(pickup.global_position)
+	_markers.track(positions)
 
 
 ## N5-5 pickup effects, each applied at collection so the player walked to it.
