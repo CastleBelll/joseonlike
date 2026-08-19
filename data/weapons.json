@@ -636,17 +636,17 @@
     "category": "spiritual",
     "grade": "common",
     "mechanic": "orbit",
-    "damage": 6.0,
+    "damage": 10.2,
     "cooldown_sec": 0.9,
-    "projectile_count": 2,
+    "projectile_count": 1,
     "pierce": 0,
     "area_scale": 1.0,
     "speed": 0.0,
     "range_px": 80.0,
     "orbit": {
-      "radius_px": 90.0,
+      "radius_px": 84.0,
       "speed_deg_s": 170.0,
-      "orb_radius_px": 10.0
+      "orb_radius_px": 13.0
     },
     "max_level": 8,
     "per_level": {
@@ -662,12 +662,14 @@
     "milestones": {
       "2": {
         "orbit": {
-          "speed_deg_s": 12.0
+          "radius_px": 8.0,
+          "speed_deg_s": 10.0
         }
       },
       "3": {
+        "projectile_count": 1,
         "orbit": {
-          "orb_radius_px": 1.5
+          "radius_px": 6.0
         }
       },
       "4": {
@@ -676,11 +678,15 @@
         }
       },
       "5": {
-        "projectile_count": 1
+        "projectile_count": 1,
+        "orbit": {
+          "orb_radius_px": 1.5
+        }
       },
       "6": {
         "orbit": {
-          "radius_px": 8.0
+          "radius_px": 6.0,
+          "speed_deg_s": 12.0
         }
       },
       "7": {
@@ -702,17 +708,17 @@
     "category": "spiritual",
     "grade": "epic",
     "mechanic": "orbit",
-    "damage": 8.0,
+    "damage": 10.8,
     "cooldown_sec": 0.8,
-    "projectile_count": 3,
+    "projectile_count": 2,
     "pierce": 0,
     "area_scale": 1.0,
     "speed": 0.0,
     "range_px": 90.0,
     "orbit": {
-      "radius_px": 98.0,
+      "radius_px": 88.0,
       "speed_deg_s": 190.0,
-      "orb_radius_px": 11.0
+      "orb_radius_px": 14.0
     },
     "max_level": 8,
     "per_level": {
@@ -728,12 +734,14 @@
     "milestones": {
       "2": {
         "orbit": {
-          "speed_deg_s": 12.0
+          "radius_px": 8.0,
+          "speed_deg_s": 10.0
         }
       },
       "3": {
+        "projectile_count": 1,
         "orbit": {
-          "orb_radius_px": 1.5
+          "radius_px": 6.0
         }
       },
       "4": {
@@ -742,16 +750,20 @@
         }
       },
       "5": {
-        "projectile_count": 1
+        "projectile_count": 1,
+        "orbit": {
+          "orb_radius_px": 1.5
+        }
       },
       "6": {
         "orbit": {
-          "radius_px": 8.0
+          "radius_px": 6.0,
+          "speed_deg_s": 12.0
         }
       },
       "7": {
-        "on_hit_status": {
-          "dps": 1.5
+        "orbit": {
+          "speed_deg_s": 15.0
         }
       },
       "8": {

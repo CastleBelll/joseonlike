@@ -3023,3 +3023,42 @@ Tests 370/370, validate 17 files PASS. Three seeds: 2 victories (380.0s,
 404.1s), 1 defeat (270.5s) — the usual band, with no sign that seven
 milestones per weapon trivialises the run at the levels a bot actually reaches
 (3-6).
+
+---
+
+# N9-45 — 혼불 starts as one close orb (2026-08-19)
+
+Owner: 혼불 should not begin with two orbs, they sit too far from the
+character, and the weapon should grow into them.
+
+The straightforward reading — fewer orbs, tighter ring — is a trap this
+project already walked into once. N4-3 measured the orbit radius at 70
+collapsing 혼불's dps from 9.9 to 1.4, because enemies chasing the player hover
+just outside a small ring. Doing both at once measured **0.5 dps at level 1**,
+against a **pre-change baseline of 11.9** on the same seed. A starting weapon
+at 0.5 dps is not a slow start, it is a dead pick.
+
+What actually works is trading ring radius for ORB radius — the same lever
+N4-3 used in the opposite direction — plus base damage to cover the lost orb.
+
+| | before | after |
+|---|---|---|
+| 혼불 L1 | 2 orbs, ring 90, orb 10 | **1 orb, ring 84, orb 13** |
+| 혼불 damage | 6.0 | **10.2** |
+| 화령 혼불 L1 | 3 orbs, ring 98, orb 11 | **2 orbs, ring 88, orb 14** |
+
+Orbs are gained at levels 3, 5 and 8, and the ring widens at 2, 3 and 6, so
+the weapon reaches its working reach early rather than staying dead while it
+levels.
+
+## Measured (seed 7, forced build, --nopick)
+
+| Level | dps |
+|---|---|
+| 1 | **10.1** (baseline before the change: 11.9) |
+| 5 | 31.9 |
+| 8 | 47.5 |
+
+Level 1 lands within noise of where it was, so the weapon is still a fair
+first pick, and it climbs to nearly 5x that by max — which is the growth the
+owner asked to see. A returning run stays at a 400.3s victory, fps 144-145.
