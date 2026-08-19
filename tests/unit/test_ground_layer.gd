@@ -8,8 +8,8 @@ const SEED_A := 12345
 const SEED_B := 54321
 ## N6-5 quiet-floor bound: measured 4.0-5.3% across three seeds at the 0.42
 ## threshold — loose bound so the check pins "sparse", not one calibration.
-const MIN_DENSITY := 0.02
-const MAX_DENSITY := 0.10
+const MIN_DENSITY := 0.08
+const MAX_DENSITY := 0.24
 ## An i.i.d. per-tile scatter at ~15% density gives each variant tile only
 ## a ~1-0.85^4=48% chance of touching another variant tile. Clustered noise
 ## patches push this well above that; this is the line that actually

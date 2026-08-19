@@ -28,13 +28,17 @@ const VIEW_MARGIN_PX := 64.0
 ## Density noise: high frequency relative to the field so patches span a
 ## handful of tiles ("large soft patches"), not single scattered cells.
 const DENSITY_FREQUENCY := 0.09
-## N6-5 quiet floor: raised from 0.27 (~10-20% variant tiles) so only ~4-8%
-## of tiles clear the threshold — the floor recedes, the props carry the eye
-## (see tests/unit/test_ground_layer.gd for the measured bound).
-const DENSITY_THRESHOLD := 0.42
-## N6-5 contrast cut: variants draw OVER the base tile at partial alpha
-## instead of replacing it, so every patch sits closer to the base tone.
-const VARIANT_ALPHA := 0.55
+## N9-33 (owner direction): N6-5 pushed this to 0.42 (~4-8% of tiles) to quiet
+## the floor, but with the props now clustered into themed places the gaps
+## between them read as black void rather than ground, which made each prop
+## look dropped at random. Back down to ~12-18% coverage — enough that the
+## floor is a PLACE, still far from the pre-N6-5 jumble.
+## Measured bound lives in tests/unit/test_ground_layer.gd.
+const DENSITY_THRESHOLD := 0.30
+## Variants draw OVER the base tile rather than replacing it, so a patch stays
+## close to the base tone. Raised with the density: at 0.55 the larger coverage
+## was still too faint to register as ground.
+const VARIANT_ALPHA := 0.68
 ## Much lower frequency so one patch reads as one variant flavor, not a
 ## jumble of three.
 const TYPE_FREQUENCY := 0.015
