@@ -40,6 +40,36 @@ static func roll_drops(
 	return dropped
 
 
+## N9-24 first-elite floor: one special from this table, drawn in proportion to
+## the table's own chances, so the guarantee can never hand out a material the
+## table was not already willing to give. Empty string when the table holds no
+## special at all — the caller then guarantees nothing rather than invent an id.
+static func weighted_special(
+	table: Dictionary, rng: RandomNumberGenerator, loot_data: Dictionary
+) -> String:
+	var ids: Array[String] = []
+	var weights: Array[float] = []
+	var total: float = 0.0
+	for entry: Dictionary in table.get("drops", []):
+		var loot_id: String = String(entry.get("loot_id", ""))
+		if not bool((loot_data.get(loot_id, {}) as Dictionary).get("special", false)):
+			continue
+		var weight: float = float(entry.get("chance", 0.0))
+		if weight <= 0.0:
+			continue
+		ids.append(loot_id)
+		weights.append(weight)
+		total += weight
+	if ids.is_empty():
+		return ""
+	var roll: float = rng.randf() * total
+	for i: int in range(ids.size()):
+		roll -= weights[i]
+		if roll <= 0.0:
+			return ids[i]
+	return ids[ids.size() - 1]
+
+
 static func tier_color(loot_data: Dictionary, loot_id: String) -> Color:
 	var tier: String = String((loot_data.get(loot_id, {}) as Dictionary).get("tier", ""))
 	return TIER_COLORS.get(tier, UiPalette.LOOT_COMMON)

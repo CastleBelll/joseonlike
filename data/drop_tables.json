@@ -1,10 +1,11 @@
 {
   "_config": {
     "special_chance_max": {
-      "trash": 0.005,
-      "elite": 0.4,
+      "trash": 0.015,
+      "elite": 0.7,
       "boss": 2.0
-    }
+    },
+    "first_elite_special": true
   },
   "forest_goblin": {
     "drops": [
@@ -30,7 +31,7 @@
       },
       {
         "loot_id": "dokkaebi_flame",
-        "chance": 0.005
+        "chance": 0.015
       }
     ]
   },
@@ -50,23 +51,23 @@
       },
       {
         "loot_id": "fire_spirit_stone",
-        "chance": 0.18
+        "chance": 0.315
       },
       {
         "loot_id": "cinnabar",
-        "chance": 0.07
+        "chance": 0.122
       },
       {
         "loot_id": "thunder_stone",
-        "chance": 0.05
+        "chance": 0.087
       },
       {
         "loot_id": "ghost_iron",
-        "chance": 0.04
+        "chance": 0.07
       },
       {
         "loot_id": "dokkaebi_flame",
-        "chance": 0.06
+        "chance": 0.105
       }
     ]
   },

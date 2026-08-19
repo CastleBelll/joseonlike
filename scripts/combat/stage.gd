@@ -73,6 +73,11 @@ var _replaced_weapons: Array[String] = []
 # N4-9 rarity evidence: the run second each SPECIAL material dropped at —
 # the playtest harness reads this to prove the intended drop rate.
 var _special_drop_times: Array[float] = []
+# N9-24: the run's first elite always leaves one evolution material. Raising
+# the average alone still left whole runs at zero specials, and a run with zero
+# materials cannot evolve at any gate level — this removes those dead runs
+# instead of inflating the already-lucky ones further.
+var _first_elite_resolved: bool = false
 
 # N5-5 destructibles + elite chests: pickup table data, pooled pickup/chest
 # entities, and the chest reward queue. _chest_pending counts rewards still
@@ -998,6 +1003,18 @@ func _load_json(path: String) -> Dictionary:
 	return data
 
 
+## True when the first elite's own roll produced no special and the data asks
+## for the floor. A roll that already dropped one needs no help.
+func _first_elite_guarantee_due(drops: Array[String]) -> bool:
+	var config: Dictionary = _drop_tables.get("_config", {})
+	if not bool(config.get("first_elite_special", false)):
+		return false
+	for loot_id: String in drops:
+		if bool((_loot_data.get(loot_id, {}) as Dictionary).get("special", false)):
+			return false
+	return true
+
+
 ## Roll the dead monster's drop table and scatter tier-tinted drops around
 ## the corpse so they never hide under the XP orb.
 func _spawn_loot(enemy: Enemy) -> void:
@@ -1010,6 +1027,12 @@ func _spawn_loot(enemy: Enemy) -> void:
 	# N6-1 scripted first run: any overdue guarantee rides the next kill; a
 	# natural drop of the same loot earlier satisfies it via _first_run_log.
 	drops.append_array(Ftue.due_guarantees(_first_run_drops, _run_elapsed, _first_run_log))
+	if enemy.is_elite and not _first_elite_resolved:
+		_first_elite_resolved = true
+		if _first_elite_guarantee_due(drops):
+			var granted: String = Loot.weighted_special(table, _loot_rng, _loot_data)
+			if not granted.is_empty():
+				drops.append(granted)
 	for loot_id: String in drops:
 		# Boss drops land as the run ends — a trophy, not evolution currency —
 		# so the rarity metric counts only specials a build can still use.

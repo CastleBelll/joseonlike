@@ -198,3 +198,68 @@ func test_level_up_card_carries_display_fields() -> bool:
 		and String(card["well_label"]) == "Lv.2"
 		and not String(card["desc"]).is_empty()
 	)
+
+
+# N9-24 first-elite floor: the guarantee draws from the table's own special
+# entries, weighted by their chances, so it can never invent a material the
+# table was unwilling to give.
+const FLOOR_LOOT := {
+	"plain": {"name_ko": "대나무", "tier": "common"},
+	"rare_a": {"name_ko": "화령석", "tier": "epic", "special": true},
+	"rare_b": {"name_ko": "뇌정석", "tier": "epic", "special": true},
+}
+
+
+func test_weighted_special_only_ever_returns_a_special() -> bool:
+	var table := {"drops": [
+		{"loot_id": "plain", "chance": 0.9},
+		{"loot_id": "rare_a", "chance": 0.1},
+	]}
+	var rng := RandomNumberGenerator.new()
+	for seed_value: int in range(25):
+		rng.seed = seed_value
+		if Loot.weighted_special(table, rng, FLOOR_LOOT) != "rare_a":
+			return false
+	return true
+
+
+func test_weighted_special_respects_the_table_weights() -> bool:
+	var table := {"drops": [
+		{"loot_id": "rare_a", "chance": 0.9},
+		{"loot_id": "rare_b", "chance": 0.1},
+	]}
+	var rng := RandomNumberGenerator.new()
+	var a_count: int = 0
+	for seed_value: int in range(200):
+		rng.seed = seed_value
+		if Loot.weighted_special(table, rng, FLOOR_LOOT) == "rare_a":
+			a_count += 1
+	# 90/10 weights: a wide band, but a uniform pick would sit near 100.
+	return a_count > 150 and a_count < 200
+
+
+func test_weighted_special_returns_nothing_for_a_table_with_no_special() -> bool:
+	var table := {"drops": [{"loot_id": "plain", "chance": 1.0}]}
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1
+	return Loot.weighted_special(table, rng, FLOOR_LOOT).is_empty()
+
+
+func test_weighted_special_ignores_a_zero_chance_special() -> bool:
+	# A disabled entry must not become guaranteed by the floor.
+	var table := {"drops": [
+		{"loot_id": "rare_a", "chance": 0.0},
+		{"loot_id": "rare_b", "chance": 0.2},
+	]}
+	var rng := RandomNumberGenerator.new()
+	for seed_value: int in range(20):
+		rng.seed = seed_value
+		if Loot.weighted_special(table, rng, FLOOR_LOOT) != "rare_b":
+			return false
+	return true
+
+
+func test_weighted_special_handles_an_empty_table() -> bool:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 3
+	return Loot.weighted_special({}, rng, FLOOR_LOOT).is_empty()

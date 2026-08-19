@@ -2832,3 +2832,62 @@ The pause screen now prints 무기 n/4 and 패시브 n/4 with a (가득 참) mar
 without it, "new cards stopped appearing" reads as a bug. The 개조 경로 lines
 append "Lv.N 필요" while the base weapon is under the gate, so holding the
 material at level 2 no longer shows a bare ✓ that produces no card.
+
+---
+
+# N9-24 — Evolution material supply raised, and a floor under it (2026-08-19)
+
+Owner direction after N9-23: "재료 드랍률도 좀 올려줘". With the gate at level 5
+the binding constraint had moved from investment to supply, and a run that
+drops zero materials cannot evolve at any gate level.
+
+## Rates
+
+| Source | Before | After | Note |
+|---|---|---|---|
+| Elite special sum | 0.40 | **0.70** | was already sitting exactly on its validator cap, so the cap moved with it |
+| Trash (숲 정령 도깨비불) | 0.005 | **0.015** | cap 0.005 → 0.015 |
+| Boss special sum | 2.0 | **2.0 (unchanged)** | see below |
+
+The boss is deliberately untouched. A boss kill ends the run inside the same
+call (N6-5), so its drops are never collected — raising that number would
+change nothing a player can see, and would only inflate the data.
+
+## The floor
+
+Raising the average did not remove runs that ended with zero materials, and
+those runs are the ones the change was for. The run's **first elite kill now
+always leaves one special**, unless its own roll already produced one. The
+guaranteed material is drawn from that monster's own drop table weighted by
+its own chances, so the floor can never hand out something the table was
+unwilling to give (`Loot.weighted_special`, five unit tests).
+
+## Measured (10 runs each)
+
+| | before | after |
+|---|---|---|
+| Random-pick bot, specials | 27 (8/10 runs) | **48 (10/10 runs)** |
+| Random-pick bot, per run | 2.7 | **4.8** |
+| Forced-build bot, specials | 36 (8/10) | 43 (6/10) |
+| Forced-build bot, evolutions | 5 | **9 (4/10 runs)** |
+
+## The dry runs that are left, and why they are not a drop-rate problem
+
+Four forced-build runs still ended with zero materials. Probed seed 2001:
+survived to 372.7s and killed **zero elites**. A single-weapon build cannot
+break a 6x-HP elite, and elites are the material source, so the floor never
+fires — by design, not by accident.
+
+That is a damage problem wearing a drop-rate costume, and it is a real doom
+loop: too weak to kill an elite → no material → no evolution → still weak. If
+it should be broken, the lever is a time-based backstop ("first special by
+3:00 regardless of what killed it") or a small material chance on destructible
+props — NOT another rate increase, which only makes strong runs richer.
+Deliberately left as an owner decision rather than folded in here.
+
+## Unfocused play
+
+Worth stating plainly alongside N9-23: the random-pick bot's evolutions fell
+from 4/10 runs to 1/10. That is the level-5 gate doing exactly what it was
+asked to do — spreading picks across four weapons no longer reaches it. Focus
+is now the price of evolution.
