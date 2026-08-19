@@ -12,6 +12,8 @@ extends Node
 const STAGE_SCENE := "res://scenes/stage.tscn"
 const SETTLE_FRAMES := 6
 const FRAMES_PER_PAGE := 10
+## cos(~37°): the stick may clamp the pull, never turn it.
+const DIRECTION_TOLERANCE := 0.8
 
 var _stage: Stage
 var _spawner: Spawner
@@ -19,15 +21,27 @@ var _guide: GuideDialog
 var _step: int = 0
 var _page: int = -1
 var _failed: bool = false
+var _finger: int = 0
+var _finger_down: bool = false
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Accumulated input merges drags and flushes them at frame end; the probe
+	# reads the stick on the same line it sends the drag, so it needs each
+	# event delivered as it is parsed.
+	Input.use_accumulated_input = false
 	# A fresh profile is what puts the guide on screen at all. In memory only —
 	# the harness must never write over a real save.
 	if SaveService.instance != null:
 		SaveService.instance.profile = SaveProfile.default_profile()
 	_stage = (load(STAGE_SCENE) as PackedScene).instantiate()
+	# The harness runs while paused so it can drive the guide, but the stage
+	# must NOT inherit that: shipped, it is the scene root and pauses with the
+	# tree. Hanging it under an ALWAYS node kept the whole world — joystick
+	# included — receiving input through every pause, which is precisely the
+	# condition the reported bug needs, so the probe would have passed forever.
+	_stage.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(_stage)
 	_spawner = _stage.get_node("World/Spawner")
 
@@ -75,7 +89,77 @@ func _check_page(index: int) -> void:
 		index, await_action if not await_action.is_empty() else "-",
 		str(_spawner.waves_held), _spawner.active_enemies().size()
 	])
+	_probe_touch(index, await_action)
 	_capture("user://tutorial_page_%d.png" % index)
+
+
+## Puts a real finger on the screen where the script asks the player to act.
+## The move page leaves it DOWN across the page change — that is the reported
+## sequence, and the pause that follows is what used to swallow the release and
+## strand the captured index, so the kill page's drag then went nowhere.
+func _probe_touch(index: int, await_action: String) -> void:
+	if await_action == Ftue.AWAIT_MOVE:
+		_probe_drag(index, Vector2(0.0, -50.0))
+		_finger_down = true
+		return
+	if await_action.is_empty():
+		# A tap-through page freezes the world. The player lifts their thumb to
+		# reach the button, and THAT release is the one the stick never saw.
+		if _finger_down:
+			_release_finger()
+		return
+	if await_action == Ftue.AWAIT_KILL:
+		# A different direction on purpose: a stick that never let go would
+		# still be reporting the move page's upward pull, which any
+		# "produced some output" check would wave through.
+		_probe_drag(index, Vector2(50.0, 0.0))
+		_release_finger()
+
+
+## N9-50 (owner report: "도깨비 잡아보는거에서 드래그하면 조이스틱이 굳어서
+## 안움직여"). Every earlier check faked the guide's actions, so no probe ever
+## put a finger on the screen — and the guide is exactly where a swallowed
+## touch hides (N9-44 was the same family). Each page that asks the player to
+## act gets a real press and drag through Input, and the stick has to answer.
+##
+## The move page deliberately keeps the finger DOWN through the page change:
+## that is the reported sequence, and the pause that follows is what used to
+## eat the release and strand the captured index.
+## The drag DIRECTION is what gets asserted, not merely "some output": a stick
+## still holding the previous finger keeps reporting the previous vector, which
+## a non-zero check would happily accept as working.
+func _probe_drag(index: int, pull: Vector2) -> void:
+	var origin := Vector2(160.0 + 40.0 * float(index), 700.0)
+	_send_touch(origin, true)
+	_send_drag(origin + pull)
+	var output: Vector2 = _stage._joystick.output
+	var want: Vector2 = pull.normalized()
+	if output.normalized().dot(want) < DIRECTION_TOLERANCE:
+		_fail("page %d: dragged %s, stick reported %s" % [index, want, output])
+	else:
+		print("CHECK page %d drag %s -> stick %s" % [index, want, output])
+
+
+## Lifts the finger with a fresh index, the way the next real touch arrives.
+func _release_finger() -> void:
+	_send_touch(Vector2(160.0, 650.0), false)
+	_finger += 1
+	_finger_down = false
+
+
+func _send_touch(at: Vector2, pressed: bool) -> void:
+	var event := InputEventScreenTouch.new()
+	event.index = _finger
+	event.position = at
+	event.pressed = pressed
+	Input.parse_input_event(event)
+
+
+func _send_drag(to: Vector2) -> void:
+	var event := InputEventScreenDrag.new()
+	event.index = _finger
+	event.position = to
+	Input.parse_input_event(event)
 
 
 ## Fakes whatever the page is waiting for, so the probe can walk the whole

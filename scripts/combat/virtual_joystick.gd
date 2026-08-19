@@ -45,6 +45,17 @@ static func output_vector(origin: Vector2, touch: Vector2, radius: float) -> Vec
 	return knob_offset(origin, touch, radius) / radius
 
 
+## A pause stops this node receiving input, so the touch-release that ends the
+## current drag is never delivered — the captured finger index would survive
+## into the unpaused world and reject every later touch, leaving the stick
+## frozen at a stale origin. Every screen that freezes the run (guide pages,
+## level-up cards, pause, result) goes through the tree pause, so releasing
+## here covers all of them at once instead of at each call site.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PAUSED:
+		_release()
+
+
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		_handle_touch(event)

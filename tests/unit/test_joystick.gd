@@ -40,3 +40,38 @@ func test_output_zero_at_origin_and_degenerate_radius() -> bool:
 	var still: Vector2 = TouchJoystick.output_vector(origin, origin, RADIUS)
 	var degenerate: Vector2 = TouchJoystick.output_vector(origin, origin + Vector2.ONE, 0.0)
 	return still == Vector2.ZERO and degenerate == Vector2.ZERO
+
+
+## N9-50 (owner report: the stick froze on the guide's kill page and stayed
+## frozen). A pause takes this node out of input, so the release that ends the
+## drag never arrives. The stick has to let the finger go when the world
+## freezes, or it keeps the index forever and every later touch is refused.
+func test_pause_releases_the_captured_finger() -> bool:
+	var stick := TouchJoystick.new()
+	_press(stick, 0, Vector2(100.0, 800.0))
+	_drag(stick, 0, Vector2(100.0, 740.0))
+	var moving: bool = (stick.output - Vector2(0.0, -1.0)).length() < EPSILON
+	stick._notification(Node.NOTIFICATION_PAUSED)
+	var stopped: bool = stick.output == Vector2.ZERO
+	# The next touch must anchor a NEW origin: with the finger still captured
+	# the press is ignored and this drag reads from where the run started.
+	_press(stick, 0, Vector2(300.0, 300.0))
+	_drag(stick, 0, Vector2(360.0, 300.0))
+	var reanchored: bool = (stick.output - Vector2(1.0, 0.0)).length() < EPSILON
+	stick.free()
+	return moving and stopped and reanchored
+
+
+func _press(stick: TouchJoystick, index: int, at: Vector2) -> void:
+	var event := InputEventScreenTouch.new()
+	event.index = index
+	event.position = at
+	event.pressed = true
+	stick._input(event)
+
+
+func _drag(stick: TouchJoystick, index: int, to: Vector2) -> void:
+	var event := InputEventScreenDrag.new()
+	event.index = index
+	event.position = to
+	stick._input(event)
