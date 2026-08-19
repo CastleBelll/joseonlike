@@ -81,6 +81,12 @@ func test_profile_migration_coerces_a_junk_unlock_list() -> bool:
 	var profile: Dictionary = SaveProfile.default_profile()
 	profile[Unlocks.PROFILE_KEY] = ["map", "map", 7, ""]
 	var clean: Dictionary = SaveProfile.migrate(profile)
+	# Checked before indexing: a migrate that aborted returns an EMPTY profile,
+	# and indexing it would report a key error instead of the real failure —
+	# that the migration dropped everything the player owns.
+	if not clean.has(Unlocks.PROFILE_KEY):
+		push_error("test_unlocks: migrate returned a profile with no unlocks key")
+		return false
 	return (clean[Unlocks.PROFILE_KEY] as Array) == ["map", "7"]
 
 

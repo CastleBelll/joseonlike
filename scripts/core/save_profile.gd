@@ -48,6 +48,10 @@ static func default_profile() -> Dictionary:
 		"ftue": Ftue.default_flags(),
 		"meta_tree": {},
 		"bestiary": Bestiary.default_record(),
+		# N9-58: permanent unlocks, stored as ids only. Validation against the
+		# unlock data happens at the consumer (Unlocks.owned), the same split
+		# meta_tree and bestiary already use.
+		Unlocks.PROFILE_KEY: [],
 	}
 
 
@@ -110,6 +114,19 @@ static func migrate(profile: Dictionary) -> Dictionary:
 	# default fill above; a present one is re-coerced into shape here. Unknown
 	# ids are pruned against game data at the consumer (Bestiary.prune_record).
 	merged["bestiary"] = Bestiary.normalized_record(merged["bestiary"])
+	# N9-58: coerced to a list of strings so a hand-edited save cannot make a
+	# consumer iterate over dictionaries or numbers. Unknown ids are pruned
+	# against the data at the consumer, not here.
+	var unlocks: Array = []
+	for raw: Variant in (merged.get(Unlocks.PROFILE_KEY, []) as Array):
+		# Formatted, not converted. The String constructor rejects a Variant
+		# that is already a String, and a conversion that throws inside migrate
+		# aborts it — which hands the caller an EMPTY profile, wiping gold, the
+		# tree and every unlock. Formatting cannot fail whatever is in the list.
+		var id: String = "%s" % raw
+		if not id.is_empty() and not unlocks.has(id):
+			unlocks.append(id)
+	merged[Unlocks.PROFILE_KEY] = unlocks
 	return merged
 
 
