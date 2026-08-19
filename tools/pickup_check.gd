@@ -224,6 +224,11 @@ func _collect_buttons(node: Node, found: Array[Button]) -> void:
 
 
 func _shot(name_part: String) -> void:
+	# N9-51: frame_post_draw never fires without a rendering device, so this
+	# await hung the whole probe forever headless — the assertions below it
+	# could not run at all, and CI had no way to execute this check.
+	if DisplayServer.get_name() == "headless":
+		return
 	await RenderingServer.frame_post_draw
 	var path: String = "user://pickup_check_%s.png" % name_part
 	get_viewport().get_texture().get_image().save_png(path)

@@ -62,10 +62,11 @@ jobs:
           # Imported TWICE on purpose. On a COLD .godot a resource can be parsed
           # before its dependency finishes importing — asset/ui_theme.tres
           # references the font and reports "Parse Error: referenced non-existent
-          # resource" on the first pass, then resolves on the second. This job
-          # passes today only because its .godot cache is warm; a cache eviction
-          # would fail main for something that is not a real error. Proven by
-          # web-deploy run 32218173780, which started with no cache at all.
+          # resource" on the first pass, then resolves on the second. Before the
+          # second pass landed, this job passed only because its .godot cache was
+          # warm and a cache eviction would have failed main for something that is
+          # not a real error. Proven by web-deploy run 32218173780, which started
+          # with no cache at all.
           #
           # The old `import_exit=$?` after a pipe read tee's status, never
           # Godot's, so that guard could not fire. `set -o pipefail` above is
@@ -108,5 +109,37 @@ jobs:
           fi
           if [ "$validate_exit" -ne 0 ]; then
             echo "::error::tools/validate_data.gd exited with status $validate_exit"
+            exit 1
+          fi
+
+      # The unit suite cannot see anything that only exists once a scene is
+      # running: a held tutorial, a swallowed touch, a projectile that never
+      # leaves. Those live in the evidence harnesses, and until now nothing ran
+      # them but a human — which is how n64_check sat red (the first-run guide
+      # held its weapons) and pickup_check hung forever headless (it awaited a
+      # frame that never draws) without anyone noticing.
+      #
+      # Every harness here self-asserts and exits non-zero on failure. They are
+      # run in one step so a single red one does not hide the rest, and the
+      # whole set costs about half a minute.
+      - name: Run scene harnesses (headless)
+        timeout-minutes: 6
+        run: |
+          # Without pipefail the `if !` below reads tee's status, never Godot's,
+          # and every harness would look green no matter what it exited with.
+          set -o pipefail
+          failed=""
+          for harness in creep_check meta_flow_check music_check n64_check \
+                         pickup_check shadow_check tutorial_check; do
+            echo "--- $harness"
+            if ! "$GODOT" --headless --path . "res://tools/$harness.tscn" 2>&1 | tee "$harness.log"; then
+              failed="$failed $harness"
+            elif grep -Eq "SCRIPT ERROR|Parse Error" "$harness.log"; then
+              echo "::error::$harness logged a script error"
+              failed="$failed $harness"
+            fi
+          done
+          if [ -n "$failed" ]; then
+            echo "::error::scene harnesses failed:$failed"
             exit 1
           fi

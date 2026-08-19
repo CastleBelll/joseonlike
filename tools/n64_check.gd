@@ -28,6 +28,17 @@ var _failed: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# N9-51: a RETURNING profile, in memory only (the dev's save on disk is
+	# never touched). Without it the first-run guide opens and holds every
+	# weapon's fire until its combat page — this probe fires at one second and
+	# saw nothing, so it had been reporting "no projectile fired" ever since
+	# the staged tutorial landed. It tests targeting, not the tutorial.
+	if SaveService.instance != null:
+		var returning: Dictionary = SaveProfile.default_profile()
+		(returning["stats"] as Dictionary)["runs_played"] = 1
+		returning[Ftue.FTUE_KEY] = {Ftue.MOVE_HINT_SEEN: true, Ftue.MOD_EXPLAINED: true}
+		SaveService.instance.profile = returning
+		SaveService.instance._write_locked = true
 	_stage = (load(STAGE_SCENE) as PackedScene).instantiate()
 	add_child(_stage)
 	_player = _stage.get_node("World/Player")
