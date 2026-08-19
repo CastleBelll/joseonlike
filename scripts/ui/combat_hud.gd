@@ -465,6 +465,10 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 	var extra_height: float = 0.0
 
 	if not weapons.is_empty():
+		# N9-23: the build has slots now, so the pause screen says how many are
+		# spent — otherwise "no new weapons are being offered" reads as a bug.
+		_build_section.add_child(_slot_header("무기", weapons.size(), LevelUp.WEAPON_SLOTS))
+		extra_height += BUILD_PASSIVE_ROW_HEIGHT
 		var grid := GridContainer.new()
 		grid.name = "WeaponGrid"
 		grid.columns = BUILD_WEAPON_COLUMNS
@@ -477,6 +481,10 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		extra_height += weapon_rows * BUILD_CELL_HEIGHT + UiPalette.SPACE_SM
 
 	if not passives.is_empty():
+		_build_section.add_child(
+			_slot_header("패시브", passives.size(), LevelUp.PASSIVE_SLOTS)
+		)
+		extra_height += BUILD_PASSIVE_ROW_HEIGHT
 		var grid := GridContainer.new()
 		grid.name = "PassiveGrid"
 		grid.columns = BUILD_PASSIVE_COLUMNS
@@ -513,6 +521,19 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 	var half: float = (OVERLAY_PANEL_HEIGHT + extra_height) / 2.0
 	_pause_panel.offset_top = -half
 	_pause_panel.offset_bottom = half
+
+
+## "무기 3/4" — reads GOLD while a slot is open and muted once the build is
+## closed, so the player can see at a glance why new cards stopped appearing.
+func _slot_header(title: String, taken: int, total: int) -> Label:
+	var full: bool = taken >= total
+	var header: Label = _label(
+		"%s %d/%d%s" % [title, taken, total, "  (가득 참)" if full else ""],
+		UiPalette.FONT_SIZE_LABEL,
+		UiPalette.TEXT_MUTED_ON_PAPER if full else UiPalette.VERMILION
+	)
+	header.name = title + "Slots"
+	return header
 
 
 ## One weapon cell: dark icon well with the weapon icon (letter fallback for

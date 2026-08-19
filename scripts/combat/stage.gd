@@ -907,11 +907,18 @@ func _evolution_lines() -> Array[String]:
 			continue
 		var loot_id: String = String(mod.get("loot_id", ""))
 		var held: bool = int(_run_state.inventory.get(loot_id, 0)) > 0
-		lines.append("%s → %s · %s%s" % [
+		# N9-23: the gate moved to Lv.5, so the line has to say what is still
+		# missing — holding the material with the level unmet used to read as a
+		# ✓ that never produced a card.
+		var need: int = int(mod.get("level_required", 1))
+		var level: int = int(_owned_levels[base_id])
+		var gate: String = "" if level >= need else "  Lv.%d 필요" % need
+		lines.append("%s → %s · %s%s%s" % [
 			String((_weapons_data.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
 			String((_weapons_data.get(result_id, {}) as Dictionary).get("name_ko", result_id)),
 			String((_loot_data.get(loot_id, {}) as Dictionary).get("name_ko", loot_id)),
 			" ✓" if held else " 필요",
+			gate,
 		])
 	return lines
 

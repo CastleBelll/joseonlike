@@ -569,3 +569,83 @@ func test_describe_marks_a_milestone_level_up_card() -> bool:
 	)
 	return marked.contains(LevelUp.MILESTONE_MARK) \
 		and not plain.contains(LevelUp.MILESTONE_MARK)
+
+
+# N9-23 build slots: the pool must stop offering NEW weapons and NEW passives
+# once the build is full, which is what lets a focused player actually reach
+# the level-5 개조 gate instead of being handed a grab bag.
+const SLOT_WEAPONS := {
+	"w1": {"name_ko": "1", "damage": 5.0, "cooldown_sec": 1.0, "speed": 200.0, "max_level": 8},
+	"w2": {"name_ko": "2", "damage": 5.0, "cooldown_sec": 1.0, "speed": 200.0, "max_level": 8},
+	"w3": {"name_ko": "3", "damage": 5.0, "cooldown_sec": 1.0, "speed": 200.0, "max_level": 8},
+	"w4": {"name_ko": "4", "damage": 5.0, "cooldown_sec": 1.0, "speed": 200.0, "max_level": 8},
+	"w5": {"name_ko": "5", "damage": 5.0, "cooldown_sec": 1.0, "speed": 200.0, "max_level": 8},
+	"w6": {"name_ko": "6", "damage": 5.0, "cooldown_sec": 1.0, "speed": 200.0, "max_level": 8},
+}
+const SLOT_PASSIVES := {
+	"attack_damage": {"name_ko": "a", "stat": "attack_damage", "per_stack": 0.05, "max_stacks": 5},
+	"move_speed": {"name_ko": "b", "stat": "move_speed", "per_stack": 0.05, "max_stacks": 5},
+	"max_hp": {"name_ko": "c", "stat": "max_hp", "per_stack": 0.05, "max_stacks": 5},
+	"magnet_radius": {"name_ko": "d", "stat": "magnet_radius", "per_stack": 0.05, "max_stacks": 5},
+	"luck": {"name_ko": "e", "stat": "luck", "per_stack": 0.05, "max_stacks": 5},
+}
+
+
+func _kinds(pool: Array[Dictionary], kind: String) -> Array[String]:
+	var ids: Array[String] = []
+	for choice: Dictionary in pool:
+		if String(choice["kind"]) == kind:
+			ids.append(String(choice["id"]))
+	return ids
+
+
+func test_new_weapons_are_offered_while_a_slot_is_free() -> bool:
+	var owned := {"w1": 1, "w2": 1, "w3": 1}
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		SLOT_WEAPONS, SLOT_PASSIVES, owned, {}
+	)
+	# Three owned, one slot left: the three unowned weapons are all on offer.
+	return _kinds(pool, LevelUp.KIND_NEW_WEAPON).size() == 3
+
+
+func test_a_full_weapon_build_stops_offering_new_weapons() -> bool:
+	var owned := {"w1": 1, "w2": 1, "w3": 1, "w4": 1}
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		SLOT_WEAPONS, SLOT_PASSIVES, owned, {}
+	)
+	if not _kinds(pool, LevelUp.KIND_NEW_WEAPON).is_empty():
+		return false
+	# ...but every owned weapon still has somewhere to go, or the screen would
+	# be empty at exactly the moment the player is meant to be investing.
+	return _kinds(pool, LevelUp.KIND_WEAPON_UP).size() == 4
+
+
+func test_a_full_passive_build_still_grows_the_passives_it_has() -> bool:
+	var stacks := {"attack_damage": 1, "move_speed": 1, "max_hp": 1, "magnet_radius": 1}
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		SLOT_WEAPONS, SLOT_PASSIVES, {"w1": 1}, stacks
+	)
+	var offered: Array[String] = _kinds(pool, LevelUp.KIND_PASSIVE)
+	# The fifth passive is locked out; the four taken ones keep climbing.
+	return offered.size() == 4 and not offered.has("luck")
+
+
+func test_a_zero_stack_passive_does_not_consume_a_slot() -> bool:
+	# A passive that was offered and never taken can linger at 0 in the dict;
+	# counting it would silently shrink the build by one.
+	var stacks := {"attack_damage": 1, "move_speed": 0, "max_hp": 0, "magnet_radius": 0}
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		SLOT_WEAPONS, SLOT_PASSIVES, {"w1": 1}, stacks
+	)
+	return _kinds(pool, LevelUp.KIND_PASSIVE).size() == 5
+
+
+func test_a_maxed_full_build_reopens_the_slots_instead_of_going_blank() -> bool:
+	# Four weapons at max level with no grade ladder, four passives at max
+	# stacks: without the reopen the player would face an empty screen.
+	var owned := {"w1": 8, "w2": 8, "w3": 8, "w4": 8}
+	var stacks := {"attack_damage": 5, "move_speed": 5, "max_hp": 5, "magnet_radius": 5}
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		SLOT_WEAPONS, SLOT_PASSIVES, owned, stacks
+	)
+	return not pool.is_empty()

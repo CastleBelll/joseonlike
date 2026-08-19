@@ -2764,3 +2764,71 @@ versus ~16 before (a number the owner already called high). The gold value
 per break (12→40) is sized so the fewer, deliberate breaks still pay; if the
 recovery loop starves in play (health pickups ride the same table), raise
 `solid_count` or the health share before touching the cluster layout.
+
+---
+
+# N9-23 — Build slots, and the 개조 gate the owner actually asked for (2026-08-19)
+
+Owner report: "내가 분명 무기 5렙에 개조 열어달라했는데". True — the gate was
+set to 5 earlier in the project, measured as unreachable, and quietly reverted
+to 3. Reverting an explicit instruction without saying so was the mistake; the
+measurement was right, the response to it was not. This entry does both: the
+gate goes back to 5, and the reason it was unreachable gets fixed.
+
+## Why level 5 was unreachable
+
+The level-up pool held every owned weapon's upgrade, every UNOWNED weapon, and
+all 12 passives, drawn uniformly. As the run went on the pool grew with things
+the player had declined, so a given weapon's upgrade card surfaced roughly
+three times across a whole run. A player could not reach level 5 by playing
+well — the card simply was not offered often enough. Measured ceiling before
+this change, across seeds: weapon level 4.
+
+A second dilution, easy to miss: `pick` guarantees distinct SUBJECT ids, so a
+weapon's grade-up card and its level-up card compete for the same slot on a
+screen. Roughly half the times a weapon appeared, it appeared as a grade card.
+
+## The change
+
+| Knob | Before | After |
+|---|---|---|
+| Weapon slots | unlimited | **4** |
+| Passive slots | unlimited | **4** |
+| `level_required` (all 19 recipes) | 3 (taoist) / 5 (warrior, archer) | **5** |
+
+Once a build is full, NEW weapon and NEW passive cards stop appearing;
+everything already in the build keeps growing. A passive sitting at 0 stacks
+does not consume a slot (it was offered and declined, not taken). If a full
+build somehow maxes everything, the slots re-open rather than hand back an
+empty screen.
+
+## Measured
+
+Random-pick bot (models a player with no plan), 4 seeds:
+
+| | before | after |
+|---|---|---|
+| Weapons owned | up to 5+ | 4 max, often 2-3 |
+| Peak weapon level | 4 | 8 |
+| Evolutions | rare | 0-2, gated on materials |
+
+Forced-build bot `--weapon=old_talisman` (models a player who commits),
+3 seeds: two ran the full 낡은 부적 → 화염 부적 → 봉황 부적 chain, two
+evolutions each, ending at Lv.8 and Lv.5. The third dropped zero special
+materials all run and could not have evolved at any gate level.
+
+Run outcomes stayed in the usual band (victories 366-420s, defeats 209-312s).
+
+## What now gates evolution
+
+Level 5 is reachable by focusing; the binding constraint moves to the special
+material (N4-9 keeps those deliberately rare at ~0.55/run). Both must line up,
+which is the intent — but it does mean an unlucky run evolves nothing. If that
+reads as too dry in play, the lever is the N4-9 drop rate, not this gate.
+
+## Legibility
+
+The pause screen now prints 무기 n/4 and 패시브 n/4 with a (가득 참) marker —
+without it, "new cards stopped appearing" reads as a bug. The 개조 경로 lines
+append "Lv.N 필요" while the base weapon is under the gate, so holding the
+material at level 2 no longer shows a bare ✓ that produces no card.

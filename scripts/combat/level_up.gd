@@ -53,6 +53,15 @@ const PROJECTILE_MECHANICS: Array[String] = [
 ## At or past this pierce count the card reads "everything on the line".
 ## N9-20: weapon levels gained per level-up card.
 const LEVEL_STEP := 1
+
+## N9-23 build slots (owner direction 2026-08-19). Without a cap the choice
+## pool grows with everything the player has NOT taken, so a given weapon's
+## upgrade card surfaced roughly three times in a whole run and level 5 — the
+## 개조 gate — was unreachable no matter how hard the player focused. Capping
+## the build narrows the pool to what is already in it, which is what makes
+## investment reach the gate and what stops the run reading as a grab bag.
+const WEAPON_SLOTS := 4
+const PASSIVE_SLOTS := 4
 const PIERCE_ALL := 99
 
 ## N4-8 milestone vocabulary: every field a weapons.json "milestones" delta
@@ -108,10 +117,15 @@ static func candidates(
 	owned_grades: Dictionary = {},
 	grades: Dictionary = {},
 	replaced: Array = [],
-	allowed_categories: Array = []
+	allowed_categories: Array = [],
+	ignore_slots: bool = false
 ) -> Array[Dictionary]:
 	var pool: Array[Dictionary] = []
 	var rungs: Array[String] = WeaponGrade.ladder(grades)
+	var weapon_slots_left: bool = ignore_slots or owned_levels.size() < WEAPON_SLOTS
+	var passive_slots_left: bool = (
+		ignore_slots or _taken_passives(passive_stacks) < PASSIVE_SLOTS
+	)
 	for weapon_id: String in weapons:
 		if weapon_id.begins_with("_"):
 			continue  # reserved config keys ("_grades") are not weapons
@@ -127,7 +141,8 @@ static func candidates(
 			var current: String = current_grade(weapon_id, weapons, owned_grades)
 			if not rungs.is_empty() and not WeaponGrade.is_top(rungs, current):
 				pool.append({"kind": KIND_GRADE_UP, "id": weapon_id})
-		elif not bool(stats.get("evolution_only", false)) and runtime_can_fire(stats):
+		elif weapon_slots_left and not bool(stats.get("evolution_only", false)) \
+				and runtime_can_fire(stats):
 			# N9-5d weapon identity (GDD §3, owner report: the taoist was
 			# offered the 각궁): a NEW weapon must belong to the character's
 			# weapon_categories. Owned weapons upgrade regardless — identity
@@ -140,9 +155,34 @@ static func candidates(
 		if not OFFERABLE_PASSIVES.has(passive_id):
 			continue
 		var passive: Dictionary = passives[passive_id]
-		if int(passive_stacks.get(passive_id, 0)) < int(passive.get("max_stacks", 0)):
-			pool.append({"kind": KIND_PASSIVE, "id": passive_id})
-	return pool
+		var stacks: int = int(passive_stacks.get(passive_id, 0))
+		if stacks >= int(passive.get("max_stacks", 0)):
+			continue
+		# A passive already in the build always keeps growing; a NEW one only
+		# while a slot is free.
+		if stacks == 0 and not passive_slots_left:
+			continue
+		pool.append({"kind": KIND_PASSIVE, "id": passive_id})
+	if not pool.is_empty():
+		return pool
+	# Safety net: a full build whose every weapon and passive is maxed would
+	# otherwise hand back an empty screen. Re-open the slots rather than show
+	# the player nothing.
+	if weapon_slots_left and passive_slots_left:
+		return pool  # genuinely nothing left to offer; caller falls back
+	return candidates(
+		weapons, passives, owned_levels, passive_stacks, owned_grades, grades,
+		replaced, allowed_categories, true
+	)
+
+
+## Passives actually in the build — a zero-stack entry is not taken.
+static func _taken_passives(passive_stacks: Dictionary) -> int:
+	var count: int = 0
+	for passive_id: String in passive_stacks:
+		if int(passive_stacks[passive_id]) > 0:
+			count += 1
+	return count
 
 
 ## 개조 candidates (N4-6): one per recipe whose material is held, base weapon
