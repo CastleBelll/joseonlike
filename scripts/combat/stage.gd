@@ -127,6 +127,9 @@ var _first_run_log: Dictionary = {}
 # N6-2: a guaranteed first-run drop lands ahead of the player (data offset),
 # not on the corpse — something to walk toward and see, not receive.
 var _guarantee_offset_px: float = 0.0
+# N9-22 selected difficulty tier + run length (empty = defaults).
+var _tier: Dictionary = {}
+var _run_length: Dictionary = {}
 
 
 func _ready() -> void:
@@ -169,6 +172,14 @@ func _ready() -> void:
 	)
 	_feedback = _load_json(Spawner.EFFECTS_PATH).get("hit_feedback", {})
 	var stage_entry: Dictionary = _load_json(Spawner.STAGES_PATH).get(Spawner.STAGE_ID, {})
+	# N9-22: the same tier/length scaling the spawner applies, so the HUD
+	# clock and the wave schedule always agree on when the night ends.
+	var difficulty_config: Dictionary = Difficulty.load_config()
+	_tier = Difficulty.entry(difficulty_config, Difficulty.selected_id(difficulty_config))
+	_run_length = Difficulty.run_length(
+		difficulty_config, Difficulty.selected_run_length(difficulty_config)
+	)
+	stage_entry = Difficulty.apply(stage_entry, _tier, _run_length)
 	_duration_sec = float(stage_entry.get("duration_sec", 0.0))
 	_boss_gold = int(stage_entry.get("boss_gold", 0))
 	_puff_pool = NodePool.new(self, _create_puff)
@@ -506,6 +517,10 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 		_run_elapsed, _kills, _gold, _player.last_hit_source
 	)
 	summary["total_gold"] = SaveService.instance.bank_run(_run_elapsed, _kills, _gold, boss_killed)
+	# N9-22: surviving the night opens the next tier of the ladder.
+	if outcome == RunFlow.OUTCOME_VICTORY:
+		var config: Dictionary = Difficulty.load_config()
+		SaveService.instance.mark_difficulty_cleared(Difficulty.selected_id(config))
 	_result.open(outcome, summary)
 
 
@@ -599,6 +614,7 @@ func _on_orb_collected(orb: XpOrb) -> void:
 	# every orb at pickup through the same multiplier.
 	_run_state.add_xp(int(round(
 		float(orb.xp_value) * (1.0 + _meta_bonus("xp_gain") + _passive_bonus("xp_gain"))
+		* Difficulty.reward_mult(_tier, _run_length, "xp_mult")
 	)))
 	_refresh_progress_hud()
 	_orb_pool.release(orb)
@@ -905,7 +921,10 @@ func _meta_bonus(stat: String) -> float:
 ## bonus applies uniformly (kills, salvage, dead-material cash-outs).
 ## Returns the amount actually gained for cue labels.
 func _add_gold(amount: int) -> int:
-	var gained: int = int(round(float(amount) * (1.0 + _meta_bonus("gold_gain"))))
+	var gained: int = int(round(
+		float(amount) * (1.0 + _meta_bonus("gold_gain"))
+		* Difficulty.reward_mult(_tier, _run_length, "gold_mult")
+	))
 	_gold += gained
 	_hud.set_gold(_gold)
 	return gained

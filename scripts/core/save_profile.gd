@@ -33,7 +33,12 @@ static func default_profile() -> Dictionary:
 			"effects_volume": 1.0,
 			"joystick_opacity": JOYSTICK_OPACITY_MAX,
 			"locale": UiLocale.DEFAULT_LOCALE,
+			# N9-22 difficulty ladder + run length; sanitized against the data
+			# on load so a hand-edited save cannot start a locked night.
+			"difficulty": "",
+			"run_length": "",
 		},
+		"cleared_difficulties": [],
 		"stats": {
 			"runs_played": 0,
 			"best_time_sec": 0.0,
@@ -139,6 +144,11 @@ static func clamp_settings(settings: Dictionary) -> Dictionary:
 	)
 	var locale: String = String(settings.get("locale", ""))
 	result["locale"] = locale if locale in SUPPORTED_LOCALES else String(defaults["locale"])
+	# N9-22: difficulty / run length pass through as plain ids. Validity is
+	# resolved against difficulties.json at run start (Difficulty.selected_id),
+	# not here, so this stays a pure dict-shape sanitizer with no data load.
+	for key: String in ["difficulty", "run_length"]:
+		result[key] = String(settings.get(key, defaults[key]))
 	return result
 
 

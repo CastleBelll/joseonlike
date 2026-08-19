@@ -92,6 +92,14 @@ func mark_guide_seen() -> void:
 	save_profile()
 
 
+## N9-22: a cleared difficulty opens the next rung; no write when repeated.
+func mark_difficulty_cleared(id: String) -> void:
+	var result: Dictionary = Difficulty.mark_cleared(profile, id)
+	if bool(result["changed"]):
+		profile = result["profile"]
+		save_profile()
+
+
 func mark_level_up_explained() -> void:
 	profile = Ftue.mark_level_up_explained(profile)
 	save_profile()

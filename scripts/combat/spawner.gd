@@ -37,6 +37,8 @@ var _boss_id: String = ""
 var _boss_at_sec: float = RunFlow.NO_BOSS
 var _boss_spawn_done: bool = false
 var _soft_enrage: Dictionary = {}
+## N9-22 selected difficulty tier (empty = no scaling).
+var _tier: Dictionary = {}
 # N3-14 separation state; buffers are reused every frame (clear keeps
 # capacity), so steady-state separation allocates nothing.
 var _separation := Separation.new()
@@ -68,6 +70,14 @@ func setup(player: Player) -> void:
 	_sep_pad = float(sep.get("pad_px", 0.0))
 	_separation.configure(float(sep.get("cell_px", 1.0)))
 	var stage: Dictionary = stage_data.get(STAGE_ID, {})
+	# N9-22: the selected difficulty tier and run length reshape the schedule
+	# (wave counts, boss/surge timing, enrage ceilings) before anything reads it.
+	var difficulty_config: Dictionary = Difficulty.load_config()
+	_tier = Difficulty.entry(difficulty_config, Difficulty.selected_id(difficulty_config))
+	stage = Difficulty.apply(
+		stage, _tier,
+		Difficulty.run_length(difficulty_config, Difficulty.selected_run_length(difficulty_config))
+	)
 	_spawning = stage.get("spawning", {})
 	_boss_id = String(stage.get("boss_id", ""))
 	_boss_at_sec = RunFlow.boss_spawn_time(stage)
@@ -193,8 +203,12 @@ func _spawn_one(monster_id: String) -> Enemy:
 	# N4-2 soft enrage: monsters spawned after the ramp start arrive scaled,
 	# so a stalled post-boss field turns lethal instead of dragging (GDD §34).
 	# The boss spawns at boss_at_sec, before the ramp, and is never scaled.
+	# N9-22: tier scaling first (flat per-night pressure), then the enrage ramp.
+	var tiered: Dictionary = Difficulty.scale_monster(
+		_monsters[monster_id], _tier, monster_id == _boss_id
+	)
 	var stats: Dictionary = RunFlow.enrage_stats(
-		_monsters[monster_id], _soft_enrage, RunFlow.enrage_progress(_elapsed, _soft_enrage)
+		tiered, _soft_enrage, RunFlow.enrage_progress(_elapsed, _soft_enrage)
 	)
 	enemy.setup(
 		monster_id,

@@ -1,0 +1,115 @@
+{
+  "_config": {
+    "default_id": "sunhaeng",
+    "default_run_length": "standard",
+    "note": "N9-22 난이도 사다리. rank는 오름차순 고유값. unlock_after가 빈 문자열이면 처음부터 열려 있고, 그 외에는 해당 난이도를 클리어해야 열린다. 배수는 스테이지 데이터 위에 곱해진다."
+  },
+  "difficulties": [
+    {
+      "id": "sunhaeng",
+      "name_ko": "순행",
+      "name_en": "Calm Path",
+      "desc_ko": "밤이 아직 얕다. 처음 나서는 길.",
+      "rank": 0,
+      "unlock_after": "",
+      "enemy_hp_mult": 1.0,
+      "enemy_damage_mult": 1.0,
+      "enemy_speed_mult": 1.0,
+      "spawn_count_mult": 1.0,
+      "elite_count_mult": 1.0,
+      "boss_hp_mult": 1.0,
+      "gold_mult": 1.0,
+      "xp_mult": 1.0
+    },
+    {
+      "id": "yeohaeng",
+      "name_ko": "여행",
+      "name_en": "Wandering",
+      "desc_ko": "괴이가 길을 알아본다. 걸음이 무거워진다.",
+      "rank": 1,
+      "unlock_after": "sunhaeng",
+      "enemy_hp_mult": 1.35,
+      "enemy_damage_mult": 1.2,
+      "enemy_speed_mult": 1.05,
+      "spawn_count_mult": 1.15,
+      "elite_count_mult": 1.0,
+      "boss_hp_mult": 1.3,
+      "gold_mult": 1.25,
+      "xp_mult": 1.1
+    },
+    {
+      "id": "sunan",
+      "name_ko": "수난",
+      "name_en": "Ordeal",
+      "desc_ko": "숲이 사람을 밀어낸다. 정예가 잦아진다.",
+      "rank": 2,
+      "unlock_after": "yeohaeng",
+      "enemy_hp_mult": 1.8,
+      "enemy_damage_mult": 1.45,
+      "enemy_speed_mult": 1.1,
+      "spawn_count_mult": 1.3,
+      "elite_count_mult": 1.5,
+      "boss_hp_mult": 1.7,
+      "gold_mult": 1.6,
+      "xp_mult": 1.2
+    },
+    {
+      "id": "akyeon",
+      "name_ko": "악연",
+      "name_en": "Ill Fate",
+      "desc_ko": "무언가가 이쪽을 지목했다. 한 번의 실수가 끝이다.",
+      "rank": 3,
+      "unlock_after": "sunan",
+      "enemy_hp_mult": 2.4,
+      "enemy_damage_mult": 1.75,
+      "enemy_speed_mult": 1.15,
+      "spawn_count_mult": 1.45,
+      "elite_count_mult": 2.0,
+      "boss_hp_mult": 2.2,
+      "gold_mult": 2.0,
+      "xp_mult": 1.3
+    },
+    {
+      "id": "yeokbyeong",
+      "name_ko": "역병",
+      "name_en": "Plague Night",
+      "desc_ko": "밤 전체가 괴이다. 살아 돌아온 자가 드물다.",
+      "rank": 4,
+      "unlock_after": "akyeon",
+      "enemy_hp_mult": 3.2,
+      "enemy_damage_mult": 2.1,
+      "enemy_speed_mult": 1.22,
+      "spawn_count_mult": 1.6,
+      "elite_count_mult": 2.5,
+      "boss_hp_mult": 3.0,
+      "gold_mult": 2.6,
+      "xp_mult": 1.45
+    }
+  ],
+  "run_lengths": [
+    {
+      "id": "short",
+      "name_ko": "짧은 밤",
+      "name_en": "Short Night",
+      "desc_ko": "빠르게 한 판.",
+      "duration_scale": 0.6,
+      "gold_mult": 0.7
+    },
+    {
+      "id": "standard",
+      "name_ko": "보통 밤",
+      "name_en": "Standard Night",
+      "desc_ko": "기준이 되는 길이.",
+      "duration_scale": 1.0,
+      "gold_mult": 1.0
+    },
+    {
+      "id": "long",
+      "name_ko": "긴 밤",
+      "name_en": "Long Night",
+      "desc_ko": "끝까지 버텨본다.",
+      "duration_scale": 1.5,
+      "gold_mult": 1.4
+    }
+  ]
+}

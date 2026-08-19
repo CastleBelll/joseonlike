@@ -12,7 +12,7 @@ const SELECT_SCENE := "res://scenes/character_select.tscn"
 
 const MARGIN_SIDE := 32
 const MARGIN_TOP := 24
-const MARGIN_BOTTOM := 48
+const MARGIN_BOTTOM := 28
 const STAT_ROW_HEIGHT := 40.0
 const PANEL_PADDING := 16
 const PANEL_CORNER_RADIUS := 12
@@ -24,9 +24,16 @@ const BUTTON_HEIGHT := 64
 const SELECT_BUTTON_HEIGHT := 56
 const COIN_ICON_SIZE := 32.0
 const NOTICE_FADE_SEC := 1.6
+const CYCLE_BUTTON_HEIGHT := 44.0
 
 var _notice_label: Label
 var _notice_tween: Tween
+# N9-22 departure settings: the ladder/length data plus the two cycle buttons
+# that show the current pick — one tap steps to the next option, so departing
+# still costs one tap for anyone who never touches them.
+var _difficulty_config: Dictionary = {}
+var _difficulty_button: Button
+var _run_length_button: Button
 
 
 func _ready() -> void:
@@ -159,10 +166,85 @@ func _build_buildings() -> Control:
 	return grid
 
 
+## The night the player is about to walk into: which tier, how long. Locked
+## tiers are simply not in the cycle — clearing one adds the next.
+func _build_departure_settings() -> Control:
+	_difficulty_config = Difficulty.load_config()
+	# Side by side, not stacked: the column already fills the screen and a
+	# second full-width row pushed 출정 off the bottom on a 540x960 phone.
+	var row := HBoxContainer.new()
+	row.name = "DepartureSettings"
+	row.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+
+	_difficulty_button = _cycle_button("DifficultyButton", _on_difficulty_pressed)
+	row.add_child(_difficulty_button)
+	_run_length_button = _cycle_button("RunLengthButton", _on_run_length_pressed)
+	row.add_child(_run_length_button)
+	_refresh_departure_labels()
+	return row
+
+
+func _cycle_button(node_name: String, handler: Callable) -> Button:
+	var button := Button.new()
+	button.name = node_name
+	button.custom_minimum_size = Vector2(0.0, CYCLE_BUTTON_HEIGHT)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	WoodButton.apply(button)
+	button.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
+	button.pressed.connect(handler)
+	return button
+
+
+func _refresh_departure_labels() -> void:
+	var tier: Dictionary = Difficulty.entry(
+		_difficulty_config, Difficulty.selected_id(_difficulty_config)
+	)
+	var length: Dictionary = Difficulty.run_length(
+		_difficulty_config, Difficulty.selected_run_length(_difficulty_config)
+	)
+	_difficulty_button.text = "난이도 ‹%s›" % String(tier.get("name_ko", "-"))
+	_difficulty_button.tooltip_text = String(tier.get("desc_ko", ""))
+	_run_length_button.text = "‹%s›" % String(length.get("name_ko", "-"))
+	_run_length_button.tooltip_text = String(length.get("desc_ko", ""))
+
+
+func _on_difficulty_pressed() -> void:
+	var cleared: Array = _profile().get(Difficulty.CLEARED_KEY, [])
+	var open_ids: Array[String] = []
+	for tier: Dictionary in Difficulty.ladder(_difficulty_config):
+		var id: String = String(tier.get("id", ""))
+		if Difficulty.is_unlocked(_difficulty_config, id, cleared):
+			open_ids.append(id)
+	_cycle_setting(Difficulty.SELECTED_KEY, open_ids, Difficulty.selected_id(_difficulty_config))
+
+
+func _on_run_length_pressed() -> void:
+	var ids: Array[String] = []
+	for raw: Variant in _difficulty_config.get("run_lengths", []):
+		if raw is Dictionary:
+			ids.append(String((raw as Dictionary).get("id", "")))
+	_cycle_setting(
+		Difficulty.RUN_LENGTH_KEY, ids, Difficulty.selected_run_length(_difficulty_config)
+	)
+
+
+func _cycle_setting(key: String, ids: Array[String], current: String) -> void:
+	if ids.size() < 2 or SaveService.instance == null:
+		# A single option has nothing to cycle to; say so instead of no-opping
+		# silently, so a locked ladder does not read as a dead button.
+		_show_notice("아직 다른 선택지가 없다")
+		return
+	var index: int = maxi(ids.find(current), 0)
+	SaveService.instance.set_setting(key, ids[(index + 1) % ids.size()])
+	_refresh_departure_labels()
+
+
 func _build_menu() -> Control:
 	var stack := VBoxContainer.new()
 	stack.name = "MenuButtons"
 	stack.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+
+	stack.add_child(_build_departure_settings())
 
 	var select := Button.new()
 	select.name = "SelectButton"
@@ -203,7 +285,11 @@ func _on_building_pressed(building: Dictionary) -> void:
 		if not scene.is_empty():
 			get_tree().change_scene_to_file(scene)
 		return
-	_notice_label.text = String(building["label"]) + " — " + notice
+	_show_notice(String(building["label"]) + " — " + notice)
+
+
+func _show_notice(text: String) -> void:
+	_notice_label.text = text
 	_notice_label.modulate = Color.WHITE
 	if not is_inside_tree():
 		return
