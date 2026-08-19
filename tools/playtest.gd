@@ -28,6 +28,9 @@ extends Node
 ##   --runs=<n>      (N4-9) n seeded free-play runs (seed, seed+1, …) on an
 ##                   in-memory RETURNING profile, ending in a RARITY TABLE of
 ##                   specials dropped and evolutions performed per run.
+##   --meta=gold:<n> (N9-54) spend <n> gold on the tree first, always buying the
+##                   cheapest available node — measures what PARTIAL ladder
+##                   progress buys, which --meta=max cannot say.
 ##   --luck=max      (N4-9) only the 천운 node at max rank, in memory only —
 ##                   isolates the luck stat's effect on special drops.
 ##   --fresh         (N4-9) run on a brand-new in-memory profile: the FTUE
@@ -139,6 +142,10 @@ var _runs_total: int = 0
 var _run_index: int = 0
 var _luck_max: bool = false
 var _fresh: bool = false
+## N9-54: gold budget to spend on the meta tree before the run, for measuring
+## what PARTIAL progress buys. "--meta=max" answers what the end of the ladder
+## feels like; it cannot say whether the middle of it is worth walking.
+var _meta_gold: int = 0
 var _rarity_rows: Array[Dictionary] = []
 var _headless: bool = false
 var _damage_total: float = 0.0
@@ -235,12 +242,51 @@ func _parse_args() -> void:
 			_idle = true
 		elif arg == "--meta=max":
 			_meta_max = true
+		elif arg.begins_with("--meta=gold:"):
+			_meta_gold = maxi(int(arg.get_slice(":", 1)), 0)
 		elif arg.begins_with("--runs="):
 			_runs_total = maxi(int(arg.get_slice("=", 1)), 0)
 		elif arg == "--luck=max":
 			_luck_max = true
 		elif arg == "--fresh":
 			_fresh = true
+
+
+## Spends `budget` gold on the cheapest available node each step — the way a
+## player actually climbs, taking what they can afford rather than saving for
+## one expensive thing. Reports what the budget bought so a measurement can be
+## read back later without re-deriving it.
+func _tree_bought_with(budget: int) -> Dictionary:
+	var tree: Dictionary = MetaTree.load_tree()
+	var profile: Dictionary = SaveService.instance.profile.duplicate(true)
+	profile["gold"] = budget
+	profile["meta_tree"] = {}
+	var unlocked: Array[String] = MetaTree.unlocked_characters(MetaTree.load_characters())
+	var bought: int = 0
+	while true:
+		var state: Dictionary = profile.get("meta_tree", {})
+		var gold: int = int(profile.get("gold", 0))
+		var best_id: String = ""
+		var best_cost: int = 0
+		for entry: Dictionary in MetaTree.nodes(tree):
+			var id: String = String(entry.get("id", ""))
+			if MetaTree.can_purchase(tree, state, gold, id, unlocked) != MetaTree.REASON_OK:
+				continue
+			var cost: int = MetaTree.next_cost(entry, MetaTree.rank_of(state, id))
+			if best_id.is_empty() or cost < best_cost:
+				best_id = id
+				best_cost = cost
+		if best_id.is_empty():
+			break
+		var result: Dictionary = MetaTree.purchase(profile, tree, best_id, unlocked)
+		if not bool(result.get("ok", false)):
+			break
+		profile = result["profile"]
+		bought += 1
+	print("PLAYTEST meta budget %d gold: %d ranks bought, %d unspent" % [
+		budget, bought, int(profile.get("gold", 0))
+	])
+	return profile
 
 
 ## Boot one run: fresh stage, seeded streams, forced/granted weapons, and the
@@ -264,6 +310,9 @@ func _start_run() -> void:
 		SaveService.instance.profile["meta_tree"] = MetaTree.maxed_state(
 			MetaTree.load_tree()
 		)
+		SaveService.instance._write_locked = true
+	elif _meta_gold > 0 and SaveService.instance != null:
+		SaveService.instance.profile = _tree_bought_with(_meta_gold)
 		SaveService.instance._write_locked = true
 	elif _luck_max and SaveService.instance != null:
 		# N4-9: ONLY the luck node maxed, so the batch isolates its effect.
