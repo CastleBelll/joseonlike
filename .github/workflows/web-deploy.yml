@@ -75,6 +75,20 @@ jobs:
           restore-keys: |
             godot-import-${{ env.GODOT_VERSION }}-
 
+      # Godot reports a missing template as a "configuration error" with the
+      # offending path listed, but reports some OTHER config problems as an
+      # empty list — so when an export fails, this listing is what tells the
+      # two apart instead of guessing.
+      - name: Verify export templates
+        run: |
+          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION//-/.}"
+          echo "templates in $TEMPLATE_DIR:"
+          ls -la "$TEMPLATE_DIR" | grep -E "web|version" || ls -la "$TEMPLATE_DIR" | head -5
+          if [ ! -s "$TEMPLATE_DIR/web_release.zip" ]; then
+            echo "::error::web_release.zip missing from the installed templates"
+            exit 1
+          fi
+
       - name: Resolve Godot binary path
         run: echo "GODOT=$HOME/godot-bin/${GODOT_BIN_NAME}" >> "$GITHUB_ENV"
 

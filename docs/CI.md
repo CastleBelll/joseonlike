@@ -149,6 +149,57 @@ running CI-driven release exports must configure them as CI secrets (e.g. GitHub
 Actions repository/environment secrets); local exports read them from the shell
 environment.
 
+## Web build and Vercel deploy (`.github/workflows/web-deploy.yml`)
+
+Pushing to `main` builds the `Web` preset (WASM) and publishes it, so the game
+can be handed to playtesters as a URL. `workflow_dispatch` runs it on demand.
+
+**Cross-origin isolation is mandatory, not optional.** Godot 4's web runtime
+uses `SharedArrayBuffer` and refuses to start without
+`Cross-Origin-Opener-Policy: same-origin` and
+`Cross-Origin-Embedder-Policy: require-corp`. `vercel.json` sets both on every
+response and is copied into the export directory before deploying. Any other
+host has to set the same two headers or the page loads and then sits blank.
+
+**The build always runs; the deploy is conditional.** With no `VERCEL_TOKEN`
+secret the job still exports, verifies and uploads the artifact, then logs a
+notice and stops. That keeps the export a real check on every push to main and
+keeps a fork from going red over a secret it cannot have.
+
+### Connecting Vercel (one-time, needs a human)
+
+1. Create an empty Vercel project. **Do not** connect it to the GitHub repo —
+   Vercel cannot build Godot; Actions builds and pushes the static output.
+2. Account Settings → Tokens → create a token.
+3. `npx vercel link` locally writes `.vercel/project.json` with `orgId` and
+   `projectId`.
+4. Add three repository secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
+   `VERCEL_PROJECT_ID`.
+
+### Two traps this workflow guards, and why
+
+- **Import before export.** `.import` sidecars are untracked here, so an export
+  on a fresh checkout would ship missing resources rather than fail loudly.
+- **The import runs twice and only the second pass is checked.** On a cold
+  `.godot`, `asset/ui_theme.tres` is parsed before the font it references and
+  reports `Parse Error: referenced non-existent resource`; it resolves on the
+  next pass. Checking the first pass turns that ordering artifact into a red
+  build (observed in run 32218173780). Only an error that survives a second
+  full import is real.
+  **`ci.yml` still has the single-pass version** and passes only because its
+  `.godot` cache is warm — a cache eviction will fail main's CI this way.
+- **Exit code zero is not proof of an export.** `index.html`, `index.wasm` and
+  `index.pck` are each checked for existence and non-zero size, because an
+  export missing the wasm is exactly what would deploy a blank page.
+
+### Known limits of the web build
+
+- The three BGM tracks are ~17MB together and load over the network before the
+  game starts. Re-encoding to OGG for web would cut this substantially.
+- Saves go to IndexedDB, so they are per-browser and per-profile and vanish
+  when site data is cleared. Fine for playtesting, not for a release.
+- The game is authored for 540x960 portrait; on a desktop browser it letterboxes.
+
 ## Services
 
 `scripts/services/ads.gd` (`AdsService`) and `scripts/services/analytics.gd`
