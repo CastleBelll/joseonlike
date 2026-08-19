@@ -384,6 +384,7 @@ func _process(delta: float) -> void:
 	if _stage == null:
 		return
 	_real_elapsed += delta
+	_clear_guide()
 	if _real_elapsed > _duration + TIMEOUT_GRACE_SEC:
 		print("PLAYTEST FAIL: run did not finish within grace window")
 		get_tree().quit(1)
@@ -499,6 +500,30 @@ func _track_weapon_damage() -> void:
 			func(amount: float, _at: Vector2, _boss: bool, _crit: bool) -> void:
 				_damage_total += amount
 		)
+
+
+## N9-36: the first-run guide now HOLDS the world until it reaches its combat
+## page, so a bot that ignores the dialog never gets a run at all — --fresh
+## measured a 420s timeout with zero kills before this. The bot answers each
+## page the way a player would: tap pages get the button, await pages get the
+## action they wait for. The kill page needs no help — the world is already
+## released there, so the bot's own weapon satisfies it.
+func _clear_guide() -> void:
+	var guide: GuideDialog = _stage.get_node_or_null("GuideDialog")
+	if guide == null:
+		return
+	var awaiting: String = guide.awaiting()
+	if awaiting.is_empty():
+		guide._on_next_pressed()
+	elif awaiting != Ftue.AWAIT_KILL:
+		# Everything except the kill page is answered directly. The bot cannot
+		# be relied on to satisfy the MOVE page: with the world held there are
+		# no enemies and no orbs, so its steering resolves to zero and it stands
+		# still — the guide waits for a step that never comes and the run never
+		# starts (observed: 420s, zero kills). The kill page is left alone
+		# because by then the world IS running and the bot's own weapon earns
+		# it, which is the thing worth measuring.
+		guide.notify_action(awaiting)
 
 
 ## Steering: repel from close enemies (boss weighted), seek the nearest

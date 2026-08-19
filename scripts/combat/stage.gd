@@ -394,13 +394,46 @@ func _dismiss_move_hint() -> void:
 
 ## N9-14: pause on tap-through pages, play on await pages; ring the
 ## actives cluster while its press is awaited.
-func _on_guide_page_shown(await_action: String) -> void:
+## Freezes or releases the world for the staged first-run guide. The spawner
+## holds its CLOCK as well as its waves, so nothing comes due in a heap when
+## the hold lifts.
+func _set_tutorial_hold(held: bool) -> void:
+	_spawner.waves_held = held
+	for weapon: AutoWeapon in _weapon_nodes.values():
+		weapon.hold_fire = held
+
+
+func _ring_rect(target: Rect2) -> void:
+	if _guide_ring == null:
+		_guide_ring = TutorialRing.new()
+		$Hud.add_child(_guide_ring)
+	_guide_ring.aim(target)
+
+
+## The player's on-screen box, for the tutorial ring. The HUD ring lives in
+## screen space while the player lives in the world, so the camera transform
+## has to be applied rather than the world position used directly.
+func _player_screen_rect() -> Rect2:
+	var half: float = Player.CONTACT_RADIUS * 2.0
+	var centre: Vector2 = (
+		_player.get_global_transform_with_canvas().origin
+	)
+	return Rect2(centre - Vector2(half, half), Vector2(half, half) * 2.0)
+
+
+func _on_guide_page_shown(index: int, await_action: String) -> void:
 	get_tree().paused = await_action.is_empty()
+	# N9-36 (owner report: the move lesson arrived with the opening rush and a
+	# talisman already flying): the world stays still until the guide reaches
+	# the page that introduces combat. One lesson at a time.
+	_set_tutorial_hold(index < Ftue.COMBAT_FROM_PAGE)
 	if await_action == Ftue.AWAIT_ACTIVE:
-		if _guide_ring == null:
-			_guide_ring = TutorialRing.new()
-			$Hud.add_child(_guide_ring)
-		_guide_ring.aim(_hud.actives_rect())
+		_ring_rect(_hud.actives_rect())
+	elif await_action == Ftue.AWAIT_KILL:
+		# Ringing the player, not a button: the thing to watch is the talisman
+		# leaving them on its own. A projectile is the wrong thing to ring —
+		# it is gone before the eye arrives.
+		_ring_rect(_player_screen_rect())
 	elif _guide_ring != null:
 		_guide_ring.queue_free()
 		_guide_ring = null
@@ -416,6 +449,7 @@ func _arm_move_hint() -> void:
 ## N9-4: guide dismissed — unpause, persist the one-shot flag, free the node.
 func _on_guide_finished() -> void:
 	get_tree().paused = false
+	_set_tutorial_hold(false)
 	if _guide_ring != null:
 		_guide_ring.queue_free()
 		_guide_ring = null
@@ -469,6 +503,10 @@ func _on_player_hit() -> void:
 ## back to its pool right after (see Spawner.enemy_killed).
 func _on_enemy_killed(enemy: Enemy) -> void:
 	_kills += 1
+	# N9-36: "부적은 알아서 날아간다" is a claim; a 괴이 falling to it is the
+	# proof, so that page advances on a kill rather than on a tap.
+	if _guide != null:
+		_guide.notify_action(Ftue.AWAIT_KILL)
 	_record_discovery(Bestiary.KIND_MONSTERS, enemy.monster_id)
 	_hud.set_kills(_kills)
 	var puff: DeathPuff = _puff_pool.acquire()

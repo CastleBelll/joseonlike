@@ -37,6 +37,11 @@ var lights: Array[Dictionary] = []
 var _targetable: Array[Enemy] = []
 var _has_absorbing: bool = false
 var _shadow_announced: bool = false
+## N9-36 tutorial gate: while held, the run clock does NOT advance either. A
+## flag that only skipped _start_due_waves would let every held second come due
+## the instant it lifted, dumping the whole opening rush at once — the exact
+## ambush the staged tutorial exists to avoid.
+var waves_held: bool = false
 
 var _monsters: Dictionary = {}
 var _spawning: Dictionary = {}
@@ -147,6 +152,8 @@ func _physics_process(delta: float) -> void:
 	if _player == null:
 		return
 	_refresh_targetable()
+	if waves_held:
+		return
 	_elapsed += delta
 	_start_due_waves()
 	_run_waves()

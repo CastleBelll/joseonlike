@@ -79,6 +79,8 @@ var _crit_multiplier: float = 1.0
 ## member rather than a returned pair because this is the per-hit hot path and
 ## a Dictionary here would allocate on every shot.
 var _last_crit: bool = false
+## N9-36: set by the stage while the first-run guide is before its combat page.
+var hold_fire: bool = false
 var _damage: float = 0.0
 var _cooldown: float = 0.0
 var _speed: float = 0.0
@@ -272,6 +274,12 @@ func _build_shot_config() -> Dictionary:
 
 func _physics_process(delta: float) -> void:
 	if _player == null:
+		return
+	# N9-36: the tutorial teaches one thing at a time, and "your talisman fires
+	# itself" is a later beat than "you can walk". Held before that beat, the
+	# cooldown does not run down either, so releasing the hold fires promptly
+	# rather than after a leftover wait.
+	if hold_fire:
 		return
 	_decay_nudge(delta)
 	if _mechanic == MECHANIC_ORBIT:

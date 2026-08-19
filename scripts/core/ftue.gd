@@ -21,6 +21,16 @@ const MOD_EXPLAIN_LINE := "첫 개조! 재료로 무기를 바꾼다"
 ## advances when the stage reports that action (GuideDialog.notify_action).
 const AWAIT_MOVE := "move"
 const AWAIT_ACTIVE := "active"
+## N9-36: the page that introduces combat waits for the player to actually see
+## a 괴이 fall to their own talisman. "Attacks fire themselves" is a claim; a
+## corpse is proof.
+const AWAIT_KILL := "kill"
+
+## Index of the first page from which the world is allowed to run — before it,
+## no waves spawn and no weapon fires. Owner report: the move page unpaused the
+## tree, so the opening rush and the auto-attack both arrived on top of the
+## lesson about walking.
+const COMBAT_FROM_PAGE := 3
 const GUIDE_PAGES: Array[Dictionary] = [
 	{
 		"name": "우치",
@@ -33,12 +43,21 @@ const GUIDE_PAGES: Array[Dictionary] = [
 	},
 	{
 		"name": "우치",
-		"text": "좋아. 오른쪽 아래 빛나는 단추가 내 비장의 술법이다.\n축지는 위기 탈출, 벽사진은 사방 일소 — 하나 눌러봐.",
+		"text": "걸음은 됐다. 이제 숨을 고르고 들어라.\n곧 괴이가 몰려온다.",
+	},
+	{
+		"name": "우치",
+		"text": "부적은 알아서 날아간다 — 겨눌 것 없이 자리만 잡아.\n오는 놈을 하나 베어봐라.",
+		"await": AWAIT_KILL,
+	},
+	{
+		"name": "우치",
+		"text": "오른쪽 아래 빛나는 단추가 내 비장의 술법이다.\n축지는 위기 탈출, 벽사진은 사방 일소 — 하나 눌러봐.",
 		"await": AWAIT_ACTIVE,
 	},
 	{
 		"name": "우치",
-		"text": "공격은 저절로 나간다 — 자리만 잘 잡으면 돼.\n괴이를 잡아 기가 차면 새 술법을 고를 수 있다. 가자.",
+		"text": "괴이를 잡아 기가 차면 새 술법을 고를 수 있다.\n이제 네 밤이다. 가자.",
 	},
 ]
 

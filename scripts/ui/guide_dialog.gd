@@ -11,7 +11,7 @@ signal finished
 ## N9-14 interactive pages: fired whenever a new page shows, with its
 ## "await" action ("" for tap-through pages) so the stage can unpause the
 ## tree and aim the highlight.
-signal page_shown(await_action: String)
+signal page_shown(index: int, await_action: String)
 
 const LAYER_ABOVE_HUD := 12
 const PANEL_MARGIN := 16.0
@@ -147,7 +147,15 @@ func _show_page() -> void:
 		Control.MOUSE_FILTER_IGNORE if not await_action.is_empty()
 		else Control.MOUSE_FILTER_STOP
 	)
-	page_shown.emit(await_action)
+	page_shown.emit(_index, await_action)
+
+
+## What the current page is waiting for, or "" for a tap page. Public so a
+## caller can answer the guide without reading its private index.
+func awaiting() -> String:
+	if _index < 0 or _index >= _pages.size():
+		return ""
+	return String(_pages[_index].get("await", ""))
 
 
 ## N9-14: the stage reports gameplay actions; the matching await page
