@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 
 SaveManager="*res://scripts/core/save_manager.gd"
 MusicManager="*res://scripts/core/music_player.gd"
+SfxManager="*res://scripts/core/sfx_player.gd"
 
 [display]
 

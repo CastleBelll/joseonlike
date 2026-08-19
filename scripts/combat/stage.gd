@@ -520,6 +520,7 @@ func _on_player_died() -> void:
 ## N3-8: the invulnerability blink lives on the player; the HUD adds the
 ## screen-edge red pulse so a hit is legible even off-center.
 func _on_player_hit() -> void:
+	_play_sfx("hurt")
 	_hud.pulse_damage(float(_feedback.get("player_vignette_sec", 0.0)))
 
 
@@ -531,6 +532,7 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 	# proof, so that page advances on a kill rather than on a tap.
 	if _guide != null:
 		_guide.notify_action(Ftue.AWAIT_KILL)
+	_play_sfx("kill")
 	_record_discovery(Bestiary.KIND_MONSTERS, enemy.monster_id)
 	_hud.set_kills(_kills)
 	var puff: DeathPuff = _puff_pool.acquire()
@@ -603,6 +605,9 @@ func _tick_boss_attacks(delta: float) -> void:
 func _warn_telegraph(
 	at: Vector2, radius: float, inner: float, warn_sec: float, attack: Dictionary
 ) -> void:
+	# The warning has to be audible: its whole job is to be reacted to, and the
+	# shape can start off-screen.
+	_play_sfx("boss_warn")
 	var telegraph: BossTelegraph = _telegraph_pool.acquire()
 	telegraph.set_meta("attack", attack)
 	telegraph.warn(at, radius, inner, warn_sec, UiPalette.VERMILION)
@@ -683,6 +688,9 @@ func _on_active_pressed(active_id: String) -> void:
 
 ## Effects live here so demo tools can fire them without touching cooldowns.
 func _execute_active(active: Dictionary) -> void:
+	# Here rather than in the button handler, so a demo tool firing an active
+	# directly is not silently different from a player pressing it.
+	_play_sfx("skill")
 	match String(active.get("type", "")):
 		"blink":
 			_execute_blink(active)
@@ -779,6 +787,16 @@ func _refresh_hp_hud() -> void:
 func _on_hit_landed(amount: float, at: Vector2, boss_hit: bool, crit: bool = false) -> void:
 	var number: DamageNumber = _number_pool.acquire()
 	number.show_amount(amount, at, boss_hit, crit)
+	# N9-52: a crit already reads differently on screen; giving it its own
+	# sound means it also reads differently when the eye is somewhere else.
+	_play_sfx("crit" if crit else "hit")
+
+
+## Every effect goes through here so the null check for node-free harnesses
+## lives in one place instead of at each call site.
+func _play_sfx(sound_id: String) -> void:
+	if SfxService.instance != null:
+		SfxService.instance.play(sound_id)
 
 
 func _on_number_finished(number: DamageNumber) -> void:
@@ -789,6 +807,7 @@ func _on_number_finished(number: DamageNumber) -> void:
 ## only tap a run asks for (DESIGN.md §5.2). Loot never opens a panel (N4-6).
 func _on_level_reached(_new_level: int) -> void:
 	_pending_level_ups += 1
+	_play_sfx("levelup")
 	if not _popup.visible:
 		_advance_popup_queue()
 
@@ -1267,6 +1286,7 @@ func _spawn_loot(enemy: Enemy) -> void:
 ## out to gold on the spot — the player never holds dead inventory. Special
 ## materials float a small cue label; commons just tick the counters.
 func _on_loot_collected(orb: XpOrb) -> void:
+	_play_sfx("pickup")
 	var loot_id: String = (orb as LootDrop).loot_id
 	_loot_pool.release(orb)
 	_record_discovery(Bestiary.KIND_LOOT, loot_id)
@@ -1342,6 +1362,7 @@ func _on_breakable_broke(breakable: Breakable) -> void:
 ## HEALTH at full HP converts to gold (chosen rule: the drop is never wasted,
 ## and the check runs at collection time so getting hit on the way still heals).
 func _on_pickup_collected(orb: XpOrb) -> void:
+	_play_sfx("pickup")
 	var kind: String = (orb as Pickup).kind
 	_pickup_pool.release(orb)
 	match kind:

@@ -216,7 +216,13 @@ func _check_combat_cross_references() -> void:
 ## consumes FAILS), per-character branch ownership against characters.json,
 ## and the strictly-increasing cost curve.
 func _check_audio() -> void:
-	for issue: String in MusicService.data_issues(_load(DATA_DIR + "/audio.json")):
+	var config: Dictionary = _load(DATA_DIR + "/audio.json")
+	for issue: String in MusicService.data_issues(config):
+		_fail("audio " + issue)
+	# N9-52: the effects share the file and the bus contract with the music but
+	# have their own rules (a throttle, per-effect loudness), so they are
+	# checked by the class that reads them.
+	for issue: String in SfxService.data_issues(config):
 		_fail("audio " + issue)
 
 

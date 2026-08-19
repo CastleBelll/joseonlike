@@ -18,7 +18,66 @@ func _ready() -> void:
 	_check_each_track_plays()
 	_check_same_track_does_not_restart()
 	_check_stop_clears_everything()
+	_check_effects()
 	_finish()
+
+
+## N9-52: the effects have a data contract the unit suite checks, but only a
+## running engine can say whether they decode, reach the Effects bus, and
+## honour the throttle that keeps a surge from stacking a dozen copies of the
+## same waveform.
+func _check_effects() -> void:
+	if SfxService.instance == null:
+		_fail("SfxManager autoload is not running")
+		return
+	var config: Dictionary = MusicService.load_config()
+	for sound_id: String in (config.get("sfx", {}) as Dictionary):
+		SfxService.instance.stop_all()
+		SfxService.instance.play(sound_id)
+		var voice: AudioStreamPlayer = _playing_voice()
+		if voice == null:
+			_fail("no voice is playing after play('%s')" % sound_id)
+			continue
+		if voice.bus != SaveService.BUS_EFFECTS:
+			_fail("'%s' plays on bus '%s', not %s" % [
+				sound_id, voice.bus, SaveService.BUS_EFFECTS
+			])
+		# A looping effect would never stop; every one of these is a one-shot.
+		if _is_looping(voice.stream):
+			_fail("effect '%s' is set to loop" % sound_id)
+		print("SFX %s: playing on %s, %.3fs" % [
+			sound_id, voice.bus, voice.stream.get_length() if voice.stream != null else 0.0
+		])
+	_check_throttle()
+	SfxService.instance.stop_all()
+
+
+## Two plays inside the throttle window must produce one sound, not two.
+func _check_throttle() -> void:
+	SfxService.instance.stop_all()
+	SfxService.instance.play("hit")
+	SfxService.instance.play("hit")
+	if _playing_voices() != 1:
+		_fail("the throttle let %d voices through for one repeated hit" % _playing_voices())
+	else:
+		print("SFX throttle: repeated hit collapsed to one voice")
+
+
+func _playing_voice() -> AudioStreamPlayer:
+	for child: Node in SfxService.instance.get_children():
+		var player := child as AudioStreamPlayer
+		if player != null and player.playing:
+			return player
+	return null
+
+
+func _playing_voices() -> int:
+	var count: int = 0
+	for child: Node in SfxService.instance.get_children():
+		var player := child as AudioStreamPlayer
+		if player != null and player.playing:
+			count += 1
+	return count
 
 
 func _check_each_track_plays() -> void:

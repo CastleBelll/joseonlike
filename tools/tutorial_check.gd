@@ -35,6 +35,10 @@ func _ready() -> void:
 	# the harness must never write over a real save.
 	if SaveService.instance != null:
 		SaveService.instance.profile = SaveProfile.default_profile()
+		# Write-locked, or the run this probe drives autosaves its throwaway
+		# profile over the developer's real one — which is exactly what happened
+		# once this harness started running on every push.
+		SaveService.instance._write_locked = true
 	_stage = (load(STAGE_SCENE) as PackedScene).instantiate()
 	# The harness runs while paused so it can drive the guide, but the stage
 	# must NOT inherit that: shipped, it is the scene root and pauses with the
