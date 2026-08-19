@@ -2,7 +2,11 @@
   "_config": {
     "default_id": "sunhaeng",
     "default_run_length": "standard",
-    "note": "N9-22 난이도 사다리. rank는 오름차순 고유값. unlock_after가 빈 문자열이면 처음부터 열려 있고, 그 외에는 해당 난이도를 클리어해야 열린다. 배수는 스테이지 데이터 위에 곱해진다."
+    "note": "N9-22 난이도 사다리. rank는 오름차순 고유값. unlock_after가 빈 문자열이면 처음부터 열려 있고, 그 외에는 해당 난이도를 클리어해야 열린다. 배수는 스테이지 데이터 위에 곱해진다. first_run_duration_scale는 첫 런(튜토리얼 런)에만 곱해지는 길이 배율로, 420초 밤을 약 1분으로 줄인다. 길이만 줄이면 같은 웨이브가 압축되어 밀도가 폭증하므로(측정: 봇 36.9초 사망) 첫 런은 스폰 수와 적 능력치도 함께 낮춘다.",
+    "first_run_duration_scale": 0.15,
+    "first_run_spawn_scale": 0.4,
+    "first_run_enemy_hp_scale": 0.6,
+    "first_run_enemy_damage_scale": 0.5
   },
   "difficulties": [
     {

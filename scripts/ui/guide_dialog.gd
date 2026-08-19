@@ -135,6 +135,7 @@ func open(pages: Array[Dictionary]) -> void:
 
 
 func _show_page() -> void:
+	_dwell_left = 0.0
 	var page: Dictionary = _pages[_index]
 	_name_label.text = String(page.get("name", ""))
 	_body_label.text = String(page.get("text", ""))
@@ -143,11 +144,24 @@ func _show_page() -> void:
 	# releases the input blocker so the player can actually play.
 	var await_action: String = String(page.get("await", ""))
 	_next_button.visible = await_action.is_empty()
-	(get_node("Blocker") as Control).mouse_filter = (
+	# N9-44 (owner: "도깨비 잡아보자 하는데 내가 움직일 수가 없다"): the PANEL
+	# swallowed touches too, and it spans the bottom of the screen — exactly
+	# where the thumb goes. Only the blocker was being opened up.
+	var filter: int = (
 		Control.MOUSE_FILTER_IGNORE if not await_action.is_empty()
 		else Control.MOUSE_FILTER_STOP
 	)
+	(get_node("Blocker") as Control).mouse_filter = filter
+	(get_node("Blocker/Panel") as Control).mouse_filter = filter
 	page_shown.emit(_index, await_action)
+
+
+## A numeric field from the current page, or 0.0 when the page omits it.
+## Public so callers never reach into the private page index.
+func current_page_number(field: String) -> float:
+	if _index < 0 or _index >= _pages.size():
+		return 0.0
+	return float(_pages[_index].get(field, 0.0))
 
 
 ## What the current page is waiting for, or "" for a tap page. Public so a
@@ -158,12 +172,32 @@ func awaiting() -> String:
 	return String(_pages[_index].get("await", ""))
 
 
+## N9-44: an answered page can hold before advancing, so the player sees what
+## they just did. Pressing 축지 used to end the page on the same frame — the
+## blink fired and the dialog was already gone.
+var _dwell_left: float = 0.0
+
+
+func _process(delta: float) -> void:
+	if _dwell_left <= 0.0:
+		return
+	_dwell_left -= delta
+	if _dwell_left <= 0.0:
+		_advance()
+
+
 ## N9-14: the stage reports gameplay actions; the matching await page
 ## advances. Wrong/duplicate actions are ignored.
 func notify_action(action: String) -> void:
 	if not visible or _pages.is_empty():
 		return
 	if String(_pages[_index].get("await", "")) != action:
+		return
+	if _dwell_left > 0.0:
+		return  # already answered; the hold is running
+	var dwell: float = float(_pages[_index].get("dwell_sec", 0.0))
+	if dwell > 0.0:
+		_dwell_left = dwell
 		return
 	_advance()
 

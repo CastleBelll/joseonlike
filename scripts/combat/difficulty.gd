@@ -70,15 +70,66 @@ static func ladder(config: Dictionary) -> Array[Dictionary]:
 static func entry(config: Dictionary, id: String) -> Dictionary:
 	for candidate: Dictionary in ladder(config):
 		if String(candidate.get("id", "")) == id:
-			return candidate
+			return _first_run_softened(config, candidate)
 	return {}
+
+
+## The first run is short (see _first_run_scaled) — but shortening the clock
+## alone compresses the same waves into a fifth of the time, which measured as
+## a bot dying at 36.9s on what is supposed to be the teaching run. The tier is
+## softened to match, through the same lookup both the stage and the spawner
+## already share.
+static func _first_run_softened(config: Dictionary, tier: Dictionary) -> Dictionary:
+	if not _is_first_run():
+		return tier
+	var settings: Dictionary = config.get("_config", {})
+	var softened: Dictionary = tier.duplicate(true)
+	for field: String in [
+		"spawn_count_mult", "elite_count_mult",
+	]:
+		softened[field] = float(tier.get(field, 1.0)) * float(
+			settings.get("first_run_spawn_scale", 1.0)
+		)
+	softened["enemy_hp_mult"] = float(tier.get("enemy_hp_mult", 1.0)) * float(
+		settings.get("first_run_enemy_hp_scale", 1.0)
+	)
+	softened["enemy_damage_mult"] = float(tier.get("enemy_damage_mult", 1.0)) * float(
+		settings.get("first_run_enemy_damage_scale", 1.0)
+	)
+	return softened
+
+
+static func _is_first_run() -> bool:
+	if SaveService.instance == null:
+		return false
+	var stats: Dictionary = SaveService.instance.profile.get("stats", {})
+	return int(stats.get("runs_played", 0)) <= 0
 
 
 static func run_length(config: Dictionary, id: String) -> Dictionary:
 	for raw: Variant in config.get("run_lengths", []):
 		if raw is Dictionary and String((raw as Dictionary).get("id", "")) == id:
-			return raw
+			return _first_run_scaled(config, raw)
 	return {}
+
+
+## N9-44 (owner: "처음 튜토리얼 끝나고는 1분 안에 게임이 끝나게"): the very
+## first run is shortened by folding an extra scale into the chosen length.
+## Doing it HERE rather than in the stage is what keeps the spawner and the
+## stage agreeing — both read their schedule through this one function, and a
+## clock that disagreed with the wave table would strand the boss.
+## runs_played is read straight off the profile rather than through Ftue, to
+## keep this class free of a dependency that would close a cycle back through
+## SaveService.
+static func _first_run_scaled(config: Dictionary, length: Dictionary) -> Dictionary:
+	var scale: float = float(
+		(config.get("_config", {}) as Dictionary).get("first_run_duration_scale", 1.0)
+	)
+	if scale >= 1.0 or not _is_first_run():
+		return length
+	var scaled: Dictionary = length.duplicate(true)
+	scaled["duration_scale"] = float(length.get("duration_scale", 1.0)) * scale
+	return scaled
 
 
 ## A tier is open when it needs no predecessor, or the predecessor is in the

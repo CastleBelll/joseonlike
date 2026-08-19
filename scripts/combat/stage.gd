@@ -127,6 +127,8 @@ var _move_hint: MoveHint
 # N9-14 interactive guide: the dialog node and the actives highlight ring.
 var _guide: GuideDialog
 var _guide_ring: TutorialRing
+## N9-44: metres walked while the guide's move page is up.
+var _guide_walked_px: float = 0.0
 var _first_run_drops: Array = []
 var _first_run_log: Dictionary = {}
 # N6-2: a guaranteed first-run drop lands ahead of the player (data offset),
@@ -340,10 +342,15 @@ func _physics_process(delta: float) -> void:
 		_dismiss_move_hint()
 	# N9-14: the guide's "움직여봐" page advances on real movement. N9-16:
 	# doing it there retires the standalone hint too — the lesson landed.
+	# N9-44: the page asks for a WALK, not a touch. Distance is accumulated
+	# while the move page is up and the lesson only lands once the player has
+	# actually covered it.
 	if _guide != null and moving:
-		_guide.notify_action(Ftue.AWAIT_MOVE)
-		if SaveService.instance != null and Ftue.should_show_move_hint(_profile()):
-			SaveService.instance.mark_move_hint_seen()
+		_guide_walked_px += _player.velocity.length() * delta
+		if _guide_walked_px >= _guide_walk_goal_px():
+			_guide.notify_action(Ftue.AWAIT_MOVE)
+			if SaveService.instance != null and Ftue.should_show_move_hint(_profile()):
+				SaveService.instance.mark_move_hint_seen()
 	_run_elapsed += delta
 	_refresh_hp_hud()
 	_stream_field_chunks()
@@ -403,6 +410,14 @@ func _set_tutorial_hold(held: bool) -> void:
 		weapon.hold_fire = held
 
 
+## How far the current guide page wants the player to walk. Zero when the
+## page does not ask for a walk, so any movement satisfies it.
+func _guide_walk_goal_px() -> float:
+	if _guide == null:
+		return 0.0
+	return _guide.current_page_number("move_px")
+
+
 func _ring_rect(target: Rect2) -> void:
 	if _guide_ring == null:
 		_guide_ring = TutorialRing.new()
@@ -427,6 +442,7 @@ func _on_guide_page_shown(index: int, await_action: String) -> void:
 	# talisman already flying): the world stays still until the guide reaches
 	# the page that introduces combat. One lesson at a time.
 	_set_tutorial_hold(index < Ftue.COMBAT_FROM_PAGE)
+	_guide_walked_px = 0.0
 	if await_action == Ftue.AWAIT_ACTIVE:
 		_ring_rect(_hud.actives_rect())
 	elif await_action == Ftue.AWAIT_KILL:

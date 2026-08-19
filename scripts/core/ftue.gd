@@ -38,8 +38,12 @@ const GUIDE_PAGES: Array[Dictionary] = [
 	},
 	{
 		"name": "우치",
-		"text": "먼저 움직여보자.\n화면 아무 곳이나 끌면 그쪽으로 걷는다. 해봐.",
+		"text": "먼저 움직여보자.\n화면 아무 곳이나 끌어서, 저만치 걸어가 봐.",
 		"await": AWAIT_MOVE,
+		## N9-44 (owner: the page ended the instant the pad was touched): one
+		## frame of input taught nothing. The player has to actually walk this
+		## far before the lesson counts.
+		"move_px": 220.0,
 	},
 	{
 		"name": "우치",
@@ -49,11 +53,15 @@ const GUIDE_PAGES: Array[Dictionary] = [
 		"name": "우치",
 		"text": "부적은 알아서 날아간다 — 겨눌 것 없이 자리만 잡아.\n오는 놈을 하나 베어봐라.",
 		"await": AWAIT_KILL,
+		"dwell_sec": 1.0,
 	},
 	{
 		"name": "우치",
 		"text": "오른쪽 아래 빛나는 단추가 내 비장의 술법이다.\n축지는 위기 탈출, 벽사진은 사방 일소 — 하나 눌러봐.",
 		"await": AWAIT_ACTIVE,
+		## Hold after the press so the blink or the burst is actually watched;
+		## it used to close on the same frame the skill fired.
+		"dwell_sec": 1.6,
 	},
 	{
 		"name": "우치",
