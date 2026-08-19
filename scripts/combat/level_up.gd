@@ -199,8 +199,10 @@ static func _taken_passives(passive_stacks: Dictionary) -> int:
 ## 개조 candidates (N4-6): one per recipe whose material is held, base weapon
 ## owned AND invested to the recipe's milestone level (N4-9 "level_required"),
 ## and result neither owned nor already replaced by an earlier mod.
-## `waive_level_gate` is the FTUE exception (N4-9): the scripted first run
-## teaches the system, so its one guaranteed card must never be level-blocked.
+## `waive_level_gate` exists for probes and harnesses that need to reach a
+## recipe without staging the levels. It is NOT used in play any more: the FTUE
+## once waived the gate on the first run, which taught a rule the second run
+## contradicts (N9-31).
 static func mod_candidates(
 	mods: Dictionary,
 	inventory: Dictionary,

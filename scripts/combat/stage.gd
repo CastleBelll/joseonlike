@@ -670,11 +670,15 @@ func _show_next_level_up() -> void:
 		_weapons_data, _passives_data, _owned_levels, _passive_stacks,
 		_owned_grades, _grades_config, _replaced_weapons, _weapon_categories
 	)
-	# N4-9: evolution is earned — the recipe's level_required gate applies from
-	# the second run on; the scripted first run keeps its teaching card free.
+	# N9-31 (owner report: 낡은 부적 Lv.5 안됐는데도 개조가 되네): the level gate
+	# now applies on the first run too. It used to be waived so the scripted
+	# first run could teach 개조 — but that taught a rule that becomes false on
+	# run two, and a lesson the game then contradicts is worse than no lesson.
+	# The teaching moved to a truthful signal that already exists: picking the
+	# material floats "<무기> Lv.N에서 개조" (_material_cue), and the pause
+	# screen's 개조 경로 lines carry the same requirement.
 	var mod_pool: Array[Dictionary] = LevelUp.mod_candidates(
-		_mods_data, _run_state.inventory, _owned_levels, _replaced_weapons,
-		Ftue.is_first_run(_profile())
+		_mods_data, _run_state.inventory, _owned_levels, _replaced_weapons
 	)
 	# N7-2 혜안: the choice_count meta bonus widens every level-up screen.
 	var choices: Array[Dictionary] = LevelUp.assemble(
