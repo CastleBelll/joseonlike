@@ -123,11 +123,14 @@ func test_tinted_flag_only_from_active_steps() -> bool:
 
 
 func test_candidates_offer_grade_up_below_top_only() -> bool:
+	# N9-28: grade is offered only once the weapon is maxed, so both probes
+	# level it out first — otherwise this measures the level gate, not the rung.
+	var max_level: int = int(WEAPONS["talisman"]["max_level"])
 	var below: Array[Dictionary] = LevelUp.candidates(
-		WEAPONS, {}, {"talisman": 1}, {}, {"talisman": "rare"}, GRADES
+		WEAPONS, {}, {"talisman": max_level}, {}, {"talisman": "rare"}, GRADES
 	)
 	var at_top: Array[Dictionary] = LevelUp.candidates(
-		WEAPONS, {}, {"talisman": 1}, {}, {"talisman": "mythic"}, GRADES
+		WEAPONS, {}, {"talisman": max_level}, {}, {"talisman": "mythic"}, GRADES
 	)
 	var count_grade_ups := func(pool: Array[Dictionary]) -> int:
 		var found: int = 0
@@ -303,3 +306,46 @@ func test_grade_bonuses_accumulate_across_rungs() -> bool:
 	var none: float = WeaponGrade.bonus(ladder, "rare", "rare", "crit_chance")
 	var unknown: float = WeaponGrade.bonus(ladder, "common", "mythic", "no_such_field")
 	return absf(both - 0.25) < 0.0001 and absf(one - 0.1) < 0.0001 		and none == 0.0 and unknown == 0.0
+
+
+# N9-28: grade is what a MAXED weapon does next, not a rival to levelling it.
+func test_grade_up_is_not_offered_below_max_level() -> bool:
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		WEAPONS, {}, {"talisman": 1}, {}, {}, GRADES
+	)
+	for choice: Dictionary in pool:
+		if String(choice["kind"]) == LevelUp.KIND_GRADE_UP:
+			return false
+	# The level card is still there — the weapon has somewhere to go.
+	for choice: Dictionary in pool:
+		if String(choice["kind"]) == LevelUp.KIND_WEAPON_UP:
+			return true
+	return false
+
+
+func test_grade_up_appears_once_the_weapon_is_maxed() -> bool:
+	var max_level: int = int(WEAPONS["talisman"]["max_level"])
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		WEAPONS, {}, {"talisman": max_level}, {}, {}, GRADES
+	)
+	var has_grade: bool = false
+	for choice: Dictionary in pool:
+		if String(choice["kind"]) == LevelUp.KIND_GRADE_UP:
+			has_grade = true
+		# A maxed weapon must NOT still offer a level card.
+		if String(choice["kind"]) == LevelUp.KIND_WEAPON_UP:
+			return false
+	return has_grade
+
+
+func test_a_maxed_weapon_at_the_top_rung_offers_neither() -> bool:
+	# Nothing left to sell on this weapon; the pool must simply not carry it
+	# rather than offer a card that cannot advance anything.
+	var max_level: int = int(WEAPONS["talisman"]["max_level"])
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		WEAPONS, {}, {"talisman": max_level}, {}, {"talisman": "mythic"}, GRADES
+	)
+	for choice: Dictionary in pool:
+		if String(choice["id"]) == "talisman":
+			return false
+	return true

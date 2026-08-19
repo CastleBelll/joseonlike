@@ -142,12 +142,16 @@ static func candidates(
 		if owned_levels.has(weapon_id):
 			if int(owned_levels[weapon_id]) < int(stats.get("max_level", 0)):
 				pool.append({"kind": KIND_WEAPON_UP, "id": weapon_id})
-			# Grade-up is deliberately independent of the level cap (GDD §33:
-			# the two growth axes are separate), so a max-level weapon can
-			# still climb the ladder.
-			var current: String = current_grade(weapon_id, weapons, owned_grades)
-			if not rungs.is_empty() and not WeaponGrade.is_top(rungs, current):
-				pool.append({"kind": KIND_GRADE_UP, "id": weapon_id})
+			# N9-28 (owner direction): grade is what a MAXED weapon does next,
+			# not a rival to levelling it. While both were offered they fought
+			# for the same card slot — one card per subject id (N4-7) — so a
+			# grade card silently cost that weapon a level, working against the
+			# level-5 evolution gate. Offering it only at max level makes the
+			# order explicit: level the weapon out, then specialise it.
+			if int(owned_levels[weapon_id]) >= int(stats.get("max_level", 0)):
+				var current: String = current_grade(weapon_id, weapons, owned_grades)
+				if not rungs.is_empty() and not WeaponGrade.is_top(rungs, current):
+					pool.append({"kind": KIND_GRADE_UP, "id": weapon_id})
 		elif weapon_slots_left and not bool(stats.get("evolution_only", false)) \
 				and runtime_can_fire(stats):
 			# N9-5d weapon identity (GDD §3, owner report: the taoist was

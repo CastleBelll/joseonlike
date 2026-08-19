@@ -301,16 +301,17 @@ func test_pick_three_from_larger_pool_has_no_duplicates() -> bool:
 ## same weapon — one screen must still never show the same weapon twice, by
 ## construction, not by shuffle luck.
 func test_pick_never_yields_two_cards_for_the_same_weapon() -> bool:
-	var pool: Array[Dictionary] = LevelUp.candidates(
-		WEAPONS, {}, {"talisman": 1}, {}, {"talisman": "common"}, GRADES
-	)
-	var talisman_cards: int = 0
-	for choice: Dictionary in pool:
-		if String(choice["id"]) == "talisman":
-			talisman_cards += 1
-	if talisman_cards != 2:
-		push_error("test_level_up: fixture no longer yields level+grade for one weapon")
-		return false
+	# Built by hand rather than via candidates(): since N9-28 gated grade behind
+	# max level, candidates() no longer produces a level+grade collision for one
+	# weapon — and the rule under test belongs to pick() (one card per subject
+	# id), whatever put two of them in the pool.
+	var pool: Array[Dictionary] = [
+		{"kind": LevelUp.KIND_WEAPON_UP, "id": "talisman"},
+		{"kind": LevelUp.KIND_GRADE_UP, "id": "talisman"},
+		{"kind": LevelUp.KIND_NEW_WEAPON, "id": "bow"},
+		{"kind": LevelUp.KIND_PASSIVE, "id": "attack_damage"},
+		{"kind": LevelUp.KIND_PASSIVE, "id": "move_speed"},
+	]
 	var rng := _rng()
 	for _attempt: int in range(200):
 		var seen: Array[String] = []
