@@ -24,6 +24,18 @@ static func build_frames(
 	return frames
 
 
+## N9-38: one looping animation from a single strip, for effect sprites that
+## have no idle/walk split (the 혼불 wisp). Same strip contract as the
+## character sheets — square frames, count = width / height.
+static func loop_frames(path: String, fps: float, anim: String = ANIM_IDLE) -> SpriteFrames:
+	var frames := SpriteFrames.new()
+	frames.rename_animation("default", anim)
+	frames.set_animation_speed(anim, fps)
+	frames.set_animation_loop(anim, true)
+	_add_strip_frames(frames, anim, path)
+	return frames
+
+
 static func _add_strip_frames(frames: SpriteFrames, anim: String, path: String) -> void:
 	var strip: Texture2D = load(path)
 	if strip == null:

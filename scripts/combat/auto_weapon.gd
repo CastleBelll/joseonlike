@@ -709,11 +709,14 @@ class OrbVisual:
 	const GLOW_ALPHA := 0.22
 	const TRAIL_ALPHA := 0.3
 	const TRAIL_RADIUS_SCALE := 0.35
-	## N9-5c: the orb body is the hand-drawn dokkaebi-fire wisp texture,
-	## authored in luminance so `color` (soul blue / fire orange / grade
-	## tint) modulates the hue. Visual height tracks the hit diameter.
+	## N9-5c: the orb body is the dokkaebi-fire wisp, authored in LUMINANCE so
+	## `color` (soul blue / fire orange / grade tint) modulates the hue — which
+	## is how 혼불 and 화령 혼불 share one texture and still read as different
+	## flames. N9-38 replaced the single frame with the owner's 14-frame loop.
+	## Visual height tracks the hit diameter.
 	const WISP_TEXTURE := "res://asset/weapon/fx/honbul_wisp.png"
 	const WISP_HEIGHT_SCALE := 2.6
+	const WISP_FPS := 12.0
 
 	var color: Color = UiPalette.WEAPON_SOUL
 	var radius: float = AutoWeapon.ORB_RADIUS_PX
@@ -722,19 +725,29 @@ class OrbVisual:
 	var _ages := PackedFloat32Array()
 	var _head: int = -1
 	var _count: int = 0
-	var _wisp: Sprite2D
+	var _wisp: AnimatedSprite2D
 
 	func _init() -> void:
 		_trail.resize(TRAIL_CAPACITY)
 		_ages.resize(TRAIL_CAPACITY)
 
 	func _ready() -> void:
-		_wisp = Sprite2D.new()
-		_wisp.texture = load(WISP_TEXTURE)
+		_wisp = AnimatedSprite2D.new()
+		_wisp.sprite_frames = SpriteSheet.loop_frames(WISP_TEXTURE, WISP_FPS)
 		_wisp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		_wisp.modulate = color
-		var height: float = maxf(_wisp.texture.get_height(), 1.0)
+		var frame: Texture2D = _wisp.sprite_frames.get_frame_texture(
+			SpriteSheet.ANIM_IDLE, 0
+		)
+		var height: float = maxf(frame.get_height() if frame != null else 1.0, 1.0)
 		_wisp.scale = Vector2.ONE * (radius * WISP_HEIGHT_SCALE / height)
+		# Orbs are built together, so start each at a different point in the
+		# loop — otherwise every flame flickers in lockstep and reads as one
+		# blinking object rather than several fires.
+		_wisp.play()
+		_wisp.frame = randi() % maxi(
+			_wisp.sprite_frames.get_frame_count(SpriteSheet.ANIM_IDLE), 1
+		)
 		add_child(_wisp)
 
 	## Parent AutoWeapon moves the orb in ITS _physics_process (parents run
