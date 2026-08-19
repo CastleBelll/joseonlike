@@ -3,7 +3,7 @@
     "name_ko": "대나무 숲",
     "name_en": "Bamboo Forest",
     "duration_sec": 420,
-    "boss_id": "bamboo_spirit_lord",
+    "boss_id": "dudueori",
     "boss_gold": 150,
     "boss_at_sec": 340,
     "surge_at_sec": 300,

@@ -802,6 +802,14 @@ class ArcFlash:
 	const FULL_ALPHA := 0.16
 	## The bright leading blade covers this slice of the full arc.
 	const EDGE_SLICE := 0.22
+	## N9-47: the leading blade is the pack crescent rather than a drawn slice.
+	## It rides the sweep at the outer radius; the truthful sector underneath is
+	## still what states coverage, so a fixed-shape sprite never has to.
+	## Authored in luminance, like every other tinted effect here.
+	const BLADE_TEXTURE := "res://asset/weapon/fx/arc_blade.png"
+	const BLADE_FRAMES := 4
+	## Blade height as a share of the swing radius.
+	const BLADE_SCALE := 0.55
 
 	var _aim: float = 0.0
 	var _arc_rad: float = 0.0
@@ -809,6 +817,28 @@ class ArcFlash:
 	var _color: Color = UiPalette.PAPER
 	var _age: float = 0.0
 	var _duration: float = 0.0
+
+	static var _blade_frames: Array[AtlasTexture] = []
+
+	## Cut once for the whole run: a strip of square-ish cells, same contract as
+	## every other strip in the project (count is declared, cells are equal).
+	static func _blades() -> Array[AtlasTexture]:
+		if not _blade_frames.is_empty():
+			return _blade_frames
+		if not ResourceLoader.exists(BLADE_TEXTURE, "Texture2D"):
+			return _blade_frames
+		var sheet: Texture2D = load(BLADE_TEXTURE)
+		if sheet == null:
+			return _blade_frames
+		var cell: float = sheet.get_size().x / float(BLADE_FRAMES)
+		for i: int in range(BLADE_FRAMES):
+			var atlas := AtlasTexture.new()
+			atlas.atlas = sheet
+			atlas.region = Rect2(
+				Vector2(cell * float(i), 0.0), Vector2(cell, sheet.get_size().y)
+			)
+			_blade_frames.append(atlas)
+		return _blade_frames
 
 	func _ready() -> void:
 		visible = false
@@ -881,6 +911,23 @@ class ArcFlash:
 				Vector2.ZERO, _radius, start, edge, POINTS,
 				Color(_color, 0.8 * fade), TRAIL_WIDTH
 			)
+		# N9-47: the drawn crescent rides the leading edge. Missing art falls
+		# through to the slice below, so the swing never depends on the asset.
+		var blades: Array[AtlasTexture] = _blades()
+		if not blades.is_empty():
+			var blade: AtlasTexture = blades[mini(
+				int(progress * float(blades.size())), blades.size() - 1
+			)]
+			var blade_h: float = maxf(blade.get_size().y, 1.0)
+			var scale: float = _radius * BLADE_SCALE / blade_h
+			draw_set_transform(
+				Vector2.from_angle(edge) * (_radius * 0.78), edge, Vector2.ONE * scale
+			)
+			draw_texture(
+				blade, -blade.get_size() / 2.0, Color(_color, 0.85 * fade)
+			)
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			return
 		# Leading blade: a short, bright slice with a white-hot core riding the
 		# outer rim — the moving staff head.
 		var blade_from: float = maxf(edge - _arc_rad * EDGE_SLICE, start)

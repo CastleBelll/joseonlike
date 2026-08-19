@@ -6,7 +6,7 @@ extends RefCounted
 
 const MONSTERS_PATH := "res://data/monsters.json"
 const WALK_FRAME_COUNT := 4
-const BOSS_DIR := "res://asset/monsters/bamboo_spirit_lord"
+const BOSS_DIR := "res://asset/monsters/dudueori"
 
 ## Expected drawn heights in logical px: opaque-pixel rows / EXPORT_SCALE.
 const EXPECTED_HEIGHTS: Dictionary = {

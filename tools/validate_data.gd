@@ -732,7 +732,10 @@ func _check_shadow_monsters() -> void:
 			_fail(label + " must be an object")
 			continue
 		var shadow: Dictionary = monster["shadow"]
-		for key: String in ["grow_per_sec", "max_scale", "lit_shrink_per_sec", "leash_px"]:
+		for key: String in [
+			"grow_per_sec", "max_scale", "lit_shrink_per_sec", "leash_px",
+			"leash_fade_sec",
+		]:
 			if float(shadow.get(key, 0.0)) <= 0.0:
 				_fail("%s.%s missing or not positive" % [label, key])
 		if float(shadow.get("max_scale", 0.0)) <= 1.0:

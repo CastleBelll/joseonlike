@@ -94,9 +94,21 @@ func test_death_cause_elite_and_boss_names_resolve_from_data() -> bool:
 	var elite: Dictionary = Enemy.derive_elite_stats(
 		monsters["bamboo_brute"], monsters["bamboo_brute_elite"]
 	)
-	var boss_name: String = String((monsters["bamboo_spirit_lord"] as Dictionary)["name_ko"])
-	return RunFlow.death_cause_text(String(elite["name_ko"])) == "정예 죽림 거한" \
-		and RunFlow.death_cause_text(boss_name) == "죽림 정령왕"
+	# N9-46: the boss is read from the stage rather than named here. The old
+	# version hardcoded its display name and failed the moment the boss was
+	# renamed — for the one reason a data-driven check never should, that it
+	# described the content instead of the rule. The RULE is that a boss's
+	# death line is its own name unadorned, while an elite gains the prefix.
+	var stages: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string("res://data/stages.json")
+	)
+	if stages is not Dictionary:
+		return false
+	var boss_id: String = String((stages["bamboo_forest"] as Dictionary)["boss_id"])
+	var boss_name: String = String((monsters[boss_id] as Dictionary)["name_ko"])
+	var base_name: String = String((monsters["bamboo_brute"] as Dictionary)["name_ko"])
+	return RunFlow.death_cause_text(String(elite["name_ko"])) == "정예 " + base_name \
+		and RunFlow.death_cause_text(boss_name) == boss_name
 
 
 func test_death_cause_falls_back_when_unattributable() -> bool:

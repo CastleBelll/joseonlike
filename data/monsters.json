@@ -45,17 +45,17 @@
     "size_mult": 1.6,
     "reward_mult": 6.0
   },
-  "bamboo_spirit_lord": {
-    "name_ko": "죽림 정령왕",
-    "name_en": "Bamboo Spirit Lord",
-    "origin_ko": "정령왕은 수백 년을 대나무숲에서 살아온 최고의 정령이다. 오직 운택의 봉인 부적만이 그 무한한 힘을 가둘 수 있다.",
+  "dudueori": {
+    "name_ko": "두두리",
+    "name_en": "Dudueori",
+    "origin_ko": "경주 일대에서 섬기던 목신(木神)으로, 목랑(木郞)이라고도 한다. 『고려사』와 『신증동국여지승람』에 그 이름이 남아 있고, 도깨비의 원형으로 지목되는 존재다. 말과 무기를 바치면 신령하게 돕는다 하여 이의민은 집에 신당을 짓고 그림으로 모셨다. 이 밤의 대숲에서는 바치는 자가 없어, 스스로 걸어 나왔다.",
     "hp": 2400.0,
     "damage": 35.0,
     "speed": 50.0,
     "xp_drop": 200,
     "behaviour": "boss",
     "collision_radius": 33.5,
-    "sprite": "res://asset/monsters/bamboo_spirit_lord"
+    "sprite": "res://asset/monsters/dudueori"
   },
   "gwimyeon_dokkaebi": {
     "name_ko": "귀면 도깨비",
@@ -252,7 +252,8 @@
       "max_scale": 2.8,
       "lit_shrink_per_sec": 0.5,
       "damage_per_scale": 3.0,
-      "leash_px": 420.0
+      "leash_px": 420.0,
+      "leash_fade_sec": 1.6
     }
   }
 }

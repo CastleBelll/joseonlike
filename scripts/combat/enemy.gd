@@ -126,6 +126,8 @@ var _lit: bool = false
 var _shadow_anchor := Vector2.ZERO
 var _shadow_anchored: bool = false
 var _shadow_leashed: bool = false
+## N9-48: seconds spent outside the haunt, counting down to sinking away.
+var _shadow_leash_left: float = 0.0
 
 
 func _ready() -> void:
@@ -204,6 +206,10 @@ func setup(
 	_lit = false
 	_shadow_anchored = false
 	_shadow_leashed = false
+	_shadow_leash_left = 0.0
+	# Pool-safe: a shadow that sank away must not hand its fade to the next
+	# monster reusing this instance.
+	modulate.a = 1.0
 	_contact_cooldown = contact_cooldown
 	_time_since_contact = contact_cooldown  # first touch may hit immediately
 	separation_push = Vector2.ZERO
@@ -349,6 +355,22 @@ func _update_shadow(delta: float) -> void:
 	_shadow_leashed = not CombatMath.within_leash(
 		_shadow_anchor, _target.global_position, float(shadow_config.get("leash_px", 0.0))
 	)
+	# N9-48 (owner: "오다가 말고 끝까지 안 따라오더라"): standing frozen at the
+	# leash edge reads as a broken chase. A shadow that has lost its hold sinks
+	# back into the dark it belongs to — it fades and is gone, which reads as
+	# the haunt letting go rather than as a monster that stopped working.
+	var fade_sec: float = float(shadow_config.get("leash_fade_sec", 0.0))
+	if _shadow_leashed and fade_sec > 0.0:
+		_shadow_leash_left += delta
+		modulate.a = clampf(1.0 - _shadow_leash_left / fade_sec, 0.0, 1.0)
+		if _shadow_leash_left >= fade_sec:
+			modulate.a = 1.0
+			died.emit(self)
+			return
+	elif _shadow_leash_left > 0.0:
+		# Back inside the haunt before it finished sinking: it solidifies again.
+		_shadow_leash_left = maxf(_shadow_leash_left - delta * 2.0, 0.0)
+		modulate.a = clampf(1.0 - _shadow_leash_left / fade_sec, 0.0, 1.0)
 	_shadow_scale = CombatMath.shadow_scale(_shadow_scale, delta, _lit, shadow_config)
 	_visual.scale = Vector2(float(_facing) * _shadow_scale, _shadow_scale)
 	if _flash_left <= 0.0:
