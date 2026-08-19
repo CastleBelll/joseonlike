@@ -16,10 +16,14 @@ const MARGIN_BOTTOM := 28
 const STAT_ROW_HEIGHT := 40.0
 const PANEL_PADDING := 16
 const PANEL_CORNER_RADIUS := 12
-const SPOT_HEIGHT := 96.0
+const SPOT_HEIGHT := 88.0
 const SPOT_CORNER_RADIUS := 8
 const SPOT_BORDER_WIDTH := 2
-const SPOT_COLUMNS := 2
+## N9-33: five buildings in two columns is three rows with a lone orphan on
+## the last one, and that third row is what pushed 출정 off a 960px screen once
+## the difficulty and run-length buttons joined the menu. Three columns fits
+## the same five spots in two rows, balanced 3+2.
+const SPOT_COLUMNS := 3
 const BUTTON_HEIGHT := 64
 const SELECT_BUTTON_HEIGHT := 56
 const COIN_ICON_SIZE := 32.0
@@ -208,7 +212,9 @@ func _refresh_departure_labels() -> void:
 	)
 	_difficulty_button.text = "난이도 ‹%s›" % String(tier.get("name_ko", "-"))
 	_difficulty_button.tooltip_text = String(tier.get("desc_ko", ""))
-	_run_length_button.text = "‹%s›" % String(length.get("name_ko", "-"))
+	# Both cycle buttons name what they cycle; the length button used to show
+	# only the value, which read as a stray chip next to a labelled one.
+	_run_length_button.text = "길이 ‹%s›" % String(length.get("name_ko", "-"))
 	_run_length_button.tooltip_text = String(length.get("desc_ko", ""))
 
 
