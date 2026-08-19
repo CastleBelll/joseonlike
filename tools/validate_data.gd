@@ -113,6 +113,13 @@ func _check_combat_cross_references() -> void:
 			continue
 		_require_positive_numbers(monsters[monster_id], MONSTER_FIELDS, "monsters." + monster_id)
 		_check_monster_sprites(monsters[monster_id], "monsters." + monster_id)
+		# N9-49 boss patterns: a telegraph nobody can react to is just damage,
+		# and a band that swallows its own middle is a disc with a misleading
+		# name. Both fail here rather than in play.
+		for issue: String in BossPatterns.data_issues(
+			monsters[monster_id], "monsters." + monster_id
+		):
+			_fail(issue)
 	var curve: Dictionary = RunState.load_curve()
 	for stage_id: String in stages:
 		var stage: Dictionary = stages[stage_id]

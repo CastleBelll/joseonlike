@@ -268,7 +268,8 @@ func _physics_process(delta: float) -> void:
 	_update_curse(delta)
 	if CombatMath.is_dead(hp):
 		return  # a DoT tick killed this enemy; it is already released
-	_update_shadow(delta)
+	if _update_shadow(delta):
+		return  # sank away and was pooled; this body has left the space
 	_shock_left = maxf(_shock_left - delta, 0.0)
 	_stun_left = maxf(_stun_left - delta, 0.0)
 	_knockback = _knockback.move_toward(Vector2.ZERO, _knockback_decay * delta)
@@ -338,9 +339,13 @@ func is_shadow() -> bool:
 ## Swell in the dark, shrink in the light, and show which one is happening.
 ## The silhouette is the whole tell: near-black and growing means "you cannot
 ## hurt this yet", lit and shrinking means "hit it now".
-func _update_shadow(delta: float) -> void:
+## Returns true when the shadow released itself this frame — the caller must
+## stop immediately. Emitting died() hands this body back to the pool and takes
+## it out of the physics space, so anything after it (move_and_slide) runs on a
+## body with no space and errors ("body->get_space() is null").
+func _update_shadow(delta: float) -> bool:
 	if shadow_config.is_empty():
-		return
+		return false
 	if not _shadow_anchored:
 		# The spawner positions the enemy after setup(), so the haunt anchor can
 		# only be taken on the first frame it is actually standing somewhere.
@@ -366,7 +371,7 @@ func _update_shadow(delta: float) -> void:
 		if _shadow_leash_left >= fade_sec:
 			modulate.a = 1.0
 			died.emit(self)
-			return
+			return true
 	elif _shadow_leash_left > 0.0:
 		# Back inside the haunt before it finished sinking: it solidifies again.
 		_shadow_leash_left = maxf(_shadow_leash_left - delta * 2.0, 0.0)
@@ -379,6 +384,7 @@ func _update_shadow(delta: float) -> void:
 			_sprite.modulate = tint
 		else:
 			_body.color = tint
+	return false
 
 
 func is_burning() -> bool:

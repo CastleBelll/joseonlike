@@ -113,6 +113,12 @@ var _run_elapsed: float = 0.0
 var _duration_sec: float = 0.0
 var _boss: Enemy
 var _boss_hp_max: float = 0.0
+# N9-49 boss patterns: the attack table for the live boss and the seconds since
+# each one last fired. Owned here, like every other pool and timer, so the
+# damage lands in one place instead of inside a monster's own physics step.
+var _boss_attacks: Array[Dictionary] = []
+var _boss_attack_since: Array[float] = []
+var _telegraph_pool: NodePool
 var _outcome: String = RunFlow.OUTCOME_NONE
 var _result: ResultScreen
 
@@ -195,6 +201,7 @@ func _ready() -> void:
 	_duration_sec = float(stage_entry.get("duration_sec", 0.0))
 	_boss_gold = int(stage_entry.get("boss_gold", 0))
 	_puff_pool = NodePool.new(self, _create_puff)
+	_telegraph_pool = NodePool.new(self, _create_telegraph)
 	_burst_ring_pool = NodePool.new(self, _create_burst_ring)
 	if EffectSprite.available("blink_puff"):
 		_fx_pool = NodePool.new(self, _create_effect_sprite)
@@ -352,6 +359,7 @@ func _physics_process(delta: float) -> void:
 			if SaveService.instance != null and Ftue.should_show_move_hint(_profile()):
 				SaveService.instance.mark_move_hint_seen()
 	_run_elapsed += delta
+	_tick_boss_attacks(delta)
 	_refresh_hp_hud()
 	_stream_field_chunks()
 	if _duration_sec > 0.0 and _run_elapsed >= _duration_sec:
@@ -556,9 +564,76 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 		_end_run(RunFlow.resolve_outcome(false, true, false), true)
 
 
+## N9-49: one telegraph node per warning, pooled like every other effect.
+func _create_telegraph() -> BossTelegraph:
+	var telegraph := BossTelegraph.new()
+	telegraph.erupted.connect(_on_telegraph_erupted)
+	telegraph.finished.connect(
+		func(done: BossTelegraph) -> void: _telegraph_pool.release(done)
+	)
+	return telegraph
+
+
+## Drives the live boss's attack table. Runs on the stage clock rather than the
+## boss's own process so a paused tree stops the patterns too.
+func _tick_boss_attacks(delta: float) -> void:
+	if _boss == null or _boss_attacks.is_empty():
+		return
+	for i: int in range(_boss_attack_since.size()):
+		_boss_attack_since[i] += delta
+	var index: int = BossPatterns.due_index(_boss_attacks, _boss_attack_since)
+	if index < 0:
+		return
+	_boss_attack_since[index] = 0.0
+	var attack: Dictionary = _boss_attacks[index]
+	var radius: float = float(attack.get("radius_px", 0.0))
+	var inner: float = float(attack.get("inner_px", 0.0))
+	var warn_sec: float = float(attack.get("warn_sec", 0.0))
+	# A band pattern is centred on the boss (step in or step out); a disc
+	# pattern hunts the player.
+	if inner > 0.0:
+		_warn_telegraph(_boss.global_position, radius, inner, warn_sec, attack)
+		return
+	for point: Vector2 in BossPatterns.surge_points(
+		_player.global_position, _player.velocity, attack, _choice_rng.randf() * TAU
+	):
+		_warn_telegraph(point, radius, 0.0, warn_sec, attack)
+
+
+func _warn_telegraph(
+	at: Vector2, radius: float, inner: float, warn_sec: float, attack: Dictionary
+) -> void:
+	var telegraph: BossTelegraph = _telegraph_pool.acquire()
+	telegraph.set_meta("attack", attack)
+	telegraph.warn(at, radius, inner, warn_sec, UiPalette.VERMILION)
+
+
+## The eruption resolves against the player only. Boss patterns are the boss's
+## own damage; they never chip the monsters standing in them, which would let a
+## player farm the boss's attacks.
+func _on_telegraph_erupted(at: Vector2, radius: float, inner: float) -> void:
+	for child: Node in get_children():
+		var telegraph := child as BossTelegraph
+		if telegraph == null or not telegraph.visible or telegraph.global_position != at:
+			continue
+		var attack: Dictionary = telegraph.get_meta("attack", {})
+		if not BossPatterns.covers(_player.global_position, at, radius, inner):
+			return
+		_player.take_hit(float(attack.get("damage", 0.0)), String(attack.get("name_ko", "")))
+		return
+
+
 func _on_boss_spawned(boss: Enemy) -> void:
 	_boss = boss
 	_boss_hp_max = boss.hp
+	_boss_attacks = BossPatterns.attacks(
+		(_load_json(Spawner.MONSTERS_PATH) as Dictionary).get(boss.monster_id, {})
+	)
+	_boss_attack_since = []
+	for _attack: Dictionary in _boss_attacks:
+		# Start part-charged so the fight opens with a pattern instead of a
+		# silent first cooldown, but not so charged that both land at once.
+		_boss_attack_since.append(0.0)
 	_hud.show_boss_bar()
 	_hud.set_boss_hp(boss.hp, _boss_hp_max)
 

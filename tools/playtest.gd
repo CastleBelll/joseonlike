@@ -44,6 +44,12 @@ const MIDRUN_SHOT_PATH := "user://playtest_midrun.png"
 ## N4-8: first level-up card that crosses a milestone (★ in its description).
 const MILESTONE_SHOT_PATH := "user://playtest_milestone_card.png"
 const MIDRUN_SHOT_AT_SEC := 75.0
+## N9-49: the boss telegraphs are the only thing on screen the player must read
+## and react to, so the run has to prove they actually drew, not just that the
+## scheduler ran. Fires on the first warning shape of each shape kind (disc and
+## band) — one shot each, because a band that looks like a disc is the failure.
+const BOSS_DISC_SHOT_PATH := "user://playtest_boss_disc.png"
+const BOSS_BAND_SHOT_PATH := "user://playtest_boss_band.png"
 ## N6-1: capture the move hint before the bot's first input dismisses it.
 const HINT_SHOT_PATH := "user://playtest_move_hint.png"
 const HINT_SHOT_AT_SEC := 0.6
@@ -95,6 +101,8 @@ var _surge_at: float = 0.0
 var _boss_at: float = 0.0
 var _pick_wait: float = 0.0
 var _surge_shot_done: bool = false
+var _boss_disc_shot_done: bool = false
+var _boss_band_shot_done: bool = false
 var _result_shot_done: bool = false
 var _fps_min: float = 1e9
 var _fps_sum: float = 0.0
@@ -424,6 +432,7 @@ func _process(delta: float) -> void:
 	if not _midrun_shot_done and elapsed >= MIDRUN_SHOT_AT_SEC:
 		_midrun_shot_done = true
 		_capture(MIDRUN_SHOT_PATH)
+	_watch_boss_telegraphs()
 	if not _surge_shot_done and elapsed >= _surge_at + SURGE_SHOT_DELAY_SEC:
 		_surge_shot_done = true
 		_capture(SURGE_SHOT_PATH)
@@ -721,6 +730,29 @@ func _button_has_label(button: Button, text: String) -> bool:
 	return false
 
 
+## Reports and captures each boss telegraph shape the first time it appears, so
+## a run that never reaches the boss says so instead of quietly passing.
+func _watch_boss_telegraphs() -> void:
+	if _boss_disc_shot_done and _boss_band_shot_done:
+		return
+	for child: Node in _stage.get_children():
+		var telegraph := child as BossTelegraph
+		if telegraph == null or not telegraph.visible:
+			continue
+		if telegraph.is_band():
+			if _boss_band_shot_done:
+				continue
+			_boss_band_shot_done = true
+			print("PLAYTEST boss telegraph: band")
+			_capture(BOSS_BAND_SHOT_PATH)
+		else:
+			if _boss_disc_shot_done:
+				continue
+			_boss_disc_shot_done = true
+			print("PLAYTEST boss telegraph: disc")
+			_capture(BOSS_DISC_SHOT_PATH)
+
+
 func _capture(path: String) -> void:
 	if _headless:
 		return  # no frames to grab without a rendering device
@@ -735,6 +767,9 @@ func _finish() -> void:
 	var fps_avg: float = _fps_sum / float(maxi(_fps_samples, 1))
 	var elapsed: float = _stage._run_elapsed
 	print("PLAYTEST outcome: %s at %.1fs" % [_stage._outcome, elapsed])
+	print("PLAYTEST boss patterns seen: disc=%s band=%s" % [
+		_boss_disc_shot_done, _boss_band_shot_done
+	])
 	print("PLAYTEST level: %d (level-ups: %d, skipped screens: %d)" % [
 		_stage._run_state.level, _stage._run_state.level - 1, _skipped_screens
 	])
