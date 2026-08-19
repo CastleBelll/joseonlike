@@ -101,7 +101,6 @@
       "damage": 4.2,
       "cooldown_sec": -0.05
     },
-    "evolves_to": "phoenix_talisman",
     "evolution_only": true,
     "on_hit_status": {
       "id": "burn",
@@ -137,65 +136,6 @@
       "8": {
         "on_hit_status": {
           "dps": 2.0
-        },
-        "projectile_count": 1
-      }
-    }
-  },
-  "phoenix_talisman": {
-    "name_ko": "봉황 부적",
-    "name_en": "Phoenix Talisman",
-    "travel_sprite": "res://asset/weapon/travel/phoenix_talisman.png",
-    "hit_effect": "hit_phoenix",
-    "category": "spiritual",
-    "grade": "epic",
-    "damage": 16.0,
-    "cooldown_sec": 0.95,
-    "projectile_count": 1,
-    "pierce": 2,
-    "area_scale": 1.8,
-    "speed": 280.0,
-    "range_px": 450.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.8,
-      "cooldown_sec": -0.04
-    },
-    "evolution_only": true,
-    "on_hit_status": {
-      "id": "burn",
-      "dps": 7.0,
-      "duration_sec": 3.0
-    },
-    "sprite": "res://asset/weapon/icons/phoenix_talisman.png",
-    "milestones": {
-      "2": {
-        "on_hit_status": {
-          "dps": 1.5
-        }
-      },
-      "3": {
-        "pierce": 1
-      },
-      "4": {
-        "on_hit_status": {
-          "duration_sec": 0.5
-        }
-      },
-      "5": {
-        "projectile_count": 1
-      },
-      "6": {
-        "on_hit_status": {
-          "dps": 2.0
-        }
-      },
-      "7": {
-        "pierce": 1
-      },
-      "8": {
-        "on_hit_status": {
-          "dps": 2.5
         },
         "projectile_count": 1
       }

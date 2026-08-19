@@ -35,7 +35,6 @@ const MECHANIC_CURSE := "curse"
 ## on the field; anything unlisted keeps the plain talisman paper.
 const TINTS: Dictionary = {
 	"fire_talisman": UiPalette.WEAPON_FIRE,
-	"phoenix_talisman": UiPalette.WEAPON_FIRE,
 	"hwabu": UiPalette.WEAPON_FIRE,
 	"hwaryeongbu": UiPalette.WEAPON_FIRE,
 	"noebu": UiPalette.WEAPON_LIGHTNING,
@@ -313,6 +312,15 @@ func _fire() -> void:
 	if _mechanic == MECHANIC_MELEE_ARC:
 		_fire_arc(enemies, positions, aim["point"] as Vector2)
 		return
+	# N9-42: lightning strikes, it does not fly. A chain weapon resolves on the
+	# enemy it aimed at with no travel, and the bolt is drawn from the caster.
+	# With nothing to aim at there is nothing to strike — unlike a thrown
+	# talisman, a bolt cannot be fired into empty space and hit later.
+	var strike_now: Enemy = null
+	if _mechanic == MECHANIC_CHAIN:
+		if String(aim.get("kind", "")) != "enemy":
+			return
+		strike_now = enemies[int(aim.get("index", -1))]
 	var direction: Vector2 = CombatMath.chase_direction(
 		_player.global_position, aim["point"] as Vector2
 	)
@@ -329,7 +337,7 @@ func _fire() -> void:
 		var shot_damage: float = _roll_damage()
 		projectile.launch(
 			_player.global_position, shot_direction, _speed, shot_damage, _spawner,
-			_player, _tint(), _view_margin, _shot_config, _last_crit
+			_player, _tint(), _view_margin, _shot_config, _last_crit, strike_now
 		)
 
 

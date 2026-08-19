@@ -51,6 +51,11 @@ var _chain_falloff: float = 1.0
 var _chain_range: float = 0.0
 ## N3-17: previous chain hit position — the next hit draws a bolt from here.
 var _chain_prev := Vector2.INF
+## Where this shot was cast from — the first chain leg is drawn from here.
+var _origin := Vector2.ZERO
+## N9-42 instant strike (chain weapons): resolved on the first physics frame.
+var _instant: bool = false
+var _instant_target: Enemy = null
 var _status: Dictionary = {}
 var _seal: Dictionary = {}
 var _trail: TrailVisual
@@ -96,8 +101,10 @@ static func travel_available(path: String) -> bool:
 ## lands — otherwise the number reports a plain hit for doubled damage.
 func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 		spawner: Spawner, player: Player, tint: Color = UiPalette.PAPER,
-		view_margin: float = 0.0, config: Dictionary = {}, crit: bool = false) -> void:
+		view_margin: float = 0.0, config: Dictionary = {}, crit: bool = false,
+		strike_now: Enemy = null) -> void:
 	global_position = from
+	_origin = from
 	_velocity = direction * speed
 	_damage = damage
 	_crit = crit
@@ -117,6 +124,8 @@ func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 	_chain_falloff = float(chain.get("falloff", 1.0))
 	_chain_range = float(chain.get("range_px", 0.0))
 	_chain_prev = Vector2.INF
+	_instant_target = strike_now
+	_instant = strike_now != null
 	_status = config.get("status", {})
 	_seal = config.get("seal", {})
 	_struck.clear()
@@ -133,6 +142,21 @@ func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 
 
 func _physics_process(delta: float) -> void:
+	if _instant:
+		# N9-42: chain weapons do not travel. The shot resolves on the frame it
+		# is cast, at its target, and the bolts do the talking. Handled here
+		# rather than inside launch() so the strike still runs inside the
+		# physics step, where every other strike in this file runs.
+		_instant = false
+		if _instant_target != null and not CombatMath.is_dead(_instant_target.hp):
+			var target_at: Vector2 = _instant_target.global_position
+			global_position = target_at
+			_strike(_instant_target, _damage)
+			if _chain_jumps_left > 0:
+				_resolve_chain(target_at)
+		_instant_target = null
+		finished.emit(self)
+		return
 	global_position += _velocity * delta
 	_trail.record(global_position, delta)
 	# N5-5: a shot passing over a destructible prop chips it. Free of pierce
@@ -200,10 +224,12 @@ func _strike(enemy: Enemy, damage: float) -> void:
 		if _chain_prev != Vector2.INF:
 			chained.emit(_chain_prev, hit_at)
 		else:
-			chained.emit(
-				hit_at - _velocity.normalized() * WeaponEffects.value("chain_first_leg_px"),
-				hit_at
-			)
+			# N9-42 (owner: lightning should leave the CHARACTER, not fly in as
+			# a talisman): the first leg is drawn from where the shot was cast,
+			# so the bolt reads as reaching out from the caster. It used to be
+			# a stub arcing in along the flight line, which only made sense
+			# while the shot visibly travelled.
+			chained.emit(_origin, hit_at)
 		_chain_prev = hit_at
 	match String(_status.get("id", "")):
 		"burn":

@@ -77,12 +77,6 @@
     "result_weapon": "gwisal",
     "level_required": 5
   },
-  "phoenix_talisman_mod": {
-    "weapon_id": "fire_talisman",
-    "loot_id": "dokkaebi_flame",
-    "result_weapon": "phoenix_talisman",
-    "level_required": 5
-  },
   "twin_sword_mod": {
     "weapon_id": "sharp_sword",
     "loot_id": "whetstone",

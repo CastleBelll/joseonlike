@@ -50,14 +50,19 @@ func test_projectile_travel_art_resolves_with_missing_fallback() -> bool:
 		push_error("test_weapon_effects: weapons.json did not parse")
 		return false
 	var passed: bool = true
-	for weapon_id: String in [
-		"old_talisman", "fire_talisman", "phoenix_talisman", "beopgeom",
-		"bongmageom", "hwabu", "hwaryeongbu", "noebu", "noejeongbu",
-		"sal", "gwisal",
-	]:
+	# N9-43: derived from the data rather than a hardcoded roster. The old list
+	# still named 봉황 부적 after it was removed, so the test failed for the one
+	# reason a data-driven check should never fail — it was describing weapons
+	# that no longer exist. Every weapon that DECLARES travel art must ship it;
+	# weapons without the field are simply not in scope.
+	for weapon_id: String in weapons:
+		if weapon_id.begins_with("_"):
+			continue
 		var path: String = String(
 			(weapons[weapon_id] as Dictionary).get("travel_sprite", "")
 		)
+		if path.is_empty():
+			continue
 		if not Projectile.travel_available(path):
 			push_error("test_weapon_effects: travel art unavailable: " + weapon_id)
 			passed = false

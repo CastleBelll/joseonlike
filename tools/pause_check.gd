@@ -26,7 +26,7 @@ func _ready() -> void:
 					"grade": "epic", "grade_ko": "영웅"},
 				{"id": "seokjang", "name": "석장", "level": 6,
 					"grade": "common", "grade_ko": "일반"},
-				{"id": "phoenix_talisman", "name": "봉황 부적", "level": 8,
+				{"id": "gwisal", "name": "귀살", "level": 8,
 					"grade": "mythic", "grade_ko": "신화"},
 			],
 			"passives": [
