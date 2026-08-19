@@ -57,6 +57,11 @@ var _boss_id: String = ""
 var _boss_at_sec: float = RunFlow.NO_BOSS
 var _boss_spawn_done: bool = false
 var _soft_enrage: Dictionary = {}
+## N9-60 endless: the loop config, the stage's own waves to replay, and the
+## highest loop already armed (0 = still on the night as written).
+var _endless: Dictionary = {}
+var _stage_waves: Array = []
+var _loop_armed: int = 0
 ## N9-22 selected difficulty tier (empty = no scaling).
 var _tier: Dictionary = {}
 # N3-14 separation state; buffers are reused every frame (clear keeps
@@ -102,11 +107,44 @@ func setup(player: Player) -> void:
 	_boss_id = String(stage.get("boss_id", ""))
 	_boss_at_sec = RunFlow.boss_spawn_time(stage)
 	_soft_enrage = stage.get("soft_enrage", {})
+	# N9-60: the endless loop reuses THIS stage's waves, so it is read from the
+	# same dict the ordinary night uses. Empty when the chosen run length is not
+	# endless, which leaves every path below at its previous behaviour.
+	if Endless.is_endless(Difficulty.run_length(
+		difficulty_config, Difficulty.selected_run_length(difficulty_config)
+	)):
+		_endless = stage.get(Endless.FLAG, {})
+		_stage_waves = stage.get("waves", [])
 	if _spawning.is_empty() or _monsters.is_empty():
 		push_error("spawner: missing spawning config or monsters for " + STAGE_ID)
 		return
 	for wave: Dictionary in stage.get("waves", []):
 		_pending_waves.append(wave)
+
+
+## Per-loop growth on top of everything else. Linear, and applied at spawn so a
+## monster keeps the numbers it arrived with rather than mutating mid-fight.
+func _endless_scaled(stats: Dictionary) -> Dictionary:
+	if _endless.is_empty() or _loop_armed <= 0:
+		return stats
+	var scaled: Dictionary = stats.duplicate()
+	scaled["hp"] = float(stats.get("hp", 0.0)) * Endless.loop_scale(
+		_loop_armed, float(_endless.get("hp_growth_per_loop", 0.0))
+	)
+	scaled["damage"] = float(stats.get("damage", 0.0)) * Endless.loop_scale(
+		_loop_armed, float(_endless.get("damage_growth_per_loop", 0.0))
+	)
+	return scaled
+
+
+## True while the run has no end but its own: the stage asks before deciding
+## that time has run out.
+func is_endless_run() -> bool:
+	return not _endless.is_empty()
+
+
+func endless_loop() -> int:
+	return _loop_armed
 
 
 ## N4-2: "elite_of" entries are multiplier recipes, not full monsters —
@@ -197,7 +235,21 @@ func _apply_separation() -> void:
 		) * _sep_weight
 
 
+## N9-60: arms the next loop's waves as its start time comes round. Done here,
+## just before waves are consumed, so an endless run never has an empty
+## schedule — a silent field reads as a crash, not as a mode.
+func _arm_endless_loop() -> void:
+	if _endless.is_empty():
+		return
+	var index: int = Endless.loop_index(_elapsed, _endless)
+	while _loop_armed < index:
+		_loop_armed += 1
+		for wave: Dictionary in Endless.loop_waves(_stage_waves, _endless, _loop_armed):
+			_pending_waves.append(wave)
+
+
 func _start_due_waves() -> void:
+	_arm_endless_loop()
 	for wave: Dictionary in _pending_waves.duplicate():
 		if _elapsed < float(wave.get("at_sec", 0.0)):
 			continue
@@ -230,6 +282,13 @@ func _start_boss_if_due() -> void:
 	if _boss_spawn_done or _boss_at_sec < 0.0 or _elapsed < _boss_at_sec:
 		return
 	_boss_spawn_done = true
+	spawn_boss()
+
+
+## N9-60: public so the endless night can send the boss back after its timer,
+## through the same path the scheduled arrival uses — a second spawn site
+## would be a second place for the HUD wiring to be forgotten.
+func spawn_boss() -> void:
 	var boss: Enemy = _spawn_one(_boss_id)
 	if boss != null:
 		boss_spawned.emit(boss)
@@ -254,6 +313,11 @@ func _spawn_one(monster_id: String) -> Enemy:
 	var stats: Dictionary = RunFlow.enrage_stats(
 		tiered, _soft_enrage, RunFlow.enrage_progress(_elapsed, _soft_enrage)
 	)
+	# N9-60: the enrage ramp reaches its ceiling and stops, which is right for a
+	# night that ends. An endless one needs pressure that keeps climbing, so the
+	# loop multiplier is applied on top of it — including to the boss, which is
+	# the only thing that would otherwise get easier every time it returns.
+	stats = _endless_scaled(stats)
 	enemy.light_sources = lights
 	enemy.setup(
 		monster_id,

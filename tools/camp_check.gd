@@ -16,7 +16,13 @@ func _ready() -> void:
 		profile = Bestiary.record_discovery(
 			profile, Bestiary.KIND_MONSTERS, "forest_goblin"
 		)["profile"]
+		# N9-60: the departure line is the only place the endless night is
+		# chosen, so the shot has to show it actually selectable rather than
+		# just present in the data.
+		(profile["settings"] as Dictionary)[Difficulty.RUN_LENGTH_KEY] = "endless"
 		SaveService.instance.profile = profile
+		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 	var camp: Control = (load("res://scenes/camp.tscn") as PackedScene).instantiate()
 	add_child(camp)
 	_capture()

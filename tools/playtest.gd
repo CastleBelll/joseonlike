@@ -33,6 +33,8 @@ extends Node
 ##                   progress buys, which --meta=max cannot say.
 ##   --luck=max      (N4-9) only the 천운 node at max rank, in memory only —
 ##                   isolates the luck stat's effect on special drops.
+##   --endless       (N9-60) select the endless run length: no clock, looping
+##                   waves, a returning boss. The run ends only on death.
 ##   --fresh         (N4-9) run on a brand-new in-memory profile: the FTUE
 ##                   first-run guarantee path (scripted drops + free 개조).
 ## Screenshots are skipped in headless mode (no frames to grab).
@@ -146,6 +148,10 @@ var _fresh: bool = false
 ## what PARTIAL progress buys. "--meta=max" answers what the end of the ladder
 ## feels like; it cannot say whether the middle of it is worth walking.
 var _meta_gold: int = 0
+## N9-60: run the night that never ends. The bot cannot survive one forever,
+## which is the point — what this measures is that the clock never fires and
+## the field never falls silent.
+var _endless: bool = false
 var _rarity_rows: Array[Dictionary] = []
 var _headless: bool = false
 var _damage_total: float = 0.0
@@ -250,6 +256,8 @@ func _parse_args() -> void:
 			_luck_max = true
 		elif arg == "--fresh":
 			_fresh = true
+		elif arg == "--endless":
+			_endless = true
 
 
 ## Spends `budget` gold on the cheapest available node each step — the way a
@@ -297,6 +305,7 @@ func _start_run() -> void:
 		# N4-9 FTUE probe: a brand-new profile, in memory only.
 		SaveService.instance.profile = SaveProfile.default_profile()
 		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 	elif _runs_total > 0 and SaveService.instance != null:
 		# N4-9 rarity batch: a RETURNING profile (runs_played > 0, FTUE spent)
 		# so the scripted first-run guarantees stay out of the measurement.
@@ -305,20 +314,28 @@ func _start_run() -> void:
 		returning[Ftue.FTUE_KEY] = {Ftue.MOVE_HINT_SEEN: true, Ftue.MOD_EXPLAINED: true}
 		SaveService.instance.profile = returning
 		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 	if _meta_max and SaveService.instance != null:
 		# In-memory maxed tree; the write lock keeps it off the dev's disk.
 		SaveService.instance.profile["meta_tree"] = MetaTree.maxed_state(
 			MetaTree.load_tree()
 		)
 		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 	elif _meta_gold > 0 and SaveService.instance != null:
 		SaveService.instance.profile = _tree_bought_with(_meta_gold)
 		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 	elif _luck_max and SaveService.instance != null:
 		# N4-9: ONLY the luck node maxed, so the batch isolates its effect.
 		var maxed: Dictionary = MetaTree.maxed_state(MetaTree.load_tree())
 		SaveService.instance.profile["meta_tree"] = {"luck": int(maxed.get("luck", 0))}
 		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
+	if _endless and SaveService.instance != null:
+		SaveService.instance.set_setting(Difficulty.RUN_LENGTH_KEY, "endless", false)
+		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 	if _run_seed != 0:
 		seed(_run_seed)  # drives the stage's randi() field seed
 	_stage = (load(STAGE_SCENE) as PackedScene).instantiate()

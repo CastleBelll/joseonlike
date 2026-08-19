@@ -144,6 +144,10 @@ func _check_combat_cross_references() -> void:
 			_fail("stages.%s %s" % [stage_id, issue])
 		# N6-2 opening invariants: rush density + first-level-up XP bound,
 		# checked against the stage's own "opening" block.
+		# N9-60: an endless loop that arms no waves would leave the field silent
+		# forever, which reads as a crash rather than as a mode.
+		for issue: String in Endless.data_issues(stage, "stages." + stage_id):
+			_fail(issue)
 		for issue: String in RunFlow.opening_issues(
 			stage, monsters, float(curve.get("base_xp", 0.0)), float(curve.get("growth", 0.0))
 		):
@@ -204,6 +208,7 @@ func _check_combat_cross_references() -> void:
 	_check_shadow_monsters()
 	_check_loot(monsters, weapons, stages)
 	_check_audio()
+	_check_unlocks()
 	_check_field_passives()
 	_check_difficulties()
 	_check_meta_tree()
@@ -225,6 +230,12 @@ func _check_audio() -> void:
 	# checked by the class that reads them.
 	for issue: String in SfxService.data_issues(config):
 		_fail("audio " + issue)
+
+
+## N9-58: an unlock without a price or a name is a row the screen cannot draw.
+func _check_unlocks() -> void:
+	for issue: String in Unlocks.data_issues(_load(DATA_DIR + "/unlocks.json")):
+		_fail("unlocks " + issue)
 
 
 func _check_field_passives() -> void:

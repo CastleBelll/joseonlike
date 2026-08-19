@@ -133,6 +133,9 @@ var _gold: int = 0
 var _boss_gold: int = 0
 var _run_elapsed: float = 0.0
 var _duration_sec: float = 0.0
+## N9-60: seconds until the endless night sends the boss back. Zero when none
+## is pending.
+var _boss_return_wait: float = 0.0
 var _boss: Enemy
 var _boss_hp_max: float = 0.0
 # N9-49 boss patterns: the attack table for the live boss and the seconds since
@@ -386,7 +389,8 @@ func _physics_process(delta: float) -> void:
 	_tick_minimap(delta)
 	_refresh_hp_hud()
 	_stream_field_chunks()
-	if _duration_sec > 0.0 and _run_elapsed >= _duration_sec:
+	_tick_boss_return(delta)
+	if _duration_sec > 0.0 and not _spawner.is_endless_run() 			and _run_elapsed >= _duration_sec:
 		_end_run(RunFlow.resolve_outcome(false, false, true))
 	if _boss != null and not CombatMath.is_dead(_boss.hp):
 		_hud.set_boss_hp(_boss.hp, _boss_hp_max)
@@ -587,7 +591,33 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 		_add_gold(_boss_gold)
 		_boss = null
 		_hud.hide_boss_bar()
+		# N9-60: in an endless night the boss is a recurring event, not the
+		# finish line. Killing it pays out and sets the next one coming; the
+		# only way the run ends is the player falling.
+		if _spawner.is_endless_run():
+			_boss_return_wait = Endless.boss_repeat_sec(_endless_config())
+			_float_label("두두리를 물리쳤다")
+			return
 		_end_run(RunFlow.resolve_outcome(false, true, false), true)
+
+
+## N9-60 (owner: "무한모드도 존재했으면 좋겠어"). Counts down to the next boss
+## once the last one fell. Zero means nothing is pending — the boss is either
+## alive or was never scheduled to return.
+func _tick_boss_return(delta: float) -> void:
+	if _boss_return_wait <= 0.0:
+		return
+	_boss_return_wait -= delta
+	if _boss_return_wait > 0.0:
+		return
+	_boss_return_wait = 0.0
+	_spawner.spawn_boss()
+
+
+func _endless_config() -> Dictionary:
+	return (_load_json(Spawner.STAGES_PATH) as Dictionary).get(
+		Spawner.STAGE_ID, {}
+	).get(Endless.FLAG, {})
 
 
 ## N9-49: one telegraph node per warning, pooled like every other effect.

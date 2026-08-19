@@ -247,6 +247,15 @@
         "count": 15,
         "interval_sec": 1.02
       }
-    ]
+    ],
+    "endless": {
+      "_note": "N9-60 무한 모드. 스테이지 자신의 웨이브를 loop_from_sec부터 다시 재생하되 루프마다 수와 능력치를 올린다. 별도 웨이브 표를 두지 않는 이유: 둘 중 하나만 조정되는 순간 어긋난다.",
+      "loop_from_sec": 120.0,
+      "loop_period_sec": 180.0,
+      "count_growth_per_loop": 0.25,
+      "hp_growth_per_loop": 0.45,
+      "damage_growth_per_loop": 0.3,
+      "boss_repeat_sec": 220.0
+    }
   }
 }

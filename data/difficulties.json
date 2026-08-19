@@ -114,6 +114,16 @@
       "desc_ko": "끝까지 버텨본다.",
       "duration_scale": 1.5,
       "gold_mult": 1.4
+    },
+    {
+      "id": "endless",
+      "name_ko": "끝없는 밤",
+      "name_en": "Endless Night",
+      "desc_ko": "끝이 없다. 쓰러질 때까지 버텨라.",
+      "desc_en": "No dawn. Last as long as you can.",
+      "duration_scale": 1.0,
+      "gold_mult": 1.6,
+      "endless": true
     }
   ]
 }
