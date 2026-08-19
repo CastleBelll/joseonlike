@@ -6,6 +6,9 @@ extends Node
 ## Run: godot --headless --path . res://tools/music_check.tscn
 
 const TRACK_IDS: Array[String] = ["title", "camp", "bamboo_forest"]
+## Longer than any min_interval_sec in data/audio.json, so the throttle probe
+## starts from a clean window whatever the loop before it played.
+const THROTTLE_SETTLE_SEC := 0.8
 
 var _failed: bool = false
 
@@ -18,7 +21,7 @@ func _ready() -> void:
 	_check_each_track_plays()
 	_check_same_track_does_not_restart()
 	_check_stop_clears_everything()
-	_check_effects()
+	await _check_effects()
 	_finish()
 
 
@@ -48,12 +51,18 @@ func _check_effects() -> void:
 		print("SFX %s: playing on %s, %.3fs" % [
 			sound_id, voice.bus, voice.stream.get_length() if voice.stream != null else 0.0
 		])
-	_check_throttle()
+	await _check_throttle()
 	SfxService.instance.stop_all()
 
 
 ## Two plays inside the throttle window must produce one sound, not two.
+##
+## The wait is not padding. The loop above just played every effect, including
+## this one, so without it the FIRST play here is still inside the window and
+## the probe measures zero voices — which it read as a broken throttle. Earlier
+## runs passed only because the loop happened to take longer than the window.
 func _check_throttle() -> void:
+	await get_tree().create_timer(THROTTLE_SETTLE_SEC).timeout
 	SfxService.instance.stop_all()
 	SfxService.instance.play("hit")
 	SfxService.instance.play("hit")

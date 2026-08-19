@@ -560,8 +560,15 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 ## closed, so the player can see at a glance why new cards stopped appearing.
 func _slot_header(title: String, taken: int, total: int) -> Label:
 	var full: bool = taken >= total
+	# N9-55: field passives deliberately exceed the slot budget, so "5/4" would
+	# read as a bug in the counter rather than as the reward it is. Past the
+	# cap the line stops being a fraction and says where the extras came from.
+	var text: String = (
+		"%s %d  (칸 %d + 주움 %d)" % [title, taken, total, taken - total] if taken > total
+		else "%s %d/%d%s" % [title, taken, total, "  (가득 참)" if full else ""]
+	)
 	var header: Label = _label(
-		"%s %d/%d%s" % [title, taken, total, "  (가득 참)" if full else ""],
+		text,
 		UiPalette.FONT_SIZE_LABEL,
 		UiPalette.TEXT_MUTED_ON_PAPER if full else UiPalette.VERMILION
 	)

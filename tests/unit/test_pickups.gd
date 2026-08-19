@@ -243,3 +243,62 @@ func test_chest_still_offers_what_the_run_already_holds() -> bool:
 		if String(choice["kind"]) == LevelUp.KIND_PASSIVE and String(choice["id"]) == "attack_damage":
 			has_passive = true
 	return has_weapon and has_passive
+
+
+## N9-55 field passives (owner: "떨어져있는 패시브를 주우면 4개 이상으로도
+## 등록이 되도록"). The rule under test is that the four-slot budget does NOT
+## apply to something found on the ground — only maxed passives are excluded.
+func test_field_passive_ids_ignore_the_slot_budget() -> bool:
+	var passives: Dictionary = {
+		"a": {"max_stacks": 5}, "b": {"max_stacks": 5},
+		"c": {"max_stacks": 5}, "d": {"max_stacks": 5}, "e": {"max_stacks": 5},
+	}
+	# Four already taken: the level-up screen would offer nothing new here.
+	var stacks: Dictionary = {"a": 1, "b": 1, "c": 1, "d": 1}
+	return Pickups.field_passive_ids(passives, stacks).size() == 5
+
+
+func test_field_passive_ids_drop_maxed_passives() -> bool:
+	var passives: Dictionary = {"a": {"max_stacks": 3}, "b": {"max_stacks": 3}}
+	var ids: Array[String] = Pickups.field_passive_ids(passives, {"a": 3})
+	return ids == ["b"]
+
+
+func test_field_passive_ids_skip_comment_keys_and_junk() -> bool:
+	# Data files carry "_note" keys, and a malformed entry must not crash a run.
+	var passives: Dictionary = {"_note": "text", "a": {"max_stacks": 2}, "b": 7}
+	return Pickups.field_passive_ids(passives, {}) == ["a"]
+
+
+func test_field_spawn_point_sits_on_the_ring() -> bool:
+	var player := Vector2(120.0, -40.0)
+	var at: Vector2 = Pickups.field_spawn_point(player, PI / 3.0, 700.0)
+	return absf(player.distance_to(at) - 700.0) < 0.01
+
+
+func test_field_spawn_point_survives_a_negative_distance() -> bool:
+	var player := Vector2(5.0, 5.0)
+	return Pickups.field_spawn_point(player, 0.0, -100.0) == player
+
+
+func test_shipped_field_passive_block_is_reachable_and_offscreen() -> bool:
+	# The shipped numbers must place the drop outside the view (or it collects
+	# itself) and inside a distance a player would actually walk.
+	return Pickups.field_passive_issues(_pickups()).is_empty()
+
+
+func test_field_passive_issues_catch_an_onscreen_spawn() -> bool:
+	var broken: Dictionary = {"field_passive": {
+		"interval_sec": 10.0, "max_live": 2,
+		"spawn_min_px": 100.0, "spawn_max_px": 900.0, "min_offscreen_px": 560.0,
+	}}
+	return Pickups.field_passive_issues(broken).size() == 1
+
+
+func test_field_passive_issues_report_a_missing_block() -> bool:
+	return Pickups.field_passive_issues({}).size() == 1
+
+
+func _pickups() -> Dictionary:
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(PICKUPS_PATH))
+	return data if data is Dictionary else {}

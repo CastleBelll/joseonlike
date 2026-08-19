@@ -69,6 +69,14 @@ var _drop_tables: Dictionary = {}
 var _mods_data: Dictionary = {}
 var _loot_pool: NodePool
 var _loot_rng := RandomNumberGenerator.new()
+## N9-55 field passives: seconds until the next one is placed, and the ones
+## currently lying on the map (tracked so the cap counts what is actually out
+## there, not how many have ever been spawned).
+var _field_passive_wait: float = 0.0
+var _live_field_passives: Array[Pickup] = []
+## Lifetime count, for the harness: a run that places none has the feature
+## switched off in all but name, and nothing else would say so.
+var _field_passives_placed: int = 0
 var _replaced_weapons: Array[String] = []
 # N4-9 rarity evidence: the run second each SPECIAL material dropped at —
 # the playtest harness reads this to prove the intended drop rate.
@@ -360,6 +368,7 @@ func _physics_process(delta: float) -> void:
 				SaveService.instance.mark_move_hint_seen()
 	_run_elapsed += delta
 	_tick_boss_attacks(delta)
+	_tick_field_passives(delta)
 	_refresh_hp_hud()
 	_stream_field_chunks()
 	if _duration_sec > 0.0 and _run_elapsed >= _duration_sec:
@@ -1358,14 +1367,82 @@ func _on_breakable_broke(breakable: Breakable) -> void:
 	pickup.launch_pickup(breakable.global_position, kind, _player, _orb_config)
 
 
+## N9-55 (owner: "맵에 패시브 스킬들이 떨어져있고… 4개 이상으로도 등록이 되도록").
+## Places a passive on the map every interval_sec, on a ring beyond the screen
+## edge so it has to be walked to. The cap counts what is still lying out
+## there — collecting one immediately makes room for the next.
+func _tick_field_passives(delta: float) -> void:
+	var block: Dictionary = _pickups_data.get("field_passive", {})
+	if block.is_empty():
+		return
+	# Anything left far behind is recycled: the player has walked away and is
+	# never coming back for it, and while it counts against max_live the field
+	# ahead of them stops offering anything at all.
+	var despawn_px: float = float(block.get("despawn_px", 0.0))
+	var kept: Array[Pickup] = []
+	for pickup: Pickup in _live_field_passives:
+		if not is_instance_valid(pickup) or not pickup.visible:
+			continue
+		if despawn_px > 0.0 				and pickup.global_position.distance_to(_player.global_position) > despawn_px:
+			_pickup_pool.release(pickup)
+			continue
+		kept.append(pickup)
+	_live_field_passives = kept
+	_field_passive_wait -= delta
+	if _field_passive_wait > 0.0:
+		return
+	_field_passive_wait = float(block.get("interval_sec", 20.0))
+	if _live_field_passives.size() >= int(block.get("max_live", 1)):
+		return
+	var ids: Array[String] = Pickups.field_passive_ids(_passives_data, _passive_stacks)
+	if ids.is_empty():
+		return  # everything is maxed: a pickup that grants nothing is a lie
+	var at: Vector2 = Pickups.field_spawn_point(
+		_player.global_position,
+		_loot_rng.randf() * TAU,
+		_loot_rng.randf_range(
+			float(block.get("spawn_min_px", 600.0)),
+			float(block.get("spawn_max_px", 1000.0))
+		)
+	)
+	var pickup: Pickup = _pickup_pool.acquire()
+	pickup.launch_pickup(
+		at, Pickups.KIND_PASSIVE, _player, _orb_config,
+		ids[_loot_rng.randi_range(0, ids.size() - 1)]
+	)
+	_live_field_passives.append(pickup)
+	_field_passives_placed += 1
+
+
+## A found passive is added whatever the four-slot budget says (owner
+## direction). The cap governs what the LEVEL-UP screen offers — that is a
+## choice, made from a menu, and the budget is what makes it a choice. Walking
+## across the field to something visible is the opposite kind of act, and
+## taxing it with the same rule would make the trip pointless.
+func _collect_field_passive(passive_id: String) -> void:
+	if passive_id.is_empty():
+		return
+	var entry: Dictionary = _passives_data.get(passive_id, {})
+	if entry.is_empty():
+		push_warning("stage: field passive '%s' is not in the passive data" % passive_id)
+		return
+	_passive_stacks[passive_id] = int(_passive_stacks.get(passive_id, 0)) + 1
+	_refresh_run_scalars()
+	_refresh_weapon_scales()
+	_float_label("%s +1" % String(entry.get("name_ko", passive_id)))
+
+
 ## N5-5 pickup effects, each applied at collection so the player walked to it.
 ## HEALTH at full HP converts to gold (chosen rule: the drop is never wasted,
 ## and the check runs at collection time so getting hit on the way still heals).
 func _on_pickup_collected(orb: XpOrb) -> void:
 	_play_sfx("pickup")
 	var kind: String = (orb as Pickup).kind
+	var granted: String = (orb as Pickup).passive_id
 	_pickup_pool.release(orb)
 	match kind:
+		Pickups.KIND_PASSIVE:
+			_collect_field_passive(granted)
 		Pickups.KIND_GOLD:
 			var gained: int = _add_gold(
 				int((_pickups_data.get("gold", {}) as Dictionary).get("amount", 0))

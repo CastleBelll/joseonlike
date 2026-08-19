@@ -97,11 +97,55 @@ func _process(delta: float) -> void:
 			_nuke_cap_probe()
 		10:
 			await _shot("nuke_boss_cap")
+			# Awaited: the probe suspends on a timer, and without the await the
+			# step machine walks on and quits before its assertion ever runs.
+			await _field_passive_probe()
+		11:
 			print("PICKUP CHECK done")
 			get_tree().quit(0)
 			return
 	_step += 1
 	_busy = false
+
+
+## N9-55: proves the found-passive rule that no unit test can — that a pickup
+## placed on the map registers even when the four passive slots are already
+## spent. The slot budget is what the level-up screen enforces; walking to
+## something visible is meant to get past it.
+func _field_passive_probe() -> void:
+	var passives: Dictionary = _stage._passives_data
+	var ids: Array[String] = Pickups.field_passive_ids(passives, {})
+	if ids.size() < LevelUp.PASSIVE_SLOTS + 1:
+		push_error("pickup_check: not enough passives to test the slot overflow")
+		return
+	# Fill every slot with DIFFERENT passives, then drop a fifth one.
+	_stage._passive_stacks = {}
+	for i: int in range(LevelUp.PASSIVE_SLOTS):
+		_stage._passive_stacks[ids[i]] = 1
+	var granted: String = ids[LevelUp.PASSIVE_SLOTS]
+	var taken_before: int = _stage._passive_stacks.size()
+	_pickup = _stage._pickup_pool.acquire()
+	_pickup.launch_pickup(
+		_player.global_position + Vector2(0.0, -40.0),
+		Pickups.KIND_PASSIVE, _player, _stage._orb_config, granted
+	)
+	# Captured BEFORE the magnet takes it: the point of the shot is what the
+	# thing looks like lying on the ground, which is the only state a player
+	# ever has to spot from a distance.
+	await _shot("field_passive")
+	_attract()
+	await get_tree().create_timer(0.6).timeout
+	var taken_after: int = _stage._passive_stacks.size()
+	if int(_stage._passive_stacks.get(granted, 0)) < 1:
+		push_error("pickup_check: a found passive did not register at all")
+	elif taken_after != taken_before + 1:
+		push_error("pickup_check: found passive did not get past the slot budget (%d -> %d)" % [
+			taken_before, taken_after
+		])
+	else:
+		print("PICKUP field passive: %d taken -> %d with %d slots, gained '%s'" % [
+			taken_before, taken_after, LevelUp.PASSIVE_SLOTS, granted
+		])
 
 
 func _step_is_chest() -> bool:

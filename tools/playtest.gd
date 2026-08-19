@@ -819,6 +819,9 @@ func _finish() -> void:
 	print("PLAYTEST boss patterns seen: disc=%s band=%s" % [
 		_boss_disc_shot_done, _boss_band_shot_done
 	])
+	# N9-55: the bot does not detour for them, so this reports how many were
+	# PLACED. Zero would mean the field never offered any — a silent feature.
+	print("PLAYTEST field passives placed: %d" % _stage._field_passives_placed)
 	print("PLAYTEST level: %d (level-ups: %d, skipped screens: %d)" % [
 		_stage._run_state.level, _stage._run_state.level - 1, _skipped_screens
 	])

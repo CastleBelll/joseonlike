@@ -55,5 +55,14 @@
       "5": 5.0
     },
     "fallback_gold": 60
+  },
+  "field_passive": {
+    "_note": "N9-55 필드 패시브. 지도에 떨어져 있는 패시브를 걸어가서 줍는다. 레벨업 화면의 4칸 제한을 받지 않는다 — 고른 게 아니라 찾은 것이므로. interval_sec마다 최대 max_live개까지, 플레이어 기준 spawn_min~max_px 링 위에 놓인다. min_offscreen_px는 화면 반대각선의 절반보다 커야 화면 밖에서 생긴다.",
+    "interval_sec": 22.0,
+    "max_live": 3,
+    "spawn_min_px": 620.0,
+    "spawn_max_px": 1100.0,
+    "min_offscreen_px": 560.0,
+    "despawn_px": 2200.0
   }
 }

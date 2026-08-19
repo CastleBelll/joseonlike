@@ -102,7 +102,14 @@ func _stream_for(sound_id: String, file_path: String) -> AudioStream:
 		_missing[sound_id] = true
 		push_warning("sfx_player: missing file for '%s' — running silent" % sound_id)
 		return null
-	var stream: AudioStream = load(file_path)
+	# CACHE_MODE_IGNORE for the same reason MusicService uses it: a stream in
+	# the global resource cache outlives this node's own release, and Godot then
+	# reports "resources still in use at exit" — an ERROR line that fails every
+	# runtime check. The dictionary above is the cache that matters here, and it
+	# IS released, so nothing is reloaded per play either.
+	var stream: AudioStream = ResourceLoader.load(
+		file_path, "", ResourceLoader.CACHE_MODE_IGNORE
+	)
 	if stream == null:
 		_missing[sound_id] = true
 		push_warning("sfx_player: cannot load '%s' — running silent" % sound_id)

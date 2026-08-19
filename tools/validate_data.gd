@@ -204,6 +204,7 @@ func _check_combat_cross_references() -> void:
 	_check_shadow_monsters()
 	_check_loot(monsters, weapons, stages)
 	_check_audio()
+	_check_field_passives()
 	_check_difficulties()
 	_check_meta_tree()
 	_check_pickups(monsters, stages)
@@ -224,6 +225,11 @@ func _check_audio() -> void:
 	# checked by the class that reads them.
 	for issue: String in SfxService.data_issues(config):
 		_fail("audio " + issue)
+
+
+func _check_field_passives() -> void:
+	for issue: String in Pickups.field_passive_issues(_load(DATA_DIR + "/pickups.json")):
+		_fail("pickups " + issue)
 
 
 func _check_difficulties() -> void:

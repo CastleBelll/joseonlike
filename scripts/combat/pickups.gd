@@ -15,6 +15,66 @@ const KINDS: Array[String] = [KIND_NOTHING, KIND_GOLD, KIND_HEALTH, KIND_NUKE, K
 ## weight share must stay at or above _rules.plain_share_min (validated).
 const PLAIN_KINDS: Array[String] = [KIND_NOTHING, KIND_GOLD]
 const CHEST_COUNTS: Array[String] = ["1", "3", "5"]
+## N9-55 field passives. Deliberately NOT in KINDS: that array is the
+## prop-break roll table, and a passive falling out of a smashed jar would be
+## indistinguishable from the loot the player already gets for free. These are
+## placed on the map and have to be walked to.
+const KIND_PASSIVE := "passive"
+
+
+## Passive ids a field drop may offer: everything not already at max stacks.
+##
+## The four-slot budget is deliberately NOT applied here (owner direction). A
+## passive lying on the ground is FOUND, not chosen, and getting past the cap
+## the level-up screen enforces is the entire reason to walk over and take it.
+## Maxed passives are excluded because a pickup that grants nothing is a
+## promise the game does not keep.
+static func field_passive_ids(
+	passives: Dictionary, passive_stacks: Dictionary
+) -> Array[String]:
+	var ids: Array[String] = []
+	for passive_id: String in passives:
+		if passive_id.begins_with("_"):
+			continue
+		var entry: Variant = passives[passive_id]
+		if entry is not Dictionary:
+			continue
+		var max_stacks: int = int((entry as Dictionary).get("max_stacks", 0))
+		if max_stacks > 0 and int(passive_stacks.get(passive_id, 0)) >= max_stacks:
+			continue
+		ids.append(passive_id)
+	return ids
+
+
+## A point on a ring around the player. Off-screen on purpose: a pickup that
+## spawns in view is collected by standing still, which is the opposite of what
+## walking out to find one is for.
+static func field_spawn_point(
+	player_pos: Vector2, angle: float, distance: float
+) -> Vector2:
+	return player_pos + Vector2.from_angle(angle) * maxf(distance, 0.0)
+
+
+## Data contract for validate_data: the field-passive block has to describe a
+## drop that can actually appear and can actually be reached.
+static func field_passive_issues(pickups: Dictionary) -> Array[String]:
+	var issues: Array[String] = []
+	var block: Dictionary = pickups.get("field_passive", {})
+	if block.is_empty():
+		issues.append("field_passive block missing")
+		return issues
+	if float(block.get("interval_sec", 0.0)) <= 0.0:
+		issues.append("field_passive.interval_sec must be positive")
+	if int(block.get("max_live", 0)) <= 0:
+		issues.append("field_passive.max_live must be positive")
+	var near: float = float(block.get("spawn_min_px", 0.0))
+	var far: float = float(block.get("spawn_max_px", 0.0))
+	if near <= 0.0 or far <= near:
+		issues.append("field_passive.spawn_min_px must be positive and below spawn_max_px")
+	# Inside the view it collects itself, which defeats going to find it.
+	if near < float(block.get("min_offscreen_px", 0.0)):
+		issues.append("field_passive.spawn_min_px must clear min_offscreen_px")
+	return issues
 
 
 ## Roll the break table once. Returns a KINDS entry (KIND_NOTHING on empty or

@@ -11,6 +11,11 @@ const OUTLINE_WIDTH := 1.0
 const CROSS_ARM := 4.0
 const CROSS_THICK := 3.0
 const SPARK_POINTS := 4
+## Bigger than the other pickups on purpose: this one is meant to be spotted
+## from across the field and walked to, not hoovered up in passing.
+const PASSIVE_RADIUS := 11.0
+const PASSIVE_ICON_PX := 14.0
+const PASSIVE_RIM_POINTS := 24
 
 ## N6-5 real art per kind, drawn 1:1 at the source's native pixel size so the
 ## scale stays honest against the 38px character. Gold reuses the HUD 엽전
@@ -27,13 +32,18 @@ const KIND_TEXTURES: Dictionary = {
 const GOLD_DRAW_PX := 16.0
 
 var kind: String = Pickups.KIND_GOLD
+## N9-55: which passive a KIND_PASSIVE pickup grants. Empty for every other
+## kind. The stage reads it on collection; the icon is drawn from it here.
+var passive_id: String = ""
 
 
 func launch_pickup(
-	at: Vector2, pickup_kind: String, player: Player, orb_config: Dictionary
+	at: Vector2, pickup_kind: String, player: Player, orb_config: Dictionary,
+	granted_passive: String = ""
 ) -> void:
 	launch(at, 0, player, orb_config)
 	kind = pickup_kind
+	passive_id = granted_passive
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	queue_redraw()
 
@@ -68,6 +78,9 @@ func _draw_kind_texture(texture: Texture2D) -> void:
 
 
 func _draw() -> void:
+	if kind == Pickups.KIND_PASSIVE:
+		_draw_passive()
+		return
 	# A null texture must fall through to the drawn shape and never reach
 	# draw_texture_rect — reaching it is what produced the white square.
 	var texture: Texture2D = kind_texture(String(KIND_TEXTURES.get(kind, "")))
@@ -110,3 +123,50 @@ func _draw() -> void:
 			draw_arc(Vector2(0.0, 1.0), 4.0, PI, TAU, 10, UiPalette.LOOT_CORE, 3.0)
 			draw_rect(Rect2(-5.5, 1.0, 3.0, 3.0), UiPalette.LOOT_CORE)
 			draw_rect(Rect2(2.5, 1.0, 3.0, 3.0), UiPalette.LOOT_CORE)
+
+
+## A field passive: its own icon on a gold-rimmed disc. The rim is what makes
+## it readable at a distance as "worth walking to" — the icon itself is 16px
+## and unreadable until the player is nearly on top of it, which is too late
+## for something they are supposed to detour for.
+func _draw_passive() -> void:
+	draw_circle(Vector2.ZERO, PASSIVE_RADIUS, UiPalette.INK)
+	draw_circle(Vector2.ZERO, PASSIVE_RADIUS - OUTLINE_WIDTH, UiPalette.LOOT_RARE)
+	draw_arc(
+		Vector2.ZERO, PASSIVE_RADIUS - OUTLINE_WIDTH, 0.0, TAU, PASSIVE_RIM_POINTS,
+		UiPalette.GOLD, OUTLINE_WIDTH * 2.0
+	)
+	var icon: Texture2D = passive_badge(passive_id)
+	if icon == null:
+		# No art for this passive yet: a plain core still reads as a pickup.
+		draw_circle(Vector2.ZERO, PASSIVE_RADIUS * 0.45, UiPalette.LOOT_CORE)
+		return
+	var size: Vector2 = icon.get_size()
+	draw_texture_rect(icon, Rect2(-size / 2.0, size), false)
+
+
+## The passive icons are authored at 512px for the level-up cards. Drawing one
+## straight into a 14px rect asks the rasterizer to throw away 36 texels in
+## every direction, and what comes out is a solid block rather than a glyph —
+## the icon's shape is entirely in detail that fine.
+##
+## So each is resized ONCE into a badge-sized ImageTexture and kept: the shape
+## survives because the resize averages the source instead of point-sampling
+## it, and no run ever pays for the conversion twice.
+static var _badges: Dictionary = {}
+
+
+static func passive_badge(passive_id: String) -> Texture2D:
+	if _badges.has(passive_id):
+		return _badges[passive_id]
+	var source: Texture2D = UiIcons.passive_icon(passive_id)
+	var badge: Texture2D = null
+	if source != null:
+		var image: Image = source.get_image()
+		if image != null:
+			image.resize(
+				int(PASSIVE_ICON_PX), int(PASSIVE_ICON_PX), Image.INTERPOLATE_LANCZOS
+			)
+			badge = ImageTexture.create_from_image(image)
+	_badges[passive_id] = badge
+	return badge
