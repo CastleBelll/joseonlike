@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 SaveManager="*res://scripts/core/save_manager.gd"
+MusicManager="*res://scripts/core/music_player.gd"
 
 [display]
 

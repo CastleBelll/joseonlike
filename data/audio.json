@@ -1,0 +1,24 @@
+{
+  "_config": {
+    "note": "N9-1a BGM. fade_sec은 곡이 교체될 때 겹치는 페이드 길이(초). 같은 track_id가 이어지는 화면 전환에서는 곡을 다시 시작하지 않는다. volume은 곡별 음량 보정(0~1)이며, 사용자 설정의 음악 볼륨은 Music 버스에서 따로 적용된다.",
+    "fade_sec": 1.2,
+    "default_volume": 0.85
+  },
+  "tracks": {
+    "title": {
+      "name_ko": "조선라이크",
+      "file": "res://asset/bgm/title.mp3",
+      "volume": 0.85
+    },
+    "camp": {
+      "name_ko": "본거지",
+      "file": "res://asset/bgm/camp.mp3",
+      "volume": 0.8
+    },
+    "bamboo_forest": {
+      "name_ko": "대나무숲",
+      "file": "res://asset/bgm/bamboo_forest.mp3",
+      "volume": 0.75
+    }
+  }
+}

@@ -38,6 +38,10 @@ var _run_length_button: Button
 
 func _ready() -> void:
 	build_ui()
+	# N9-1a: 본거지 has its own track; guarded because the headless layout test
+	# builds this screen with no autoloads running.
+	if MusicService.instance != null:
+		MusicService.instance.play("camp")
 
 
 ## Builds every child node. Public so the headless test can construct the

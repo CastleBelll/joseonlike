@@ -196,6 +196,7 @@ func _check_combat_cross_references() -> void:
 	_check_props()
 	_check_shadow_monsters()
 	_check_loot(monsters, weapons, stages)
+	_check_audio()
 	_check_difficulties()
 	_check_meta_tree()
 	_check_pickups(monsters, stages)
@@ -207,6 +208,11 @@ func _check_combat_cross_references() -> void:
 ## N7-2 adds: wired-effect stat vocabulary (a node whose effect nothing
 ## consumes FAILS), per-character branch ownership against characters.json,
 ## and the strictly-increasing cost curve.
+func _check_audio() -> void:
+	for issue: String in MusicService.data_issues(_load(DATA_DIR + "/audio.json")):
+		_fail("audio " + issue)
+
+
 func _check_difficulties() -> void:
 	for issue: String in Difficulty.data_issues(_load(DATA_DIR + "/difficulties.json")):
 		_fail("difficulties " + issue)

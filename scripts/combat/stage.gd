@@ -172,6 +172,10 @@ func _ready() -> void:
 	_spawner.enemy_killed.connect(_on_enemy_killed)
 	_spawner.boss_spawned.connect(_on_boss_spawned)
 	_spawner.shadow_spawned.connect(_on_shadow_spawned)
+	# N9-1a: the stage id IS the track id, so a second region ships its own
+	# music by adding one entry to data/audio.json and nothing else.
+	if MusicService.instance != null:
+		MusicService.instance.play(Spawner.STAGE_ID)
 	# N4-4a: burn ticks float through the same damage-number pool as hits.
 	_spawner.burn_damaged.connect(
 		func(amount: float, at: Vector2) -> void: _on_hit_landed(amount, at, false)

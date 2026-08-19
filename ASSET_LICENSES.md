@@ -10,6 +10,7 @@ Every asset under `asset/` must have a row here before it ships. No row, no comm
 | `asset/weapon/travel/*.png` (11 N9-3f projectile sprites) | Owner-dropped pack `new_asset/500 Bullet 24x24 Free` (Parts 2A/2B/2C/3C; native cells cropped without resampling by `asset/weapon/build_travel.py`) | **UNCONFIRMED** — no license file shipped inside the pack; owner must confirm terms before release | Unknown until confirmed | 2026-08-18 (N9-3f) |
 | `asset/pickups/health.png` | Owner-dropped pack `new_asset/Pixel UI pack 3` (00.png red heart; night-tinted via asset/pickups/build_assets.py) | **UNCONFIRMED** — no license file shipped inside the pack; owner must confirm terms before release | Unknown until confirmed | 2026-08-18 (N6-5) |
 | `asset/pickups/nuke.png` | Owner-dropped pack `new_asset/Trap and Weapon` (Bomb.png frame 0; night-tinted via asset/pickups/build_assets.py) | **UNCONFIRMED** — no license file shipped inside the pack; owner must confirm terms before release | Unknown until confirmed | 2026-08-18 (N6-5) |
+| `asset/bgm/{title,camp,bamboo_forest}.mp3` | Owner-dropped `new_asset/bgm/{Joseonlike,본거지,대나무숲}.mp3`, copied byte-for-byte and renamed to ascii ids | **UNCONFIRMED** — origin not stated with the drop; owner must confirm authorship or licence before release | Unknown until confirmed | 2026-08-19 (N9-1a) |
 
 ## Rules
 

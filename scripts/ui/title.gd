@@ -45,6 +45,7 @@ static func menu_button_defs() -> Array[Dictionary]:
 
 func _ready() -> void:
 	build_ui()
+	_play_music("title")
 	_settings_popup = SettingsPopup.new()
 	_settings_popup.locale_changed.connect(refresh_texts)
 	add_child(_settings_popup)
@@ -228,3 +229,10 @@ func _build_menu() -> void:
 	var first_button: Button = stack.get_child(0)
 	if first_button.is_inside_tree():
 		first_button.grab_focus()
+
+
+## N9-1a: the autoload is absent in node-free headless tests, so every caller
+## goes through this guard rather than assuming music exists.
+func _play_music(track_id: String) -> void:
+	if MusicService.instance != null:
+		MusicService.instance.play(track_id)
