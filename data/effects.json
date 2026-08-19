@@ -38,6 +38,7 @@
     "shockwave_nudge_px": 8.0,
     "shockwave_nudge_sec": 0.18,
     "curse_jump_sec": 0.45,
+    "curse_creep_sag_px": 14.0,
     "status_flicker_hz": 6.0,
     "blink_puff_sec": 0.3,
     "screen_flash_sec": 0.22,

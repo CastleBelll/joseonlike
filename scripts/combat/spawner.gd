@@ -65,13 +65,13 @@ var _sep_neighbours: Array[int] = []
 var _sep_neighbour_positions: Array[Vector2] = []
 var _sep_neighbour_radii: Array[float] = []
 # N3-17: pooled curse-jump bolts — one per infected neighbour on a cursed death.
-var _bolt_pool: NodePool
+var _creep_pool: NodePool
 
 
 func setup(player: Player) -> void:
 	_player = player
 	_pool = EnemyPool.new(self)
-	_bolt_pool = NodePool.new(self, _create_curse_bolt)
+	_creep_pool = NodePool.new(self, _create_curse_creep)
 	_rng.randomize()
 	var stage_data: Dictionary = _load_json(STAGES_PATH)
 	_monsters = _load_json(MONSTERS_PATH)
@@ -356,21 +356,23 @@ func _spread_curse(source: Enemy) -> void:
 			source.curse_dps, source.curse_duration,
 			source.curse_spread_px, source.curse_spread_count
 		)
-		# N3-17: the jump itself is drawn, so the spread reads as an event.
-		var bolt: ChainBolt = _bolt_pool.acquire()
-		bolt.show_bolt(
+		# N9-30: the spread is drawn as a creep, not a bolt. It used to reuse
+		# 뇌부's ChainBolt with a purple tint, which read as lightning — a thing
+		# that strikes — when a curse should crawl to its next host.
+		var creep: CurseCreep = _creep_pool.acquire()
+		creep.show_creep(
 			source.global_position, _active[i].global_position,
 			UiPalette.WEAPON_CURSE, WeaponEffects.value("curse_jump_sec"),
-			WeaponEffects.value("chain_bolt_jitter_px")
+			WeaponEffects.value("curse_creep_sag_px")
 		)
 
 
-func _create_curse_bolt() -> ChainBolt:
-	var bolt := ChainBolt.new()
-	bolt.finished.connect(
-		func(done: ChainBolt) -> void: _bolt_pool.release(done)
+func _create_curse_creep() -> CurseCreep:
+	var creep := CurseCreep.new()
+	creep.finished.connect(
+		func(done: CurseCreep) -> void: _creep_pool.release(done)
 	)
-	return bolt
+	return creep
 
 
 func _release(enemy: Enemy) -> void:
