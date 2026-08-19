@@ -1369,10 +1369,22 @@ func _show_next_chest_reward() -> void:
 		_weapons_data, _passives_data, _owned_levels, _passive_stacks,
 		_owned_grades, _grades_config, _replaced_weapons, _weapon_categories
 	)
+	# Owner direction: a chest only deepens what the run already has; new
+	# skills belong to the level-up screen. The weapon half of that shipped in
+	# N5-5, but a passive at zero stacks is just as new and slipped through —
+	# owner report N9-41. Both are excluded by asking whether the build already
+	# holds the subject, rather than by listing kinds, so a future card kind
+	# cannot reopen the same hole.
 	var owned_only: Array[Dictionary] = []
 	for choice: Dictionary in pool:
-		if String(choice.get("kind", "")) != LevelUp.KIND_NEW_WEAPON:
-			owned_only.append(choice)
+		var id: String = String(choice.get("id", ""))
+		match String(choice.get("kind", "")):
+			LevelUp.KIND_NEW_WEAPON:
+				continue
+			LevelUp.KIND_PASSIVE:
+				if int(_passive_stacks.get(id, 0)) <= 0:
+					continue
+		owned_only.append(choice)
 	var rewards: Array[Dictionary] = LevelUp.assemble(owned_only, [], 1, _choice_rng)
 	if rewards.is_empty():
 		var gained: int = _add_gold(

@@ -39,8 +39,28 @@ func launch_pickup(
 
 
 ## Centered sprite draw; gold downscales to its logical 16px, the rest are 1:1.
-func _draw_kind_texture(path: String) -> void:
-	var texture: Texture2D = load(path)
+## Loaded once per path for the whole run. Owner report: 엽전 and 폭탄 sometimes
+## came out as plain white squares. The cause was loading inside _draw — when
+## load() hands back null (which ResourceLoader.exists cannot rule out, and
+## which the web build hits far more often than a desktop one),
+## draw_texture_rect falls back to its own white texture and paints exactly
+## that square. Caching also stops a resource lookup running on every redraw.
+static var _textures: Dictionary = {}
+
+
+static func kind_texture(path: String) -> Texture2D:
+	if _textures.has(path):
+		return _textures[path]
+	var texture: Texture2D = null
+	if not path.is_empty() and ResourceLoader.exists(path, "Texture2D"):
+		texture = load(path)
+	if texture == null and not path.is_empty():
+		push_warning("pickup: no texture at " + path + " — using the drawn shape")
+	_textures[path] = texture
+	return texture
+
+
+func _draw_kind_texture(texture: Texture2D) -> void:
 	var size: Vector2 = texture.get_size()
 	if kind == Pickups.KIND_GOLD:
 		size = Vector2(GOLD_DRAW_PX, GOLD_DRAW_PX)
@@ -48,9 +68,11 @@ func _draw_kind_texture(path: String) -> void:
 
 
 func _draw() -> void:
-	var texture_path: String = String(KIND_TEXTURES.get(kind, ""))
-	if not texture_path.is_empty() and ResourceLoader.exists(texture_path, "Texture2D"):
-		_draw_kind_texture(texture_path)
+	# A null texture must fall through to the drawn shape and never reach
+	# draw_texture_rect — reaching it is what produced the white square.
+	var texture: Texture2D = kind_texture(String(KIND_TEXTURES.get(kind, "")))
+	if texture != null:
+		_draw_kind_texture(texture)
 		return
 	match kind:
 		Pickups.KIND_GOLD:

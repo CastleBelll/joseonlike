@@ -170,3 +170,76 @@ func test_breakable_props_are_solid_with_positive_hp() -> bool:
 		if float((prop.get("breakable") as Dictionary).get("hp", 0.0)) <= 0.0:
 			return false
 	return breakable_count >= 3
+
+
+# N9-41 (owner report: 상자에서 신규 무기·패시브가 나온다). A chest only ever
+# deepens what the run already holds; new skills belong to the level-up screen.
+# The weapon half shipped in N5-5, the passive half leaked until now, so this
+# guards the RULE rather than either half of it.
+const CHEST_WEAPONS := {
+	"owned": {
+		"name_ko": "보유", "grade": "common", "damage": 10.0, "cooldown_sec": 1.0,
+		"speed": 200.0, "max_level": 8, "per_level": {"damage": 2.0},
+	},
+	"unowned": {
+		"name_ko": "미보유", "grade": "common", "damage": 10.0, "cooldown_sec": 1.0,
+		"speed": 200.0, "max_level": 8, "per_level": {"damage": 2.0},
+	},
+}
+const CHEST_PASSIVES := {
+	"attack_damage": {"name_ko": "공격력", "stat": "attack_damage", "per_stack": 0.05, "max_stacks": 5},
+	"move_speed": {"name_ko": "이동 속도", "stat": "move_speed", "per_stack": 0.05, "max_stacks": 5},
+}
+
+
+## Mirrors Stage._show_next_chest_reward's filter. Kept as a pure function here
+## so the rule is testable without a running stage.
+func _chest_pool(owned_levels: Dictionary, stacks: Dictionary) -> Array[Dictionary]:
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		CHEST_WEAPONS, CHEST_PASSIVES, owned_levels, stacks
+	)
+	var owned_only: Array[Dictionary] = []
+	for choice: Dictionary in pool:
+		var id: String = String(choice.get("id", ""))
+		match String(choice.get("kind", "")):
+			LevelUp.KIND_NEW_WEAPON:
+				continue
+			LevelUp.KIND_PASSIVE:
+				if int(stacks.get(id, 0)) <= 0:
+					continue
+		owned_only.append(choice)
+	return owned_only
+
+
+func test_chest_never_offers_an_unowned_weapon() -> bool:
+	var pool: Array[Dictionary] = _chest_pool({"owned": 1}, {"attack_damage": 1})
+	for choice: Dictionary in pool:
+		if String(choice["kind"]) == LevelUp.KIND_NEW_WEAPON:
+			return false
+		if String(choice["id"]) == "unowned":
+			return false
+	return true
+
+
+func test_chest_never_offers_a_passive_the_run_has_not_taken() -> bool:
+	# move_speed sits at zero stacks: legal on a level-up screen, never in a
+	# chest. This is the half that leaked.
+	var pool: Array[Dictionary] = _chest_pool({"owned": 1}, {"attack_damage": 1})
+	for choice: Dictionary in pool:
+		if String(choice["id"]) == "move_speed":
+			return false
+	return true
+
+
+func test_chest_still_offers_what_the_run_already_holds() -> bool:
+	# The filter must not empty the pool — a chest that can offer nothing pays
+	# fallback gold instead of a reward.
+	var pool: Array[Dictionary] = _chest_pool({"owned": 1}, {"attack_damage": 1})
+	var has_weapon: bool = false
+	var has_passive: bool = false
+	for choice: Dictionary in pool:
+		if String(choice["kind"]) == LevelUp.KIND_WEAPON_UP and String(choice["id"]) == "owned":
+			has_weapon = true
+		if String(choice["kind"]) == LevelUp.KIND_PASSIVE and String(choice["id"]) == "attack_damage":
+			has_passive = true
+	return has_weapon and has_passive
