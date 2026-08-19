@@ -130,10 +130,11 @@
         14.0
       ],
       "solid": true,
-      "weight": 0.5,
+      "weight": 1.5,
       "shape": "rect",
       "texture": "res://asset/stages/bamboo_forest/props/stone_lantern.png",
-      "placeholder": "lantern"
+      "placeholder": "lantern",
+      "light_radius_px": 170.0
     },
     "shrine_post": {
       "size": [
@@ -214,7 +215,8 @@
       "placeholder": "rock",
       "breakable": {
         "hp": 1.0
-      }
+      },
+      "light_radius_px": 200.0
     },
     "anvil": {
       "size": [

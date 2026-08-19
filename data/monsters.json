@@ -236,5 +236,23 @@
     "xp_drop": 680,
     "behaviour": "boss",
     "collision_radius": 29.5
+  },
+  "geuseundae": {
+    "name_ko": "그슨대",
+    "name_en": "Geuseundae",
+    "origin_ko": "제주에서 전해지는 어둠의 괴이다. 캄캄한 밤에 한없이 큰 형상으로 나타나 사람을 해치는데, 칼로 베어도 상하기는커녕 벨수록 더 커진다. 여럿이 횃불을 들고 나서야 비로소 그림자 본체가 사라졌다고 한다. 빛 밖에서는 벨 수 없다.",
+    "hp": 90.0,
+    "damage": 5.0,
+    "speed": 36.0,
+    "xp_drop": 22,
+    "behaviour": "chase",
+    "collision_radius": 13.0,
+    "shadow": {
+      "grow_per_sec": 0.06,
+      "max_scale": 2.8,
+      "lit_shrink_per_sec": 0.5,
+      "damage_per_scale": 3.0,
+      "leash_px": 420.0
+    }
   }
 }

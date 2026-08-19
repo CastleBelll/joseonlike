@@ -110,6 +110,16 @@ const JOYSTICK_KNOB := Color("#d4d8dc")
 
 # Spacing scale (4/8pt grid).
 const SPACE_XS := 4
+## N10-1a 그슨대: a bruised violet while untouchable — dark and wrong, but
+## still clearly readable against the night ground (a near-black silhouette
+## measured as invisible in the field), lifting to a pale grey once a light
+## reaches it. LIGHT_HALO is the warm pool a lantern or campfire casts, so the
+## player can see which props are lights and how far each one reaches.
+const SHADOW_DARK := Color(0.27, 0.24, 0.40, 1.0)
+const SHADOW_LIT := Color(0.72, 0.70, 0.82, 1.0)
+
+const LIGHT_HALO := Color(1.0, 0.82, 0.48, 1.0)
+
 const SPACE_SM := 8
 const SPACE_MD := 16
 const SPACE_LG := 24

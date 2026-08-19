@@ -73,6 +73,18 @@ Fallback:  wood-token drawn discs with the skill name
 ## Missing
 
 ```
+[MISSING] 그슨대 sprite (N10-1a)
+Size:      ~26x62 px idle + 4-frame walk, bottom-center origin like every
+           monster sheet; it renders up to 2.8x, so it must hold up scaled
+Members:   res://asset/monsters/geuseundae/{idle.png, walk.png}
+Used by:   N10-1a shadow monster (data/monsters.json geuseundae)
+Fallback:  placeholder rect tinted UiPalette.SHADOW_DARK / SHADOW_LIT
+Note:      authored as a LUMINANCE silhouette — the engine tints it dark while
+           it is untouchable and pale inside a light, so the art must read in
+           both. A featureless shape with a strong outline beats detail here.
+```
+
+```
 [MISSING] xp orb sprite (AC-4)
 Size:      orb ~10x10 px
 Members:   res://asset/drop/xp_orb.png (idle, optional 2-frame shimmer)

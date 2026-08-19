@@ -183,6 +183,11 @@ static func _solid_fits(
 ## them; broken ones stay in the list but answer alive() false.
 var breakables: Array[Breakable] = []
 
+## N10-1a: every placed prop carrying `light_radius_px`, as
+## {"position": Vector2, "radius": float}. Streamed chunks append to this same
+## array, so a shadow monster sees lights in newly generated ground too.
+var lights: Array[Dictionary] = []
+
 
 ## N9-6 infinite field: the world grows chunk by chunk as the player travels.
 ## Chunk placements are seeded per (field_seed, chunk coordinate), so a run's
@@ -241,6 +246,7 @@ func build(
 ) -> void:
 	y_sort_enabled = true
 	breakables = []
+	lights = []
 	_instantiate(generate(catalog, field, field_seed), catalog, decor_parent)
 
 
@@ -263,6 +269,15 @@ func _instantiate(
 	for placement: Dictionary in placements:
 		var prop: Dictionary = catalog[placement["id"]]
 		var pos: Vector2 = placement["position"]
+		var light_radius: float = float(prop.get("light_radius_px", 0.0))
+		if light_radius > 0.0:
+			lights.append({"position": pos, "radius": light_radius})
+			var halo := LightHalo.new()
+			halo.radius = light_radius
+			halo.position = pos
+			# Decor z, not below it: z_index is canvas-wide, so a negative value
+			# put the pool underneath the ground tiles and made it invisible.
+			decor_parent.add_child(halo)
 		if bool(placement["solid"]):
 			var body: StaticBody2D = _make_solid(String(placement["id"]), prop)
 			body.position = pos
@@ -363,3 +378,25 @@ class PropVisual:
 		var rect := Rect2(Vector2(-size.x / 2.0, -size.y), size)
 		draw_rect(rect, UiPalette.INK)
 		draw_rect(rect.grow(-OUTLINE_PX), color)
+
+
+## N10-1a: the pool of light a fire prop casts. A shadow monster can only be
+## damaged inside this circle, so the circle has to be visible — without it the
+## rule is invisible and the monster just reads as broken. Drawn once as
+## concentric translucent rings (no process, no per-frame cost).
+class LightHalo:
+	extends Node2D
+
+	const RING_COUNT := 5
+	const CORE_ALPHA := 0.20
+
+	var radius: float = 0.0
+
+	func _draw() -> void:
+		# Brightest at the fire, fading to nothing exactly at the damage radius,
+		# so what the player sees is what the rule uses.
+		for ring: int in range(RING_COUNT, 0, -1):
+			var span: float = radius * float(ring) / float(RING_COUNT)
+			var color := UiPalette.LIGHT_HALO
+			color.a = CORE_ALPHA * (1.0 - float(ring - 1) / float(RING_COUNT))
+			draw_circle(Vector2.ZERO, span, color)

@@ -92,6 +92,12 @@
         "interval_sec": 1.53
       },
       {
+        "at_sec": 120.0,
+        "monster_id": "geuseundae",
+        "count": 1,
+        "interval_sec": 1.0
+      },
+      {
         "at_sec": 140,
         "monster_id": "bamboo_brute_elite",
         "count": 1,
@@ -132,6 +138,12 @@
         "monster_id": "forest_spirit",
         "count": 14,
         "interval_sec": 1.27
+      },
+      {
+        "at_sec": 200.0,
+        "monster_id": "geuseundae",
+        "count": 1,
+        "interval_sec": 1.0
       },
       {
         "at_sec": 210,
@@ -180,6 +192,12 @@
         "monster_id": "bamboo_brute",
         "count": 10,
         "interval_sec": 1.36
+      },
+      {
+        "at_sec": 280.0,
+        "monster_id": "geuseundae",
+        "count": 1,
+        "interval_sec": 1.0
       },
       {
         "at_sec": 290,

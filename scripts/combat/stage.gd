@@ -166,6 +166,7 @@ func _ready() -> void:
 	_spawner.setup(_player)
 	_spawner.enemy_killed.connect(_on_enemy_killed)
 	_spawner.boss_spawned.connect(_on_boss_spawned)
+	_spawner.shadow_spawned.connect(_on_shadow_spawned)
 	# N4-4a: burn ticks float through the same damage-number pool as hits.
 	_spawner.burn_damaged.connect(
 		func(amount: float, at: Vector2) -> void: _on_hit_landed(amount, at, false)
@@ -224,6 +225,8 @@ func _ready() -> void:
 	_pickup_pool = NodePool.new(self, _create_pickup)
 	_chest_pool = NodePool.new(self, _create_chest)
 	_spawner.breakables = _field.breakables
+	# Same array reference: chunks appending lights are seen without rewiring.
+	_spawner.lights = _field.lights
 	for breakable: Breakable in _field.breakables:
 		breakable.broke.connect(_on_breakable_broke)
 	var starting_weapon: String = Player.load_starting_weapon()
@@ -1053,6 +1056,11 @@ func _on_loot_collected(orb: XpOrb) -> void:
 ## N9-18: cue text for a banked special material — either "ready" or the
 ## exact base weapon + level the evolution card is still waiting on. Picks
 ## the closest recipe (fewest levels missing) when several match.
+## N10-1a: the shadow's rule, stated once per run at the moment it matters.
+func _on_shadow_spawned(enemy: Enemy) -> void:
+	_float_label("%s — 빛 안에서만 벨 수 있다" % enemy.name_ko)
+
+
 func _material_cue(loot_id: String, loot_name: String) -> String:
 	var best_gap: int = -1
 	var best_line: String = ""

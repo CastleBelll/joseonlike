@@ -163,3 +163,45 @@ static func accelerated_speed(
 	current: float, acceleration: float, delta: float, max_speed: float
 ) -> float:
 	return minf(current + acceleration * delta, max_speed)
+
+
+## N10-1a 그슨대: is this point inside any light source's radius? Lights are
+## {"position": Vector2, "radius": float} entries collected from the field's
+## fire props. An empty list means total darkness — which is exactly why
+## validate_data refuses a stage that ships a shadow monster and no light.
+static func is_lit(point: Vector2, lights: Array[Dictionary]) -> bool:
+	for light: Dictionary in lights:
+		var radius: float = float(light.get("radius", 0.0))
+		if point.distance_squared_to(light.get("position", Vector2.ZERO)) <= radius * radius:
+			return true
+	return false
+
+
+## The shadow's size over time: it swells in the dark and is pushed back in
+## the light. Clamped to [1.0, max_scale] so a long dark chase cannot grow it
+## without bound and a long lit fight cannot shrink it below its base.
+static func shadow_scale(
+	current: float, delta: float, lit: bool, config: Dictionary
+) -> float:
+	var rate: float = (
+		-float(config.get("lit_shrink_per_sec", 0.0)) if lit
+		else float(config.get("grow_per_sec", 0.0))
+	)
+	var max_scale: float = maxf(float(config.get("max_scale", 1.0)), 1.0)
+	return clampf(current + rate * delta, 1.0, max_scale)
+
+
+## Contact damage at the shadow's current size: the base damage plus a flat
+## step per unit grown, so a shadow the player kept running from in the dark
+## hits far harder than one they walked straight into a lantern.
+static func shadow_damage(base_damage: float, scale: float, config: Dictionary) -> float:
+	return base_damage + (scale - 1.0) * float(config.get("damage_per_scale", 0.0))
+
+
+## N10-1a leash: is the player still inside the shadow's haunt? A zero or
+## missing radius means no leash at all, so an unconfigured shadow keeps the
+## old relentless behaviour rather than silently freezing in place.
+static func within_leash(anchor: Vector2, target: Vector2, radius: float) -> bool:
+	if radius <= 0.0:
+		return true
+	return anchor.distance_squared_to(target) <= radius * radius

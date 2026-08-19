@@ -10,6 +10,11 @@ extends Node2D
 signal enemy_killed(enemy: Enemy)
 ## N5-1: the single stage boss just entered the field.
 signal boss_spawned(boss: Enemy)
+
+## N10-1a: fires once per run, the first time a shadow monster reaches the
+## field. A monster whose whole rule is invisible ("you cannot hurt this in the
+## dark") has to say so the first time, or it just reads as a broken enemy.
+signal shadow_spawned(enemy: Enemy)
 ## N4-4a: a burn tick landed on some enemy — the stage floats the number.
 signal burn_damaged(amount: float, at: Vector2)
 
@@ -22,6 +27,16 @@ const STAGE_ID := "bamboo_forest"
 ## builds. The spawner is the target registry every weapon already holds, so
 ## projectiles/arcs/orbs read breakables from here — enemies never touch them.
 var breakables: Array[Breakable] = []
+
+## N10-1a: the field's light list, handed to every spawned enemy. Only shadow
+## monsters read it; for everything else it is an unused reference.
+var lights: Array[Dictionary] = []
+
+# N10-1a targeting filter: reused buffer, rebuilt only while an untouchable
+# shadow is on the field (see active_enemies).
+var _targetable: Array[Enemy] = []
+var _has_absorbing: bool = false
+var _shadow_announced: bool = false
 
 var _monsters: Dictionary = {}
 var _spawning: Dictionary = {}
@@ -103,13 +118,35 @@ func _resolve_elites() -> void:
 		_monsters[monster_id] = Enemy.derive_elite_stats(_monsters[base_id], entry)
 
 
+## The weapon-facing registry. N10-1a: a shadow standing in the dark is not a
+## target at all — that removes its damage numbers and, more importantly, stops
+## every auto-aimed weapon from locking onto the one enemy it cannot hurt while
+## the rest of the wave closes in. The spawner's own bookkeeping still walks
+## `_active`, so despawn, separation and the live cap are unaffected.
+## The filtered array is built only while such a shadow exists; an ordinary
+## run returns `_active` itself and allocates nothing.
 func active_enemies() -> Array[Enemy]:
-	return _active
+	return _targetable if _has_absorbing else _active
+
+
+func _refresh_targetable() -> void:
+	_has_absorbing = false
+	for enemy: Enemy in _active:
+		if enemy.absorbs_damage():
+			_has_absorbing = true
+			break
+	if not _has_absorbing:
+		return
+	_targetable.clear()
+	for enemy: Enemy in _active:
+		if not enemy.absorbs_damage():
+			_targetable.append(enemy)
 
 
 func _physics_process(delta: float) -> void:
 	if _player == null:
 		return
+	_refresh_targetable()
 	_elapsed += delta
 	_start_due_waves()
 	_run_waves()
@@ -210,6 +247,7 @@ func _spawn_one(monster_id: String) -> Enemy:
 	var stats: Dictionary = RunFlow.enrage_stats(
 		tiered, _soft_enrage, RunFlow.enrage_progress(_elapsed, _soft_enrage)
 	)
+	enemy.light_sources = lights
 	enemy.setup(
 		monster_id,
 		stats,
@@ -225,6 +263,9 @@ func _spawn_one(monster_id: String) -> Enemy:
 		float(_spawning.get("spawn_margin_px", 0.0)),
 		_rng.randf_range(0.0, TAU)
 	)
+	if enemy.is_shadow() and not _shadow_announced:
+		_shadow_announced = true
+		shadow_spawned.emit(enemy)
 	_active.append(enemy)
 	return enemy
 

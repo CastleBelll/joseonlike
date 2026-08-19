@@ -116,6 +116,17 @@ var _curse_left: float = 0.0
 var _curse_tick: float = 0.0
 var _stun_left: float = 0.0
 
+# N10-1a 그슨대: the shadow contract. `shadow_config` empty = an ordinary
+# monster, so every existing enemy is untouched. `light_sources` is the live
+# array the field owns (chunks append to it as the world grows).
+var shadow_config: Dictionary = {}
+var light_sources: Array[Dictionary] = []
+var _shadow_scale: float = 1.0
+var _lit: bool = false
+var _shadow_anchor := Vector2.ZERO
+var _shadow_anchored: bool = false
+var _shadow_leashed: bool = false
+
 
 func _ready() -> void:
 	collision_layer = COLLISION_LAYER_ENEMY
@@ -188,6 +199,11 @@ func setup(
 	_curse_left = 0.0
 	_curse_tick = 0.0
 	_stun_left = 0.0
+	shadow_config = stats.get("shadow", {})
+	_shadow_scale = 1.0
+	_lit = false
+	_shadow_anchored = false
+	_shadow_leashed = false
 	_contact_cooldown = contact_cooldown
 	_time_since_contact = contact_cooldown  # first touch may hit immediately
 	separation_push = Vector2.ZERO
@@ -204,7 +220,7 @@ func setup(
 ## reset so a reused instance never shows a previous life's state.
 func _apply_visual(sprite_dir: String) -> void:
 	_facing = PlayerMotion.FACING_RIGHT
-	_visual.scale.x = 1.0
+	_visual.scale = Vector2.ONE
 	_has_art = not sprite_dir.is_empty() and ResourceLoader.exists(
 		sprite_dir.path_join("idle.png")
 	)
@@ -246,6 +262,7 @@ func _physics_process(delta: float) -> void:
 	_update_curse(delta)
 	if CombatMath.is_dead(hp):
 		return  # a DoT tick killed this enemy; it is already released
+	_update_shadow(delta)
 	_shock_left = maxf(_shock_left - delta, 0.0)
 	_stun_left = maxf(_stun_left - delta, 0.0)
 	_knockback = _knockback.move_toward(Vector2.ZERO, _knockback_decay * delta)
@@ -255,7 +272,7 @@ func _physics_process(delta: float) -> void:
 	var steer: Vector2 = CombatMath.avoid_direction(desired, _block_normal, _avoid_sign)
 	var speed: float = _speed * (_shock_scale if _shock_left > 0.0 else 1.0)
 	# Stunned (진언, N4-4b): the chase stops dead; only knockback still moves it.
-	if _stun_left > 0.0:
+	if _stun_left > 0.0 or _shadow_leashed:
 		speed = 0.0
 	velocity = Separation.blended_direction(steer, separation_push) * speed + _knockback
 	move_and_slide()
@@ -273,6 +290,11 @@ func _physics_process(delta: float) -> void:
 func take_damage(
 	amount: float, hit_direction: Vector2 = Vector2.ZERO, knockback_scale: float = 1.0
 ) -> void:
+	# 그슨대 in the dark absorbs everything — projectiles, arcs, wards and the
+	# burn/curse ticks that route through here. Guarding at the single entry
+	# point is what keeps every weapon free of a shadow special case.
+	if absorbs_damage():
+		return
 	hp = CombatMath.apply_damage(hp, amount)
 	if CombatMath.is_dead(hp):
 		died.emit(self)
@@ -295,6 +317,46 @@ func apply_burn(dps: float, duration: float, spread_px: float = 0.0) -> void:
 		burn_duration = duration
 	burn_spread_px = maxf(burn_spread_px, spread_px)
 	_burn_left = maxf(_burn_left, duration)
+
+
+## True only for a shadow monster standing outside every light. Callers use
+## it to skip damage numbers — an absorbed hit must not print a number.
+func absorbs_damage() -> bool:
+	return not shadow_config.is_empty() and not _lit
+
+
+func is_shadow() -> bool:
+	return not shadow_config.is_empty()
+
+
+## Swell in the dark, shrink in the light, and show which one is happening.
+## The silhouette is the whole tell: near-black and growing means "you cannot
+## hurt this yet", lit and shrinking means "hit it now".
+func _update_shadow(delta: float) -> void:
+	if shadow_config.is_empty():
+		return
+	if not _shadow_anchored:
+		# The spawner positions the enemy after setup(), so the haunt anchor can
+		# only be taken on the first frame it is actually standing somewhere.
+		_shadow_anchor = global_position
+		_shadow_anchored = true
+	_lit = CombatMath.is_lit(global_position, light_sources)
+	# A shadow haunts its patch of dark; it does not hunt across the province.
+	# Without this a monster nothing can kill becomes a timer on the player's
+	# life instead of a fight they choose to take — measured: the playtest bot
+	# lost every seed to an unleashed one, and no amount of stat softening
+	# fixed the shape of that.
+	_shadow_leashed = not CombatMath.within_leash(
+		_shadow_anchor, _target.global_position, float(shadow_config.get("leash_px", 0.0))
+	)
+	_shadow_scale = CombatMath.shadow_scale(_shadow_scale, delta, _lit, shadow_config)
+	_visual.scale = Vector2(float(_facing) * _shadow_scale, _shadow_scale)
+	if _flash_left <= 0.0:
+		var tint: Color = UiPalette.SHADOW_LIT if _lit else UiPalette.SHADOW_DARK
+		if _has_art:
+			_sprite.modulate = tint
+		else:
+			_body.color = tint
 
 
 func is_burning() -> bool:
@@ -389,7 +451,8 @@ func _update_flash(delta: float) -> void:
 ## actual travel direction, keeping the last facing on vertical-only travel.
 func _update_visual_motion() -> void:
 	_facing = PlayerMotion.facing_sign(velocity.x, _facing)
-	_visual.scale.x = float(_facing)
+	# A shadow's scale carries its growth on both axes; mirror by sign only.
+	_visual.scale.x = float(_facing) * absf(_visual.scale.x) if is_shadow() 		else float(_facing)
 	if not _has_art:
 		return
 	if velocity != Vector2.ZERO:
@@ -410,7 +473,7 @@ func _try_contact_damage() -> void:
 	var reach: float = contact_radius + Player.CONTACT_RADIUS
 	if global_position.distance_squared_to(_target.global_position) > reach * reach:
 		return
-	if _target.take_hit(_damage, name_ko):
+	if _target.take_hit(CombatMath.shadow_damage(_damage, _shadow_scale, shadow_config), name_ko):
 		_time_since_contact = 0.0
 
 

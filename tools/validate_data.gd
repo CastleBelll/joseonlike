@@ -48,7 +48,7 @@ const PROP_FIELD_FIELDS: Array[String] = [
 ]
 const PROP_ALLOWED_KEYS: Array[String] = [
 	"size", "collision", "solid", "weight", "shape", "texture", "placeholder",
-	"breakable"
+	"breakable", "light_radius_px"
 ]
 const PROP_SHAPES: Array[String] = ["rect", "round"]
 # N4-1 loot contract (data/loot.json, drop_tables.json, weapon_mods.json).
@@ -194,6 +194,7 @@ func _check_combat_cross_references() -> void:
 	_check_sprite_effects(sprite_effects)
 	_check_weapon_art(weapons, sprite_effects)
 	_check_props()
+	_check_shadow_monsters()
 	_check_loot(monsters, weapons, stages)
 	_check_difficulties()
 	_check_meta_tree()
@@ -649,6 +650,42 @@ func _check_ui_icons(weapons: Dictionary, loot: Dictionary) -> void:
 
 ## N3-9 prop catalogue: sizes positive, collision boxes inside sprite bounds,
 ## weights positive, unknown keys/placeholders/shapes rejected.
+## N10-1a 그슨대 contract: a shadow monster can only be damaged inside a
+## light, so a build that ships one without a single light-bearing prop ships
+## an immortal enemy. Also guards the growth numbers themselves — a shadow that
+## never shrinks in the light is the same bug wearing a different hat.
+func _check_shadow_monsters() -> void:
+	var monsters: Dictionary = _load(DATA_DIR + "/monsters.json")
+	var shadow_ids: Array[String] = []
+	for monster_id: String in monsters:
+		var monster: Dictionary = monsters[monster_id]
+		if not monster.has("shadow"):
+			continue
+		shadow_ids.append(monster_id)
+		var label: String = "monsters." + monster_id + ".shadow"
+		if monster.get("shadow") is not Dictionary:
+			_fail(label + " must be an object")
+			continue
+		var shadow: Dictionary = monster["shadow"]
+		for key: String in ["grow_per_sec", "max_scale", "lit_shrink_per_sec", "leash_px"]:
+			if float(shadow.get(key, 0.0)) <= 0.0:
+				_fail("%s.%s missing or not positive" % [label, key])
+		if float(shadow.get("max_scale", 0.0)) <= 1.0:
+			_fail(label + ".max_scale must be greater than 1.0 to read as growth")
+		if float(shadow.get("damage_per_scale", -1.0)) < 0.0:
+			_fail(label + ".damage_per_scale must not be negative")
+	if shadow_ids.is_empty():
+		return
+	var catalog: Dictionary = (_load(DATA_DIR + "/props.json")).get("props", {})
+	for prop_id: String in catalog:
+		if float((catalog[prop_id] as Dictionary).get("light_radius_px", 0.0)) > 0.0:
+			return
+	_fail(
+		"monsters %s need light: no prop declares light_radius_px, so they can never be damaged"
+		% str(shadow_ids)
+	)
+
+
 func _check_props() -> void:
 	var data: Dictionary = _load(DATA_DIR + "/props.json")
 	_require_positive_numbers(data.get("field", {}), PROP_FIELD_FIELDS, "props.field")
