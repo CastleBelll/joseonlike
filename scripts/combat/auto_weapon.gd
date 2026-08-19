@@ -790,6 +790,8 @@ class ArcFlash:
 	const TRAIL_WIDTH := 2.0
 	const POINTS := 20
 	const TRAIL_ALPHA := 0.28
+	## The full sector sits under the swept one, fainter so the sweep still reads.
+	const FULL_ALPHA := 0.16
 	## The bright leading blade covers this slice of the full arc.
 	const EDGE_SLICE := 0.22
 
@@ -829,6 +831,8 @@ class ArcFlash:
 	## Pre-sized wedge scratch: POINTS arc samples + the origin. Refilled in
 	## place every frame — drawing never allocates beyond the first frame.
 	var _wedge := PackedVector2Array()
+	## Second scratch buffer for the full-extent fan (see _draw).
+	var _full := PackedVector2Array()
 
 	func _draw() -> void:
 		var progress: float = clampf(_age / _duration, 0.0, 1.0)
@@ -837,9 +841,26 @@ class ArcFlash:
 		var eased: float = 1.0 - (1.0 - progress) * (1.0 - progress)
 		var edge: float = start + _arc_rad * eased
 		var fade: float = 1.0 - progress
-		# N3-18: the swept sector is a FILLED wedge — the N3-17 thin double arc
-		# read as two disconnected scratches. A filled fan from the player to
-		# the true range says "everything in here was hit".
+		# N9-39: the WHOLE sector is drawn from frame one, fading out, because
+		# the damage lands across the whole arc at frame one too. Sweeping the
+		# fill open over arc_sweep_sec meant the instant of the hit showed a
+		# thin sliver — the swing read as a torch beam rather than a 160-degree
+		# swing (and it widens to 250 with milestones, which was invisible).
+		# The sweeping blade below still supplies the motion.
+		if _arc_rad > 0.0:
+			if _full.size() != POINTS + 2:
+				_full.resize(POINTS + 2)
+			_full[0] = Vector2.ZERO
+			for i: int in range(POINTS + 1):
+				var full_angle: float = lerpf(start, start + _arc_rad, float(i) / float(POINTS))
+				_full[i + 1] = Vector2.from_angle(full_angle) * _radius
+			draw_colored_polygon(_full, Color(_color, FULL_ALPHA * fade))
+			draw_arc(
+				Vector2.ZERO, _radius, start, start + _arc_rad, POINTS,
+				Color(_color, 0.5 * fade), TRAIL_WIDTH
+			)
+		# The brighter swept portion rides on top, so the eye still reads a
+		# direction of travel across the sector.
 		if edge > start:
 			if _wedge.size() != POINTS + 2:
 				_wedge.resize(POINTS + 2)

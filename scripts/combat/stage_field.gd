@@ -378,6 +378,11 @@ func _make_solid(prop_id: String, prop: Dictionary) -> StaticBody2D:
 	# ground by a shadow.
 	body.add_child(_make_ground_shadow(prop))
 	body.add_child(_make_visual(prop))
+	# N9-39 (owner request: "오브젝트 전등 들어오는거"): a lantern that casts a
+	# light pool but shows no flame reads as unlit scenery with a bug attached.
+	var flame: Node2D = _make_flame(prop)
+	if flame != null:
+		body.add_child(flame)
 	if body is Breakable:
 		(body as Breakable).arm(
 			prop_id, float(breakable_config.get("hp", 1.0)), spacing_radius(prop), shape
@@ -405,6 +410,36 @@ static func _content_rect(texture: Texture2D, texture_path: String) -> Rect2i:
 ## Soft ellipse at the prop's base, sized from its collision footprint so a
 ## wide rock casts a wide shadow. Drawn as nested ellipses rather than one
 ## flat disc, which would read as a painted spot.
+## Animated flame for a prop that declares one. Sized by its own logical
+## height from data rather than the sprite's pixels, so the same strip serves
+## a lantern wick and a campfire without a second asset.
+func _make_flame(prop: Dictionary) -> Node2D:
+	var config: Dictionary = prop.get("flame", {})
+	if config.is_empty():
+		return null
+	var path: String = String(config.get("sprite", ""))
+	if not ResourceLoader.exists(path, "Texture2D"):
+		return null
+	var sprite := AnimatedSprite2D.new()
+	sprite.name = "Flame"
+	sprite.sprite_frames = SpriteSheet.loop_frames(
+		path, float(config.get("fps", 10.0))
+	)
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var frame: Texture2D = sprite.sprite_frames.get_frame_texture(SpriteSheet.ANIM_IDLE, 0)
+	var source_height: float = maxf(frame.get_height() if frame != null else 1.0, 1.0)
+	sprite.scale = Vector2.ONE * (float(config.get("height_px", 0.0)) / source_height)
+	var offset: Array = config.get("offset", [0.0, 0.0])
+	sprite.position = Vector2(float(offset[0]), float(offset[1]))
+	sprite.play()
+	# Fires placed together must not flicker in lockstep, or a row of lanterns
+	# pulses like one object.
+	sprite.frame = randi() % maxi(
+		sprite.sprite_frames.get_frame_count(SpriteSheet.ANIM_IDLE), 1
+	)
+	return sprite
+
+
 func _make_ground_shadow(prop: Dictionary) -> Node2D:
 	var shadow := PropShadow.new()
 	var box: Array = prop.get("collision", [])

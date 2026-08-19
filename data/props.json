@@ -190,7 +190,16 @@
       "shape": "rect",
       "texture": "res://asset/stages/bamboo_forest/props/stone_lantern.png",
       "placeholder": "lantern",
-      "light_radius_px": 170.0
+      "light_radius_px": 170.0,
+      "flame": {
+        "sprite": "res://asset/stages/bamboo_forest/props/prop_flame.png",
+        "height_px": 8.0,
+        "offset": [
+          0.0,
+          -22.0
+        ],
+        "fps": 10.0
+      }
     },
     "shrine_post": {
       "size": [

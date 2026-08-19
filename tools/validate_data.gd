@@ -48,7 +48,7 @@ const PROP_FIELD_FIELDS: Array[String] = [
 ]
 const PROP_ALLOWED_KEYS: Array[String] = [
 	"size", "collision", "solid", "weight", "shape", "texture", "placeholder",
-	"breakable", "light_radius_px"
+	"breakable", "light_radius_px", "flame"
 ]
 const PROP_SHAPES: Array[String] = ["rect", "round"]
 # N4-1 loot contract (data/loot.json, drop_tables.json, weapon_mods.json).
