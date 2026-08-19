@@ -30,3 +30,7 @@ export_credentials.cfg
 
 # Godot editor thumbnail cache
 .thumbs/
+
+# Vercel CLI link state — holds the project/org ids for this checkout.
+# Not secret on its own, but it is per-developer local state, not project config.
+/.vercel/

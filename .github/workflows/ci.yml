@@ -59,14 +59,21 @@ jobs:
         timeout-minutes: 5
         run: |
           set -o pipefail
+          # Imported TWICE on purpose. On a COLD .godot a resource can be parsed
+          # before its dependency finishes importing — asset/ui_theme.tres
+          # references the font and reports "Parse Error: referenced non-existent
+          # resource" on the first pass, then resolves on the second. This job
+          # passes today only because its .godot cache is warm; a cache eviction
+          # would fail main for something that is not a real error. Proven by
+          # web-deploy run 32218173780, which started with no cache at all.
+          #
+          # The old `import_exit=$?` after a pipe read tee's status, never
+          # Godot's, so that guard could not fire. `set -o pipefail` above is
+          # what actually fails the step on a non-zero Godot exit.
+          "$GODOT" --headless --path . --import > /dev/null 2>&1 || true
           "$GODOT" --headless --path . --import 2>&1 | tee import.log
-          import_exit=$?
           if grep -Eq "SCRIPT ERROR|Parse Error" import.log; then
-            echo "::error::GDScript parse/script error detected during import"
-            exit 1
-          fi
-          if [ "$import_exit" -ne 0 ]; then
-            echo "::error::godot --import exited with status $import_exit"
+            echo "::error::GDScript parse/script error survived a second import pass"
             exit 1
           fi
 

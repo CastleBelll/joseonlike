@@ -168,13 +168,26 @@ keeps a fork from going red over a secret it cannot have.
 
 ### Connecting Vercel (one-time, needs a human)
 
-1. Create an empty Vercel project. **Do not** connect it to the GitHub repo —
-   Vercel cannot build Godot; Actions builds and pushes the static output.
-2. Account Settings → Tokens → create a token.
-3. `npx vercel link` locally writes `.vercel/project.json` with `orgId` and
-   `projectId`.
-4. Add three repository secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
-   `VERCEL_PROJECT_ID`.
+**There is no "create an empty project" button.** The Vercel dashboard only
+offers importing a Git repo or a template, and importing this repo is exactly
+what must NOT happen — Vercel cannot build Godot. The project is created by the
+CLI instead, on the first link:
+
+```sh
+npx vercel login
+npx vercel link          # answer "create a new project", pick a name
+cat .vercel/project.json # -> {"orgId": "...", "projectId": "..."}
+```
+
+`.vercel/` is gitignored: it is per-checkout local state, not project config.
+
+Then add three repository secrets (Settings → Secrets and variables → Actions):
+`VERCEL_TOKEN` (Account Settings → Tokens), `VERCEL_ORG_ID` and
+`VERCEL_PROJECT_ID` from the file above.
+
+If the project ends up connected to Git by accident, disconnect it in Project
+Settings → Git. A connected project would try to build the repo itself on every
+push and fail, racing the deploy that Actions is doing correctly.
 
 ### Two traps this workflow guards, and why
 
