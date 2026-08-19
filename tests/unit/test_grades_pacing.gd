@@ -6,6 +6,20 @@ extends RefCounted
 
 const GRADES := {
 	"ladder": ["common", "rare", "mythic"],
+	# N9-27: grades grant crit, not damage. The mythic rung deliberately
+	# carries no "add" so the empty-summary fallback is covered too.
+	"steps": {
+		"rare": {"add": {"crit_chance": 0.1}},
+		"mythic": {"tinted": true},
+	},
+}
+## The multiplier machinery is still part of WeaponGrade and still drives
+## stat_at, so it keeps its own fixture. The SHIPPED ladder no longer uses it
+## (N9-27 moved grades to additive crit), and the shared GRADES fixture above
+## mirrors what ships — a test fixture that contradicts the real data is how a
+## suite ends up green on a contract nobody uses.
+const MULT_GRADES := {
+	"ladder": ["common", "rare", "mythic"],
 	"steps": {
 		"rare": {"mult": {"damage": 2.0, "cooldown_sec": 0.5}},
 		"mythic": {"mult": {"damage": 3.0}, "tinted": true},
@@ -76,27 +90,27 @@ func test_highest_picks_ladder_max() -> bool:
 
 func test_multiplier_compounds_steps_above_base() -> bool:
 	return (
-		is_equal_approx(WeaponGrade.multiplier(GRADES, "common", "rare", "damage"), 2.0)
-		and is_equal_approx(WeaponGrade.multiplier(GRADES, "common", "mythic", "damage"), 6.0)
-		and is_equal_approx(WeaponGrade.multiplier(GRADES, "rare", "mythic", "damage"), 3.0)
+		is_equal_approx(WeaponGrade.multiplier(MULT_GRADES, "common", "rare", "damage"), 2.0)
+		and is_equal_approx(WeaponGrade.multiplier(MULT_GRADES, "common", "mythic", "damage"), 6.0)
+		and is_equal_approx(WeaponGrade.multiplier(MULT_GRADES, "rare", "mythic", "damage"), 3.0)
 	)
 
 
 func test_multiplier_is_one_at_or_below_base() -> bool:
 	return (
-		is_equal_approx(WeaponGrade.multiplier(GRADES, "common", "common", "damage"), 1.0)
-		and is_equal_approx(WeaponGrade.multiplier(GRADES, "rare", "common", "damage"), 1.0)
+		is_equal_approx(WeaponGrade.multiplier(MULT_GRADES, "common", "common", "damage"), 1.0)
+		and is_equal_approx(WeaponGrade.multiplier(MULT_GRADES, "rare", "common", "damage"), 1.0)
 		# mythic's step defines no cooldown factor — missing fields multiply by 1.
-		and is_equal_approx(WeaponGrade.multiplier(GRADES, "rare", "mythic", "cooldown_sec"), 1.0)
+		and is_equal_approx(WeaponGrade.multiplier(MULT_GRADES, "rare", "mythic", "cooldown_sec"), 1.0)
 	)
 
 
 func test_stat_at_combines_level_curve_and_grade() -> bool:
 	var stats: Dictionary = WEAPONS["talisman"]
 	return (
-		is_equal_approx(WeaponGrade.stat_at(stats, "damage", 2, "rare", GRADES), 30.0)
-		and is_equal_approx(WeaponGrade.stat_at(stats, "damage", 1, "common", GRADES), 12.0)
-		and is_equal_approx(WeaponGrade.stat_at(stats, "cooldown_sec", 1, "rare", GRADES), 0.6)
+		is_equal_approx(WeaponGrade.stat_at(stats, "damage", 2, "rare", MULT_GRADES), 30.0)
+		and is_equal_approx(WeaponGrade.stat_at(stats, "damage", 1, "common", MULT_GRADES), 12.0)
+		and is_equal_approx(WeaponGrade.stat_at(stats, "cooldown_sec", 1, "rare", MULT_GRADES), 0.6)
 	)
 
 
@@ -129,13 +143,15 @@ func test_grade_up_card_shows_next_grade_and_real_numbers() -> bool:
 	var pill: String = LevelUp.grade_text(choice, WEAPONS, {}, GRADES)
 	var desc: String = LevelUp.describe(choice, WEAPONS, {}, {"talisman": 1}, {}, {}, GRADES)
 	var mechanic_line: String = Bestiary.mechanic_line("straight", "ko")
-	return pill == "희귀" and desc == "%s · 등급 일반→희귀 · 피해 12→24" % mechanic_line
+	# The card names what the rung grants. Describing it as a damage change
+	# would print an unchanged number now that grades no longer scale damage.
+	return pill == "희귀" 		and desc == "%s · 등급 일반→희귀 · 치명타 확률 +10%%" % mechanic_line
 
 
 func test_weapon_up_description_reflects_run_grade() -> bool:
 	var choice := {"kind": LevelUp.KIND_WEAPON_UP, "id": "talisman"}
 	var desc: String = LevelUp.describe(
-		choice, WEAPONS, {}, {"talisman": 1}, {}, {"talisman": "rare"}, GRADES
+		choice, WEAPONS, {}, {"talisman": 1}, {}, {"talisman": "rare"}, MULT_GRADES
 	)
 	var mechanic_line: String = Bestiary.mechanic_line("straight", "ko")
 	return desc == "%s · 피해 24→30 · 쿨다운 0.6초→0.5초" % mechanic_line
@@ -260,3 +276,30 @@ func test_enrage_stats_scale_a_copy_only() -> bool:
 		and is_equal_approx(float(half["hp"]), 40.0)
 		and is_equal_approx(float(base["hp"]), 20.0)
 	)
+
+
+func test_a_grade_rung_with_no_effect_block_still_reads_as_something() -> bool:
+	# Reaching for a rung that grants nothing must not print an empty tail —
+	# the card would read as a blank promise.
+	var choice := {"kind": LevelUp.KIND_GRADE_UP, "id": "talisman"}
+	var desc: String = LevelUp.describe(
+		choice, WEAPONS, {}, {"talisman": 1}, {}, {"talisman": "rare"}, GRADES
+	)
+	return desc.ends_with("등급 희귀→신화 · 등급 상승")
+
+
+func test_grade_bonuses_accumulate_across_rungs() -> bool:
+	var ladder := {
+		"ladder": ["common", "rare", "mythic"],
+		"steps": {
+			"rare": {"add": {"crit_chance": 0.1}},
+			"mythic": {"add": {"crit_chance": 0.15}},
+		},
+	}
+	# Two rungs above base sum; one rung counts once; the base rung grants
+	# nothing, since a weapon that starts rare was never raised to rare.
+	var both: float = WeaponGrade.bonus(ladder, "common", "mythic", "crit_chance")
+	var one: float = WeaponGrade.bonus(ladder, "common", "rare", "crit_chance")
+	var none: float = WeaponGrade.bonus(ladder, "rare", "rare", "crit_chance")
+	var unknown: float = WeaponGrade.bonus(ladder, "common", "mythic", "no_such_field")
+	return absf(both - 0.25) < 0.0001 and absf(one - 0.1) < 0.0001 		and none == 0.0 and unknown == 0.0

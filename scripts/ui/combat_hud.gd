@@ -35,6 +35,7 @@ const OVERLAY_BUTTON_HEIGHT := 56.0
 const BUILD_WEAPON_COLUMNS := 6
 const BUILD_CELL_SIZE := 52.0
 const BUILD_ICON_SIZE := 32.0
+const GRADE_BORDER_WIDTH := 2
 const BUILD_CELL_HEIGHT := 66.0
 const BUILD_PASSIVE_COLUMNS := 2
 const BUILD_PASSIVE_ROW_HEIGHT := 26.0
@@ -572,6 +573,12 @@ func _build_weapon_cell(entry: Dictionary) -> Control:
 	var well_style := StyleBoxFlat.new()
 	well_style.bg_color = UiPalette.NIGHT_BROWN
 	well_style.set_corner_radius_all(6)
+	# N9-27: the well border carries the grade, so the axis the player invested
+	# in is visible at a glance rather than only on the card that sold it.
+	var grade_id: String = String(entry.get("grade", ""))
+	if not grade_id.is_empty():
+		well_style.border_color = UiPalette.grade_color(grade_id)
+		well_style.set_border_width_all(GRADE_BORDER_WIDTH)
 	well.add_theme_stylebox_override("panel", well_style)
 	var icon: Texture2D = UiIcons.weapon_icon(String(entry.get("id", "")))
 	if icon != null:
@@ -588,6 +595,15 @@ func _build_weapon_cell(entry: Dictionary) -> Control:
 	var level := _label("Lv.%d" % int(entry.get("level", 1)), UiPalette.FONT_SIZE_LABEL, UiPalette.INK)
 	level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	cell.add_child(level)
+	var grade_ko: String = String(entry.get("grade_ko", ""))
+	if not grade_ko.is_empty():
+		# Colour alone would fail anyone who cannot separate the five hues, so
+		# the word rides with it (DESIGN.md accessibility rule).
+		var grade_label := _label(
+			grade_ko, UiPalette.FONT_SIZE_LABEL, UiPalette.grade_color(grade_id)
+		)
+		grade_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cell.add_child(grade_label)
 	return cell
 
 

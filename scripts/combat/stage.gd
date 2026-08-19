@@ -880,10 +880,15 @@ func _passive_bonus(passive_id: String) -> float:
 func _pause_build_summary() -> Dictionary:
 	var weapons: Array[Dictionary] = []
 	for weapon_id: String in _owned_levels:
+		# N9-27: grade travels with the weapon here. Picking 등급↑ used to change
+		# something the player had no way to see afterwards.
+		var grade: String = LevelUp.current_grade(weapon_id, _weapons_data, _owned_grades)
 		weapons.append({
 			"id": weapon_id,
 			"name": String((_weapons_data.get(weapon_id, {}) as Dictionary).get("name_ko", weapon_id)),
 			"level": int(_owned_levels[weapon_id]),
+			"grade": grade,
+			"grade_ko": String(LevelUp.GRADE_KO.get(grade, LevelUp.DEFAULT_GRADE_KO)),
 		})
 	var passives: Array[Dictionary] = []
 	for passive_id: String in _passive_stacks:
@@ -1038,10 +1043,25 @@ func _refresh_weapon_scales() -> void:
 	# x2 plus every 치명 일격 stack.
 	var crit_chance: float = _passive_bonus("crit_chance")
 	var crit_multiplier: float = CRIT_MULTIPLIER + _passive_bonus("crit_damage")
-	for weapon: AutoWeapon in _weapon_nodes.values():
+	for weapon_id: String in _weapon_nodes:
+		var weapon: AutoWeapon = _weapon_nodes[weapon_id]
 		weapon.set_scales(damage_scale, cooldown_scale, speed_scale)
 		weapon.set_extra_projectiles(extra_projectiles)
-		weapon.set_crit(crit_chance, crit_multiplier)
+		# N9-27: grade is a per-WEAPON crit specialisation on top of the run-wide
+		# passive crit, which is what makes it a different question from level
+		# rather than a second copy of it.
+		var base_grade: String = String(
+			(_weapons_data.get(weapon_id, {}) as Dictionary).get("grade", "")
+		)
+		var grade: String = LevelUp.current_grade(weapon_id, _weapons_data, _owned_grades)
+		weapon.set_crit(
+			crit_chance + WeaponGrade.bonus(
+				_grades_config, base_grade, grade, "crit_chance"
+			),
+			crit_multiplier + WeaponGrade.bonus(
+				_grades_config, base_grade, grade, "crit_damage"
+			)
+		)
 
 
 func _load_json(path: String) -> Dictionary:

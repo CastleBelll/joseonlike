@@ -89,6 +89,21 @@ const GRADE_RARE := Color("#35619e")
 const GRADE_EPIC := Color("#6a4399")
 const GRADE_MYTHIC := Color("#8a6a12")
 
+## N9-27: grade id → colour, shared by the level-up pill and the pause build
+## summary. It lived only in level_up_popup until the pause screen needed to
+## show grade too; two copies of a colour table drift the moment one is tuned.
+const GRADE_COLORS: Dictionary = {
+	"common": GRADE_COMMON,
+	"uncommon": GRADE_UNCOMMON,
+	"rare": GRADE_RARE,
+	"epic": GRADE_EPIC,
+	"mythic": GRADE_MYTHIC,
+}
+
+
+static func grade_color(grade_id: String) -> Color:
+	return GRADE_COLORS.get(grade_id, GRADE_COMMON)
+
 # N4-1 modded-weapon projectile tints so a transformation reads on the field.
 const WEAPON_FIRE := Color("#ff8a3c")
 const WEAPON_LIGHTNING := Color("#8ad2ff")

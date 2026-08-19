@@ -371,7 +371,7 @@ func _make_grade_pill(text: String, grade_id: String) -> Panel:
 	pill.offset_bottom = PILL_MARGIN + PILL_SIZE.y
 	pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var style := StyleBoxFlat.new()
-	style.bg_color = GRADE_PILL_COLORS.get(grade_id, UiPalette.GRADE_COMMON) as Color
+	style.bg_color = UiPalette.grade_color(grade_id)
 	style.set_corner_radius_all(int(PILL_SIZE.y / 2.0))
 	pill.add_theme_stylebox_override("panel", style)
 	var label := _label(text, UiPalette.FONT_SIZE_LABEL, UiPalette.PILL_TEXT)

@@ -319,14 +319,29 @@ func _check_weapon_grades(weapons: Dictionary) -> void:
 	for step_id: String in steps:
 		if step_id not in rungs:
 			_fail("weapons._grades.steps.%s not on the ladder" % step_id)
+	# N9-27: a rung may scale stats ("mult") or grant additive effects ("add"),
+	# but it must do SOMETHING — a rung granting nothing is a card the player
+	# spends a level-up on for no reason. `add` fields are whitelisted to the
+	# ones the runtime actually reads, so a typo fails here instead of silently
+	# doing nothing (the same rule milestones already live under).
 	for rung: String in rungs.slice(1):
-		var mult: Dictionary = (steps.get(rung, {}) as Dictionary).get("mult", {})
-		if mult.is_empty():
-			_fail("weapons._grades.steps.%s.mult missing or empty" % rung)
+		var step: Dictionary = steps.get(rung, {})
+		var mult: Dictionary = step.get("mult", {})
+		var add: Dictionary = step.get("add", {})
+		if mult.is_empty() and add.is_empty():
+			_fail("weapons._grades.steps.%s grants nothing (needs mult or add)" % rung)
 			continue
 		for field: String in mult:
 			if float(mult[field]) <= 0.0:
 				_fail("weapons._grades.steps.%s.mult.%s must be positive" % [rung, field])
+		for field: String in add:
+			if field not in LevelUp.GRADE_EFFECT_LABELS:
+				_fail(
+					"weapons._grades.steps.%s.add.%s is not a wired grade effect %s"
+					% [rung, field, str(LevelUp.GRADE_EFFECT_LABELS.keys())]
+				)
+			elif float(add[field]) <= 0.0:
+				_fail("weapons._grades.steps.%s.add.%s must be positive" % [rung, field])
 	for weapon_id: String in weapons:
 		if weapon_id.begins_with("_"):
 			continue

@@ -17,6 +17,11 @@ const HEEL_DISTANCE_PX := 48.0
 var _player: Player
 var _spawner: Spawner
 var _damage: float = 0.0
+# N9-27: the general rolls crit per ATTACK, like the ward rolls per tick. One
+# roll at summon time would freeze a crit (or its absence) for the whole life
+# of a summon that keeps swinging.
+var _crit_chance: float = 0.0
+var _crit_multiplier: float = 1.0
 var _speed: float = 0.0
 var _leash: float = 0.0
 var _attack_cooldown: float = 0.0
@@ -56,12 +61,16 @@ func arm(
 	summon_config: Dictionary,
 	damage: float,
 	status: Dictionary,
-	color: Color
+	color: Color,
+	crit_chance: float = 0.0,
+	crit_multiplier: float = 1.0
 ) -> void:
 	global_position = at
 	_player = player
 	_spawner = spawner
 	_damage = damage
+	_crit_chance = crit_chance
+	_crit_multiplier = crit_multiplier
 	_status = status
 	_color = color
 	_speed = float(summon_config.get("speed", 0.0))
@@ -116,9 +125,12 @@ func _try_strike(enemy: Enemy) -> void:
 			float(_status.get("slow_scale", 1.0)),
 			float(_status.get("duration_sec", 0.0))
 		)
-	enemy.take_damage(_damage, CombatMath.chase_direction(global_position, at))
+	var damage: float = _damage
+	if _crit_chance > 0.0 and randf() < _crit_chance:
+		damage *= _crit_multiplier
+	enemy.take_damage(damage, CombatMath.chase_direction(global_position, at))
 	_strike_flash.flash(at, _color, WeaponEffects.value("summon_strike_sec"))
-	struck.emit(_damage, at, boss_hit)
+	struck.emit(damage, at, boss_hit)
 
 
 ## 신장 strike flash (N3-17): a short X-slash burst at the struck enemy so

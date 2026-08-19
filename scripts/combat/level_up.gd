@@ -21,6 +21,13 @@ const GRADE_KO := {
 const DEFAULT_GRADE_KO := "일반"
 const DEFAULT_GRADE_ID := "common"
 const GRADE_UP_LABEL := "등급↑"
+## N9-27: what a grade rung actually grants, for card copy. Grades no longer
+## touch damage or cooldown — describing them that way would print an
+## unchanged number and read as a card that does nothing.
+const GRADE_EFFECT_LABELS: Dictionary = {
+	"crit_chance": "치명타 확률",
+	"crit_damage": "치명타 피해",
+}
 const MOD_LABEL := "변신!"
 const MOD_NAME := "개조"
 ## N4-9 knowledge rule: a mod result the 괴이록 has not recorded yet shows as
@@ -572,15 +579,18 @@ static func describe(
 			return "%s · %s" % [_weapon_mechanic_line(stats), numbers]
 		KIND_GRADE_UP:
 			var stats: Dictionary = weapons.get(id, {})
-			var level: int = int(owned_levels.get(id, 1))
 			var grade: String = current_grade(id, weapons, owned_grades)
 			var raised: String = WeaponGrade.next(WeaponGrade.ladder(grades), grade)
-			return "%s · 등급 %s→%s · 피해 %s→%s" % [
+			var granted: String = WeaponGrade.step_summary(
+				grades, raised, GRADE_EFFECT_LABELS
+			)
+			if granted.is_empty():
+				granted = "등급 상승"
+			return "%s · 등급 %s→%s · %s" % [
 				_weapon_mechanic_line(stats),
 				String(GRADE_KO.get(grade, DEFAULT_GRADE_KO)),
 				String(GRADE_KO.get(raised, DEFAULT_GRADE_KO)),
-				_fmt(WeaponGrade.stat_at(stats, "damage", level, grade, grades)),
-				_fmt(WeaponGrade.stat_at(stats, "damage", level, raised, grades)),
+				granted,
 			]
 		KIND_MOD:
 			# Reads like the old loot popup did: the full transformation, plus

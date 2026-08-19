@@ -60,6 +60,40 @@ static func multiplier(
 
 
 ## True when any active step (above base, up to current) sets `flag`.
+## N9-27: additive grade bonuses, summed across every rung above the weapon's
+## base. Grades used to multiply damage and cooldown — the exact two numbers
+## levels already move — so the player had no way to tell the axes apart. They
+## now grant crit instead: a distinct question ("does this weapon spike?")
+## rather than a second copy of "does this weapon hit harder?".
+##
+## Crit specifically, because it is the only qualitative knob that reaches
+## EVERY mechanic through one path (AutoWeapon._roll_damage covers projectile,
+## arc, ward tick and orbit graze). Pierce or explosion would have been dead
+## rungs for 결계, 혼불 and 신장.
+static func bonus(
+	grades: Dictionary, base_grade: String, current_grade: String, field: String
+) -> float:
+	var rungs: Array[String] = ladder(grades)
+	var steps: Dictionary = grades.get("steps", {})
+	var total: float = 0.0
+	for i: int in range(index_of(rungs, base_grade) + 1, index_of(rungs, current_grade) + 1):
+		var step: Dictionary = steps.get(rungs[i], {})
+		total += float((step.get("add", {}) as Dictionary).get(field, 0.0))
+	return total
+
+
+## What one rung grants, as card copy — the 등급↑ card has to say what the
+## player is buying, not just show a prettier pill.
+static func step_summary(grades: Dictionary, rung: String, labels: Dictionary) -> String:
+	var step: Dictionary = (grades.get("steps", {}) as Dictionary).get(rung, {})
+	var add: Dictionary = step.get("add", {})
+	var parts: PackedStringArray = []
+	for field: String in add:
+		var label: String = String(labels.get(field, field))
+		parts.append("%s +%d%%" % [label, roundi(float(add[field]) * 100.0)])
+	return ", ".join(parts)
+
+
 static func has_flag(
 	grades: Dictionary, base_grade: String, current_grade: String, flag: String
 ) -> bool:

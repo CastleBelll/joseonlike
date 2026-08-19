@@ -13,13 +13,21 @@ func _ready() -> void:
 	add_child(hud)
 	hud.build_provider = func() -> Dictionary:
 		return {
+			# N9-27: every rung appears exactly once, so a missing colour-table
+			# entry or a cell that lost its grade row shows up in the shot.
 			"weapons": [
-				{"id": "old_talisman", "name": "낡은 부적", "level": 5},
-				{"id": "noebu", "name": "뇌부", "level": 3},
-				{"id": "gyeolgye", "name": "결계", "level": 4},
-				{"id": "honbul", "name": "혼불", "level": 2},
-				{"id": "seokjang", "name": "석장", "level": 6},
-				{"id": "phoenix_talisman", "name": "봉황 부적", "level": 8},
+				{"id": "old_talisman", "name": "낡은 부적", "level": 5,
+					"grade": "rare", "grade_ko": "희귀"},
+				{"id": "noebu", "name": "뇌부", "level": 3,
+					"grade": "common", "grade_ko": "일반"},
+				{"id": "gyeolgye", "name": "결계", "level": 4,
+					"grade": "uncommon", "grade_ko": "고급"},
+				{"id": "honbul", "name": "혼불", "level": 2,
+					"grade": "epic", "grade_ko": "영웅"},
+				{"id": "seokjang", "name": "석장", "level": 6,
+					"grade": "common", "grade_ko": "일반"},
+				{"id": "phoenix_talisman", "name": "봉황 부적", "level": 8,
+					"grade": "mythic", "grade_ko": "신화"},
 			],
 			"passives": [
 				{"name": "공격력", "stacks": 3, "max": 5},
@@ -70,7 +78,14 @@ func _ready() -> void:
 	# summary that renders every row but runs off the bottom is not a pass.
 	var panel: Control = hud.get_node_or_null("PauseOverlay/PaperPanel")
 	var fits: bool = panel != null and panel.size.y <= hud.size.y
-	if grid != null and grid.get_child_count() == 6 \
+	# Each weapon cell is icon well + Lv line + grade line. A cell that lost its
+	# grade row drops to two children, which is the regression this counts.
+	var graded: int = 0
+	if grid != null:
+		for cell: Node in grid.get_children():
+			if cell.get_child_count() >= 3:
+				graded += 1
+	if grid != null and grid.get_child_count() == 6 and graded == 6 \
 			and passives != null and passives.get_child_count() == 5 \
 			and stats != null and stats.get_child_count() == 12 and fits:
 		print("PASS pause_check: 6 weapons + 5 passives + 12 stat lines, panel %.0fpx" % panel.size.y)

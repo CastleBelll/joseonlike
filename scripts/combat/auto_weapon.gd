@@ -430,7 +430,8 @@ func _spawn_summon() -> void:
 	_live_summon = _summon_pool.acquire()
 	_live_summon.arm(
 		_player.global_position, _player, _spawner, _summon_config,
-		_damage, _stats.get("on_hit_status", {}), _tint()
+		_damage, _stats.get("on_hit_status", {}), _tint(),
+		_crit_chance, _crit_multiplier
 	)
 
 

@@ -2891,3 +2891,71 @@ Worth stating plainly alongside N9-23: the random-pick bot's evolutions fell
 from 4/10 runs to 1/10. That is the level-5 gate doing exactly what it was
 asked to do — spreading picks across four weapons no longer reaches it. Focus
 is now the price of evolution.
+
+---
+
+# N9-27 — Grade becomes a different question from level (2026-08-19)
+
+Owner asked whether weapon grade and weapon level being separate axes is
+right. It is defensible — grade survives 개조, so it is investment that is not
+lost when a weapon transforms — but as shipped it was not pulling its weight.
+
+## What was wrong
+
+- **Both axes pushed the same two numbers.** Grade multiplied damage and
+  cooldown; level does that too, and level additionally carries milestones
+  (extra projectiles, chain jumps, arc width). Grade had no identity of its
+  own, so the player had no way to tell what they were buying.
+- **Grade was invisible.** The pause build summary printed `Lv.N` only. A
+  player could spend a level-up on 등급↑ and then have no way to see it.
+- **It competes with level for the same card slot.** `pick` guarantees one
+  card per subject id (N4-7), so a weapon's grade card displaces its level
+  card on that screen. Measured 1-2 grade picks per run — which is 1-2 fewer
+  level picks, directly against the level-5 개조 gate from N9-23.
+
+## The change
+
+| Rung | Before | After |
+|---|---|---|
+| 고급 uncommon | damage x1.15, cooldown x0.96 | **치명타 확률 +7%** |
+| 희귀 rare | damage x1.18, cooldown x0.94 | **치명타 피해 +40%** |
+| 영웅 epic | damage x1.22, cooldown x0.92 | **치명타 확률 +7%** |
+| 신화 mythic | damage x1.30, cooldown x0.90 | **치명타 피해 +60%** |
+
+Level is now the only quantitative axis; grade asks "does this weapon spike?"
+
+**Crit specifically, and not pierce or explosion**, because crit is the only
+qualitative knob that reaches every mechanic through one path
+(`AutoWeapon._roll_damage` covers projectile, arc, ward tick and orbit graze).
+Pierce or an on-hit explosion would have been dead rungs for 결계, 혼불 and
+신장 — half the arsenal buying nothing.
+
+One gap closed while wiring it: **the 신장 summon never rolled crit at all**.
+It now rolls per attack, like the ward rolls per tick — a single roll at
+summon time would freeze a crit, or its absence, for the summon's whole life.
+
+## Ceilings
+
+Crit chance tops out at 44% (passives 30% + grade 14%); the multiplier at 4.0x
+(base 2.0 + passives 1.0 + grade 1.0). A fully committed crit build averages
+about 2.3x damage on that weapon and costs ten passive picks out of ~19, so it
+is a real specialisation rather than a free ride.
+
+## Measured
+
+Four seeds after the change: 2 victories (376.8s, 420.1s), 2 defeats (295.9s,
+172.1s). In the usual band — the early defeat ran a one-weapon build with zero
+grade picks. Note the sample is noisy: the field seed is randomised per
+process, so `--seed` does not reproduce a run exactly.
+
+## Legibility
+
+The pause build summary now borders each weapon well in its grade colour and
+prints the grade word under the level — colour alone would fail anyone who
+cannot separate five hues. The 등급↑ card names what the rung grants instead
+of printing a damage change that no longer happens. The grade colour table
+moved to `UiPalette.grade_color` now that two screens read it.
+
+`validate_data` requires each rung to grant something (`mult` or `add`) and
+whitelists `add` fields to the ones the runtime reads, so a typo fails CI
+rather than silently doing nothing.
