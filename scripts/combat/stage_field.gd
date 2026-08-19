@@ -54,10 +54,68 @@ static func generate(
 	var rng := RandomNumberGenerator.new()
 	rng.seed = field_seed
 	var anchors: Array[Vector2] = cluster_anchors(field, rng)
+	var themes: Array[String] = cluster_themes(field, rng, anchors.size())
 	var placements: Array[Dictionary] = []
-	_scatter(placements, catalog, field, rng, anchors, true, int(field.get("solid_count", 0)))
-	_scatter(placements, catalog, field, rng, anchors, false, int(field.get("decor_count", 0)))
+	_scatter(
+		placements, catalog, field, rng, anchors, themes, true,
+		int(field.get("solid_count", 0))
+	)
+	_scatter(
+		placements, catalog, field, rng, anchors, themes, false,
+		int(field.get("decor_count", 0))
+	)
 	return placements
+
+
+## N9-32: one theme per cluster, drawn by weight. A cluster stands for a
+## PLACE — 대숲, 길가 서낭, 야영터, 물가 — and only that place's props go in it.
+## Before this every cluster drew from the whole catalogue, so a blacksmith's
+## anvil could land beside a shrine post in a bamboo grove, which is what made
+## the field read as thrown together rather than built.
+## Empty theme data falls back to one unnamed theme, which _theme_table treats
+## as "the whole catalogue" — the pre-N9-32 behaviour, so missing data degrades
+## instead of emptying the field.
+static func cluster_themes(
+	field: Dictionary, rng: RandomNumberGenerator, count: int
+) -> Array[String]:
+	var themes: Array = field.get("themes", [])
+	var chosen: Array[String] = []
+	if themes.is_empty():
+		for i: int in range(count):
+			chosen.append("")
+		return chosen
+	var weights: Array[float] = []
+	for theme: Variant in themes:
+		weights.append(float((theme as Dictionary).get("weight", 0.0)))
+	for i: int in range(count):
+		var picked: Dictionary = themes[pick_weighted(weights, rng.randf())]
+		chosen.append(String(picked.get("id", "")))
+	return chosen
+
+
+## Ids and weights a theme offers for one pass (solid or decor). An unknown or
+## empty theme id means the whole catalogue, so a stage that ships no themes
+## still generates a field.
+static func _theme_table(
+	catalog: Dictionary, field: Dictionary, theme_id: String, solid: bool
+) -> Dictionary:
+	var allowed: Dictionary = {}
+	for theme: Variant in field.get("themes", []):
+		if String((theme as Dictionary).get("id", "")) == theme_id:
+			allowed = (theme as Dictionary).get("props", {})
+			break
+	var ids: Array[String] = []
+	var weights: Array[float] = []
+	for id: String in catalog:
+		if bool((catalog[id] as Dictionary).get("solid", false)) != solid:
+			continue
+		if allowed.is_empty():
+			ids.append(id)
+			weights.append(float((catalog[id] as Dictionary).get("weight", 0.0)))
+		elif allowed.has(id):
+			ids.append(id)
+			weights.append(float(allowed[id]))
+	return {"ids": ids, "weights": weights}
 
 
 ## Seeded cluster centers: each disc sits fully inside the edge margin, its
@@ -129,26 +187,32 @@ static func _scatter(
 	field: Dictionary,
 	rng: RandomNumberGenerator,
 	anchors: Array[Vector2],
+	themes: Array[String],
 	solid: bool,
 	count: int
 ) -> void:
-	var ids: Array[String] = []
-	var weights: Array[float] = []
-	for id: String in catalog:
-		if bool((catalog[id] as Dictionary).get("solid", false)) == solid:
-			ids.append(id)
-			weights.append(float((catalog[id] as Dictionary).get("weight", 0.0)))
-	if ids.is_empty() or anchors.is_empty():
+	if anchors.is_empty():
 		return
+	# Built once per theme rather than per attempt: the tables are small but
+	# this runs for every streamed chunk.
+	var tables: Array[Dictionary] = []
+	for i: int in range(anchors.size()):
+		var theme_id: String = themes[i] if i < themes.size() else ""
+		tables.append(_theme_table(catalog, field, theme_id, solid))
 	var radius: float = float(field.get("cluster_radius_px", 0.0))
 	var attempts: int = int(field.get("max_attempts_per_prop", 1))
 	for i: int in range(count):
 		for attempt: int in range(attempts):
-			var id: String = ids[pick_weighted(weights, rng.randf())]
-			# Uniform position inside a random cluster's disc (sqrt keeps the
-			# density even instead of center-heavy).
-			var anchor: Vector2 = anchors[rng.randi_range(0, anchors.size() - 1)]
-			var pos: Vector2 = anchor + Vector2.from_angle(rng.randf() * TAU) \
+			# The cluster is chosen FIRST, because which props are legal depends
+			# on which place this is.
+			var index: int = rng.randi_range(0, anchors.size() - 1)
+			var ids: Array[String] = tables[index]["ids"]
+			if ids.is_empty():
+				continue
+			var id: String = ids[pick_weighted(tables[index]["weights"], rng.randf())]
+			# Uniform position inside that cluster's disc (sqrt keeps the density
+			# even instead of center-heavy).
+			var pos: Vector2 = anchors[index] + Vector2.from_angle(rng.randf() * TAU) \
 				* sqrt(rng.randf()) * radius
 			if solid and not _solid_fits(placements, catalog, field, catalog[id], pos):
 				continue
@@ -227,12 +291,13 @@ static func chunk_placements(
 				anchors.append(pos)
 				break
 	var placements: Array[Dictionary] = []
+	var themes: Array[String] = cluster_themes(field, rng, anchors.size())
 	_scatter(
-		placements, catalog, field, rng, anchors, true,
+		placements, catalog, field, rng, anchors, themes, true,
 		maxi(1, roundi(float(field.get("solid_count", 0)) * share))
 	)
 	_scatter(
-		placements, catalog, field, rng, anchors, false,
+		placements, catalog, field, rng, anchors, themes, false,
 		maxi(1, roundi(float(field.get("decor_count", 0)) * share))
 	)
 	return placements
@@ -306,6 +371,12 @@ func _make_solid(prop_id: String, prop: Dictionary) -> StaticBody2D:
 		float(box[0]) + float(box[2]) / 2.0, float(box[1]) + float(box[3]) / 2.0
 	)
 	body.add_child(shape)
+	# N9-32: props sat on black with no contact, so each one read as pasted on
+	# rather than standing in the field — a large part of the "thrown together"
+	# look. The shadow goes on the BODY (not inside _make_visual) so only solids
+	# get one: grass and pebbles lie flat and would look wrong lifted off the
+	# ground by a shadow.
+	body.add_child(_make_ground_shadow(prop))
 	body.add_child(_make_visual(prop))
 	if body is Breakable:
 		(body as Breakable).arm(
@@ -331,6 +402,20 @@ static func _content_rect(texture: Texture2D, texture_path: String) -> Rect2i:
 ## Uses the real texture when the AC-4 art exists at the declared path;
 ## otherwise a palette-token placeholder shape of the same logical size, so
 ## the art lands later with zero code change.
+## Soft ellipse at the prop's base, sized from its collision footprint so a
+## wide rock casts a wide shadow. Drawn as nested ellipses rather than one
+## flat disc, which would read as a painted spot.
+func _make_ground_shadow(prop: Dictionary) -> Node2D:
+	var shadow := PropShadow.new()
+	var box: Array = prop.get("collision", [])
+	if box.size() == 4:
+		shadow.width = float(box[2]) * 1.15
+	else:
+		var size: Array = prop.get("size", [])
+		shadow.width = float(size[0]) * 0.8 if size.size() == 2 else 0.0
+	return shadow
+
+
 func _make_visual(prop: Dictionary) -> Node2D:
 	var size_field: Array = prop.get("size", [])
 	var logical_size := Vector2(float(size_field[0]), float(size_field[1]))
@@ -387,16 +472,49 @@ class PropVisual:
 class LightHalo:
 	extends Node2D
 
-	const RING_COUNT := 5
-	const CORE_ALPHA := 0.20
+	# N9-32: five hard bands at alpha 0.20 read as a radar sweep, not firelight
+	# — the owner reported the field looking cluttered and these were the
+	# loudest offender. Many thin steps on a quadratic falloff give a smooth
+	# pool at a fraction of the weight, while the outermost step still lands
+	# exactly on the damage radius, so what the player sees is still what the
+	# rule uses.
+	const RING_COUNT := 18
+	const CORE_ALPHA := 0.11
+	## Higher is tighter: light stays near the fire instead of washing the field.
+	const FALLOFF_POWER := 2.4
 
 	var radius: float = 0.0
 
 	func _draw() -> void:
-		# Brightest at the fire, fading to nothing exactly at the damage radius,
-		# so what the player sees is what the rule uses.
 		for ring: int in range(RING_COUNT, 0, -1):
-			var span: float = radius * float(ring) / float(RING_COUNT)
+			var t: float = float(ring) / float(RING_COUNT)
 			var color := UiPalette.LIGHT_HALO
-			color.a = CORE_ALPHA * (1.0 - float(ring - 1) / float(RING_COUNT))
-			draw_circle(Vector2.ZERO, span, color)
+			color.a = CORE_ALPHA * pow(1.0 - t, FALLOFF_POWER)
+			draw_circle(Vector2.ZERO, radius * t, color)
+
+
+## N9-32 contact shadow: a squashed, layered ellipse under a solid prop so it
+## reads as standing on the ground instead of floating over it. Draw-only, no
+## process, no texture — it has to be free enough to put under every prop on a
+## streamed field.
+class PropShadow:
+	extends Node2D
+
+	const LAYERS := 4
+	const CORE_ALPHA := 0.30
+	## Height as a share of width — a low ellipse reads as ground contact,
+	## a circle reads as a hole.
+	const SQUASH := 0.32
+
+	var width: float = 0.0
+
+	func _draw() -> void:
+		if width <= 0.0:
+			return
+		for layer: int in range(LAYERS, 0, -1):
+			var t: float = float(layer) / float(LAYERS)
+			var color := UiPalette.INK
+			color.a = CORE_ALPHA * (1.0 - t) / float(LAYERS) * 4.0
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, SQUASH))
+			draw_circle(Vector2.ZERO, width * 0.5 * t, color)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

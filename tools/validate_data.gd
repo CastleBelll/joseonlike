@@ -675,6 +675,50 @@ func _check_ui_icons(weapons: Dictionary, loot: Dictionary) -> void:
 ## light, so a build that ships one without a single light-bearing prop ships
 ## an immortal enemy. Also guards the growth numbers themselves — a shadow that
 ## never shrinks in the light is the same bug wearing a different hat.
+## N9-32 theme contract. A theme naming a prop id that does not exist is
+## silently dropped by _theme_table, and a theme with no solid (or no decor)
+## entry makes that whole scatter pass come up empty for every cluster it owns
+## — both are invisible in play and would only show as a field that looks
+## slightly wrong.
+func _check_prop_themes(catalog: Dictionary, field: Dictionary) -> void:
+	var themes: Array = field.get("themes", [])
+	if themes.is_empty():
+		return  # no themes is legal: the scatter falls back to the catalogue
+	var seen: Array[String] = []
+	for raw: Variant in themes:
+		if raw is not Dictionary:
+			_fail("props.field.themes entry is not an object")
+			continue
+		var theme: Dictionary = raw
+		var theme_id: String = String(theme.get("id", ""))
+		var label: String = "props.field.themes." + theme_id
+		if theme_id.is_empty() or seen.has(theme_id):
+			_fail("props.field.themes id '%s' missing or duplicated" % theme_id)
+		seen.append(theme_id)
+		if String(theme.get("name_ko", "")).is_empty():
+			_fail(label + ".name_ko missing")
+		if float(theme.get("weight", 0.0)) <= 0.0:
+			_fail(label + ".weight must be positive")
+		var props: Dictionary = theme.get("props", {})
+		var solids: int = 0
+		var decor: int = 0
+		for prop_id: String in props:
+			if not catalog.has(prop_id):
+				_fail("%s names unknown prop '%s'" % [label, prop_id])
+				continue
+			if float(props[prop_id]) <= 0.0:
+				_fail("%s.%s weight must be positive" % [label, prop_id])
+			if bool((catalog[prop_id] as Dictionary).get("solid", false)):
+				solids += 1
+			else:
+				decor += 1
+		if solids <= 0 or decor <= 0:
+			_fail(
+				"%s must offer at least one solid and one decor prop (has %d/%d)"
+				% [label, solids, decor]
+			)
+
+
 func _check_shadow_monsters() -> void:
 	var monsters: Dictionary = _load(DATA_DIR + "/monsters.json")
 	var shadow_ids: Array[String] = []
@@ -742,6 +786,7 @@ func _check_props() -> void:
 			_fail(label + ".size must be [width, height] with positive numbers")
 			continue
 		_check_prop_collision(prop, label, float(size[0]), float(size[1]))
+	_check_prop_themes(catalog, data.get("field", {}))
 
 
 ## Collision boxes are relative to the bottom-center origin: the sprite spans

@@ -10,7 +10,63 @@
     "cluster_min_gap_px": 420.0,
     "min_gap_px": 60.0,
     "spawn_clear_radius_px": 170.0,
-    "max_attempts_per_prop": 24
+    "max_attempts_per_prop": 24,
+    "themes": [
+      {
+        "id": "grove",
+        "name_ko": "대숲",
+        "weight": 5.0,
+        "props": {
+          "bamboo_clump_small": 5.0,
+          "bamboo_clump_large": 2.0,
+          "fallen_log": 1.5,
+          "rock_small": 1.0,
+          "fern": 3.0,
+          "grass_tuft": 6.0,
+          "pebbles": 1.0
+        }
+      },
+      {
+        "id": "wayside",
+        "name_ko": "길가 서낭",
+        "weight": 2.0,
+        "props": {
+          "stone_lantern": 2.0,
+          "shrine_post": 1.5,
+          "stone_marker": 2.0,
+          "rock_small": 1.0,
+          "pebbles": 4.0,
+          "grass_tuft": 3.0
+        }
+      },
+      {
+        "id": "camp",
+        "name_ko": "야영터",
+        "weight": 1.5,
+        "props": {
+          "campfire": 2.0,
+          "fallen_log": 2.0,
+          "rock_small": 2.0,
+          "rock_large": 1.5,
+          "pebbles": 3.0,
+          "grass_tuft": 2.0
+        }
+      },
+      {
+        "id": "waterside",
+        "name_ko": "물가",
+        "weight": 2.0,
+        "props": {
+          "rock_large": 2.0,
+          "rock_small": 2.0,
+          "bamboo_clump_small": 1.5,
+          "water_puddle": 4.0,
+          "fern": 3.0,
+          "fog_wisp": 2.0,
+          "grass_tuft": 2.0
+        }
+      }
+    ]
   },
   "props": {
     "bamboo_clump_small": {
