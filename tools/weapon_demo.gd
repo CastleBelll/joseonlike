@@ -63,7 +63,7 @@ func _ready() -> void:
 	(_stage._weapon_nodes[_weapon_id] as AutoWeapon).hit_landed.connect(_on_weapon_hit)
 
 
-func _on_weapon_hit(_amount: float, _at: Vector2, _boss: bool) -> void:
+func _on_weapon_hit(_amount: float, _at: Vector2, _boss: bool, _crit: bool) -> void:
 	var elapsed: float = _stage._run_elapsed
 	if _hit_shots >= HIT_SHOT_MAX or elapsed - _last_hit_shot < HIT_SHOT_GAP_SEC:
 		return

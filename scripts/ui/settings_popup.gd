@@ -46,6 +46,10 @@ var _active_tab: String = TAB_GAME
 
 
 func _ready() -> void:
+	# N9-35: this is opened from the combat pause screen, which pauses the whole
+	# tree. Without this the panel draws but every slider and toggle is inert,
+	# which reads as a frozen game rather than as a settings screen.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = LAYER_ABOVE_TITLE
 	_root = Control.new()
 	_root.name = "Blocker"

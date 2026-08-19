@@ -5,7 +5,7 @@ extends Node2D
 ## Pooled by AutoWeapon (NodePool) — the pool disables processing while parked.
 ## All numbers come from the weapon's data "ward" block.
 
-signal ticked(amount: float, at: Vector2, boss_hit: bool)
+signal ticked(amount: float, at: Vector2, boss_hit: bool, crit: bool)
 signal finished(ward: Ward)
 
 const FILL_ALPHA := 0.1
@@ -132,10 +132,11 @@ func _tick() -> void:
 		var boss_hit: bool = enemy.is_boss
 		# N9-19: one crit roll per enemy per tick.
 		var tick_damage: float = _damage
-		if _crit_chance > 0.0 and randf() < _crit_chance:
+		var crit: bool = _crit_chance > 0.0 and randf() < _crit_chance
+		if crit:
 			tick_damage *= _crit_multiplier
 		enemy.take_damage(tick_damage)
-		ticked.emit(tick_damage, at, boss_hit)
+		ticked.emit(tick_damage, at, boss_hit, crit)
 
 
 ## N9-5c 결계 look: the authored 부적진 texture (Sigil child) carries the

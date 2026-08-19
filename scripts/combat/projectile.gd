@@ -6,7 +6,7 @@ extends Node2D
 ## (burn/shock) and seal stacks. Finishes when its mechanic is spent or it
 ## leaves the visible view rect plus the shared targeting margin (N3-15).
 
-signal hit_landed(amount: float, at: Vector2, boss_hit: bool)
+signal hit_landed(amount: float, at: Vector2, boss_hit: bool, crit: bool)
 ## N4-4a: the impact splash happened — AutoWeapon shows the pooled ring flash.
 signal exploded(at: Vector2, radius: float)
 ## N3-17: a chain shot connected two enemies — AutoWeapon draws the bolt.
@@ -32,6 +32,7 @@ static func blade_size() -> Vector2:
 
 var _velocity := Vector2.ZERO
 var _damage: float = 0.0
+var _crit: bool = false
 var _view_margin: float = 0.0
 var _spawner: Spawner
 var _player: Player
@@ -90,12 +91,16 @@ static func travel_available(path: String) -> bool:
 ## {"pierce": int, "explosion_radius": float, "chain": {jumps, falloff,
 ## range_px}, "status": Dictionary, "seal": Dictionary, "size": Vector2,
 ## "travel_sprite": String}.
+## N9-34: `crit` travels with the shot. The roll happens at launch, in the
+## weapon, so the projectile has to carry the verdict to the hit it eventually
+## lands — otherwise the number reports a plain hit for doubled damage.
 func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 		spawner: Spawner, player: Player, tint: Color = UiPalette.PAPER,
-		view_margin: float = 0.0, config: Dictionary = {}) -> void:
+		view_margin: float = 0.0, config: Dictionary = {}, crit: bool = false) -> void:
 	global_position = from
 	_velocity = direction * speed
 	_damage = damage
+	_crit = crit
 	_view_margin = view_margin
 	_spawner = spawner
 	_player = player
@@ -223,9 +228,9 @@ func _strike(enemy: Enemy, damage: float) -> void:
 	if not _seal.is_empty() and enemy.apply_seal(int(_seal.get("burst_at", 0))):
 		burst = damage * float(_seal.get("burst_damage_scale", 0.0))
 	enemy.take_damage(damage + burst, _velocity.normalized())
-	hit_landed.emit(damage, hit_at, boss_hit)
+	hit_landed.emit(damage, hit_at, boss_hit, _crit)
 	if burst > 0.0:
-		hit_landed.emit(burst, hit_at, boss_hit)
+		hit_landed.emit(burst, hit_at, boss_hit, false)
 
 
 ## 화부 (N4-4a): full damage to every enemy whose center sits in the splash.

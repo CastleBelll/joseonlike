@@ -10,7 +10,7 @@ extends Node2D
 ## else the player's facing direction — a weapon never holds its shot.
 ## All balance numbers come from data.
 
-signal hit_landed(amount: float, at: Vector2, boss_hit: bool)
+signal hit_landed(amount: float, at: Vector2, boss_hit: bool, crit: bool)
 
 const WEAPONS_PATH := "res://data/weapons.json"
 ## Cooldown can shrink per level and per attack-speed stacks; never let it
@@ -75,6 +75,10 @@ var _speed_scale: float = 1.0
 var _extra_projectiles: int = 0
 var _crit_chance: float = 0.0
 var _crit_multiplier: float = 1.0
+## Set by _roll_damage and read at the emit that immediately follows it. A
+## member rather than a returned pair because this is the per-hit hot path and
+## a Dictionary here would allocate on every shot.
+var _last_crit: bool = false
 var _damage: float = 0.0
 var _cooldown: float = 0.0
 var _speed: float = 0.0
@@ -198,9 +202,8 @@ func set_crit(chance: float, multiplier: float) -> void:
 
 ## Damage for one hit, with the crit roll folded in.
 func _roll_damage() -> float:
-	if _crit_chance > 0.0 and randf() < _crit_chance:
-		return _damage * _crit_multiplier
-	return _damage
+	_last_crit = _crit_chance > 0.0 and randf() < _crit_chance
+	return _damage * _crit_multiplier if _last_crit else _damage
 
 
 func _recompute() -> void:
@@ -313,9 +316,12 @@ func _fire() -> void:
 		direction, int(_stats.get("projectile_count", 1)), deg_to_rad(_fan_spread_deg)
 	):
 		var projectile: Projectile = _pool.acquire()
+		# _roll_damage sets _last_crit, so it must be evaluated before the
+		# argument list reads it.
+		var shot_damage: float = _roll_damage()
 		projectile.launch(
-			_player.global_position, shot_direction, _speed, _roll_damage(), _spawner,
-			_player, _tint(), _view_margin, _shot_config
+			_player.global_position, shot_direction, _speed, shot_damage, _spawner,
+			_player, _tint(), _view_margin, _shot_config, _last_crit
 		)
 
 
@@ -341,7 +347,7 @@ func _fire_arc(enemies: Array[Enemy], positions: Array[Vector2], aim_point: Vect
 		var arc_damage: float = _roll_damage()
 		enemy.take_damage(arc_damage, CombatMath.chase_direction(origin, hit_at), knockback)
 		_after_hit(arc_damage)
-		hit_landed.emit(arc_damage, hit_at, boss_hit)
+		hit_landed.emit(arc_damage, hit_at, boss_hit, _last_crit)
 	_arc_flash.flash(
 		origin, aim, arc_rad, _range, _tint(), WeaponEffects.value("arc_sweep_sec")
 	)
@@ -406,7 +412,9 @@ func _process_orbit(delta: float) -> void:
 		var orb_damage: float = _roll_damage()
 		enemy.take_damage(orb_damage, CombatMath.chase_direction(_player.global_position, hit_at))
 		_after_hit(orb_damage)
-		hit_landed.emit(_damage, hit_at, boss_hit)
+		# N9-34: reported the BASE damage while dealing the rolled one, so an
+		# orbit crit hit for double and printed the ordinary number.
+		hit_landed.emit(orb_damage, hit_at, boss_hit, _last_crit)
 
 
 ## 결계 (N4-4b): drop a pooled ward on the aim point — the same N6-4
@@ -464,18 +472,22 @@ func _pulse_shockwave() -> void:
 		if CombatMath.is_dead(enemy.hp):
 			continue
 		enemy.apply_stun(stun_sec)
+		# N9-34: the shockwave used _damage directly, so 진언 was the one
+		# mechanic that never crit — while still reporting a stale _last_crit
+		# left over from another weapon's hit.
+		var pulse_damage: float = _roll_damage()
 		var burst: float = 0.0
 		if not seal.is_empty() and enemy.apply_seal(int(seal.get("burst_at", 0))):
-			burst = _damage * float(seal.get("burst_damage_scale", 0.0))
+			burst = pulse_damage * float(seal.get("burst_damage_scale", 0.0))
 		var hit_at: Vector2 = enemy.global_position
 		var boss_hit: bool = enemy.is_boss
 		enemy.take_damage(
-			_damage + burst, CombatMath.chase_direction(origin, hit_at), knockback
+			pulse_damage + burst, CombatMath.chase_direction(origin, hit_at), knockback
 		)
-		_after_hit(_damage)
-		hit_landed.emit(_damage, hit_at, boss_hit)
+		_after_hit(pulse_damage)
+		hit_landed.emit(pulse_damage, hit_at, boss_hit, _last_crit)
 		if burst > 0.0:
-			hit_landed.emit(burst, hit_at, boss_hit)
+			hit_landed.emit(burst, hit_at, boss_hit, false)
 	# N5-5: the pulse cracks destructible props inside its radius as well.
 	for breakable: Breakable in _spawner.breakables:
 		if breakable.alive() and origin.distance_squared_to(breakable.global_position) \
@@ -556,12 +568,12 @@ func _create_projectile() -> Projectile:
 	return projectile
 
 
-func _on_projectile_hit(amount: float, at: Vector2, boss_hit: bool) -> void:
+func _on_projectile_hit(amount: float, at: Vector2, boss_hit: bool, crit: bool) -> void:
 	_after_hit(amount)
 	if _impact_pool != null:
 		var sprite: EffectSprite = _impact_pool.acquire()
 		sprite.play_effect(_impact_effect, at, 0.0, Color.WHITE)
-	hit_landed.emit(amount, at, boss_hit)
+	hit_landed.emit(amount, at, boss_hit, crit)
 
 
 func _create_impact_sprite() -> EffectSprite:
@@ -631,9 +643,9 @@ func _decay_nudge(delta: float) -> void:
 func _create_ward() -> Ward:
 	var ward := Ward.new()
 	ward.ticked.connect(
-		func(amount: float, at: Vector2, boss_hit: bool) -> void:
+		func(amount: float, at: Vector2, boss_hit: bool, crit: bool) -> void:
 			_after_hit(amount)
-			hit_landed.emit(amount, at, boss_hit)
+			hit_landed.emit(amount, at, boss_hit, crit)
 	)
 	ward.finished.connect(
 		func(done: Ward) -> void: _ward_pool.release(done)
@@ -644,9 +656,9 @@ func _create_ward() -> Ward:
 func _create_summon() -> Summon:
 	var summon := Summon.new()
 	summon.struck.connect(
-		func(amount: float, at: Vector2, boss_hit: bool) -> void:
+		func(amount: float, at: Vector2, boss_hit: bool, crit: bool) -> void:
 			_after_hit(amount)
-			hit_landed.emit(amount, at, boss_hit)
+			hit_landed.emit(amount, at, boss_hit, crit)
 	)
 	summon.expired.connect(
 		func(done: Summon) -> void:

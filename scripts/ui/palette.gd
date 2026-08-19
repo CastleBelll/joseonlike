@@ -92,6 +92,10 @@ const GRADE_MYTHIC := Color("#8a6a12")
 ## N9-27: grade id → colour, shared by the level-up pill and the pause build
 ## summary. It lived only in level_up_popup until the pause screen needed to
 ## show grade too; two copies of a colour table drift the moment one is tuned.
+## N9-34 치명타: hot gold-white, distinct from the boss GOLD and from the
+## plain DAMAGE_TEXT so a crit is legible in a crowd of ordinary numbers.
+const CRIT_TEXT := Color("#ffe08a")
+
 const GRADE_COLORS: Dictionary = {
 	"common": GRADE_COMMON,
 	"uncommon": GRADE_UNCOMMON,

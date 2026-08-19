@@ -29,12 +29,15 @@ const SELECT_BUTTON_HEIGHT := 56
 const COIN_ICON_SIZE := 32.0
 const NOTICE_FADE_SEC := 1.6
 const CYCLE_BUTTON_HEIGHT := 44.0
+## N9-35: same flat corner glyph the title and the combat HUD already use.
+const UTILITY_BUTTON_SIZE := 44.0  # UiPalette.TOUCH_TARGET_MIN
 
 var _notice_label: Label
 var _notice_tween: Tween
 # N9-22 departure settings: the ladder/length data plus the two cycle buttons
 # that show the current pick — one tap steps to the next option, so departing
 # still costs one tap for anyone who never touches them.
+var _settings_popup: SettingsPopup
 var _difficulty_config: Dictionary = {}
 var _difficulty_button: Button
 var _run_length_button: Button
@@ -42,6 +45,12 @@ var _run_length_button: Button
 
 func _ready() -> void:
 	build_ui()
+	# N9-35 (owner request): audio and the other settings were reachable only
+	# from the title, so a player already in the camp had to back all the way
+	# out to change the volume. Built in _ready rather than build_ui because
+	# the headless layout test constructs the screen with no SceneTree.
+	_settings_popup = SettingsPopup.new()
+	add_child(_settings_popup)
 	# N9-1a: 본거지 has its own track; guarded because the headless layout test
 	# builds this screen with no autoloads running.
 	if MusicService.instance != null:
@@ -109,6 +118,7 @@ func build_ui() -> void:
 	column.add_child(_notice_label)
 
 	column.add_child(_build_menu())
+	_build_settings_button()
 
 
 ## GOLD title left, coin + permanent gold right (meta grammar, capture _02).
@@ -176,6 +186,37 @@ func _build_buildings() -> Control:
 
 ## The night the player is about to walk into: which tier, how long. Locked
 ## tiers are simply not in the cycle — clearing one adds the next.
+## Flat icon in the top-left, matching the title screen and the combat HUD's
+## pause glyph — settings never wears wood-button chrome (owner direction).
+## Anchored to the screen rather than the column so the growing menu below can
+## never push it around.
+func _build_settings_button() -> void:
+	var settings := Button.new()
+	settings.name = "SettingsButton"
+	settings.flat = true
+	settings.tooltip_text = UiLocale.text("title.settings")
+	# Bottom-left, not the top corner the title screen uses: 본거지's header
+	# already occupies the top-left with its name and the top-right with the
+	# gold counter, and an icon there lands on top of the title text.
+	settings.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	settings.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	settings.position = Vector2(
+		UiPalette.SPACE_SM, -UTILITY_BUTTON_SIZE - UiPalette.SPACE_SM
+	)
+	settings.custom_minimum_size = Vector2(UTILITY_BUTTON_SIZE, UTILITY_BUTTON_SIZE)
+	settings.size = settings.custom_minimum_size
+	var icon: TextureRect = UiIcons.icon_rect(
+		UiIcons.hud_icon("settings"), UTILITY_BUTTON_SIZE * 0.6
+	)
+	icon.set_anchors_preset(Control.PRESET_CENTER)
+	settings.add_child(icon)
+	settings.pressed.connect(func() -> void:
+		if _settings_popup != null:
+			_settings_popup.open()
+	)
+	add_child(settings)
+
+
 func _build_departure_settings() -> Control:
 	_difficulty_config = Difficulty.load_config()
 	# Side by side, not stacked: the column already fills the screen and a

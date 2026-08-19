@@ -496,7 +496,7 @@ func _track_weapon_damage() -> void:
 			continue
 		_tracked_weapons.append(weapon_id)
 		(_stage._weapon_nodes[weapon_id] as AutoWeapon).hit_landed.connect(
-			func(amount: float, _at: Vector2, _boss: bool) -> void:
+			func(amount: float, _at: Vector2, _boss: bool, _crit: bool) -> void:
 				_damage_total += amount
 		)
 

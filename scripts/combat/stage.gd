@@ -647,9 +647,9 @@ func _refresh_hp_hud() -> void:
 	)
 
 
-func _on_hit_landed(amount: float, at: Vector2, boss_hit: bool) -> void:
+func _on_hit_landed(amount: float, at: Vector2, boss_hit: bool, crit: bool = false) -> void:
 	var number: DamageNumber = _number_pool.acquire()
-	number.show_amount(amount, at, boss_hit)
+	number.show_amount(amount, at, boss_hit, crit)
 
 
 func _on_number_finished(number: DamageNumber) -> void:

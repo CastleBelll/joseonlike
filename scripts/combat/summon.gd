@@ -6,7 +6,7 @@ extends CharacterBody2D
 ## LAYER_OBSTACLE in the collision mask, so it slides around solid props
 ## instead of walking through them. Lifetime-limited and pooled by AutoWeapon.
 
-signal struck(amount: float, at: Vector2, boss_hit: bool)
+signal struck(amount: float, at: Vector2, boss_hit: bool, crit: bool)
 signal expired(summon: Summon)
 
 const CONTACT_RADIUS := 12.0
@@ -126,11 +126,12 @@ func _try_strike(enemy: Enemy) -> void:
 			float(_status.get("duration_sec", 0.0))
 		)
 	var damage: float = _damage
-	if _crit_chance > 0.0 and randf() < _crit_chance:
+	var crit: bool = _crit_chance > 0.0 and randf() < _crit_chance
+	if crit:
 		damage *= _crit_multiplier
 	enemy.take_damage(damage, CombatMath.chase_direction(global_position, at))
 	_strike_flash.flash(at, _color, WeaponEffects.value("summon_strike_sec"))
-	struck.emit(damage, at, boss_hit)
+	struck.emit(damage, at, boss_hit, crit)
 
 
 ## 신장 strike flash (N3-17): a short X-slash burst at the struck enemy so

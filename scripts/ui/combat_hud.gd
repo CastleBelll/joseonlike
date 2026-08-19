@@ -67,6 +67,7 @@ var _pause_overlay: Control
 var _pause_panel: PanelContainer
 var _build_section: VBoxContainer
 var _resume_button: Button
+var _settings_popup: SettingsPopup
 ## Stage installs this; called on every pause open so the summary is always
 ## the live build (no push-sync to drift). Returns
 ## {"weapons": [{"id", "name", "level"}], "passives": [{"name", "stacks", "max"}]}.
@@ -432,6 +433,11 @@ func _build_pause_overlay() -> void:
 	layout.add_child(_build_section)
 	_resume_button = _overlay_button("ResumeButton", "계속하기", _on_resume_pressed)
 	layout.add_child(_resume_button)
+	# N9-35 (owner request): mid-run, the pause screen was the only thing
+	# between the player and the title, so changing the volume meant abandoning
+	# the run. The popup runs on PROCESS_MODE_ALWAYS, so it works while the
+	# tree is paused.
+	layout.add_child(_overlay_button("SettingsButton", "설정", _on_settings_pressed))
 	layout.add_child(_overlay_button("QuitButton", "타이틀로", _on_quit_pressed))
 	_pause_panel = panel
 	add_child(_pause_overlay)
@@ -605,6 +611,13 @@ func _build_weapon_cell(entry: Dictionary) -> Control:
 		grade_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		cell.add_child(grade_label)
 	return cell
+
+
+func _on_settings_pressed() -> void:
+	if _settings_popup == null:
+		_settings_popup = SettingsPopup.new()
+		add_child(_settings_popup)
+	_settings_popup.open()
 
 
 func _on_resume_pressed() -> void:
