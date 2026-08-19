@@ -40,6 +40,8 @@ const STRINGS := {
 	"meta.branch_only_fmt": {"ko": "%s 전용 · 선택한 수행자에게만 적용", "en": "%s only · applies to that cultivator"},
 	"meta.char_locked": {"ko": "수행자 해금 후 구매 가능", "en": "Unlock the cultivator to purchase"},
 	"bestiary.title": {"ko": "괴이록", "en": "Records of Anomalies"},
+	"unlocks.title": {"ko": "해금", "en": "Unlocks"},
+	"unlocks.owned": {"ko": "보유", "en": "Owned"},
 	"bestiary.tab_monsters": {"ko": "몬스터", "en": "Monsters"},
 	"bestiary.tab_loot": {"ko": "전리품", "en": "Loot"},
 	"bestiary.tab_weapons": {"ko": "무기", "en": "Weapons"},

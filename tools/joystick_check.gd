@@ -19,6 +19,7 @@ func _ready() -> void:
 			_opacity = float(arg.get_slice("=", 1))
 	if SaveService.instance != null:
 		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 		SaveService.instance.set_setting(SaveProfile.JOYSTICK_OPACITY_KEY, _opacity, false)
 	_stage = (load(STAGE_SCENE) as PackedScene).instantiate()
 	add_child(_stage)

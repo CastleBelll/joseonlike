@@ -49,14 +49,15 @@ func test_summary_tolerates_missing_sections() -> bool:
 
 func test_buildings_roster_and_meta_routing() -> bool:
 	var buildings: Array[Dictionary] = Camp.buildings()
-	if buildings.size() != 5:
-		push_error("test_camp: expected 5 GDD building spots (incl. 명부수)")
+	if buildings.size() != 6:
+		push_error("test_camp: expected 6 GDD building spots (incl. 명부수)")
 		return false
 	# Buildings with a landed screen route to it instead of talking
-	# (명부수 N7-1, 괴이록 N5-4); the rest stay 준비 중 placeholders.
+	# (명부수 N7-1, 괴이록 N5-4, 해금 N9-58); the rest stay 준비 중 placeholders.
 	var routed: Dictionary = {
 		"meta": "res://scenes/meta_tree.tscn",
 		"bestiary": "res://scenes/bestiary.tscn",
+		"unlocks": "res://scenes/unlocks.tscn",
 	}
 	for building: Dictionary in buildings:
 		if String(building["label"]).is_empty():
@@ -66,6 +67,11 @@ func test_buildings_roster_and_meta_routing() -> bool:
 			if Camp.building_notice(building) != "" \
 					or Camp.building_scene(building) != String(routed[building["id"]]):
 				push_error("test_camp: routed building must open its scene")
+				return false
+			# A route to a scene that is not in the build is a dead end that
+			# only shows up when someone taps it.
+			if not ResourceLoader.exists(Camp.building_scene(building)):
+				push_error("test_camp: routed scene missing: " + Camp.building_scene(building))
 				return false
 			continue
 		if bool(building["ready"]) \

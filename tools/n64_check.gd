@@ -58,6 +58,7 @@ func _ready() -> void:
 		returning[Ftue.FTUE_KEY] = {Ftue.MOVE_HINT_SEEN: true, Ftue.MOD_EXPLAINED: true}
 		SaveService.instance.profile = returning
 		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 	_stage = (load(STAGE_SCENE) as PackedScene).instantiate()
 	add_child(_stage)
 	_player = _stage.get_node("World/Player")

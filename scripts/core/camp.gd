@@ -15,6 +15,7 @@ const DEST_TITLE := "title"
 const BUILDINGS: Array[Dictionary] = [
 	{"id": "meta", "label": "수련", "ready": true, "scene": "res://scenes/meta_tree.tscn"},
 	{"id": "bestiary", "label": "괴이록", "ready": true, "scene": "res://scenes/bestiary.tscn"},
+	{"id": "unlocks", "label": "해금", "ready": true, "scene": "res://scenes/unlocks.tscn"},
 	{"id": "weapon_codex", "label": "무기 도감", "ready": false},
 	{"id": "training", "label": "훈련장", "ready": false},
 	{"id": "region_select", "label": "지역 선택", "ready": false},

@@ -39,6 +39,7 @@ func _ready() -> void:
 		# profile over the developer's real one — which is exactly what happened
 		# once this harness started running on every push.
 		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 	_stage = (load(STAGE_SCENE) as PackedScene).instantiate()
 	# The harness runs while paused so it can drive the guide, but the stage
 	# must NOT inherit that: shipped, it is the scene root and pauses with the

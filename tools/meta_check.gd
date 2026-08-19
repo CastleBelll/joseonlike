@@ -20,6 +20,7 @@ func _ready() -> void:
 		profile["meta_tree"] = {"iron_bones": 2, "wind_steps": 1, "burn_mastery": 1}
 		SaveService.instance.profile = profile
 		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 	var screen: MetaTreeScreen = (
 		load("res://scenes/meta_tree.tscn") as PackedScene
 	).instantiate()

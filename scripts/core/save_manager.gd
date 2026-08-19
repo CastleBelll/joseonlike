@@ -35,6 +35,10 @@ var profile: Dictionary = SaveProfile.default_profile()
 ## N7-1 fail-safe: a profile written by a NEWER build is never loaded and
 ## never overwritten — the session runs on an in-memory default instead.
 var _write_locked: bool = false
+## Why writes are locked, so the log says which guard fired. The lock is set
+## both by the newer-build guard and by every harness that swaps in a throwaway
+## profile, and one message for both told the reader the wrong thing.
+var _write_lock_reason: String = "writes locked"
 
 
 func _init() -> void:
@@ -161,7 +165,7 @@ func apply_settings() -> void:
 
 func save_profile() -> void:
 	if _write_locked:
-		push_warning("save_manager: profile from a newer build — not overwriting")
+		push_warning("save_manager: not overwriting the profile — " + _write_lock_reason)
 		return
 	var file: FileAccess = FileAccess.open(TEMP_PATH, FileAccess.WRITE)
 	if file == null:
@@ -193,6 +197,7 @@ func _load_from_disk() -> Dictionary:
 		push_warning("save_manager: profile schema is newer than this build; " +
 			"running read-only on a default profile")
 		_write_locked = true
+		_write_lock_reason = "its schema is newer than this build"
 		return SaveProfile.default_profile()
 	var migrated: Dictionary = SaveProfile.migrate(raw)
 	if migrated.is_empty():
