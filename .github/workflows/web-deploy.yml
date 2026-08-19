@@ -1,0 +1,144 @@
+name: Web deploy
+
+# Builds the Godot web (WASM) export and publishes it to Vercel so the owner
+# can hand friends a URL instead of a build. The build always runs — it is a
+# real check that the project still exports — while the deploy only runs when
+# the Vercel secrets exist, so a fork or a fresh clone is never broken by a
+# missing token.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  # Pinned to the same build as ci.yml. A floating "latest" here would let the
+  # deployed game drift from the tested one.
+  GODOT_VERSION: "4.7-stable"
+  GODOT_RELEASE_TAG: "4.7-stable"
+  GODOT_ARCHIVE: "Godot_v4.7-stable_linux.x86_64.zip"
+  GODOT_BIN_NAME: "Godot_v4.7-stable_linux.x86_64"
+  GODOT_TEMPLATES_ARCHIVE: "Godot_v4.7-stable_export_templates.tpz"
+  EXPORT_PRESET: "Web"
+  EXPORT_DIR: "build/web"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Godot binary
+        id: cache-godot-bin
+        uses: actions/cache@v4
+        with:
+          path: ~/godot-bin
+          key: godot-bin-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Download Godot ${{ env.GODOT_VERSION }}
+        if: steps.cache-godot-bin.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot-bin
+          curl -fL -o /tmp/godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE_TAG}/${GODOT_ARCHIVE}"
+          unzip -q /tmp/godot.zip -d ~/godot-bin
+          chmod +x "$HOME/godot-bin/${GODOT_BIN_NAME}"
+
+      # The templates archive is ~1GB, so it is cached separately from the
+      # binary — the binary cache is shared with ci.yml and must stay small.
+      - name: Cache export templates
+        id: cache-templates
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates
+          key: godot-templates-${{ env.GODOT_VERSION }}
+
+      - name: Install export templates
+        if: steps.cache-templates.outputs.cache-hit != 'true'
+        run: |
+          curl -fL -o /tmp/templates.tpz \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE_TAG}/${GODOT_TEMPLATES_ARCHIVE}"
+          # The .tpz is a zip whose single top-level folder is "templates";
+          # Godot expects it renamed to the exact version string.
+          unzip -q /tmp/templates.tpz -d /tmp/templates
+          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION//-/.}"
+          mkdir -p "$TEMPLATE_DIR"
+          mv /tmp/templates/templates/* "$TEMPLATE_DIR/"
+
+      - name: Resolve Godot binary path
+        run: echo "GODOT=$HOME/godot-bin/${GODOT_BIN_NAME}" >> "$GITHUB_ENV"
+
+      # Same reasoning as ci.yml: .import sidecars are untracked, so the class
+      # cache and every imported asset have to be built before an export can
+      # find them. Without this the export silently ships missing resources.
+      - name: Import project (headless)
+        timeout-minutes: 10
+        run: |
+          set -o pipefail
+          "$GODOT" --headless --path . --import 2>&1 | tee import.log
+          if grep -Eq "SCRIPT ERROR|Parse Error" import.log; then
+            echo "::error::GDScript parse/script error during import"
+            exit 1
+          fi
+
+      - name: Export web build
+        timeout-minutes: 10
+        run: |
+          set -o pipefail
+          mkdir -p "$EXPORT_DIR"
+          "$GODOT" --headless --path . \
+            --export-release "$EXPORT_PRESET" "$PWD/$EXPORT_DIR/index.html" 2>&1 | tee export.log
+          if grep -Eq "SCRIPT ERROR|Parse Error|Failed to export" export.log; then
+            echo "::error::web export reported an error"
+            exit 1
+          fi
+          # An export that "succeeds" without producing the wasm is the failure
+          # mode that would otherwise deploy a blank page.
+          for required in index.html index.wasm index.pck; do
+            if [ ! -s "$EXPORT_DIR/$required" ]; then
+              echo "::error::export did not produce $required"
+              exit 1
+            fi
+          done
+          cp vercel.json "$EXPORT_DIR/vercel.json"
+          echo "### Web export" >> "$GITHUB_STEP_SUMMARY"
+          du -h "$EXPORT_DIR"/* | sort -h >> "$GITHUB_STEP_SUMMARY"
+
+      # Uploaded unconditionally: without Vercel secrets this artifact is still
+      # a playable build the owner can download and serve.
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: joseonlike-web
+          path: ${{ env.EXPORT_DIR }}
+          retention-days: 14
+
+      - name: Check for Vercel credentials
+        id: creds
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -n "$VERCEL_TOKEN" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::VERCEL_TOKEN not set — build verified, deploy skipped. Add VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID as repository secrets to publish."
+          fi
+
+      - name: Deploy to Vercel
+        if: steps.creds.outputs.ready == 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -o pipefail
+          # The export directory is plain static output, so Vercel serves it
+          # as-is with vercel.json's cross-origin headers, which the Godot
+          # web runtime requires in order to start at all.
+          npx --yes vercel@latest deploy "$EXPORT_DIR" \
+            --prod --yes --token "$VERCEL_TOKEN" | tee deploy.log
+          echo "### Deployed" >> "$GITHUB_STEP_SUMMARY"
+          tail -n 1 deploy.log >> "$GITHUB_STEP_SUMMARY"
