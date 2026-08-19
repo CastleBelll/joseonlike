@@ -101,6 +101,8 @@ func _process(delta: float) -> void:
 			# step machine walks on and quits before its assertion ever runs.
 			await _field_passive_probe()
 		11:
+			await _minimap_probe()
+		12:
 			print("PICKUP CHECK done")
 			get_tree().quit(0)
 			return
@@ -156,6 +158,51 @@ func _field_passive_probe() -> void:
 		print("PICKUP field passive: %d taken -> %d with %d slots, gained '%s'" % [
 			taken_before, taken_after, LevelUp.PASSIVE_SLOTS, granted
 		])
+
+
+## N9-59: the map is a PURCHASE, so the run must not draw one until it is
+## owned. Both halves are checked here — absent while locked, present with
+## blips once bought — because "it appeared" and "it appeared for the right
+## reason" are different claims.
+func _minimap_probe() -> void:
+	if _stage.get_node_or_null("Hud/Minimap") != null:
+		push_error("pickup_check: the map exists without the unlock")
+	# Funded first, in memory only: the dev profile on disk carries whatever
+	# gold it happens to have, and a refused purchase would leave the map
+	# locked while this probe reported nothing at all.
+	SaveService.instance._write_locked = true
+	SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
+	var funded: Dictionary = SaveService.instance.profile.duplicate(true)
+	funded["gold"] = Unlocks.cost(_unlock_data(), Unlocks.MAP)
+	var bought: Dictionary = Unlocks.purchase(funded, _unlock_data(), Unlocks.MAP)
+	if not bool(bought["ok"]):
+		push_error("pickup_check: could not buy the map (%s)" % String(bought["reason"]))
+		return
+	SaveService.instance.profile = bought["profile"]
+	# Something to actually mark: a drop placed away from the player.
+	var far: Pickup = _stage._pickup_pool.acquire()
+	far.launch_pickup(
+		_player.global_position + Vector2(700.0, -500.0),
+		Pickups.KIND_PASSIVE, _player, _stage._orb_config, "max_hp"
+	)
+	_stage._live_field_passives.append(far)
+	_stage._minimap_wait = 0.0
+	await get_tree().create_timer(0.4).timeout
+	var map: Minimap = _stage.get_node_or_null("Hud/Minimap")
+	if map == null:
+		push_error("pickup_check: the map did not appear after the unlock (outcome=%s paused=%s)" % [
+			_stage._outcome, str(get_tree().paused)
+		])
+		return
+	print("PICKUP minimap: drawn at %s with the unlock owned" % str(map.position))
+	await _shot("minimap")
+
+
+func _unlock_data() -> Dictionary:
+	var parsed: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string(UnlocksScreen.UNLOCKS_PATH)
+	)
+	return parsed if parsed is Dictionary else {}
 
 
 func _step_is_chest() -> bool:

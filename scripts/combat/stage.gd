@@ -79,6 +79,18 @@ var _live_field_passives: Array[Pickup] = []
 var _field_passives_placed: int = 0
 ## N9-57: edge arrows for the drops that are deliberately off-screen.
 var _markers: OffscreenMarkers
+## N9-59: the 지도 unlock. Null when it is not owned — the map is a purchase,
+## so an unbought one must not exist at all rather than be hidden.
+var _minimap: Minimap
+## Seconds until the next map sweep. Blips are gathered by walking the stage's
+## children, which is cheap at 5Hz and wasteful every frame.
+var _minimap_wait: float = 0.0
+## Top-left: the timer and bars sit above, the actives below-right, and the
+## thumb lives at the bottom — this is the only corner a map does not fight
+## something for.
+const MINIMAP_MARGIN := 16.0
+const MINIMAP_TOP := 132.0
+const MINIMAP_REFRESH_SEC := 0.2
 var _replaced_weapons: Array[String] = []
 # N4-9 rarity evidence: the run second each SPECIAL material dropped at —
 # the playtest harness reads this to prove the intended drop rate.
@@ -371,6 +383,7 @@ func _physics_process(delta: float) -> void:
 	_run_elapsed += delta
 	_tick_boss_attacks(delta)
 	_tick_field_passives(delta)
+	_tick_minimap(delta)
 	_refresh_hp_hud()
 	_stream_field_chunks()
 	if _duration_sec > 0.0 and _run_elapsed >= _duration_sec:
@@ -1447,6 +1460,54 @@ func _refresh_markers() -> void:
 	for pickup: Pickup in _live_field_passives:
 		positions.append(pickup.global_position)
 	_markers.track(positions)
+
+
+## N9-59 (owner: "위치를 보기위한 지도도 필요할건데 지도같은건 해금해야 얻을 수
+## 있도록"). Builds the map on first use and only if the unlock is owned, then
+## refreshes it a few times a second.
+func _tick_minimap(delta: float) -> void:
+	if not _map_unlocked():
+		return
+	_minimap_wait -= delta
+	if _minimap_wait > 0.0:
+		return
+	_minimap_wait = MINIMAP_REFRESH_SEC
+	if _minimap == null:
+		_minimap = Minimap.new()
+		_minimap.name = "Minimap"
+		_minimap.position = Vector2(MINIMAP_MARGIN, MINIMAP_TOP)
+		$Hud.add_child(_minimap)
+	_minimap.show_blips(_player.global_position, _minimap_blips())
+
+
+## Walked once per sweep rather than tracked per spawn: the pools hand nodes
+## back and forth constantly, and a subscription per pickup would be a second
+## bookkeeping path to keep in step with the first.
+func _minimap_blips() -> Dictionary:
+	var loot: Array[Vector2] = []
+	var chests: Array[Vector2] = []
+	for child: Node in get_children():
+		var item := child as CanvasItem
+		if item == null or not item.visible:
+			continue
+		if child is Chest:
+			chests.append((child as Chest).global_position)
+		elif child is LootDrop or child is Pickup:
+			loot.append((child as Node2D).global_position)
+	var passives: Array[Vector2] = []
+	for pickup: Pickup in _live_field_passives:
+		passives.append(pickup.global_position)
+	return {
+		Minimap.KIND_LOOT: loot,
+		Minimap.KIND_CHEST: chests,
+		Minimap.KIND_PASSIVE: passives,
+	}
+
+
+func _map_unlocked() -> bool:
+	if SaveService.instance == null:
+		return false
+	return Unlocks.is_unlocked(SaveService.instance.profile, Unlocks.MAP)
 
 
 ## N5-5 pickup effects, each applied at collection so the player walked to it.
