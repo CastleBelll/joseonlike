@@ -132,6 +132,16 @@ jobs:
               exit 1
             fi
           done
+          # N9-56: the engine writes canvas.style.width inline from the project
+          # resolution divided by the device pixel ratio — 180px on a dpr-3
+          # phone. Only an !important rule in head_include beats an inline
+          # style, so losing it silently ships a postage-stamp canvas that
+          # nothing else in this pipeline would catch.
+          if ! grep -q 'width:min(100vw,calc(100dvh \* 540 / 960))!important' \
+              "$EXPORT_DIR/index.html"; then
+            echo "::error::the letterbox CSS lost its !important — mobile will render tiny"
+            exit 1
+          fi
           cp vercel.json "$EXPORT_DIR/vercel.json"
           echo "### Web export" >> "$GITHUB_STEP_SUMMARY"
           du -h "$EXPORT_DIR"/* | sort -h >> "$GITHUB_STEP_SUMMARY"
