@@ -13,7 +13,11 @@ const WALK_TEXTURE_PATH := "res://asset/characters/taoist/walk.png"
 ## 16x nearest-neighbor blocks of 40x40 logical frames, figure 38px tall,
 ## which is the intended in-world read on the 540px viewport.
 const SPRITE_EXPORT_SCALE := SpriteSheet.EXPORT_SCALE
-const WALK_FRAME_COUNT := 4
+## N9-37: the owner's walk sheet ships eight frames. SpriteSheet derives the
+## count from the strip itself; this constant exists so a test can assert the
+## art and the code still agree — which is exactly what caught the mismatch
+## when the new sheet landed.
+const WALK_FRAME_COUNT := 8
 const WALK_FPS := 8.0
 const IDLE_FPS := 1.0  # single idle frame; the speed value is inert
 const ANIM_IDLE := SpriteSheet.ANIM_IDLE
