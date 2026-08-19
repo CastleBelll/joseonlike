@@ -503,6 +503,32 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		var passive_rows: int = ceili(float(passives.size()) / float(BUILD_PASSIVE_COLUMNS))
 		extra_height += passive_rows * BUILD_PASSIVE_ROW_HEIGHT + UiPalette.SPACE_SM
 
+	# N9-25: the character sheet. Two columns of name/value pairs; a line the
+	# run has actually moved off its base reads in ink, an untouched one stays
+	# muted, so what this build changed is visible without reading numbers.
+	var stats: Array = summary.get("stats", [])
+	if not stats.is_empty():
+		var box := VBoxContainer.new()
+		box.name = "StatLines"
+		box.add_child(_label("능력치", UiPalette.FONT_SIZE_LABEL, UiPalette.VERMILION))
+		var grid := GridContainer.new()
+		grid.name = "StatGrid"
+		grid.columns = BUILD_PASSIVE_COLUMNS
+		grid.add_theme_constant_override("h_separation", UiPalette.SPACE_MD)
+		for entry: Dictionary in stats:
+			var modified: bool = bool(entry.get("modified", false))
+			var line := _label(
+				"%s %s" % [String(entry.get("name", "")), String(entry.get("value", ""))],
+				UiPalette.FONT_SIZE_LABEL,
+				UiPalette.INK if modified else UiPalette.TEXT_MUTED_ON_PAPER
+			)
+			line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			grid.add_child(line)
+		box.add_child(grid)
+		_build_section.add_child(box)
+		var stat_rows: int = ceili(float(stats.size()) / float(BUILD_PASSIVE_COLUMNS))
+		extra_height += (stat_rows + 1) * BUILD_PASSIVE_ROW_HEIGHT + UiPalette.SPACE_SM
+
 	# N9-9: evolution paths open to this build — base → result · material,
 	# ✓ when the material is already in the run inventory.
 	var evolutions: Array = summary.get("evolutions", [])

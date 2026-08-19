@@ -28,6 +28,24 @@ func _ready() -> void:
 				{"name": "행운", "stacks": 4, "max": 5},
 				{"name": "경험치 획득", "stacks": 5, "max": 5},
 			],
+			# N9-25 character sheet, in the shape Stage._pause_build_summary
+			# actually produces: a mix of moved and untouched lines so the
+			# highlight rule is visible in the shot, and the full 12-line count
+			# so the panel is measured at its tallest.
+			"stats": [
+				{"name": "체력", "value": "118/150", "modified": false},
+				{"name": "이동 속도", "value": "104", "modified": true},
+				{"name": "공격력", "value": "118%", "modified": true},
+				{"name": "공격 속도", "value": "100%", "modified": false},
+				{"name": "치명타 확률", "value": "15%", "modified": true},
+				{"name": "치명타 피해", "value": "x2.3", "modified": true},
+				{"name": "투사체", "value": "+1", "modified": true},
+				{"name": "투사체 속도", "value": "100%", "modified": false},
+				{"name": "피해 감소", "value": "0%", "modified": false},
+				{"name": "자석 범위", "value": "100%", "modified": false},
+				{"name": "경험치 획득", "value": "125%", "modified": true},
+				{"name": "행운", "value": "+20%", "modified": true},
+			],
 			"evolutions": [
 				"낡은 부적 → 뇌부 · 뇌정석 ✓",
 				"낡은 부적 → 살 · 도깨비불 필요",
@@ -45,10 +63,18 @@ func _ready() -> void:
 	var passives: GridContainer = hud.get_node_or_null(
 		"PauseOverlay/PaperPanel/Pad/Layout/BuildSummary/PassiveGrid"
 	)
+	var stats: GridContainer = hud.get_node_or_null(
+		"PauseOverlay/PaperPanel/Pad/Layout/BuildSummary/StatLines/StatGrid"
+	)
+	# The panel must also still fit the 960px screen at this worst case; a
+	# summary that renders every row but runs off the bottom is not a pass.
+	var panel: Control = hud.get_node_or_null("PauseOverlay/PaperPanel")
+	var fits: bool = panel != null and panel.size.y <= hud.size.y
 	if grid != null and grid.get_child_count() == 6 \
-			and passives != null and passives.get_child_count() == 5:
-		print("PASS pause_check: 6 weapon cells + 5 passive lines rendered")
+			and passives != null and passives.get_child_count() == 5 \
+			and stats != null and stats.get_child_count() == 12 and fits:
+		print("PASS pause_check: 6 weapons + 5 passives + 12 stat lines, panel %.0fpx" % panel.size.y)
 	else:
-		push_error("FAIL pause_check: build summary rows missing")
+		push_error("FAIL pause_check: build summary rows missing or panel overflows")
 	get_tree().paused = false
 	get_tree().quit(0)

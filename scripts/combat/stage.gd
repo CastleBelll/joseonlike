@@ -894,8 +894,53 @@ func _pause_build_summary() -> Dictionary:
 		})
 	return {
 		"weapons": weapons, "passives": passives,
+		"stats": _pause_stat_lines(),
 		"evolutions": _evolution_lines(),
 	}
+
+
+## N9-25: the character sheet the pause screen shows. Every line is read from
+## the SAME expression combat uses (_refresh_run_scalars / _refresh_weapon_
+## scales) rather than recomputed here — a second copy of the arithmetic would
+## drift from the real numbers the moment either side is tuned.
+## `modified` marks a line that a passive or the meta tree has moved off its
+## base, so the panel can highlight what this run actually built.
+func _pause_stat_lines() -> Array[Dictionary]:
+	var move: float = 1.0 + _passive_bonus("move_speed") + _meta_bonus("move_speed")
+	var damage: float = 1.0 + _passive_bonus("attack_damage") + _meta_bonus("attack_damage")
+	var attack_speed: float = 1.0 + _passive_bonus("attack_speed") + _meta_bonus("attack_speed")
+	var defense: float = _meta_bonus("damage_reduction") + _passive_bonus("defense")
+	var magnet: float = 1.0 + _passive_bonus("magnet_radius") + _meta_bonus("magnet_radius")
+	var projectile_speed: float = 1.0 + _passive_bonus("projectile_speed")
+	var extra_projectiles: int = int(round(_passive_bonus("projectile_count")))
+	var crit_chance: float = _passive_bonus("crit_chance")
+	var crit_multiplier: float = CRIT_MULTIPLIER + _passive_bonus("crit_damage")
+	var xp_gain: float = 1.0 + _meta_bonus("xp_gain") + _passive_bonus("xp_gain")
+	var luck: float = _meta_bonus("luck") + _passive_bonus("luck")
+	# The damage floor is the one applied in _refresh_run_scalars; showing the
+	# raw sum would promise a reduction the player does not actually get.
+	var applied_defense: float = 1.0 - maxf(1.0 - defense, 0.5)
+	return [
+		# Health is always in ink: it is the one line a player checks mid-run,
+		# not a modifier that is interesting only when something moved it.
+		_stat_line("체력", "%d/%d" % [ceili(_player.hp), ceili(_player.hp_max)], true),
+		_stat_line("이동 속도", "%d" % roundi(_player.load_move_speed() * move), move != 1.0),
+		_stat_line("공격력", "%d%%" % roundi(damage * 100.0), damage != 1.0),
+		_stat_line("공격 속도", "%d%%" % roundi(attack_speed * 100.0), attack_speed != 1.0),
+		_stat_line("치명타 확률", "%d%%" % roundi(crit_chance * 100.0), crit_chance > 0.0),
+		_stat_line("치명타 피해", "x%.1f" % crit_multiplier, crit_multiplier != CRIT_MULTIPLIER),
+		_stat_line("투사체", "+%d" % extra_projectiles, extra_projectiles > 0),
+		_stat_line("투사체 속도", "%d%%" % roundi(projectile_speed * 100.0),
+			projectile_speed != 1.0),
+		_stat_line("피해 감소", "%d%%" % roundi(applied_defense * 100.0), applied_defense > 0.0),
+		_stat_line("자석 범위", "%d%%" % roundi(magnet * 100.0), magnet != 1.0),
+		_stat_line("경험치 획득", "%d%%" % roundi(xp_gain * 100.0), xp_gain != 1.0),
+		_stat_line("행운", "+%d%%" % roundi(luck * 100.0), luck > 0.0),
+	]
+
+
+func _stat_line(stat_name: String, value: String, modified: bool) -> Dictionary:
+	return {"name": stat_name, "value": value, "modified": modified}
 
 
 ## One line per recipe an OWNED weapon can still take: base → result with

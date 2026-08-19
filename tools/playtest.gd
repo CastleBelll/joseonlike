@@ -713,6 +713,18 @@ func _finish() -> void:
 	print("PLAYTEST level: %d (level-ups: %d, skipped screens: %d)" % [
 		_stage._run_state.level, _stage._run_state.level - 1, _skipped_screens
 	])
+	# N9-25: exercise the pause character sheet against the REAL run state. The
+	# panel is only ever built when a human pauses, so without this a bad format
+	# string or a null read would ship and surface as a crash on the pause tap.
+	var sheet: Array = _stage._pause_build_summary().get("stats", [])
+	var moved: int = 0
+	for line: Dictionary in sheet:
+		if bool(line.get("modified", false)):
+			moved += 1
+	print("PLAYTEST stat sheet: %d lines, %d moved off base, sample %s" % [
+		sheet.size(), moved,
+		"none" if sheet.is_empty() else "%s %s" % [sheet[1]["name"], sheet[1]["value"]],
+	])
 	print("PLAYTEST weapons: %s (replaced: %s)" % [
 		str(_stage._owned_levels), str(_stage._replaced_weapons)
 	])
