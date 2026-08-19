@@ -1,0 +1,13 @@
+{
+  "_note": "N9-58 영구 해금. 골드로 사고 프로필에 id만 남는다(가격·이름은 데이터에 있으므로 가격 조정이 세이브를 건드리지 않는다). 명부수 트리와 분리한 이유: 트리는 스탯 랭크 전용이고, 해금은 '가졌다/없다'라서 트리에 넣으려면 가짜 스탯을 만들어야 한다.",
+  "entries": [
+    {
+      "id": "map",
+      "name_ko": "지도",
+      "name_en": "Field Map",
+      "desc_ko": "출정 중 화면 구석에 주변 지도를 띄운다. 떨어진 물건과 자신의 위치가 표시된다.",
+      "desc_en": "Shows a corner map during a run, marking your position and the items lying nearby.",
+      "cost": 900
+    }
+  ]
+}
