@@ -103,6 +103,8 @@ func _process(delta: float) -> void:
 		11:
 			await _minimap_probe()
 		12:
+			await _magnet_scope_probe()
+		13:
 			print("PICKUP CHECK done")
 			get_tree().quit(0)
 			return
@@ -203,6 +205,43 @@ func _unlock_data() -> Dictionary:
 		FileAccess.get_file_as_string(UnlocksScreen.UNLOCKS_PATH)
 	)
 	return parsed if parsed is Dictionary else {}
+
+
+## N9-62 (owner: "자석 아이템 먹었을 때 다른 오브젝트 파괴하고 나온 아이템들은
+## 딸려오면 안되고 경험치만 딸려와야지"). Pickup and LootDrop both extend XpOrb,
+## so the magnet's `is XpOrb` sweep took them too. The check has to be by
+## BEHAVIOUR, not by reading the branch: place one of each far away, fire the
+## magnet, and see which ones moved.
+func _magnet_scope_probe() -> void:
+	var away: Vector2 = _player.global_position + Vector2(520.0, 0.0)
+	var orb: XpOrb = _stage._orb_pool.acquire()
+	orb.launch(away, 1, _player, _stage._orb_config)
+	var drop: LootDrop = _stage._loot_pool.acquire()
+	drop.launch_loot(
+		away + Vector2(0.0, 40.0), "talisman_paper", UiPalette.LOOT_CORE,
+		_player, _stage._orb_config
+	)
+	var coin: Pickup = _stage._pickup_pool.acquire()
+	coin.launch_pickup(away + Vector2(0.0, 80.0), Pickups.KIND_GOLD, _player, _stage._orb_config)
+	var drop_at: Vector2 = drop.global_position
+	var coin_at: Vector2 = coin.global_position
+	_stage._execute_magnet()
+	await get_tree().create_timer(0.5).timeout
+	# The orb either flew in or was already collected; both mean it answered.
+	var orb_moved: bool = not orb.visible 		or orb.global_position.distance_to(away) > 40.0
+	var drop_moved: bool = not drop.visible 		or drop.global_position.distance_to(drop_at) > 40.0
+	var coin_moved: bool = not coin.visible 		or coin.global_position.distance_to(coin_at) > 40.0
+	if not orb_moved:
+		push_error("pickup_check: the magnet left an XP orb behind")
+	if drop_moved or coin_moved:
+		push_error("pickup_check: the magnet pulled loot=%s pickup=%s — XP only" % [
+			str(drop_moved), str(coin_moved)
+		])
+	else:
+		print("PICKUP magnet scope: xp pulled, loot and pickups stayed put")
+	for node: XpOrb in [drop, coin]:
+		if node.visible:
+			node.visible = false
 
 
 func _step_is_chest() -> bool:

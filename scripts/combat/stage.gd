@@ -1619,8 +1619,14 @@ func _execute_nuke() -> void:
 		_on_hit_landed(damage, hit_at, boss_hit)
 
 
-## MAGNET: every uncollected orb, material and pickup on the field flies in at
-## once. An empty field still shows the ring + label — never a dead tap.
+## MAGNET: every uncollected XP orb on the field flies in at once. An empty
+## field still shows the ring + label — never a dead tap.
+##
+## XP ONLY (owner direction). Pickup and LootDrop both EXTEND XpOrb to reuse
+## its magnet physics, so the obvious `is XpOrb` test swept in every material
+## and prop drop as well — a magnet was hoovering up the whole field. Walking
+## to a thing you can see is the reward those are placed for; the magnet is
+## for the orbs scattered behind you by a fight.
 func _execute_magnet() -> void:
 	var ring: BlastRing = _burst_ring_pool.acquire()
 	ring.burst(
@@ -1630,8 +1636,12 @@ func _execute_magnet() -> void:
 	)
 	_float_label("자석!")
 	for child: Node in get_children():
-		if child is XpOrb and (child as XpOrb).visible:
-			(child as XpOrb).attract_now()
+		var orb := child as XpOrb
+		if orb == null or not orb.visible:
+			continue
+		if orb is Pickup or orb is LootDrop:
+			continue
+		orb.attract_now()
 
 
 ## N5-5 chest open: roll the reward count against luck, then queue that many

@@ -82,9 +82,26 @@ func _draw() -> void:
 				draw_arc(mapped["at"], BLIP_RADIUS, 0.0, TAU, 10, color, 1.5)
 			else:
 				draw_circle(mapped["at"], BLIP_RADIUS, color)
-	# The player last, so nothing can hide them on their own map.
-	draw_circle(middle, PLAYER_RADIUS + 1.0, UiPalette.INK)
-	draw_circle(middle, PLAYER_RADIUS, UiPalette.TEXT_ON_DARK)
+	# The player last, so nothing can hide them on their own map, and as a
+	# DIAMOND rather than another dot. Loot draws in near-white and the player
+	# used to draw in a slightly different near-white, which at three pixels
+	# was no difference at all — on a map bought for 900 gold, the one marker
+	# that must never be ambiguous is where you are standing.
+	_draw_player(middle)
+
+
+func _draw_player(at: Vector2) -> void:
+	var points := PackedVector2Array([
+		at + Vector2(0.0, -PLAYER_RADIUS - 1.5),
+		at + Vector2(PLAYER_RADIUS + 1.5, 0.0),
+		at + Vector2(0.0, PLAYER_RADIUS + 1.5),
+		at + Vector2(-PLAYER_RADIUS - 1.5, 0.0),
+	])
+	draw_colored_polygon(points, UiPalette.GOLD)
+	draw_polyline(
+		PackedVector2Array([points[0], points[1], points[2], points[3], points[0]]),
+		UiPalette.INK, 1.0
+	)
 
 
 ## Kinds are told apart by colour AND by the rim rule above (hollow = at the
