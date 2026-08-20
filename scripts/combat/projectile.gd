@@ -30,6 +30,11 @@ static func blade_size() -> Vector2:
 		WeaponEffects.value("blade_width_px"), WeaponEffects.value("blade_length_px")
 	)
 
+## N9-80 flight-animation rate. A constant rather than a data knob: a flight
+## lasts a fraction of a second, so this is a look, not a balance number, and a
+## per-weapon key would be one more thing to keep in sync with the art.
+const TRAVEL_FPS := 12.0
+
 var _velocity := Vector2.ZERO
 var _damage: float = 0.0
 var _crit: bool = false
@@ -59,6 +64,11 @@ var _instant_target: Enemy = null
 var _status: Dictionary = {}
 var _seal: Dictionary = {}
 var _trail: TrailVisual
+## N9-80 flight animation: how many frames the travel art declared, and how long
+## this shot has been in the air. 1 frame means a still, which is every shipped
+## travel sprite today.
+var _travel_frames: int = 1
+var _travel_age: float = 0.0
 # Enemies this shot already struck (instance id -> true) so pierce and chain
 # never hit twice. A pooled instance re-armed mid-flight would be wrongly
 # excluded, but flights last well under a second — accepted.
@@ -83,7 +93,7 @@ func _ready() -> void:
 	_trail.name = "Trail"
 	add_child(_trail)
 	_apply_shape(paper_size())
-	_set_travel_art("")
+	_set_travel_art("", 1)
 
 
 ## Travel art is optional by contract: bad or absent data keeps the original
@@ -113,7 +123,9 @@ func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 	_player = player
 	# N4-1: modded weapons tint the paper so a transformation reads on field.
 	_paper.color = tint
-	_set_travel_art(String(config.get("travel_sprite", "")))
+	_set_travel_art(
+		String(config.get("travel_sprite", "")), int(config.get("travel_frames", 1))
+	)
 	_aim_visual(direction)
 	_pierce_left = int(config.get("pierce", 0))
 	_pierce_retention = float(config.get("pierce_retention", 1.0))
@@ -158,6 +170,7 @@ func _physics_process(delta: float) -> void:
 		finished.emit(self)
 		return
 	global_position += _velocity * delta
+	_tick_travel_art(delta)
 	_trail.record(global_position, delta)
 	# N5-5: a shot passing over a destructible prop chips it. Free of pierce
 	# accounting on purpose — props never eat a shot meant for a monster — and
@@ -309,10 +322,44 @@ func _resolve_chain(from: Vector2) -> void:
 		from = positions[index]
 
 
-func _set_travel_art(path: String) -> void:
+## N9-80 (owner: 투사체도 이펙트가 필요할 것 같다). A travel sprite may be a
+## horizontal strip, in which case the shot animates while it flies.
+##
+## The frame count comes from data, not from the file's shape. Character sheets
+## in this project declare themselves by shape because their frames are square
+## and the reading is unambiguous; travel sprites are NOT square (20x7, 18x10),
+## so a 40x20 file could equally be one drawing or two frames and there is no
+## way to tell. validate_data checks the declared count against the file width.
+##
+## Reset on every arm, not only when the path changes: these are pooled, and a
+## reused instance that kept the previous shot's count would slice the new
+## texture into cells it does not have.
+func _set_travel_art(path: String, frames: int) -> void:
 	_sprite.texture = load(path) if travel_available(path) else null
 	_sprite.visible = _sprite.texture != null
 	_paper.visible = not _sprite.visible
+	_travel_frames = maxi(frames, 1) if _sprite.texture != null else 1
+	_travel_age = 0.0
+	_sprite.hframes = _travel_frames
+	_sprite.frame = 0
+
+
+## Advances the flight animation. Loops rather than holding the last frame: a
+## flight has no fixed length, so an animation that ended would freeze in mid
+## air on the long shots.
+func _tick_travel_art(delta: float) -> void:
+	if _travel_frames <= 1:
+		return
+	_travel_age += delta
+	_sprite.frame = travel_frame(_travel_age, _travel_frames)
+
+
+## Which cell a flight of `age` seconds is showing. Pure so the headless suite
+## can pin the wrap-around and the still case.
+static func travel_frame(age: float, frames: int) -> int:
+	if frames <= 1:
+		return 0
+	return int(maxf(age, 0.0) * TRAVEL_FPS) % frames
 
 
 func _aim_visual(direction: Vector2) -> void:

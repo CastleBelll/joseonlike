@@ -936,6 +936,32 @@ func _check_sprite_effects(sprites: Dictionary) -> void:
 			_fail("effects.sprite_effects.%s file missing: %s" % [effect_id, file])
 
 
+## N9-80 flight-animation contract. A travel sprite is a horizontal strip of
+## `travel_frames` equal cells; omitting the key means one cell, which is what
+## every shipped sprite is. The count is DECLARED because travel art is not
+## square — a 40x20 file is equally one drawing or two frames — so the only
+## thing that can be checked mechanically is that the declared count divides
+## the width evenly. A count that does not divide would hand Sprite2D an
+## hframes that slices the drawing at the wrong place.
+func _check_travel_frames(weapon_id: String, weapon: Dictionary, travel: String) -> void:
+	var frames: int = int(weapon.get("travel_frames", 1))
+	if frames < 1:
+		_fail("weapons.%s.travel_frames must be at least 1, got %d" % [weapon_id, frames])
+		return
+	if frames == 1:
+		return
+	var texture: Texture2D = load(travel)
+	if texture == null:
+		_fail("weapons.%s.travel_sprite will not load: %s" % [weapon_id, travel])
+		return
+	var width: int = int(texture.get_size().x)
+	if width % frames != 0:
+		_fail(
+			"weapons.%s.travel_frames %d does not divide the %dpx sheet"
+			% [weapon_id, frames, width]
+		)
+
+
 ## N9-3f optional projectile art contract. Optional is intentional: weapons
 ## without these keys keep Projectile's procedural paper/blade fallback.
 func _check_weapon_art(weapons: Dictionary, sprite_effects: Dictionary) -> void:
@@ -958,6 +984,9 @@ func _check_weapon_art(weapons: Dictionary, sprite_effects: Dictionary) -> void:
 					"weapons.%s is a chain weapon and never travels; drop travel_sprite"
 					% weapon_id
 				)
+			_check_travel_frames(weapon_id, weapon, travel)
+		elif weapon.has("travel_frames"):
+			_fail("weapons.%s declares travel_frames with no travel_sprite" % weapon_id)
 		if weapon.has("hit_effect"):
 			var hit_effect: String = String(weapon.get("hit_effect", ""))
 			if not sprite_effects.has(hit_effect):

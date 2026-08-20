@@ -227,6 +227,33 @@ Reference: new_asset/generated/fx_swing_arc.png (양끝이 뾰족한 베기 자�
 Note:      초승달이 아니라 베기 자국이다 — 양끝이 바늘처럼 가늘어야 한다
 ```
 
+### 투사체가 날면서 움직이려면 (N9-80)
+
+투사체 그림도 스트립을 받는다. 다만 캐릭터 시트와 계약이 다르다 — 투사체는
+정사각이 아니라(20x7, 18x10) 파일 모양만으로는 40x20이 한 장인지 2프레임인지
+구분할 수 없다. 그래서 **프레임 수를 `data/weapons.json`에 적는다**:
+
+```json
+"travel_sprite": "res://asset/weapon/travel/old_talisman.png",
+"travel_frames": 4
+```
+
+파일은 셀을 가로로 이어 붙인 것이고, 셀 크기는 지금 파일 크기 그대로다.
+4프레임이면 `18x10` → `72x10`. 키를 빼면 1프레임(지금 상태)이다.
+`travel_frames`가 폭을 나누지 못하면 `validate_data`가 실패한다.
+
+지금 전부 1프레임이라 정지 그림이다. 움직이면 좋을 후보, 값어치 순:
+
+| 투사체 | 셀 크기 | 왜 |
+|---|---|---|
+| `hwabu` / `hwaryeongbu` | 18x18 / 16x18 | 불꽃이 흔들려야 불로 읽힌다 |
+| `sal` / `gwisal` | 18x18 / 16x18 | 저주 연기가 일렁여야 한다 |
+| `old_talisman` / `fire_talisman` | 18x10 | 종이가 팔랑이는 것이 이 무기의 정체다 |
+| `beopgeom` / `bongmageom` | 20x7 | 검기가 번쩍이면 좋지만 셋 중 제일 급하지 않다 |
+
+4프레임이면 충분하다. 12fps로 도는데 비행이 1초 미만이라 그보다 많으면
+플레이어가 못 본다.
+
 기존 타격 이펙트 6종(`hit_neutral` / `hit_fire` / `hit_lightning` /
 `hit_curse` / `hit_paper` / `blink_puff`)은 무료 팩에서 왔고 지금 동작한다.
 오너가 "근접 공격 이펙트, 결계, 진언 애셋이 빈약하다"고 지적한 대상이 이쪽이므로

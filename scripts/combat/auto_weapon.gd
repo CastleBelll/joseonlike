@@ -272,6 +272,11 @@ func _build_shot_config() -> Dictionary:
 	var travel_sprite: String = String(_stats.get("travel_sprite", ""))
 	if not travel_sprite.is_empty():
 		config["travel_sprite"] = travel_sprite
+		# N9-80: how many cells that file holds. Declared rather than derived —
+		# travel art is not square, so a 40x20 file is equally one drawing or
+		# two frames and its shape cannot say which. validate_data checks the
+		# count divides the width.
+		config["travel_frames"] = int(_stats.get("travel_frames", 1))
 	if _stats.has("on_hit_status"):
 		config["status"] = _stats.get("on_hit_status", {})
 	if _stats.has("on_hit_seal"):
