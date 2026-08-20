@@ -333,46 +333,46 @@ static func mechanic_text(stats: Dictionary) -> String:
 	match String(stats.get("mechanic", "straight")):
 		"explosion":
 			# Player-facing copy: no "px" — engine units are dev jargon (QA-2).
-			parts.append("폭발 반경 %s" % _fmt(
+			parts.append(UiLocale.t("폭발 반경 %s") % _fmt(
 				float((stats.get("explosion", {}) as Dictionary).get("radius_px", 0.0))
 			))
 		"chain":
 			var chain: Dictionary = stats.get("chain", {})
-			parts.append("연쇄 %d회 · 도약당 피해 %d%%" % [
+			parts.append(UiLocale.t("연쇄 %d회 · 도약당 피해 %d%%") % [
 				int(chain.get("jumps", 0)),
 				int(round(float(chain.get("falloff", 1.0)) * 100.0)),
 			])
 		"melee_arc":
 			var arc: Dictionary = stats.get("arc", {})
-			parts.append("%s° 원호 · 넉백 %s배" % [
+			parts.append(UiLocale.t("%s° 원호 · 넉백 %s배") % [
 				_fmt(float(arc.get("angle_deg", 0.0))),
 				_fmt(float(arc.get("knockback_scale", 1.0))),
 			])
 		"orbit":
 			var orbit: Dictionary = stats.get("orbit", {})
-			parts.append("선회 구슬 %d개 · 반경 %s" % [
+			parts.append(UiLocale.t("선회 구슬 %d개 · 반경 %s") % [
 				int(stats.get("projectile_count", 1)),
 				_fmt(float(orbit.get("radius_px", 0.0))),
 			])
 		"pierce":
 			var pierce: int = int(stats.get("pierce", 0))
-			parts.append("직선 전원 관통" if pierce >= PIERCE_ALL else "관통 %d" % pierce)
+			parts.append(UiLocale.t("직선 전원 관통") if pierce >= PIERCE_ALL else UiLocale.t("관통 %d") % pierce)
 		"ward":
 			var ward: Dictionary = stats.get("ward", {})
-			parts.append("장판 반경 %s · %s초 지속 · 이동 %d%%" % [
+			parts.append(UiLocale.t("장판 반경 %s · %s초 지속 · 이동 %d%%") % [
 				_fmt(float(ward.get("radius_px", 0.0))),
 				_fmt(float(ward.get("duration_sec", 0.0))),
 				int(round(float(ward.get("slow_scale", 1.0)) * 100.0)),
 			])
 		"summon":
 			var summon: Dictionary = stats.get("summon", {})
-			parts.append("소환수 %s초 · %s초마다 공격" % [
+			parts.append(UiLocale.t("소환수 %s초 · %s초마다 공격") % [
 				_fmt(float(summon.get("lifetime_sec", 0.0))),
 				_fmt(float(summon.get("attack_cooldown_sec", 0.0))),
 			])
 		"shockwave":
 			var shockwave: Dictionary = stats.get("shockwave", {})
-			parts.append("파동 반경 %s · 기절 %s초 · 넉백 %s배" % [
+			parts.append(UiLocale.t("파동 반경 %s · 기절 %s초 · 넉백 %s배") % [
 				_fmt(float(shockwave.get("radius_px", 0.0))),
 				_fmt(float(shockwave.get("stun_sec", 0.0))),
 				_fmt(float(shockwave.get("knockback_scale", 1.0))),
@@ -380,32 +380,32 @@ static func mechanic_text(stats: Dictionary) -> String:
 	var status: Dictionary = stats.get("on_hit_status", {})
 	match String(status.get("id", "")):
 		"burn":
-			var burn: String = "화상 초당 %s (%s초)" % [
+			var burn: String = UiLocale.t("화상 초당 %s (%s초)") % [
 				_fmt(float(status.get("dps", 0.0))),
 				_fmt(float(status.get("duration_sec", 0.0))),
 			]
 			if float(status.get("spread_radius_px", 0.0)) > 0.0:
-				burn += " · 사망 시 전파"
+				burn += UiLocale.t(" · 사망 시 전파")
 			parts.append(burn)
 		"shock":
-			parts.append("감전 이동 %d%% (%s초)" % [
+			parts.append(UiLocale.t("감전 이동 %d%% (%s초)") % [
 				int(round(float(status.get("slow_scale", 1.0)) * 100.0)),
 				_fmt(float(status.get("duration_sec", 0.0))),
 			])
 		"curse":
-			parts.append("저주 초당 %s (%s초) · 사망 시 %d마리 전염" % [
+			parts.append(UiLocale.t("저주 초당 %s (%s초) · 사망 시 %d마리 전염") % [
 				_fmt(float(status.get("dps", 0.0))),
 				_fmt(float(status.get("duration_sec", 0.0))),
 				int(status.get("spread_count", 0)),
 			])
 	var seal: Dictionary = stats.get("on_hit_seal", {})
 	if not seal.is_empty():
-		parts.append("봉인 %d중첩 시 %s배 폭발" % [
+		parts.append(UiLocale.t("봉인 %d중첩 시 %s배 폭발") % [
 			int(seal.get("burst_at", 0)),
 			_fmt(float(seal.get("burst_damage_scale", 0.0))),
 		])
 	if float(stats.get("lifesteal", 0.0)) > 0.0:
-		parts.append("피해의 %d%% 흡혈" % int(round(float(stats.get("lifesteal", 0.0)) * 100.0)))
+		parts.append(UiLocale.t("피해의 %d%% 흡혈") % int(round(float(stats.get("lifesteal", 0.0)) * 100.0)))
 	return " · ".join(parts)
 
 
@@ -457,11 +457,21 @@ static func milestone_text(delta: Dictionary, path: String = "") -> String:
 			if not nested.is_empty():
 				parts.append(nested)
 			continue
-		var label: String = String(MILESTONE_LABELS.get(full, ""))
+		var label: String = UiLocale.t(String(MILESTONE_LABELS.get(full, "")))
 		if label.is_empty():
 			continue
 		parts.append(label % _fmt(float(delta[field])) if label.contains("%s") else label)
 	return " · ".join(parts)
+
+
+## GRADE_EFFECT_LABELS is a const, so it is built once at load and cannot hold
+## translated text. step_summary prints its values straight onto the card, so
+## they are translated here, at the moment the card is written.
+static func _localized_grade_effects() -> Dictionary:
+	var localized: Dictionary = {}
+	for stat: String in GRADE_EFFECT_LABELS:
+		localized[stat] = UiLocale.t(String(GRADE_EFFECT_LABELS[stat]))
+	return localized
 
 
 static func _merge_delta(target: Dictionary, delta: Dictionary) -> void:
@@ -478,7 +488,7 @@ static func display_name(
 	choice: Dictionary, weapons: Dictionary, passives: Dictionary
 ) -> String:
 	if String(choice.get("kind", "")) == KIND_MOD:
-		return MOD_NAME
+		return UiLocale.t(MOD_NAME)
 	var id: String = String(choice.get("id", ""))
 	var source: Dictionary = passives if String(choice.get("kind", "")) == KIND_PASSIVE else weapons
 	return String((source.get(id, {}) as Dictionary).get("name_ko", id))
@@ -527,7 +537,9 @@ static func grade_text(
 	owned_grades: Dictionary = {},
 	grades: Dictionary = {}
 ) -> String:
-	return String(GRADE_KO.get(grade_id(choice, weapons, owned_grades, grades), DEFAULT_GRADE_KO))
+	return UiLocale.t(
+		String(GRADE_KO.get(grade_id(choice, weapons, owned_grades, grades), DEFAULT_GRADE_KO))
+	)
 
 
 ## Small label under the icon well: next level for anything already owned,
@@ -540,13 +552,13 @@ static func well_label(
 		KIND_WEAPON_UP:
 			return "Lv.%d" % (int(owned_levels.get(id, 0)) + 1)
 		KIND_GRADE_UP:
-			return GRADE_UP_LABEL
+			return UiLocale.t(GRADE_UP_LABEL)
 		KIND_MOD:
-			return MOD_LABEL
+			return UiLocale.t(MOD_LABEL)
 		KIND_PASSIVE:
 			var stacks: int = int(passive_stacks.get(id, 0))
-			return "신규!" if stacks == 0 else "Lv.%d" % (stacks + 1)
-	return "신규!"
+			return UiLocale.t("신규!") if stacks == 0 else "Lv.%d" % (stacks + 1)
+	return UiLocale.t("신규!")
 
 
 ## Effect description with real numbers, per the owner's rule — never a bare
@@ -568,7 +580,7 @@ static func describe(
 			var stats: Dictionary = weapons.get(id, {})
 			var level: int = int(owned_levels.get(id, 1))
 			var grade: String = current_grade(id, weapons, owned_grades)
-			var numbers: String = "피해 %s→%s · 쿨다운 %s초→%s초" % [
+			var numbers: String = UiLocale.t("피해 %s→%s · 쿨다운 %s초→%s초") % [
 				_fmt(WeaponGrade.stat_at(stats, "damage", level, grade, grades)),
 				_fmt(WeaponGrade.stat_at(stats, "damage", level + 1, grade, grades)),
 				_fmt(WeaponGrade.stat_at(stats, "cooldown_sec", level, grade, grades)),
@@ -588,14 +600,14 @@ static func describe(
 			var grade: String = current_grade(id, weapons, owned_grades)
 			var raised: String = WeaponGrade.next(WeaponGrade.ladder(grades), grade)
 			var granted: String = WeaponGrade.step_summary(
-				grades, raised, GRADE_EFFECT_LABELS
+				grades, raised, _localized_grade_effects()
 			)
 			if granted.is_empty():
-				granted = "등급 상승"
-			return "%s · 등급 %s→%s · %s" % [
+				granted = UiLocale.t("등급 상승")
+			return UiLocale.t("%s · 등급 %s→%s · %s") % [
 				_weapon_mechanic_line(stats),
-				String(GRADE_KO.get(grade, DEFAULT_GRADE_KO)),
-				String(GRADE_KO.get(raised, DEFAULT_GRADE_KO)),
+				UiLocale.t(String(GRADE_KO.get(grade, DEFAULT_GRADE_KO))),
+				UiLocale.t(String(GRADE_KO.get(raised, DEFAULT_GRADE_KO))),
 				granted,
 			]
 		KIND_MOD:
@@ -608,13 +620,13 @@ static func describe(
 			# mystery — no result name, numbers or mechanic until the 괴이록
 			# records it. Knowledge is earned by doing it once.
 			if masked_results.has(result_id):
-				return "%s → %s (레벨 유지)" % [
+				return UiLocale.t("%s → %s (레벨 유지)") % [
 					String((weapons.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
 					UNKNOWN_RESULT,
 				]
 			var level: int = int(owned_levels.get(base_id, 1))
 			var carried: String = mod_carried_grade(mod, weapons, owned_grades, grades)
-			var line: String = "%s → %s · 피해 %s→%s (레벨 유지)" % [
+			var line: String = UiLocale.t("%s → %s · 피해 %s→%s (레벨 유지)") % [
 				String((weapons.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
 				String((weapons.get(result_id, {}) as Dictionary).get("name_ko", result_id)),
 				_fmt(WeaponGrade.stat_at(
@@ -634,7 +646,7 @@ static func describe(
 			# The plain-language mechanic line now covers what mechanic_text's
 			# raw numbers used to be the ONLY explanation for — keeping both
 			# doubled the card length for no added clarity.
-			return "%s — 피해 %s · 쿨다운 %s초" % [
+			return UiLocale.t("%s — 피해 %s · 쿨다운 %s초") % [
 				_weapon_mechanic_line(stats),
 				_fmt(float(stats.get("damage", 0.0))),
 				_fmt(float(stats.get("cooldown_sec", 0.0))),

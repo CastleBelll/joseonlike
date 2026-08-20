@@ -215,7 +215,9 @@ func _make_card(display: Dictionary, card_width: float, card_height: float) -> B
 	var label_text: String = String(display.get("well_label", ""))
 	var well_label := _label(
 		label_text, UiPalette.FONT_SIZE_LABEL,
-		UiPalette.VERMILION if label_text in [NEW_LABEL, TRANSFORM_LABEL] else UiPalette.INK
+		UiPalette.VERMILION
+		if label_text in [UiLocale.t(NEW_LABEL), UiLocale.t(TRANSFORM_LABEL)]
+		else UiPalette.INK
 	)
 	well_label.position = Vector2(WELL_MARGIN, WELL_MARGIN + WELL_SIZE + 4.0)
 	well_label.size = Vector2(WELL_SIZE, 20.0)
@@ -384,7 +386,7 @@ func _make_grade_pill(text: String, grade_id: String) -> Panel:
 
 func _make_close_button() -> Button:
 	var button := Button.new()
-	button.text = "닫기"
+	button.text = UiLocale.t("닫기")
 	button.custom_minimum_size = CLOSE_BUTTON_SIZE
 	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	WoodButton.apply(button)

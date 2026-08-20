@@ -131,7 +131,7 @@ jobs:
           failed=""
           for harness in creep_check meta_flow_check music_check n64_check \
                          pickup_check shadow_check tutorial_check achievements_check endless_check \
-                         nav_check select_check; do
+                         nav_check select_check locale_check; do
             echo "--- $harness"
             if ! "$GODOT" --headless --path . "res://tools/$harness.tscn" 2>&1 | tee "$harness.log"; then
               failed="$failed $harness"

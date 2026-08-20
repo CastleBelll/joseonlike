@@ -62,3 +62,119 @@ static func text(key: String) -> String:
 		return key
 	var entry: Dictionary = STRINGS[key]
 	return entry.get(current_locale, entry[DEFAULT_LOCALE])
+
+## N9-87 retrofit translation for text that shipped as Korean literals inside
+## the code. STRINGS above is key-based and right for anything written with it
+## from the start; these 94 were already in the source, and inventing a key for
+## each would have touched every call site twice for no gain. So the Korean IS
+## the key.
+##
+## Format specifiers survive translation in the same order and count — callers
+## still write `UiLocale.t("투사체 +%s") % value` — and a script checks that,
+## because `%` fills positionally and a swapped pair silently prints the wrong
+## numbers rather than failing.
+const COMBAT_EN := {
+	"파워 업!": "Power Up!",
+	"보물 상자! (%d/%d)": "Treasure Chest! (%d/%d)",
+	"회생부 발동!": "Revival Charm!",
+	"두두리를 물리쳤다": "Dudueori has fallen",
+	"%s %s 등급!": "%s is now %s",
+	"%s 획득": "%s acquired",
+	"회복 +%d": "Healed +%d",
+	"자석!": "Magnet!",
+	"+%d냥": "+%d coins",
+	"%s — 빛 안에서만 벨 수 있다": "%s — only cuts within the light",
+	"%s · 개조 준비 완료!": "%s · ready to remake",
+	"%s · %s Lv.%d에서 개조": "%s · remake at %s Lv.%d",
+	"알 수 없는 존재": "Unknown",
+	"일시 정지": "Paused",
+	"계속하기": "Resume",
+	"설정": "Settings",
+	"타이틀로": "Quit to Title",
+	"닫기": "Close",
+	"무기": "Weapons",
+	"패시브": "Passives",
+	"능력치": "Stats",
+	"개조 경로": "Remake Path",
+	"%s %d  (칸 %d + 주움 %d)": "%s %d  (slots %d + found %d)",
+	"  (가득 참)": "  (full)",
+	"  Lv.%d 필요": "  needs Lv.%d",
+	" 필요": " needed",
+	"체력": "Health",
+	"이동 속도": "Move Speed",
+	"공격력": "Attack",
+	"공격 속도": "Attack Speed",
+	"치명타 확률": "Crit Chance",
+	"치명타 피해": "Crit Damage",
+	"투사체": "Projectiles",
+	"투사체 속도": "Projectile Speed",
+	"피해 감소": "Damage Reduction",
+	"자석 범위": "Magnet Range",
+	"경험치 획득": "XP Gain",
+	"행운": "Luck",
+	"일반": "Common",
+	"고급": "Fine",
+	"희귀": "Rare",
+	"영웅": "Heroic",
+	"신화": "Mythic",
+	"등급↑": "Grade Up",
+	"등급 상승": "Grade Up",
+	"신규!": "New!",
+	"변신!": "Evolved!",
+	"개조": "Remake",
+	"%s — 피해 %s · 쿨다운 %s초": "%s — %s damage · %ss cooldown",
+	"피해 %s→%s · 쿨다운 %s초→%s초": "Damage %s→%s · Cooldown %ss→%ss",
+	"%s · 등급 %s→%s · %s": "%s · grade %s→%s · %s",
+	"%s → %s (레벨 유지)": "%s → %s (keeps its level)",
+	"%s → %s · 피해 %s→%s (레벨 유지)": "%s → %s · damage %s→%s (keeps its level)",
+	"투사체 +%s": "Projectiles +%s",
+	"관통 +%s": "Pierce +%s",
+	"관통 피해 유지 +%s": "Pierce damage kept +%s",
+	"연쇄 +%s회": "Chain +%s jumps",
+	"도약 피해 유지 +%s": "Jump damage kept +%s",
+	"연쇄 범위 +%s": "Chain range +%s",
+	"폭발 반경 +%s": "Blast radius +%s",
+	"가장자리 피해 +%s": "Edge damage +%s",
+	"원호 +%s°": "Arc +%s°",
+	"넉백 +%s배": "Knockback x%s",
+	"선회 속도 +%s": "Orbit speed +%s",
+	"선회 반경 +%s": "Orbit radius +%s",
+	"구슬 크기 +%s": "Orb size +%s",
+	"장판 반경 +%s": "Ward radius +%s",
+	"장판 지속 +%s초": "Ward lasts +%ss",
+	"감속 강화": "Stronger slow",
+	"소환 지속 +%s초": "Summon lasts +%ss",
+	"소환수 공격 가속": "Summon strikes faster",
+	"소환수 이동 +%s": "Summon speed +%s",
+	"파동 반경 +%s": "Shockwave radius +%s",
+	"기절 +%s초": "Stun +%ss",
+	"전염 +%s마리": "Spreads to +%s more",
+	"지속 피해 +%s": "Damage over time +%s",
+	"전파 반경 +%s": "Spread radius +%s",
+	"상태 지속 +%s초": "Status lasts +%ss",
+	"봉인 폭발 조건 완화": "Seal bursts sooner",
+	"폭발 반경 %s": "Blast radius %s",
+	"연쇄 %d회 · 도약당 피해 %d%%": "Chains %d times · %d%% damage per jump",
+	"%s° 원호 · 넉백 %s배": "%s° arc · knockback x%s",
+	"선회 구슬 %d개 · 반경 %s": "%d orbiting orbs · radius %s",
+	"직선 전원 관통": "Pierces everything in line",
+	"관통 %d": "Pierces %d",
+	"장판 반경 %s · %s초 지속 · 이동 %d%%": "Ward radius %s · lasts %ss · move %d%%",
+	"소환수 %s초 · %s초마다 공격": "Summon lasts %ss · strikes every %ss",
+	"파동 반경 %s · 기절 %s초 · 넉백 %s배": "Shockwave radius %s · stun %ss · knockback x%s",
+	"화상 초당 %s (%s초)": "Burns %s per second (%ss)",
+	" · 사망 시 전파": " · spreads on death",
+	"감전 이동 %d%% (%s초)": "Shocked: move %d%% (%ss)",
+	"저주 초당 %s (%s초) · 사망 시 %d마리 전염": "Curse %s per second (%ss) · spreads to %d on death",
+	"봉인 %d중첩 시 %s배 폭발": "At %d seal stacks, bursts for x%s",
+	"피해의 %d%% 흡혈": "Heals %d%% of damage dealt",
+}
+
+
+## Korean text in, the current locale's text out. An untranslated string falls
+## back to the Korean it was given, which is exactly what shipped before this,
+## so a gap in the table degrades instead of blanking the UI.
+static func t(korean: String) -> String:
+	if current_locale == DEFAULT_LOCALE:
+		return korean
+	return String(COMBAT_EN.get(korean, korean))

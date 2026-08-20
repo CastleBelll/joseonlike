@@ -60,7 +60,7 @@ static func build_summary(
 ## already-resolved name_ko, elite derivation included).
 static func death_cause_text(raw_name: String) -> String:
 	var trimmed: String = raw_name.strip_edges()
-	return trimmed if not trimmed.is_empty() else DEATH_CAUSE_UNKNOWN
+	return trimmed if not trimmed.is_empty() else UiLocale.t(DEATH_CAUSE_UNKNOWN)
 
 
 ## N4-2 wave-schedule invariants for a stage dict. Returns human-readable

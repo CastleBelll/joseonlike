@@ -424,21 +424,21 @@ func _build_pause_overlay() -> void:
 	layout.name = "Layout"
 	layout.add_theme_constant_override("separation", UiPalette.SPACE_MD)
 	pad.add_child(layout)
-	var title := _label("일시 정지", UiPalette.FONT_SIZE_TITLE, UiPalette.VERMILION)
+	var title := _label(UiLocale.t("일시 정지"), UiPalette.FONT_SIZE_TITLE, UiPalette.VERMILION)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	layout.add_child(title)
 	_build_section = VBoxContainer.new()
 	_build_section.name = "BuildSummary"
 	_build_section.add_theme_constant_override("separation", UiPalette.SPACE_SM)
 	layout.add_child(_build_section)
-	_resume_button = _overlay_button("ResumeButton", "계속하기", _on_resume_pressed)
+	_resume_button = _overlay_button("ResumeButton", UiLocale.t("계속하기"), _on_resume_pressed)
 	layout.add_child(_resume_button)
 	# N9-35 (owner request): mid-run, the pause screen was the only thing
 	# between the player and the title, so changing the volume meant abandoning
 	# the run. The popup runs on PROCESS_MODE_ALWAYS, so it works while the
 	# tree is paused.
-	layout.add_child(_overlay_button("SettingsButton", "설정", _on_settings_pressed))
-	layout.add_child(_overlay_button("QuitButton", "타이틀로", _on_quit_pressed))
+	layout.add_child(_overlay_button("SettingsButton", UiLocale.t("설정"), _on_settings_pressed))
+	layout.add_child(_overlay_button("QuitButton", UiLocale.t("타이틀로"), _on_quit_pressed))
 	_pause_panel = panel
 	add_child(_pause_overlay)
 
@@ -474,7 +474,7 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 	if not weapons.is_empty():
 		# N9-23: the build has slots now, so the pause screen says how many are
 		# spent — otherwise "no new weapons are being offered" reads as a bug.
-		_build_section.add_child(_slot_header("무기", weapons.size(), LevelUp.WEAPON_SLOTS))
+		_build_section.add_child(_slot_header(UiLocale.t("무기"), weapons.size(), LevelUp.WEAPON_SLOTS))
 		extra_height += BUILD_PASSIVE_ROW_HEIGHT
 		var grid := GridContainer.new()
 		grid.name = "WeaponGrid"
@@ -489,7 +489,7 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 
 	if not passives.is_empty():
 		_build_section.add_child(
-			_slot_header("패시브", passives.size(), LevelUp.PASSIVE_SLOTS)
+			_slot_header(UiLocale.t("패시브"), passives.size(), LevelUp.PASSIVE_SLOTS)
 		)
 		extra_height += BUILD_PASSIVE_ROW_HEIGHT
 		var grid := GridContainer.new()
@@ -517,7 +517,7 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 	if not stats.is_empty():
 		var box := VBoxContainer.new()
 		box.name = "StatLines"
-		box.add_child(_label("능력치", UiPalette.FONT_SIZE_LABEL, UiPalette.VERMILION))
+		box.add_child(_label(UiLocale.t("능력치"), UiPalette.FONT_SIZE_LABEL, UiPalette.VERMILION))
 		var grid := GridContainer.new()
 		grid.name = "StatGrid"
 		grid.columns = BUILD_PASSIVE_COLUMNS
@@ -542,7 +542,7 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 	if not evolutions.is_empty():
 		var box := VBoxContainer.new()
 		box.name = "EvolutionLines"
-		var header := _label("개조 경로", UiPalette.FONT_SIZE_LABEL, UiPalette.VERMILION)
+		var header := _label(UiLocale.t("개조 경로"), UiPalette.FONT_SIZE_LABEL, UiPalette.VERMILION)
 		box.add_child(header)
 		for line_text: Variant in evolutions:
 			box.add_child(_label(
@@ -564,8 +564,8 @@ func _slot_header(title: String, taken: int, total: int) -> Label:
 	# read as a bug in the counter rather than as the reward it is. Past the
 	# cap the line stops being a fraction and says where the extras came from.
 	var text: String = (
-		"%s %d  (칸 %d + 주움 %d)" % [title, taken, total, taken - total] if taken > total
-		else "%s %d/%d%s" % [title, taken, total, "  (가득 참)" if full else ""]
+		UiLocale.t("%s %d  (칸 %d + 주움 %d)") % [title, taken, total, taken - total] if taken > total
+		else "%s %d/%d%s" % [title, taken, total, UiLocale.t("  (가득 참)") if full else ""]
 	)
 	var header: Label = _label(
 		text,

@@ -551,7 +551,7 @@ func _on_player_died() -> void:
 		_revive_used = true
 		_player.hp = _player.hp_max * revive_ratio
 		_player.grant_invulnerability(float(revive.get("invuln_sec", 0.0)))
-		_float_label("회생부 발동!")
+		_float_label(UiLocale.t("회생부 발동!"))
 		return
 	_end_run(RunFlow.resolve_outcome(true, false, false))
 
@@ -608,7 +608,7 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 		# only way the run ends is the player falling.
 		if _spawner.is_endless_run():
 			_boss_return_wait = Endless.boss_repeat_sec(_endless_config())
-			_float_label("두두리를 물리쳤다")
+			_float_label(UiLocale.t("두두리를 물리쳤다"))
 			return
 		_end_run(RunFlow.resolve_outcome(false, true, false), true)
 
@@ -931,7 +931,7 @@ func _show_next_level_up() -> void:
 		))
 	# N9-14: the first-ever level-up screen wears a tutorial header once —
 	# the popup itself IS the weapon-upgrade tutorial (owner direction).
-	var header: String = POWER_UP_HEADER
+	var header: String = UiLocale.t(POWER_UP_HEADER)
 	if Ftue.should_explain_level_up(_profile()):
 		header = Ftue.LEVELUP_EXPLAIN_HEADER
 		if SaveService.instance != null:
@@ -1056,9 +1056,9 @@ func _set_owned_grade(weapon_id: String, grade: String) -> void:
 	if node != null:
 		node.set_grade(grade)
 	if WeaponGrade.is_top(_grade_ladder, grade) and not was_top:
-		_float_label("%s %s 등급!" % [
+		_float_label(UiLocale.t("%s %s 등급!") % [
 			String((_weapons_data.get(weapon_id, {}) as Dictionary).get("name_ko", weapon_id)),
-			String(LevelUp.GRADE_KO.get(grade, grade)),
+			UiLocale.t(String(LevelUp.GRADE_KO.get(grade, grade))),
 		])
 
 
@@ -1133,7 +1133,9 @@ func _pause_build_summary() -> Dictionary:
 			"name": String((_weapons_data.get(weapon_id, {}) as Dictionary).get("name_ko", weapon_id)),
 			"level": int(_owned_levels[weapon_id]),
 			"grade": grade,
-			"grade_ko": String(LevelUp.GRADE_KO.get(grade, LevelUp.DEFAULT_GRADE_KO)),
+			"grade_ko": UiLocale.t(
+				String(LevelUp.GRADE_KO.get(grade, LevelUp.DEFAULT_GRADE_KO))
+			),
 		})
 	var passives: Array[Dictionary] = []
 	for passive_id: String in _passive_stacks:
@@ -1177,19 +1179,19 @@ func _pause_stat_lines() -> Array[Dictionary]:
 	return [
 		# Health is always in ink: it is the one line a player checks mid-run,
 		# not a modifier that is interesting only when something moved it.
-		_stat_line("체력", "%d/%d" % [ceili(_player.hp), ceili(_player.hp_max)], true),
-		_stat_line("이동 속도", "%d" % roundi(_player.load_move_speed() * move), move != 1.0),
-		_stat_line("공격력", "%d%%" % roundi(damage * 100.0), damage != 1.0),
-		_stat_line("공격 속도", "%d%%" % roundi(attack_speed * 100.0), attack_speed != 1.0),
-		_stat_line("치명타 확률", "%d%%" % roundi(crit_chance * 100.0), crit_chance > 0.0),
-		_stat_line("치명타 피해", "x%.1f" % crit_multiplier, crit_multiplier != CRIT_MULTIPLIER),
-		_stat_line("투사체", "+%d" % extra_projectiles, extra_projectiles > 0),
-		_stat_line("투사체 속도", "%d%%" % roundi(projectile_speed * 100.0),
+		_stat_line(UiLocale.t("체력"), "%d/%d" % [ceili(_player.hp), ceili(_player.hp_max)], true),
+		_stat_line(UiLocale.t("이동 속도"), "%d" % roundi(_player.load_move_speed() * move), move != 1.0),
+		_stat_line(UiLocale.t("공격력"), "%d%%" % roundi(damage * 100.0), damage != 1.0),
+		_stat_line(UiLocale.t("공격 속도"), "%d%%" % roundi(attack_speed * 100.0), attack_speed != 1.0),
+		_stat_line(UiLocale.t("치명타 확률"), "%d%%" % roundi(crit_chance * 100.0), crit_chance > 0.0),
+		_stat_line(UiLocale.t("치명타 피해"), "x%.1f" % crit_multiplier, crit_multiplier != CRIT_MULTIPLIER),
+		_stat_line(UiLocale.t("투사체"), "+%d" % extra_projectiles, extra_projectiles > 0),
+		_stat_line(UiLocale.t("투사체 속도"), "%d%%" % roundi(projectile_speed * 100.0),
 			projectile_speed != 1.0),
-		_stat_line("피해 감소", "%d%%" % roundi(applied_defense * 100.0), applied_defense > 0.0),
-		_stat_line("자석 범위", "%d%%" % roundi(magnet * 100.0), magnet != 1.0),
-		_stat_line("경험치 획득", "%d%%" % roundi(xp_gain * 100.0), xp_gain != 1.0),
-		_stat_line("행운", "+%d%%" % roundi(luck * 100.0), luck > 0.0),
+		_stat_line(UiLocale.t("피해 감소"), "%d%%" % roundi(applied_defense * 100.0), applied_defense > 0.0),
+		_stat_line(UiLocale.t("자석 범위"), "%d%%" % roundi(magnet * 100.0), magnet != 1.0),
+		_stat_line(UiLocale.t("경험치 획득"), "%d%%" % roundi(xp_gain * 100.0), xp_gain != 1.0),
+		_stat_line(UiLocale.t("행운"), "+%d%%" % roundi(luck * 100.0), luck > 0.0),
 	]
 
 
@@ -1216,12 +1218,12 @@ func _evolution_lines() -> Array[String]:
 		# ✓ that never produced a card.
 		var need: int = int(mod.get("level_required", 1))
 		var level: int = int(_owned_levels[base_id])
-		var gate: String = "" if level >= need else "  Lv.%d 필요" % need
+		var gate: String = "" if level >= need else UiLocale.t("  Lv.%d 필요") % need
 		lines.append("%s → %s · %s%s%s" % [
 			String((_weapons_data.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
 			String((_weapons_data.get(result_id, {}) as Dictionary).get("name_ko", result_id)),
 			String((_loot_data.get(loot_id, {}) as Dictionary).get("name_ko", loot_id)),
-			" ✓" if held else " 필요",
+			" ✓" if held else UiLocale.t(" 필요"),
 			gate,
 		])
 	return lines
@@ -1395,7 +1397,7 @@ func _on_loot_collected(orb: XpOrb) -> void:
 		return
 	var gained: int = _add_gold(Loot.salvage_gold(_loot_data, loot_id))
 	if bool(stats.get("special", false)):
-		_float_label("+%d냥" % gained)
+		_float_label(UiLocale.t("+%d냥") % gained)
 
 
 ## N9-18: cue text for a banked special material — either "ready" or the
@@ -1403,7 +1405,7 @@ func _on_loot_collected(orb: XpOrb) -> void:
 ## the closest recipe (fewest levels missing) when several match.
 ## N10-1a: the shadow's rule, stated once per run at the moment it matters.
 func _on_shadow_spawned(enemy: Enemy) -> void:
-	_float_label("%s — 빛 안에서만 벨 수 있다" % enemy.name_ko)
+	_float_label(UiLocale.t("%s — 빛 안에서만 벨 수 있다") % enemy.name_ko)
 
 
 func _material_cue(loot_id: String, loot_name: String) -> String:
@@ -1422,15 +1424,15 @@ func _material_cue(loot_id: String, loot_name: String) -> String:
 		var need: int = int(mod.get("level_required", 1))
 		var gap: int = need - int(_owned_levels[base_id])
 		if gap <= 0:
-			return "%s · 개조 준비 완료!" % loot_name
+			return UiLocale.t("%s · 개조 준비 완료!") % loot_name
 		if best_gap < 0 or gap < best_gap:
 			best_gap = gap
-			best_line = "%s · %s Lv.%d에서 개조" % [
+			best_line = UiLocale.t("%s · %s Lv.%d에서 개조") % [
 				loot_name,
 				String((_weapons_data.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
 				need,
 			]
-	return best_line if not best_line.is_empty() else "%s 획득" % loot_name
+	return best_line if not best_line.is_empty() else UiLocale.t("%s 획득") % loot_name
 
 
 ## N5-5 destructible feedback: the shared pooled puff at the prop's footprint,
@@ -1653,7 +1655,7 @@ func _on_pickup_collected(orb: XpOrb) -> void:
 			var gained: int = _add_gold(
 				int((_pickups_data.get("gold", {}) as Dictionary).get("amount", 0))
 			)
-			_float_label("+%d냥" % gained)
+			_float_label(UiLocale.t("+%d냥") % gained)
 		Pickups.KIND_HEALTH:
 			_collect_health()
 		Pickups.KIND_NUKE:
@@ -1666,7 +1668,7 @@ func _collect_health() -> void:
 	var health: Dictionary = _pickups_data.get("health", {})
 	if _player.hp >= _player.hp_max:
 		var gained: int = _add_gold(int(health.get("full_hp_gold", 0)))
-		_float_label("+%d냥" % gained)
+		_float_label(UiLocale.t("+%d냥") % gained)
 		return
 	_heal_player(float(health.get("hp_ratio", 0.0)))
 
@@ -1681,7 +1683,7 @@ func _heal_player(hp_ratio: float) -> void:
 	_player.hp += heal
 	_heal_events += 1
 	_heal_total += heal
-	_float_label("회복 +%d" % int(round(heal)))
+	_float_label(UiLocale.t("회복 +%d") % int(round(heal)))
 	var puff: DeathPuff = _puff_pool.acquire()
 	puff.puff(
 		_player.global_position, Player.CONTACT_RADIUS * 2.0,
@@ -1733,7 +1735,7 @@ func _execute_magnet() -> void:
 		float((_pickups_data.get("magnet", {}) as Dictionary).get("ring_radius_px", 0.0)),
 		WeaponEffects.value("burst_ring_sec"), UiPalette.LOOT_RARE, BlastRing.Style.WAVE
 	)
-	_float_label("자석!")
+	_float_label(UiLocale.t("자석!"))
 	for child: Node in get_children():
 		var orb := child as XpOrb
 		if orb == null or not orb.visible:
@@ -1796,7 +1798,7 @@ func _show_next_chest_reward() -> void:
 		var gained: int = _add_gold(
 			int((_pickups_data.get("chest", {}) as Dictionary).get("fallback_gold", 0))
 		)
-		_float_label("+%d냥" % gained)
+		_float_label(UiLocale.t("+%d냥") % gained)
 		_advance_popup_queue()
 		return
 	get_tree().paused = true
@@ -1807,7 +1809,7 @@ func _show_next_chest_reward() -> void:
 		_owned_grades, _grades_config, masked
 	)]
 	_popup.open(
-		CHEST_HEADER % [_chest_batch_index, _chest_batch_total],
+		UiLocale.t(CHEST_HEADER) % [_chest_batch_index, _chest_batch_total],
 		cards, _owned_levels, _weapons_data
 	)
 
