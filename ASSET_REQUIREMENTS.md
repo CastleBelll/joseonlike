@@ -111,14 +111,14 @@ Fallback:  palette-token WOOD/WEAPON_GHOST arc strokes and WEAPON_SOUL orbs
 ```
 
 ```
-[MISSING] passive stat icons: attack_damage, attack_speed, move_speed,
-          max_hp, magnet_radius
-Size:      32x32 logical, like the weapon icons
-Members:   res://asset/ui/passive_icons/<passive_id>.png (UiIcons would need
-           a passive_icon lookup once these exist)
-Used by:   N3-6 power-up popup (scripts/ui/level_up_popup.gd icon wells)
-Fallback:  INK well + first syllable of name_ko as a GOLD glyph (the N3-13
-           missing-icon fallback path)
+[DELIVERED N9-89] passive stat icons — all 18 of data/passives.json, one
+           Joseon folk object each (tiger claw, folding fan, jipsin, gourd,
+           ginseng, rattan shield, bokjumeoni, lodestone, bound books,
+           talisman fan, arrow, yut sticks, tiger fang, cinnabar brush, bagua
+           mirror, flint striker, chain links, seal stamp), generated as one
+           batch so the set reads as one hand and installed by
+           asset/build_from_generated.py. The old free-pack eleven (western
+           boots, clover, gear-heart) are replaced.
 ```
 
 ```
@@ -184,13 +184,11 @@ Fallback:  IN USE — the entry's real art self-modulated to INK reads as a
 ```
 
 ```
-[MISSING] pickup_magnet (N5-5, narrowed N6-5)
-Size:      ~14px logical in-world sprite: magnet (lodestone)
-Used by:   prop-break pickups (scripts/combat/pickup.gd)
-Fallback:  IN USE — code-drawn blue horseshoe disc. N6-5 wired the other
-           three kinds from real art (coin = asset/ui/hud/coin.png reuse,
-           health = Pixel UI pack 3 heart, nuke = Trap and Weapon bomb via
-           asset/pickups/build_assets.py); no pack has anything magnet-like.
+[DELIVERED N9-89] pickup_magnet — asset/pickups/magnet.png (14x14,
+           lodestone with iron filings and a red thread, generated and cut in
+           asset/build_from_generated.py), wired in scripts/combat/pickup.gd
+           KIND_TEXTURES. The code-drawn blue horseshoe stays as the
+           missing-file fallback.
 ```
 
 ```

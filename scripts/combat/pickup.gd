@@ -22,12 +22,14 @@ const PASSIVE_RIM_POINTS := 24
 ## glyph (16 logical px at 16x export — drawn at 16px, an exact NEAREST
 ## downscale); health/heart and nuke/bomb come from the owner packs via
 ## asset/pickups/build_assets.py. A missing file falls back to the N5-5
-## code-drawn shape — art never blocks the feature. Magnet has no pack art
-## (ASSET_REQUIREMENTS.md) and stays code-drawn.
+## code-drawn shape — art never blocks the feature. N9-89: the magnet gains
+## real art (a lodestone with filings, built by asset/build_from_generated.py);
+## the blue horseshoe below stays as its missing-file fallback.
 const KIND_TEXTURES: Dictionary = {
 	Pickups.KIND_GOLD: "res://asset/ui/hud/coin.png",
 	Pickups.KIND_HEALTH: "res://asset/pickups/health.png",
 	Pickups.KIND_NUKE: "res://asset/pickups/nuke.png",
+	Pickups.KIND_MAGNET: "res://asset/pickups/magnet.png",
 }
 const GOLD_DRAW_PX := 16.0
 

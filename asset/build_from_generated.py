@@ -9,10 +9,13 @@ thing is on screen.
 
 Two kinds of target:
 
-* weapon icons are authored at 16x their 32px logical size, like every other
-  sheet in the project, so they go down to 32 and back up with NEAREST;
-* projectile and FX sprites are authored at 1x, so they go straight down to
-  their final size and stop there.
+* icons (weapon and passive) are authored at 16x their 32px logical size,
+  like every other sheet in the project, so they go down to 32 and back up
+  with NEAREST — their 512x512 box is fixed by that contract, so an icon
+  needs no existing file to take a size from;
+* projectile, FX and pickup sprites are authored at 1x. An existing file
+  supplies the size; a NEW sprite declares it as a "WxH" string, because
+  there is nothing on disk to read it from.
 
 뇌부/뇌정부 are absent on purpose: a chain weapon never flies (AutoWeapon
 resolves it on the enemy it aimed at and ChainBolt draws the jump), so a
@@ -67,6 +70,29 @@ INSTALL = [
     ("travel_gwisal", "asset/weapon/travel/gwisal.png", False),
     ("fx_sinjang", "asset/weapon/fx/sinjang.png", False),
     ("fx_arc_blade", "asset/weapon/fx/arc_blade.png", False),
+    # N9-89: the full passive set as one hand — the shipped eleven were a
+    # free-pack grab bag (western boots, a clover, a gear-heart) and seven
+    # passives had no icon at all.
+    ("passive_attack_damage", "asset/ui/passive_icons/attack_damage.png", True),
+    ("passive_attack_speed", "asset/ui/passive_icons/attack_speed.png", True),
+    ("passive_move_speed", "asset/ui/passive_icons/move_speed.png", True),
+    ("passive_max_hp", "asset/ui/passive_icons/max_hp.png", True),
+    ("passive_hp_regen", "asset/ui/passive_icons/hp_regen.png", True),
+    ("passive_defense", "asset/ui/passive_icons/defense.png", True),
+    ("passive_luck", "asset/ui/passive_icons/luck.png", True),
+    ("passive_magnet_radius", "asset/ui/passive_icons/magnet_radius.png", True),
+    ("passive_xp_gain", "asset/ui/passive_icons/xp_gain.png", True),
+    ("passive_projectile_count", "asset/ui/passive_icons/projectile_count.png", True),
+    ("passive_projectile_speed", "asset/ui/passive_icons/projectile_speed.png", True),
+    ("passive_crit_chance", "asset/ui/passive_icons/crit_chance.png", True),
+    ("passive_crit_damage", "asset/ui/passive_icons/crit_damage.png", True),
+    ("passive_skill_power", "asset/ui/passive_icons/skill_power.png", True),
+    ("passive_area_scale", "asset/ui/passive_icons/area_scale.png", True),
+    ("passive_burn_power", "asset/ui/passive_icons/burn_power.png", True),
+    ("passive_chain_amount", "asset/ui/passive_icons/chain_amount.png", True),
+    ("passive_seal_haste", "asset/ui/passive_icons/seal_haste.png", True),
+    # The one true pickup gap: 14px sits between the 12px herb and 16px coin.
+    ("passive_pickup_magnet", "asset/pickups/magnet.png", "14x14"),
 ]
 
 
@@ -137,26 +163,35 @@ def fit(image: Image.Image, box: tuple[int, int]) -> Image.Image:
     return canvas
 
 
-def install(stem: str, target_rel: str, is_icon: bool) -> None:
+def install(stem: str, target_rel: str, mode) -> None:
+    """mode: True = 16x icon (fixed 512 box), False = 1x at the existing
+    file's size, "WxH" = 1x at that size whether or not the file exists."""
     source = SOURCE_DIR / f"{stem}.png"
     target = ROOT / target_rel
     if not source.exists():
         print(f"  {target_rel}: source missing ({stem}.png)")
         return
-    if not target.exists():
-        print(f"  {target_rel}: no existing file to take the size from, skipped")
-        return
-    with Image.open(target) as existing:
-        box = existing.size
-    logical = (ICON_LOGICAL_PX, ICON_LOGICAL_PX) if is_icon else box
+    is_icon = mode is True
+    if is_icon:
+        logical = (ICON_LOGICAL_PX, ICON_LOGICAL_PX)
+        box = (ICON_LOGICAL_PX * ICON_EXPORT_SCALE, ICON_LOGICAL_PX * ICON_EXPORT_SCALE)
+    elif isinstance(mode, str):
+        logical = tuple(int(v) for v in mode.split("x"))
+        box = logical
+    else:
+        if not target.exists():
+            print(f"  {target_rel}: no existing file to take the size from, skipped")
+            return
+        with Image.open(target) as existing:
+            box = existing.size
+        logical = box
 
     art = fit(cut_background(Image.open(source).convert("RGBA")), logical)
     if is_icon:
-        art = art.resize(
-            (logical[0] * ICON_EXPORT_SCALE, logical[1] * ICON_EXPORT_SCALE), Image.NEAREST
-        )
+        art = art.resize(box, Image.NEAREST)
     if art.size != box:
-        raise ValueError(f"{target_rel}: built {art.size}, file is {box}")
+        raise ValueError(f"{target_rel}: built {art.size}, expected {box}")
+    target.parent.mkdir(parents=True, exist_ok=True)
     art.save(target)
     used = art.split()[3].getbbox()
     print(f"  {target_rel}: {art.size}, subject {used[2] - used[0]}x{used[3] - used[1]}")
