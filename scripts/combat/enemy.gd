@@ -53,6 +53,7 @@ static func derive_elite_stats(base: Dictionary, elite: Dictionary) -> Dictionar
 	derived["size_scale"] = size_mult
 	derived["name_ko"] = String(elite.get("name_ko", base.get("name_ko", "")))
 	derived["name_en"] = String(elite.get("name_en", base.get("name_en", "")))
+	derived["name_en"] = String(elite.get("name_en", base.get("name_en", "")))
 	# N5-5: elites drop reward chests and resist the nuke pickup's full damage.
 	derived["is_elite"] = true
 	return derived
@@ -171,7 +172,7 @@ func setup(
 	feedback: Dictionary = {}
 ) -> void:
 	monster_id = id
-	name_ko = String(stats.get("name_ko", ""))
+	name_ko = UiLocale.data_name(stats, "")
 	hp = float(stats.get("hp", 1.0))
 	_damage = float(stats.get("damage", 0.0))
 	_speed = float(stats.get("speed", 0.0))

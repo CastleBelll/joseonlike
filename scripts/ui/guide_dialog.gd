@@ -137,9 +137,11 @@ func open(pages: Array[Dictionary]) -> void:
 func _show_page() -> void:
 	_dwell_left = 0.0
 	var page: Dictionary = _pages[_index]
-	_name_label.text = String(page.get("name", ""))
-	_body_label.text = String(page.get("text", ""))
-	_next_button.text = "가자" if _index == _pages.size() - 1 else "다음"
+	_name_label.text = UiLocale.t(String(page.get("name", "")))
+	_body_label.text = UiLocale.t(String(page.get("text", "")))
+	_next_button.text = (
+		UiLocale.t("가자") if _index == _pages.size() - 1 else UiLocale.t("다음")
+	)
 	# N9-14: an await page hides the button — the ACTION advances it — and
 	# releases the input blocker so the player can actually play.
 	var await_action: String = String(page.get("await", ""))

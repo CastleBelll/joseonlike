@@ -55,7 +55,12 @@ static func summary(profile: Dictionary) -> Dictionary:
 
 
 static func buildings() -> Array[Dictionary]:
-	return BUILDINGS.duplicate(true)
+	# Translated per call, not in BUILDINGS: a const is built once at load,
+	# so a name localised there would freeze at whatever locale started.
+	var localized: Array[Dictionary] = BUILDINGS.duplicate(true)
+	for building: Dictionary in localized:
+		building["label"] = UiLocale.t(String(building.get("label", "")))
+	return localized
 
 
 ## Tap response for a building spot: the not-ready notice, or "" once the
@@ -63,7 +68,7 @@ static func buildings() -> Array[Dictionary]:
 static func building_notice(building: Dictionary) -> String:
 	if bool(building.get("ready", false)):
 		return ""
-	return NOT_READY_NOTICE
+	return UiLocale.t(NOT_READY_NOTICE)
 
 
 ## Scene a ready building routes to; "" for a placeholder spot.

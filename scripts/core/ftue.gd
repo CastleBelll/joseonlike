@@ -146,7 +146,7 @@ static func explain_mod_cards(cards: Array[Dictionary]) -> Dictionary:
 			continue
 		explained = true
 		var copy: Dictionary = card.duplicate()
-		copy["desc"] = MOD_EXPLAIN_LINE + "\n" + String(card.get("desc", ""))
+		copy["desc"] = UiLocale.t(MOD_EXPLAIN_LINE) + "\n" + String(card.get("desc", ""))
 		updated.append(copy)
 	return {"cards": updated, "explained": explained}
 

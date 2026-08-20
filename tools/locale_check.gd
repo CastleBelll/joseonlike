@@ -29,8 +29,8 @@ func _ready() -> void:
 ## reordered one prints the wrong number instead of failing.
 func _check_table() -> void:
 	var mismatched: int = 0
-	for korean: String in UiLocale.COMBAT_EN:
-		var english: String = String(UiLocale.COMBAT_EN[korean])
+	for korean: String in UiLocale.INLINE_EN:
+		var english: String = String(UiLocale.INLINE_EN[korean])
 		if _specifiers(korean) != _specifiers(english):
 			push_error(
 				"locale_check: '%s' -> '%s' changes its format specifiers"
@@ -40,7 +40,7 @@ func _check_table() -> void:
 	if mismatched > 0:
 		_failed = true
 	print("LOCALE table: %d entries, %d with mismatched specifiers" % [
-		UiLocale.COMBAT_EN.size(), mismatched
+		UiLocale.INLINE_EN.size(), mismatched
 	])
 
 
@@ -58,6 +58,13 @@ func _check_call_sites() -> void:
 		"res://scripts/combat/run_flow.gd",
 		"res://scripts/ui/combat_hud.gd",
 		"res://scripts/ui/level_up_popup.gd",
+		"res://scripts/core/camp.gd",
+		"res://scripts/core/ftue.gd",
+		"res://scripts/ui/camp_screen.gd",
+		"res://scripts/ui/result_screen.gd",
+		"res://scripts/ui/guide_dialog.gd",
+		"res://scripts/ui/move_hint.gd",
+		"res://scripts/ui/achievements_screen.gd",
 	]:
 		var source: String = FileAccess.get_file_as_string(path)
 		var cursor: int = 0
@@ -74,7 +81,7 @@ func _check_call_sites() -> void:
 			if not _has_hangul(literal):
 				continue
 			checked += 1
-			if not UiLocale.COMBAT_EN.has(literal):
+			if not UiLocale.INLINE_EN.has(literal):
 				push_error("locale_check: no translation for '%s' (%s)" % [literal, path])
 				missing += 1
 	print("LOCALE call sites: %d Korean literals, %d untranslated" % [checked, missing])
@@ -95,7 +102,9 @@ func _specifiers(text: String) -> Array[String]:
 
 
 ## Drives the real card writer over every weapon the game can offer, which is
-## where the bulk of the translated text is produced.
+## where the bulk of the translated text is produced. No name exemption any
+## more: since data_name resolves name_en for every catalogue, a Korean name
+## on an English card is a gap rather than a fact of life.
 func _check_cards() -> void:
 	var weapons: Dictionary = _load("res://data/weapons.json")
 	var passives: Dictionary = _load("res://data/passives.json")
@@ -114,26 +123,12 @@ func _check_cards() -> void:
 			if text.is_empty():
 				continue
 			checked += 1
-			if _has_hangul(text) and not _is_only_a_data_name(text, weapons, weapon_id):
+			if _has_hangul(text):
 				push_error("locale_check: %s.%s still Korean: %s" % [weapon_id, field, text])
 				leaked += 1
 	print("LOCALE cards: %d strings checked, %d still Korean" % [checked, leaked])
 	if leaked > 0:
 		_failed = true
-
-
-## A weapon's own name stays Korean in both languages — data carries name_en
-## but the cards deliberately show the Korean name — so a string whose only
-## Hangul IS the name is not a translation gap.
-func _is_only_a_data_name(text: String, weapons: Dictionary, weapon_id: String) -> bool:
-	var stripped: String = text
-	for other_id: String in weapons:
-		if other_id.begins_with("_"):
-			continue
-		var name_ko: String = String((weapons[other_id] as Dictionary).get("name_ko", ""))
-		if not name_ko.is_empty():
-			stripped = stripped.replace(name_ko, "")
-	return not _has_hangul(stripped)
 
 
 func _has_hangul(text: String) -> bool:

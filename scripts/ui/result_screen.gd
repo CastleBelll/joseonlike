@@ -65,7 +65,9 @@ func _ready() -> void:
 ## Show the screen for a finished run. `outcome` is a RunFlow.OUTCOME_*;
 ## `summary` comes from RunFlow.build_summary.
 func open(outcome: String, summary: Dictionary) -> void:
-	_title_label.text = "승리" if outcome == RunFlow.OUTCOME_VICTORY else "패배"
+	_title_label.text = (
+		UiLocale.t("승리") if outcome == RunFlow.OUTCOME_VICTORY else UiLocale.t("패배")
+	)
 	# N6-2: what killed the run, localized — victory never shows the row.
 	var defeated: bool = outcome == RunFlow.OUTCOME_DEFEAT
 	_death_row.visible = defeated
@@ -108,19 +110,19 @@ func _make_body() -> Control:
 	body.offset_right = -BODY_MARGIN
 	body.offset_top = HEADER_HEIGHT
 	body.offset_bottom = -BODY_MARGIN
-	_death_value = _add_row(body, "죽음")
+	_death_value = _add_row(body, UiLocale.t("죽음"))
 	_death_row = _death_value.get_parent() as Control
 	_death_row.visible = false
-	_time_value = _add_row(body, "생존 시간")
-	_kills_value = _add_row(body, "처치")
-	_gold_value = _add_row(body, "엽전")
-	_total_gold_value = _add_row(body, "보유 엽전")
+	_time_value = _add_row(body, UiLocale.t("생존 시간"))
+	_kills_value = _add_row(body, UiLocale.t("처치"))
+	_gold_value = _add_row(body, UiLocale.t("엽전"))
+	_total_gold_value = _add_row(body, UiLocale.t("보유 엽전"))
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_child(spacer)
 	var cta := Button.new()
 	cta.name = "TitleButton"
-	cta.text = "본거지로"
+	cta.text = UiLocale.t("본거지로")
 	cta.custom_minimum_size = Vector2(0.0, CTA_HEIGHT)
 	WoodButton.apply(cta)
 	cta.pressed.connect(_on_cta_pressed)

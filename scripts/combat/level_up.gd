@@ -491,7 +491,7 @@ static func display_name(
 		return UiLocale.t(MOD_NAME)
 	var id: String = String(choice.get("id", ""))
 	var source: Dictionary = passives if String(choice.get("kind", "")) == KIND_PASSIVE else weapons
-	return String((source.get(id, {}) as Dictionary).get("name_ko", id))
+	return UiLocale.data_name(source.get(id, {}) as Dictionary, id)
 
 
 ## The grade a mod result lands on: the base weapon's run grade carries, but
@@ -621,14 +621,14 @@ static func describe(
 			# records it. Knowledge is earned by doing it once.
 			if masked_results.has(result_id):
 				return UiLocale.t("%s → %s (레벨 유지)") % [
-					String((weapons.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
+					UiLocale.data_name(weapons.get(base_id, {}) as Dictionary, base_id),
 					UNKNOWN_RESULT,
 				]
 			var level: int = int(owned_levels.get(base_id, 1))
 			var carried: String = mod_carried_grade(mod, weapons, owned_grades, grades)
 			var line: String = UiLocale.t("%s → %s · 피해 %s→%s (레벨 유지)") % [
-				String((weapons.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
-				String((weapons.get(result_id, {}) as Dictionary).get("name_ko", result_id)),
+				UiLocale.data_name(weapons.get(base_id, {}) as Dictionary, base_id),
+				UiLocale.data_name(weapons.get(result_id, {}) as Dictionary, result_id),
 				_fmt(WeaponGrade.stat_at(
 					weapons.get(base_id, {}) as Dictionary, "damage", level,
 					current_grade(base_id, weapons, owned_grades), grades
@@ -661,7 +661,7 @@ static func describe(
 				else "+%d%%" % int(round(per_stack * 100.0))
 			)
 			return "%s %s (%d/%d)" % [
-				String(passive.get("name_ko", id)), amount, next_stack, max_stacks
+				UiLocale.data_name(passive, id), amount, next_stack, max_stacks
 			]
 	return ""
 

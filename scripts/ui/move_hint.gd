@@ -28,7 +28,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var label := Label.new()
 	label.name = "HintLabel"
-	label.text = HINT_LABEL
+	label.text = UiLocale.t(HINT_LABEL)
 	label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
 	label.add_theme_color_override("font_color", UiPalette.GOLD)
 	label.add_theme_color_override("font_outline_color", UiPalette.INK)

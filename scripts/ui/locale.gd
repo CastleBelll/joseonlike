@@ -73,7 +73,7 @@ static func text(key: String) -> String:
 ## still write `UiLocale.t("투사체 +%s") % value` — and a script checks that,
 ## because `%` fills positionally and a swapped pair silently prints the wrong
 ## numbers rather than failing.
-const COMBAT_EN := {
+const INLINE_EN := {
 	"파워 업!": "Power Up!",
 	"보물 상자! (%d/%d)": "Treasure Chest! (%d/%d)",
 	"회생부 발동!": "Revival Charm!",
@@ -168,6 +168,44 @@ const COMBAT_EN := {
 	"저주 초당 %s (%s초) · 사망 시 %d마리 전염": "Curse %s per second (%ss) · spreads to %d on death",
 	"봉인 %d중첩 시 %s배 폭발": "At %d seal stacks, bursts for x%s",
 	"피해의 %d%% 흡혈": "Heals %d%% of damage dealt",
+	"본거지": "Camp",
+	"출정 횟수": "Runs",
+	"최고 생존": "Best Time",
+	"최고 처치": "Best Kills",
+	"보스 처치": "Bosses Slain",
+	"난이도 ‹%s›": "Difficulty ‹%s›",
+	"길이 ‹%s›": "Length ‹%s›",
+	"아직 다른 선택지가 없다": "Nothing else to choose yet",
+	"수행자 선택": "Choose Cultivator",
+	"출정": "Set Out",
+	"수련": "Training",
+	"괴이록": "Bestiary",
+	"업적": "Achievements",
+	"무기 도감": "Weapon Codex",
+	"훈련장": "Training Ground",
+	"지역 선택": "Choose Region",
+	"준비 중": "Not ready",
+	"승리": "Victory",
+	"패배": "Defeat",
+	"죽음": "Killed by",
+	"생존 시간": "Survived",
+	"처치": "Kills",
+	"엽전": "Coins",
+	"보유 엽전": "Coins Held",
+	"본거지로": "To Camp",
+	"%d냥": "%d coins",
+	"가자": "Let's go",
+	"다음": "Next",
+	"끌어서 이동": "Drag to move",
+	"첫 개조! 재료로 무기를 바꾼다": "First remake! Trade materials for a new weapon",
+	"첫 파워 업! 하나를 골라 강해지자": "First power up! Pick one and grow",
+	"우치": "Uchi",
+	"정령왕의 저주가 짙군... 숲 전체가 영원한 밤에 잠겼어.\n놈을 봉인하려면 우선 살아남아야 한다.": "The Spirit King's curse runs deep... the whole forest has sunk into endless night.\nTo seal him, first you survive.",
+	"먼저 움직여보자.\n화면 아무 곳이나 끌어서, 저만치 걸어가 봐.": "Move first.\nDrag anywhere on the screen and walk over there.",
+	"걸음은 됐다. 이제 숨을 고르고 들어라.\n곧 괴이가 몰려온다.": "Walking will do. Catch your breath and listen.\nThe creatures are coming.",
+	"부적은 알아서 날아간다 — 겨눌 것 없이 자리만 잡아.\n오는 놈을 하나 베어봐라.": "The talismans fly on their own — no aiming, just position.\nCut down one that comes.",
+	"오른쪽 아래 빛나는 단추가 내 비장의 술법이다.\n축지는 위기 탈출, 벽사진은 사방 일소 — 하나 눌러봐.": "Those glowing buttons are my hidden arts.\nChukji escapes danger, Byeoksajin sweeps every side — press one.",
+	"괴이를 잡아 기가 차면 새 술법을 고를 수 있다.\n이제 네 밤이다. 가자.": "Slay creatures, fill your energy, and you may choose a new art.\nThe night is yours now. Go.",
 }
 
 
@@ -177,4 +215,15 @@ const COMBAT_EN := {
 static func t(korean: String) -> String:
 	if current_locale == DEFAULT_LOCALE:
 		return korean
-	return String(COMBAT_EN.get(korean, korean))
+	return String(INLINE_EN.get(korean, korean))
+
+## A data entry's own name in the current locale. Every catalogue in data/
+## already carries name_ko and name_en side by side; several screens still
+## reached straight for name_ko, so a translated label printed an untranslated
+## value next to it — "Difficulty ‹순행›". Falls back to the Korean, which is
+## what those call sites did before.
+static func data_name(entry: Dictionary, fallback: String = "-") -> String:
+	var localized: Variant = entry.get("name_" + current_locale)
+	if localized is String and not (localized as String).is_empty():
+		return localized
+	return String(entry.get("name_" + DEFAULT_LOCALE, fallback))

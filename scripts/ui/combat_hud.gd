@@ -222,7 +222,7 @@ func build_actives(actives: Array[Dictionary]) -> void:
 		var button := ActiveButton.new()
 		var active_id: String = String(active.get("id", ""))
 		button.name = "Active_" + active_id
-		button.skill_name = String(active.get("name_ko", active_id))
+		button.skill_name = UiLocale.data_name(active, active_id)
 		button.custom_minimum_size = Vector2(ACTIVE_BUTTON_SIZE, ACTIVE_BUTTON_SIZE)
 		button.pressed.connect(
 			func() -> void: active_pressed.emit(active_id)

@@ -194,7 +194,7 @@ func _reward_text(row: Dictionary) -> String:
 		parts.append(grants + " " + UiLocale.text("achievements.unlocked"))
 	var gold: int = int(row["reward_gold"])
 	if gold > 0:
-		parts.append("%d냥" % gold)
+		parts.append(UiLocale.t("%d냥") % gold)
 	return " · ".join(parts)
 
 

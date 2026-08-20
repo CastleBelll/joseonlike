@@ -694,7 +694,7 @@ func _on_telegraph_erupted(at: Vector2, radius: float, inner: float) -> void:
 		var attack: Dictionary = telegraph.get_meta("attack", {})
 		if not BossPatterns.covers(_player.global_position, at, radius, inner):
 			return
-		_player.take_hit(float(attack.get("damage", 0.0)), String(attack.get("name_ko", "")))
+		_player.take_hit(float(attack.get("damage", 0.0)), UiLocale.data_name(attack, ""))
 		return
 
 
@@ -1057,7 +1057,7 @@ func _set_owned_grade(weapon_id: String, grade: String) -> void:
 		node.set_grade(grade)
 	if WeaponGrade.is_top(_grade_ladder, grade) and not was_top:
 		_float_label(UiLocale.t("%s %s 등급!") % [
-			String((_weapons_data.get(weapon_id, {}) as Dictionary).get("name_ko", weapon_id)),
+			UiLocale.data_name(_weapons_data.get(weapon_id, {}) as Dictionary, weapon_id),
 			UiLocale.t(String(LevelUp.GRADE_KO.get(grade, grade))),
 		])
 
@@ -1130,7 +1130,9 @@ func _pause_build_summary() -> Dictionary:
 		var grade: String = LevelUp.current_grade(weapon_id, _weapons_data, _owned_grades)
 		weapons.append({
 			"id": weapon_id,
-			"name": String((_weapons_data.get(weapon_id, {}) as Dictionary).get("name_ko", weapon_id)),
+			"name": UiLocale.data_name(
+				_weapons_data.get(weapon_id, {}) as Dictionary, weapon_id
+			),
 			"level": int(_owned_levels[weapon_id]),
 			"grade": grade,
 			"grade_ko": UiLocale.t(
@@ -1144,7 +1146,7 @@ func _pause_build_summary() -> Dictionary:
 			continue
 		var passive: Dictionary = _passives_data.get(passive_id, {})
 		passives.append({
-			"name": String(passive.get("name_ko", passive_id)),
+			"name": UiLocale.data_name(passive, passive_id),
 			"stacks": stacks,
 			"max": int(passive.get("max_stacks", 0)),
 		})
@@ -1220,9 +1222,9 @@ func _evolution_lines() -> Array[String]:
 		var level: int = int(_owned_levels[base_id])
 		var gate: String = "" if level >= need else UiLocale.t("  Lv.%d 필요") % need
 		lines.append("%s → %s · %s%s%s" % [
-			String((_weapons_data.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
-			String((_weapons_data.get(result_id, {}) as Dictionary).get("name_ko", result_id)),
-			String((_loot_data.get(loot_id, {}) as Dictionary).get("name_ko", loot_id)),
+			UiLocale.data_name(_weapons_data.get(base_id, {}) as Dictionary, base_id),
+			UiLocale.data_name(_weapons_data.get(result_id, {}) as Dictionary, result_id),
+			UiLocale.data_name(_loot_data.get(loot_id, {}) as Dictionary, loot_id),
 			" ✓" if held else UiLocale.t(" 필요"),
 			gate,
 		])
@@ -1393,7 +1395,7 @@ func _on_loot_collected(orb: XpOrb) -> void:
 			# a special material is banked long before its recipe unlocks —
 			# the card needs the BASE weapon at level_required. Say which
 			# level is still missing instead of a silent "획득".
-			_float_label(_material_cue(loot_id, String(stats.get("name_ko", loot_id))))
+			_float_label(_material_cue(loot_id, UiLocale.data_name(stats, loot_id)))
 		return
 	var gained: int = _add_gold(Loot.salvage_gold(_loot_data, loot_id))
 	if bool(stats.get("special", false)):
@@ -1429,7 +1431,7 @@ func _material_cue(loot_id: String, loot_name: String) -> String:
 			best_gap = gap
 			best_line = UiLocale.t("%s · %s Lv.%d에서 개조") % [
 				loot_name,
-				String((_weapons_data.get(base_id, {}) as Dictionary).get("name_ko", base_id)),
+				UiLocale.data_name(_weapons_data.get(base_id, {}) as Dictionary, base_id),
 				need,
 			]
 	return best_line if not best_line.is_empty() else UiLocale.t("%s 획득") % loot_name
@@ -1516,7 +1518,7 @@ func _collect_field_passive(passive_id: String) -> void:
 	_passive_stacks[passive_id] = int(_passive_stacks.get(passive_id, 0)) + 1
 	_refresh_run_scalars()
 	_refresh_weapon_scales()
-	_float_label("%s +1" % String(entry.get("name_ko", passive_id)))
+	_float_label("%s +1" % UiLocale.data_name(entry, passive_id))
 
 
 ## N9-57 (owner: "무언가가 있다는 화살표 표시나 이런게 필요할거고"). Points at

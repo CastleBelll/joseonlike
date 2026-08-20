@@ -411,7 +411,7 @@ func _build_owned_row(owned_levels: Dictionary, weapons: Dictionary) -> void:
 		else:
 			# Missing-icon fallback, same rule as the card wells.
 			var glyph := _label(
-				String(stats.get("name_ko", weapon_id)).left(1),
+				UiLocale.data_name(stats, weapon_id).left(1),
 				UiPalette.FONT_SIZE_BODY, UiPalette.GOLD
 			)
 			glyph.set_anchors_preset(Control.PRESET_FULL_RECT)

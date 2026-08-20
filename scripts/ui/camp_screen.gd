@@ -126,7 +126,7 @@ func _build_header(summary: Dictionary) -> Control:
 	var header := HBoxContainer.new()
 	header.name = "Header"
 	header.add_theme_constant_override("separation", UiPalette.SPACE_SM)
-	var title := _label("본거지", UiPalette.FONT_SIZE_TITLE, UiPalette.GOLD)
+	var title := _label(UiLocale.t("본거지"), UiPalette.FONT_SIZE_TITLE, UiPalette.GOLD)
 	title.name = "CampTitle"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
@@ -150,10 +150,10 @@ func _build_stats(summary: Dictionary) -> Control:
 	rows.name = "Rows"
 	rows.add_theme_constant_override("separation", UiPalette.SPACE_SM)
 	panel.add_child(rows)
-	_add_stat_row(rows, "출정 횟수", str(int(summary["runs_played"])))
-	_add_stat_row(rows, "최고 생존", String(summary["best_time_text"]))
-	_add_stat_row(rows, "최고 처치", str(int(summary["best_kills"])))
-	_add_stat_row(rows, "보스 처치", str(int(summary["bosses_killed"])))
+	_add_stat_row(rows, UiLocale.t("출정 횟수"), str(int(summary["runs_played"])))
+	_add_stat_row(rows, UiLocale.t("최고 생존"), String(summary["best_time_text"]))
+	_add_stat_row(rows, UiLocale.t("최고 처치"), str(int(summary["best_kills"])))
+	_add_stat_row(rows, UiLocale.t("보스 처치"), str(int(summary["bosses_killed"])))
 	return panel
 
 
@@ -251,11 +251,11 @@ func _refresh_departure_labels() -> void:
 	var length: Dictionary = Difficulty.run_length(
 		_difficulty_config, Difficulty.selected_run_length(_difficulty_config)
 	)
-	_difficulty_button.text = "난이도 ‹%s›" % String(tier.get("name_ko", "-"))
+	_difficulty_button.text = UiLocale.t("난이도 ‹%s›") % UiLocale.data_name(tier)
 	_difficulty_button.tooltip_text = String(tier.get("desc_ko", ""))
 	# Both cycle buttons name what they cycle; the length button used to show
 	# only the value, which read as a stray chip next to a labelled one.
-	_run_length_button.text = "길이 ‹%s›" % String(length.get("name_ko", "-"))
+	_run_length_button.text = UiLocale.t("길이 ‹%s›") % UiLocale.data_name(length)
 	_run_length_button.tooltip_text = String(length.get("desc_ko", ""))
 
 
@@ -283,7 +283,7 @@ func _cycle_setting(key: String, ids: Array[String], current: String) -> void:
 	if ids.size() < 2 or SaveService.instance == null:
 		# A single option has nothing to cycle to; say so instead of no-opping
 		# silently, so a locked ladder does not read as a dead button.
-		_show_notice("아직 다른 선택지가 없다")
+		_show_notice(UiLocale.t("아직 다른 선택지가 없다"))
 		return
 	var index: int = maxi(ids.find(current), 0)
 	SaveService.instance.set_setting(key, ids[(index + 1) % ids.size()])
@@ -299,7 +299,7 @@ func _build_menu() -> Control:
 
 	var select := Button.new()
 	select.name = "SelectButton"
-	select.text = "수행자 선택"
+	select.text = UiLocale.t("수행자 선택")
 	select.custom_minimum_size = Vector2(0.0, SELECT_BUTTON_HEIGHT)
 	WoodButton.apply(select)
 	select.pressed.connect(_on_select_pressed)
@@ -307,7 +307,7 @@ func _build_menu() -> Control:
 
 	var depart := Button.new()
 	depart.name = "DepartButton"
-	depart.text = "출정"
+	depart.text = UiLocale.t("출정")
 	depart.custom_minimum_size = Vector2(0.0, BUTTON_HEIGHT)
 	WoodButton.apply(depart)
 	depart.pressed.connect(_on_depart_pressed)
