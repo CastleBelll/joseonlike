@@ -209,6 +209,7 @@ func _check_combat_cross_references() -> void:
 	_check_loot(monsters, weapons, stages)
 	_check_audio()
 	_check_unlocks()
+	_check_impact()
 	_check_field_passives()
 	_check_difficulties()
 	_check_meta_tree()
@@ -244,6 +245,16 @@ func _check_unlocks() -> void:
 		_load(DATA_DIR + "/characters.json")
 	):
 		_fail("achievements " + issue)
+
+
+## N9-67: hit feel is data, and its ceilings are the part that only shows up in
+## play — a hitstop long enough to hang, or shake that throws the field away.
+func _check_impact() -> void:
+	for issue: String in Impact.data_issues(
+		(_load(DATA_DIR + "/effects.json") as Dictionary).get("hit_feedback", {}),
+		"effects.hit_feedback"
+	):
+		_fail(issue)
 
 
 func _check_field_passives() -> void:

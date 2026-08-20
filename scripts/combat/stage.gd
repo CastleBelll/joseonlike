@@ -139,6 +139,13 @@ var _boss_return_wait: float = 0.0
 ## N9-65: evolutions performed this run, folded into the career counters when
 ## the run banks.
 var _evolutions: int = 0
+## N9-67 hit feel. The hitstop deadline is in REAL milliseconds because a
+## frozen world has a zero delta — a timer counted in delta would never expire
+## and the freeze would be permanent.
+var _hitstop_until_msec: int = 0
+var _hitstop_base_scale: float = 1.0
+var _shake: float = 0.0
+var _shake_time: float = 0.0
 var _boss: Enemy
 var _boss_hp_max: float = 0.0
 # N9-49 boss patterns: the attack table for the live boss and the seconds since
@@ -390,6 +397,7 @@ func _physics_process(delta: float) -> void:
 	_tick_boss_attacks(delta)
 	_tick_field_passives(delta)
 	_tick_minimap(delta)
+	_tick_impact(delta)
 	_refresh_hp_hud()
 	_stream_field_chunks()
 	_tick_boss_return(delta)
@@ -564,6 +572,7 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 	if _guide != null:
 		_guide.notify_action(Ftue.AWAIT_KILL)
 	_play_sfx("kill")
+	_punch(Impact.ELITE_KILL if enemy.is_elite or enemy.is_boss else Impact.KILL)
 	_record_discovery(Bestiary.KIND_MONSTERS, enemy.monster_id)
 	_hud.set_kills(_kills)
 	var puff: DeathPuff = _puff_pool.acquire()
@@ -674,6 +683,10 @@ func _warn_telegraph(
 ## own damage; they never chip the monsters standing in them, which would let a
 ## player farm the boss's attacks.
 func _on_telegraph_erupted(at: Vector2, radius: float, inner: float) -> void:
+	# The ground opening is the heaviest beat in the fight, and it lands
+	# whether or not the player was standing in it — the near miss is part of
+	# what teaches the pattern.
+	_punch(Impact.ERUPT)
 	for child: Node in get_children():
 		var telegraph := child as BossTelegraph
 		if telegraph == null or not telegraph.visible or telegraph.global_position != at:
@@ -715,6 +728,14 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 	var camera: Camera2D = get_viewport().get_camera_2d()
 	if camera != null:
 		camera.zoom = Vector2.ONE
+		# N9-67: and its shake offset, or the result screen sits crooked for as
+		# long as it is open — physics is paused, so nothing would decay it.
+		camera.offset = Vector2.ZERO
+	_shake = 0.0
+	# A run that ends mid-freeze would leave the whole game stopped.
+	if _hitstop_until_msec > 0:
+		_hitstop_until_msec = 0
+		Engine.time_scale = _hitstop_base_scale
 	get_tree().paused = true
 	var summary: Dictionary = RunFlow.build_summary(
 		_run_elapsed, _kills, _gold, _player.last_hit_source
@@ -858,6 +879,7 @@ func _on_hit_landed(amount: float, at: Vector2, boss_hit: bool, crit: bool = fal
 	# N9-52: a crit already reads differently on screen; giving it its own
 	# sound means it also reads differently when the eye is somewhere else.
 	_play_sfx("crit" if crit else "hit")
+	_punch(Impact.BOSS_HIT if boss_hit else (Impact.CRIT if crit else Impact.HIT))
 
 
 ## Every effect goes through here so the null check for node-free harnesses
@@ -1570,6 +1592,52 @@ func _map_unlocked() -> bool:
 	return Unlocks.is_unlocked(SaveService.instance.profile, Unlocks.MAP)
 
 
+## N9-67 (owner: "타격감이 더 중요할거같은데"). One entry point for both effects,
+## so a call site says WHAT happened and the data decides how it feels.
+##
+## Hitstop is skipped whenever the engine is running at anything other than
+## real time: that means a harness is fast-forwarding, and freezing the world
+## on its schedule would both corrupt its measurements and change how its bot
+## plays. Feel is for a person at 1x.
+func _punch(kind: String) -> void:
+	var config: Dictionary = _feedback
+	_shake = Impact.added_shake(_shake, Impact.shake_amount(config, kind), config)
+	var stop: float = Impact.hitstop_sec(config, kind)
+	if stop <= 0.0 or not is_equal_approx(Engine.time_scale, 1.0):
+		return
+	# Never shortens a freeze already running: two hits in the same frame make
+	# one stop, not a stutter.
+	var until: int = Time.get_ticks_msec() + int(stop * 1000.0)
+	if until <= _hitstop_until_msec:
+		return
+	if _hitstop_until_msec == 0:
+		_hitstop_base_scale = Engine.time_scale
+	_hitstop_until_msec = until
+	Engine.time_scale = 0.0
+
+
+func _tick_impact(delta: float) -> void:
+	if _hitstop_until_msec > 0 and Time.get_ticks_msec() >= _hitstop_until_msec:
+		_hitstop_until_msec = 0
+		Engine.time_scale = _hitstop_base_scale
+	if _shake <= 0.0:
+		return
+	_shake_time += delta
+	_shake = Impact.decayed_shake(_shake, delta, _feedback)
+	var camera: Camera2D = get_viewport().get_camera_2d()
+	if camera == null:
+		return
+	camera.offset = Impact.shake_offset(_shake, _shake_time, _shake_scale())
+
+
+func _shake_scale() -> float:
+	if SaveService.instance == null:
+		return 1.0
+	return clampf(
+		float(SaveService.instance.get_setting(SaveProfile.SCREEN_SHAKE_KEY)), 0.0, 1.0
+	)
+
+
 ## N5-5 pickup effects, each applied at collection so the player walked to it.
 ## HEALTH at full HP converts to gold (chosen rule: the drop is never wasted,
 ## and the check runs at collection time so getting hit on the way still heals).
@@ -1633,6 +1701,7 @@ func _execute_nuke() -> void:
 		WeaponEffects.value("burst_ring_sec"), UiPalette.VERMILION, BlastRing.Style.WAVE
 	)
 	_hud.flash_screen(UiPalette.VERMILION, WeaponEffects.value("screen_flash_sec"))
+	_punch(Impact.NUKE)
 	# Collect refs first: killing mutates the spawner's active list.
 	var caught: Array[Enemy] = _spawner.active_enemies().duplicate()
 	var view_size: Vector2 = get_viewport_rect().size

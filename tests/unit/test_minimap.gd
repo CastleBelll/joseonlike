@@ -103,3 +103,17 @@ func test_world_radius_covers_the_field_passive_spawn_ring() -> bool:
 		return false
 	var block: Dictionary = (data as Dictionary).get("field_passive", {})
 	return Minimap.WORLD_RADIUS >= float(block.get("spawn_max_px", 0.0))
+
+
+## N9-67 (owner: "지도에 몬스터는 안나와도돼"). The sheet marks things worth
+## walking to and the ground they sit on — never the enemies. Pinned as a rule
+## rather than left as an omission, so a later "helpful" addition has to argue
+## with a test instead of quietly landing.
+func test_the_sheet_has_no_kind_for_monsters() -> bool:
+	for kind: String in [
+		Minimap.KIND_LOOT, Minimap.KIND_CHEST,
+		Minimap.KIND_PASSIVE, Minimap.KIND_TERRAIN,
+	]:
+		if kind.contains("enemy") or kind.contains("monster") or kind.contains("boss"):
+			return false
+	return true

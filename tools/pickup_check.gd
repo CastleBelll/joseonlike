@@ -105,6 +105,8 @@ func _process(delta: float) -> void:
 		12:
 			await _magnet_scope_probe()
 		13:
+			await _impact_probe()
+		14:
 			print("PICKUP CHECK done")
 			get_tree().quit(0)
 			return
@@ -255,6 +257,37 @@ func _magnet_scope_probe() -> void:
 	for node: XpOrb in [drop, coin]:
 		if node.visible:
 			node.visible = false
+
+
+## N9-67: hitstop and shake are felt, not read, so what is checked here is that
+## they actually FIRE and actually STOP. A freeze that never lifts is the worst
+## possible failure — the game would simply hang — and no unit test can see it,
+## because the timer runs on real milliseconds outside the frozen world.
+func _impact_probe() -> void:
+	var camera: Camera2D = get_viewport().get_camera_2d()
+	_stage._punch(Impact.NUKE)
+	if _stage._shake <= 0.0:
+		push_error("pickup_check: a nuke left the camera unshaken")
+	if not is_zero_approx(Engine.time_scale):
+		push_error("pickup_check: a nuke did not freeze the world")
+	var shaken_at: float = _stage._shake
+	# Real time, because the world is stopped: waiting on the scene tree here
+	# would wait forever.
+	var deadline: int = Time.get_ticks_msec() + 900
+	while Time.get_ticks_msec() < deadline and not is_equal_approx(Engine.time_scale, 1.0):
+		await get_tree().process_frame
+	if not is_equal_approx(Engine.time_scale, 1.0):
+		push_error("pickup_check: the hitstop never lifted — the game is frozen")
+		Engine.time_scale = 1.0
+		return
+	await get_tree().create_timer(0.6).timeout
+	if _stage._shake > 0.0:
+		push_error("pickup_check: the shake never decayed away")
+	elif camera != null and camera.offset.length() > 0.01:
+		push_error("pickup_check: the camera kept its shake offset")
+	else:
+		print("PICKUP impact: froze and lifted, shake %.1f -> 0" % shaken_at)
+
 
 
 func _step_is_chest() -> bool:

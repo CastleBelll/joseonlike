@@ -18,6 +18,9 @@ const VOLUME_KEYS: Array[String] = ["master_volume", "music_volume", "effects_vo
 ## stray drag can never make the control invisible; lowering it IS allowed,
 ## just never to zero.
 const JOYSTICK_OPACITY_KEY := "joystick_opacity"
+## N9-67: screen-shake strength, 0 turns it off entirely. Shake is the one
+## effect some people genuinely cannot tolerate, so it ships with a dial.
+const SCREEN_SHAKE_KEY := "screen_shake"
 const JOYSTICK_OPACITY_MIN := 0.2
 const JOYSTICK_OPACITY_MAX := 1.0
 
@@ -32,6 +35,7 @@ static func default_profile() -> Dictionary:
 			"music_volume": 1.0,
 			"effects_volume": 1.0,
 			"joystick_opacity": JOYSTICK_OPACITY_MAX,
+			"screen_shake": 1.0,
 			"locale": UiLocale.DEFAULT_LOCALE,
 			# N9-22 difficulty ladder + run length; sanitized against the data
 			# on load so a hand-edited save cannot start a locked night.
@@ -178,6 +182,11 @@ static func clamp_settings(settings: Dictionary) -> Dictionary:
 	result[JOYSTICK_OPACITY_KEY] = clampf(
 		float(settings.get(JOYSTICK_OPACITY_KEY, defaults[JOYSTICK_OPACITY_KEY])),
 		JOYSTICK_OPACITY_MIN, JOYSTICK_OPACITY_MAX
+	)
+	# N9-67: 0 turns shake off, 1 is full. Clamped like every other dial so a
+	# hand-edited save cannot ask for a camera that leaves the screen.
+	result[SCREEN_SHAKE_KEY] = clampf(
+		float(settings.get(SCREEN_SHAKE_KEY, defaults[SCREEN_SHAKE_KEY])), 0.0, 1.0
 	)
 	var locale: String = String(settings.get("locale", ""))
 	result["locale"] = locale if locale in SUPPORTED_LOCALES else String(defaults["locale"])

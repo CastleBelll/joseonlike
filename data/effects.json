@@ -8,7 +8,28 @@
     "death_puff_radius_scale": 1.6,
     "player_vignette_sec": 0.35,
     "low_hp_threshold": 0.25,
-    "low_hp_pulse_sec": 0.9
+    "low_hp_pulse_sec": 0.9,
+    "_impact_note": "N9-67 타격감. hitstop은 드물고 의미 있는 사건에만 건다 — 평타는 초당 수십 번이라 0이어야 하고, 검증기가 그것을 강제한다. shake는 kind별로 더해지되 max에서 잘리고 decay_per_sec로 선형 감쇠한다. 사용자 설정 screen_shake(0~1)가 최종 진폭에 곱해진다.",
+    "hitstop": {
+      "hit": 0.0,
+      "crit": 0.045,
+      "kill": 0.0,
+      "elite_kill": 0.07,
+      "boss_hit": 0.03,
+      "erupt": 0.09,
+      "nuke": 0.11
+    },
+    "shake": {
+      "max": 7.0,
+      "decay_per_sec": 26.0,
+      "hit": 0.0,
+      "crit": 1.1,
+      "kill": 0.8,
+      "elite_kill": 2.6,
+      "boss_hit": 0.9,
+      "erupt": 4.5,
+      "nuke": 6.0
+    }
   },
   "separation": {
     "weight": 2.0,
