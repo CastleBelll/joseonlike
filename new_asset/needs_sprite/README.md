@@ -19,8 +19,23 @@
 `validate_data`가 실패한다. 투사체 그림은 정사각이 아니라서 파일 모양만으로는
 프레임 수를 알 수 없기 때문에 적는 것이다.
 
-**이펙트**(`asset/effect/…`, `asset/weapon/fx/…`)는 프레임이 정사각이라
-`너비 ÷ 높이`로 스스로 선언한다. 데이터에 적을 것이 없다.
+**이펙트**(`asset/effect/…`)는 프레임이 정사각이라 `너비 ÷ 높이`로 스스로
+선언한다. 프레임 수는 데이터에 적지 않는다.
+
+다만 `impact_*`는 **새로운 이펙트 id**라 등록이 한 번 필요하다.
+`data/effects.json`의 `sprite_effects`에 한 항목, 그리고 그 무기의
+`hit_effect`를 새 id로 바꾼다:
+
+```json
+"impact_beopgeom": {
+  "file": "res://asset/effect/impact_beopgeom.png",
+  "fps": 32.0,
+  "logical_px": 32.0
+}
+```
+
+`logical_px`는 아래 표의 셀 크기와 같은 숫자다. 기존 `hit_*` 다섯 종은
+그대로 두면 되고, 무기가 하나씩 새 id로 옮겨갈 때마다 쓰이지 않게 된다.
 
 투사체는 12fps로 돌고 비행이 1초 미만이라 4프레임이면 충분하다.
 그보다 많으면 플레이어가 못 본다.
@@ -39,3 +54,30 @@
 | `travel_fire_talisman.png` | `asset/weapon/travel/fire_talisman.png` | 18x10 | 4 | 화염 부적. 불길이 따라 흔들린다 |
 | `travel_beopgeom.png` | `asset/weapon/travel/beopgeom.png` | 20x7 | 4 | 법검 검기. 번쩍이면 좋지만 위의 것들보다 급하지 않다 |
 | `travel_bongmageom.png` | `asset/weapon/travel/bongmageom.png` | 20x7 | 4 | 봉마검 검기. 보랏빛이 흐른다 |
+| `impact_old_talisman.png` | `asset/effect/impact_old_talisman.png` | 32x32 | 5 | 낡은 부적 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_gyeolgye.png` | `asset/effect/impact_gyeolgye.png` | 44x44 | 5 | 결계 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_divine_bow.png` | `asset/effect/impact_divine_bow.png` | 32x32 | 5 | 신궁 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_fire_talisman.png` | `asset/effect/impact_fire_talisman.png` | 32x32 | 5 | 화염 부적 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_hwabu.png` | `asset/effect/impact_hwabu.png` | 32x32 | 5 | 화부 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_hwaryeongbu.png` | `asset/effect/impact_hwaryeongbu.png` | 32x32 | 5 | 화령부 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_honbul.png` | `asset/effect/impact_honbul.png` | 32x32 | 5 | 혼불 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_flame_honbul.png` | `asset/effect/impact_flame_honbul.png` | 32x32 | 5 | 화령 혼불 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_hwayeom_gyeolgye.png` | `asset/effect/impact_hwayeom_gyeolgye.png` | 44x44 | 5 | 화염 결계 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_flame_sword.png` | `asset/effect/impact_flame_sword.png` | 32x32 | 5 | 화염검 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_noebu.png` | `asset/effect/impact_noebu.png` | 32x32 | 5 | 뇌부 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_noejeongbu.png` | `asset/effect/impact_noejeongbu.png` | 32x32 | 5 | 뇌정부 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_noe_sinjang.png` | `asset/effect/impact_noe_sinjang.png` | 32x32 | 5 | 뇌신장 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_jineon.png` | `asset/effect/impact_jineon.png` | 44x44 | 5 | 진언 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_bongin_jineon.png` | `asset/effect/impact_bongin_jineon.png` | 44x44 | 5 | 봉인 진언 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_sal.png` | `asset/effect/impact_sal.png` | 32x32 | 5 | 살 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_gwisal.png` | `asset/effect/impact_gwisal.png` | 32x32 | 5 | 귀살 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_ghost_staff.png` | `asset/effect/impact_ghost_staff.png` | 32x32 | 5 | 귀철 석장 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_ghost_sword.png` | `asset/effect/impact_ghost_sword.png` | 32x32 | 5 | 귀철검 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_beopgeom.png` | `asset/effect/impact_beopgeom.png` | 32x32 | 5 | 법검 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_bongmageom.png` | `asset/effect/impact_bongmageom.png` | 32x32 | 5 | 봉마검 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_seokjang.png` | `asset/effect/impact_seokjang.png` | 32x32 | 5 | 석장 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_sinjang.png` | `asset/effect/impact_sinjang.png` | 32x32 | 5 | 신장 소환 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_sword.png` | `asset/effect/impact_sword.png` | 32x32 | 5 | 환도 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_twin_sword.png` | `asset/effect/impact_twin_sword.png` | 32x32 | 5 | 쌍환도 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_sharp_sword.png` | `asset/effect/impact_sharp_sword.png` | 32x32 | 5 | 예리한 환도 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
+| `impact_bow.png` | `asset/effect/impact_bow.png` | 32x32 | 5 | 각궁 타격. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
