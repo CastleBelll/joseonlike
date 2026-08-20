@@ -121,12 +121,12 @@
 
 ### 5.1 캐릭터 아트 계약 (오너 락, 위반 시 리테이크)
 
-**레퍼런스는 `new_asset/`의 오너 제공 PNG가 1순위다** (`basic.png`,
+**레퍼런스는 `new_asset/owner/`의 오너 제공 PNG가 1순위다** (`basic.png`,
 `Character.png`, UUID 파일 4종). 설화 캡처 `_01`의 설아/무운 카드 초상이
 2순위. 이 둘을 보지 않고 생성 금지.
 
-**도사는 오너가 직접 확정했다**: `new_asset/taoist.png`(전신+초상),
-`new_asset/taoist_walk.png`(8프레임 걷기). 그린스크린 배경. 이 시트가
+**도사는 오너가 직접 확정했다**: `new_asset/owner/taoist.png`(전신+초상),
+`new_asset/owner/taoist_walk.png`(8프레임 걷기). 그린스크린 배경. 이 시트가
 도사의 최종본이며 재생성 대상이 아니다 — 크로마키·정렬·다운스케일만
 한다. 이후 캐릭터도 같은 방식(오너 시트 → 가공)을 우선한다.
 

@@ -1,7 +1,7 @@
 """Build projectile travel sprites and elemental hit strips (N9-3f, art
 pass N9-5).
 
-Sources are owner-dropped packs in ``new_asset/`` and are never loaded by
+Sources are owner-dropped packs in ``new_asset/owner/`` and are never loaded by
 Godot directly. Every sprite points right so Projectile can rotate it to the
 flight direction.
 
@@ -21,8 +21,8 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = Path(__file__).resolve().parent
-BULLETS = ROOT / "new_asset" / "500 Bullet 24x24 Free"
-IMPACTS = ROOT / "new_asset" / "Retro Impact Effect Pack 5"
+BULLETS = ROOT / "new_asset" / "owner" / "500 Bullet 24x24 Free"
+IMPACTS = ROOT / "new_asset" / "owner" / "Retro Impact Effect Pack 5"
 CELL = 24
 IMPACT_CELL = 64
 

@@ -1,6 +1,6 @@
 """Pickup sprite extraction (N6-5).
 
-Sources are owner-dropped packs in new_asset/ (never loaded by the game):
+Sources are owner-dropped packs in new_asset/owner/ (never loaded by the game):
 - health.png <- "Pixel UI pack 3/00.png" full red heart (stars/hearts row)
 - nuke.png   <- "Trap and Weapon/Trap and Weapon/Bomb.png" frame 0
 
@@ -34,7 +34,7 @@ def night_tint(image: Image.Image) -> Image.Image:
 
 def build_health() -> None:
     sheet = Image.open(
-        ROOT / "new_asset" / "Pixel UI pack 3" / "00.png"
+        ROOT / "new_asset" / "owner" / "Pixel UI pack 3" / "00.png"
     ).convert("RGBA")
     heart = sheet.crop((112, 106, 130, 128))
     heart = heart.crop(heart.getbbox())
@@ -43,7 +43,7 @@ def build_health() -> None:
 
 def build_nuke() -> None:
     sheet = Image.open(
-        ROOT / "new_asset" / "Trap and Weapon" / "Trap and Weapon" / "Bomb.png"
+        ROOT / "new_asset" / "owner" / "Trap and Weapon" / "Trap and Weapon" / "Bomb.png"
     ).convert("RGBA")
     bomb = sheet.crop((0, 0, 32, 32))
     bomb = bomb.crop(bomb.getbbox())

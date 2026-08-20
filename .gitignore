@@ -37,3 +37,11 @@ export_credentials.cfg
 
 .vercel
 .env*
+
+# N9-74: owner-sourced asset packs live in new_asset/owner/ and stay OUT of the
+# repo — they are large third-party source material, and the game never loads
+# anything under new_asset/ directly. Reorganising the drop box once staged
+# 4,478 pack files by accident; this makes that impossible rather than
+# careful. The handful of owner files already tracked stay tracked: a gitignore
+# rule does not apply to files git already knows about.
+new_asset/owner/

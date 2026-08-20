@@ -113,7 +113,7 @@ Avoid: daylight green, vivid emerald, neon, realistic painting, smooth vector ar
 
 The four conditioning images were the two specified gameplay screenshots,
 `asset/characters/taoist/idle.png`, and the owner's chunky pixel-style character
-reference from `new_asset/character`.
+reference from `new_asset/owner/character`.
 
 ## Rebuild
 

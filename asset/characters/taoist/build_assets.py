@@ -6,8 +6,8 @@ from PIL import Image, ImageDraw
 
 
 ROOT = Path(__file__).resolve().parents[3]
-SOURCE = ROOT / "new_asset" / "taoist.png"
-WALK_SOURCE = ROOT / "new_asset" / "taoist_walk.png"
+SOURCE = ROOT / "new_asset" / "owner" / "taoist.png"
+WALK_SOURCE = ROOT / "new_asset" / "owner" / "taoist_walk.png"
 OUT = ROOT / "asset" / "characters" / "taoist"
 PORTRAIT = OUT / "portrait.png"
 LOGICAL_SIZE = (40, 40)

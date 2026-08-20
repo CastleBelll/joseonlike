@@ -71,13 +71,13 @@ Details and known runner gaps: [docs/CI.md](docs/CI.md).
 ## 5. Assets — pipeline, not freeze (revised 2026-08-14)
 
 Art direction: side-view pixel art anchored to the owner-supplied reference
-images in `new_asset/` (chunky proportions, 1px outline, flat cel shading;
+images in `new_asset/owner/` (chunky proportions, 1px outline, flat cel shading;
 the anchor set may be replaced by the owner — the folder's current PNGs are
 authoritative). Sprites face left/right only; left is an in-engine mirror of
 right.
 
 - **Character sprites** are generated in a dedicated asset worktree session
-  (codex) from the `new_asset/` style references — never inside a gameplay
+  (codex) from the `new_asset/owner/` style references — never inside a gameplay
   feature commit. Walk cycles must be frame-consistent (derived from one base
   sprite, not independently generated frames).
 - **Weapons, props, effects**: free third-party assets; licences go in

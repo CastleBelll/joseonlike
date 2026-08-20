@@ -1,6 +1,6 @@
 """Cut the owner's taoist walk sheet into the engine's strip format.
 
-Source: new_asset/taoist_walk.png — eight background-free frames laid out 4x2.
+Source: new_asset/owner/taoist_walk.png — eight background-free frames laid out 4x2.
 Output: asset/characters/taoist/walk.png — one horizontal strip of square
 frames at the 16x NEAREST export scale SpriteSheet expects (it reads the frame
 count as width / height, so the strip must stay exactly square-per-frame).
@@ -23,7 +23,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[3]
-SOURCE = ROOT / "new_asset" / "taoist_walk.png"
+SOURCE = ROOT / "new_asset" / "owner" / "taoist_walk.png"
 TARGET = ROOT / "asset" / "characters" / "taoist" / "walk.png"
 REFERENCE = ROOT / "asset" / "characters" / "taoist" / "idle.png"
 

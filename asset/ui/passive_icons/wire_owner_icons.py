@@ -1,7 +1,7 @@
-"""Wire the owner's new_asset/skill drop into the game (N9-17).
+"""Wire the owner's new_asset/owner/skill drop into the game (N9-17).
 
 The owner dropped 16 authored 512x512 icons. This copies them to their
-game paths under their English ids — the repo never loads new_asset/
+game paths under their English ids — the repo never loads new_asset/owner/
 directly (ASSET_REQUIREMENTS.md). Sources stay untouched.
 
 Targets:
@@ -18,7 +18,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[3]
-SRC = ROOT / "new_asset" / "skill"
+SRC = ROOT / "new_asset" / "owner" / "skill"
 
 # UI icons keep the 512px convention of the existing sets.
 UI_ICONS = {

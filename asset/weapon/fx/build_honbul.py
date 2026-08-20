@@ -1,6 +1,6 @@
 """Rebuild the 혼불 wisp and icon from the owner's blue fire pack.
 
-Source: new_asset/Pixel Fire Asset Pack v2.2/.../Pixel Fire Asset Pack 2 Blue/
+Source: new_asset/owner/Pixel Fire Asset Pack v2.2/.../Pixel Fire Asset Pack 2 Blue/
         Group 4 - 2/Group 4 - 2.png — 14 frames of 32x32.
 
 Two outputs, deliberately different in kind:
@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[3]
 SOURCE = (
     ROOT
     / "new_asset"
+    / "owner"
     / "Pixel Fire Asset Pack v2.2"
     / "Pixel Fire Asset Pack v2.2"
     / "Pixel Fire Asset Pack  Colored"

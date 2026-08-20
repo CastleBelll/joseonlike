@@ -3,7 +3,7 @@
 2026-08-14 오너 결정: **기존 코드·에셋 전면 폐기, 제로 리빌드.**
 근거 문서: `JOSEONLIKE_GDD.md`(기획 SSOT) + `DESIGN.md` v3(디자인 SSOT,
 `example/` 설화 캡처 앵커). 유지 자산: 기획/디자인 문서, `data/*.json`
-스키마(피처별 재검증), `example/`·`new_asset/` 레퍼런스, Neo둥근모 폰트.
+스키마(피처별 재검증), `example/`·`new_asset/owner/` 레퍼런스, Neo둥근모 폰트.
 구 코드는 git 히스토리로만 남는다.
 
 One feature = one session = one commit ([CLAUDE.md](CLAUDE.md)).

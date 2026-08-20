@@ -3,21 +3,34 @@
 **Asset production is frozen.** The owner supplies art and audio. Do not generate, cut,
 commission or "temporarily improve" assets during a feature session.
 
+## Drop box layout (reorganised 2026-08-20)
+
+```
+new_asset/
+  owner/      every pack and file the OWNER sourced — one folder per pack
+  generated/  art generated on request inside this project
+```
+
+Two folders, because the two have different standing. Owner packs are source
+material with their own licensing; generated files are this project's output
+and can be re-made from a prompt. Build scripts read from `new_asset/owner/…`;
+nothing under either folder is ever loaded by the game directly.
+
 ## Owner drop box (2026-08-14)
 
-The owner sources art himself and drops it into `new_asset/`. Features ship with rough
+The owner sources art himself and drops it into `new_asset/owner/`. Features ship with rough
 placeholders and the art is wired in afterwards as its own commit.
 
-- Drop raw files anywhere under `new_asset/` — any resolution, green screen or
+- Drop raw files anywhere under `new_asset/owner/` — any resolution, green screen or
   transparent, sheet or single frame. Naming hint only: `<subject>.png`,
   `<subject>_walk.png`.
 - Processing to game-ready assets (chroma key, area downscale, palette quantization,
   frame strip assembly) happens in a separate asset commit; the source file stays in
-  `new_asset/` untouched.
+  `new_asset/owner/` untouched.
 - Game-ready output lives at `asset/characters/<id>/{idle,walk,portrait}.png`,
   `asset/weapon/...`, `asset/drop/...`. Reference pipeline:
   `asset/characters/taoist/build_assets.py`.
-- Nothing in `new_asset/` is ever loaded by the game directly.
+- Nothing in `new_asset/owner/` is ever loaded by the game directly.
 
 When a feature needs art that does not exist:
 
