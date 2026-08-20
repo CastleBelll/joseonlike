@@ -57,7 +57,6 @@
     },
     "evolves_to": "fire_talisman",
     "evolution_only": false,
-    "sprite": "res://asset/weapon/icons/old_talisman.png",
     "milestones": {
       "2": {
         "pierce": 1
@@ -107,7 +106,6 @@
       "dps": 4.0,
       "duration_sec": 3.0
     },
-    "sprite": "res://asset/weapon/icons/fire_talisman.png",
     "milestones": {
       "2": {
         "on_hit_status": {
@@ -162,7 +160,6 @@
       "cooldown_sec": -0.04
     },
     "evolution_only": false,
-    "sprite": "res://asset/weapon/icons/beopgeom.png",
     "pierce_retention": 0.95,
     "milestones": {
       "2": {
@@ -1329,7 +1326,6 @@
     },
     "evolves_to": "twin_sword",
     "evolution_only": false,
-    "sprite": "res://asset/weapon/icons/sword.png",
     "milestones": {
       "5": {
         "pierce": 1
@@ -1355,7 +1351,6 @@
       "cooldown_sec": -0.03
     },
     "evolution_only": true,
-    "sprite": "res://asset/weapon/icons/twin_sword.png",
     "hit_effect": "hit_neutral"
   },
   "sharp_sword": {
@@ -1376,7 +1371,6 @@
       "cooldown_sec": -0.04
     },
     "evolution_only": true,
-    "sprite": "res://asset/weapon/icons/sharp_sword.png",
     "milestones": {
       "5": {
         "pierce": 1
@@ -1404,7 +1398,6 @@
     "evolution_only": true,
     "lifesteal": 0.15,
     "self_drain_hp_per_sec": 2.0,
-    "sprite": "res://asset/weapon/icons/ghost_sword.png",
     "hit_effect": "hit_curse"
   },
   "flame_sword": {
@@ -1425,7 +1418,6 @@
       "cooldown_sec": -0.04
     },
     "evolution_only": true,
-    "sprite": "res://asset/weapon/icons/flame_sword.png",
     "hit_effect": "hit_fire"
   },
   "bow": {
@@ -1447,7 +1439,6 @@
     },
     "evolves_to": "divine_bow",
     "evolution_only": false,
-    "sprite": "res://asset/weapon/icons/bow.png",
     "milestones": {
       "5": {
         "projectile_count": 1
@@ -1473,7 +1464,6 @@
       "cooldown_sec": -0.03
     },
     "evolution_only": true,
-    "sprite": "res://asset/weapon/icons/divine_bow.png",
     "hit_effect": "hit_paper"
   }
 }

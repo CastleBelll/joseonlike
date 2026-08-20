@@ -45,6 +45,7 @@
         "weight": 1.5,
         "props": {
           "campfire": 2.0,
+          "anvil": 1.0,
           "fallen_log": 2.0,
           "rock_small": 2.0,
           "rock_large": 1.5,

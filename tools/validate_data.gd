@@ -81,6 +81,33 @@ const ACTIVE_TYPE_FIELDS: Dictionary = {
 var _errors: int = 0
 
 
+## N9-82: every res:// path anywhere in data must point at something that
+## exists. Ten weapons carried `"sprite": "res://asset/weapon/icons/<id>.png"`
+## against a directory that has never existed — the real icons live in
+## asset/ui/weapon_icons and UiIcons finds them by id, so nothing read the key
+## and nothing complained. The per-field checks below only look at the keys they
+## know about; this one needs no list and so cannot be out of date.
+##
+## Directories are accepted as well as files: monsters.*.sprite names a folder.
+func _check_resource_paths(node: Variant, where: String) -> void:
+	if node is Dictionary:
+		for key: Variant in (node as Dictionary):
+			_check_resource_paths((node as Dictionary)[key], "%s.%s" % [where, key])
+		return
+	if node is Array:
+		for i: int in range((node as Array).size()):
+			_check_resource_paths((node as Array)[i], "%s[%d]" % [where, i])
+		return
+	if node is not String:
+		return
+	var path: String = node
+	if not path.begins_with("res://"):
+		return
+	if FileAccess.file_exists(path) or DirAccess.dir_exists_absolute(path):
+		return
+	_fail("%s points at a path that does not exist: %s" % [where, path])
+
+
 func _init() -> void:
 	var checked: int = 0
 	var dir: DirAccess = DirAccess.open(DATA_DIR)
@@ -93,8 +120,11 @@ func _init() -> void:
 			continue
 		checked += 1
 		var text: String = FileAccess.get_file_as_string(DATA_DIR + "/" + file_name)
-		if JSON.parse_string(text) == null:
+		var parsed: Variant = JSON.parse_string(text)
+		if parsed == null:
 			_fail("invalid JSON in " + file_name)
+			continue
+		_check_resource_paths(parsed, file_name)
 	_check_combat_cross_references()
 	if _errors > 0:
 		print("FAIL %d data validation error(s) across %d json files" % [_errors, checked])
@@ -849,6 +879,17 @@ func _check_props() -> void:
 	var catalog: Dictionary = data.get("props", {})
 	if catalog.is_empty():
 		_fail("props.json 'props' missing or empty")
+	# N9-82: since N9-32 a cluster only draws from its own theme's list, so a
+	# prop that appears in no theme can never be placed. `anvil` sat in the
+	# catalogue with art, a collision box and a break table, and had never once
+	# been on the field.
+	var themed: Dictionary = {}
+	for theme: Variant in (data.get("field", {}) as Dictionary).get("themes", []):
+		for prop_id: String in ((theme as Dictionary).get("props", {}) as Dictionary):
+			themed[prop_id] = true
+	for prop_id: String in catalog:
+		if not themed.has(prop_id):
+			_fail("props.%s is in no theme, so the field can never place it" % prop_id)
 	for prop_id: String in catalog:
 		var prop: Dictionary = catalog[prop_id]
 		var label: String = "props." + prop_id
