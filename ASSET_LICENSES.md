@@ -5,6 +5,7 @@ Every asset under `asset/` must have a row here before it ships. No row, no comm
 | Path | Source | License | Attribution required | Added |
 |---|---|---|---|---|
 | `asset/font/neodgm.ttf` (Neo둥근모) | https://github.com/neodgm/neodgm v1.530 | SIL OFL 1.1 | Credit in-game before release (RZ) | 2026-08-14 (relocated) |
+| `asset/effect/swing_arc.png` | Owner-dropped pack `new_asset/Effects` (sprAttackSwing; copied unmodified — already a square-frame strip) | **UNCONFIRMED** — no license file shipped inside the pack; owner must confirm terms before release | Unknown until confirmed | 2026-08-20 (N9-70) |
 | `asset/sfx/*.wav` (8 effects) | Generated in-repo by `tools/make_sfx.gd` from the synth definitions in that file — no third-party audio | None — original output of this project | None | 2026-08-19 (N9-52) |
 | `asset/effect/blink_puff.png` | Owner-dropped pack `new_asset/Retro Impact Effect Pack 5` (sheet A, row 23; desaturated for engine tinting). explosion/strike_flash sheets dropped N3-18 — back to code-drawn | **UNCONFIRMED** — no license file shipped inside the pack; owner must confirm terms before release | Unknown until confirmed | 2026-08-15 |
 | `asset/effect/hit_{fire,lightning,curse,neutral}.png` | Owner-dropped pack `new_asset/Retro Impact Effect Pack 5` (sheets A/C/B/F, rows 15/9/13/13; native 64px frames assembled by `asset/weapon/build_travel.py`) | **UNCONFIRMED** — no license file shipped inside the pack; owner must confirm terms before release | Unknown until confirmed | 2026-08-18 (N9-3f) |

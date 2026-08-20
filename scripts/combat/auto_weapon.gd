@@ -58,6 +58,12 @@ const TINTS: Dictionary = {
 ## _targeting.multishot_spread_deg (N4-8).
 ## N9-69 impact marks. The ceiling is per weapon: a ward ticking across a
 ## crowd reports dozens of hits a second, and the screen has to stay readable.
+## N9-70 swing crescent: how far out along the reach it sits, and how wide it
+## is drawn relative to that reach.
+const SWING_EFFECT := "swing_arc"
+const SWING_ART_REACH := 0.62
+const SWING_ART_ALPHA := 0.8
+const SWING_ART_SPAN := 0.55
 const MAX_LIVE_MARKS := 14
 const CRIT_MARK_SCALE := 1.45
 const FAN_SPREAD_DEG := 10.0
@@ -111,6 +117,8 @@ var _flash_pool: NodePool
 var _impact_effect: String = ""
 ## N9-69: impact marks currently on screen from THIS weapon, against the cap.
 var _live_marks: int = 0
+## N9-70: the crescent that rides the swing.
+var _swing_art: EffectSprite
 var _impact_pool: NodePool
 # N3-17 effect state: chain-jump bolts and the shockwave camera thump.
 var _bolt_pool: NodePool
@@ -377,6 +385,7 @@ func _fire_arc(enemies: Array[Enemy], positions: Array[Vector2], aim_point: Vect
 		enemy.take_damage(arc_damage, CombatMath.chase_direction(origin, hit_at), knockback)
 		_after_hit(arc_damage)
 		hit_landed.emit(arc_damage, hit_at, boss_hit, _last_crit)
+	_play_swing_art(origin, aim)
 	_arc_flash.flash(
 		origin, aim, arc_rad, _range, _tint(), WeaponEffects.value("arc_sweep_sec")
 	)
@@ -626,6 +635,33 @@ func _mark_hit(_amount: float, at: Vector2, _boss_hit: bool, crit: bool) -> void
 	sprite.scale *= CRIT_MARK_SCALE if crit else 1.0
 	if _player != null:
 		sprite.rotation = (at - _player.global_position).angle()
+
+
+## N9-70 (owner: "근접 공격 이펙트 … 좀 빈약해"). A crescent from the pack sheet
+## rides the leading edge of the swing.
+##
+## The wedge stays and keeps its exact geometry: it IS the hit area, and N3-18
+## says what the player sees has to be what the attack reaches. The crescent is
+## a flourish ON that shape, placed at two thirds of the reach so it reads as
+## the blade passing through rather than as a second, smaller hitbox.
+func _play_swing_art(origin: Vector2, aim: float) -> void:
+	if not EffectSprite.available(SWING_EFFECT):
+		return
+	if _swing_art == null:
+		_swing_art = EffectSprite.new()
+		_swing_art.name = "SwingArt"
+		add_child(_swing_art)
+	_swing_art.play_effect(
+		SWING_EFFECT, origin + Vector2.from_angle(aim) * _range * SWING_ART_REACH,
+		_range * SWING_ART_SPAN, Color(_swing_tint(), SWING_ART_ALPHA)
+	)
+	_swing_art.rotation = aim
+
+
+## Ghostly for 귀신석장, plain white for the ordinary staff — the crescent is
+## the same sheet either way, tinted rather than redrawn.
+func _swing_tint() -> Color:
+	return UiPalette.WEAPON_GHOST if weapon_id.begins_with("ghost") else Color.WHITE
 
 
 func _create_impact_sprite() -> EffectSprite:

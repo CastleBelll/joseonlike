@@ -100,6 +100,11 @@
       "file": "res://asset/effect/hit_phoenix.png",
       "fps": 30.0,
       "logical_px": 44.0
+    },
+    "swing_arc": {
+      "file": "res://asset/effect/swing_arc.png",
+      "fps": 18.0,
+      "logical_px": 20.0
     }
   }
 }
