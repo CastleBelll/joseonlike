@@ -186,6 +186,7 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 
 | Date | Feature | Commit |
 |---|---|---|
+| 2026-08-20 | N9-76 수행자 선택 재배치 (owner: 상단 확대 이미지 + 설명 + 해금 방법, 하단 작은 타일 정렬): full-width row cards replaced by one detail panel (196px portrait well, name+hanja, 칭호, scrolling backstory) over a horizontally scrolling tile strip, so the screen holds its shape as the roster grows instead of running off the bottom at four characters; viewing and selecting split — a locked tile MOVES the panel (its unlock condition under a 해금 방법 heading) but never the saved selection, proven by tools/select_check.tscn which was made to FAIL by reverting `view` to reject locked ids; hanja stand-in in the portrait well where art is missing (warrior/archer); `card_model` gains `description` (backstory, quote fallback); fixed a latent crash carried over from the row cards — the rebuild ran from a tile's own `pressed` signal and freed the emitting button (now detach + queue_free, which also frees the node names); tests 484/484, validate_data PASS, nav_check PASS | — |
 | 2026-08-14 | Full rebuild decision; docs reset (DESIGN v3 / ROADMAP / TASKS) | — |
 | 2026-08-14 | N0-1 repo reset (old code/assets removed, font kept) | 7042085 |
 | 2026-08-14 | N0-2 minimal boot: title stub + test runner + data validator | — |

@@ -13,6 +13,7 @@ const STRINGS := {
 	"select.selected": {"ko": "선택됨", "en": "Selected"},
 	"select.locked": {"ko": "잠김", "en": "Locked"},
 	"select.back": {"ko": "나가기", "en": "Back"},
+	"select.how_to_unlock": {"ko": "해금 방법", "en": "How to unlock"},
 	"settings.title": {"ko": "설정", "en": "Settings"},
 	"settings.tab_game": {"ko": "게임", "en": "Game"},
 	"settings.tab_audio": {"ko": "오디오", "en": "Audio"},
