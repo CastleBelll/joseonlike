@@ -28,7 +28,10 @@ const TEXT_MUTED_ON_DARK := Color("#b0a494")
 const PILL_TEXT := Color("#ffffff")
 
 # In-game world tokens (DESIGN.md §5 dark forest look).
-const FOREST_GROUND := Color("#232b1e")
+## Matches the dominant value of asset/stages/bamboo_forest/ground_tile.png.
+## Only drawn when the tile art is missing, so a drift between the two shows up
+## as the floor changing hue the moment an asset fails to load.
+const FOREST_GROUND := Color("#1b2320")
 const FOREST_SHADOW := Color("#1a2117")
 const ACCENT_TAOIST := Color("#4a7fd6")
 # N2-1 character accents (DESIGN.md §4 수행자 선택, GDD 부록 A palettes):
