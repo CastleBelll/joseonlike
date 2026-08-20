@@ -5,7 +5,12 @@ extends RefCounted
 ## asset/monsters/README.md holds against the 38px player.
 
 const MONSTERS_PATH := "res://data/monsters.json"
-const WALK_FRAME_COUNT := 4
+## N9-75: monsters no longer share one walk length — the owner authored 그슨대
+## with eight frames where the others have four. The contract that matters is
+## that the animation carries every frame the SHEET declares, which is what
+## catches a half-loaded or truncated strip; a fixed number only ever caught
+## somebody drawing a longer cycle.
+const MIN_WALK_FRAMES := 4
 const BOSS_DIR := "res://asset/monsters/dudueori"
 
 ## Expected drawn heights in logical px: opaque-pixel rows / EXPORT_SCALE.
@@ -18,6 +23,16 @@ const EXPECTED_HEIGHTS: Dictionary = {
 const PLAYER_HEIGHT := 38.0
 
 
+## Frames a strip declares by its own shape: square frames, count = width over
+## height. Read from the file rather than from a constant, so the test cannot
+## disagree with the art.
+func _strip_frame_count(path: String) -> int:
+	var texture: Texture2D = load(path)
+	if texture == null or texture.get_height() <= 0:
+		return 0
+	return int(texture.get_width() / texture.get_height())
+
+
 func test_declared_sprite_sets_build_walk_and_idle() -> bool:
 	var dirs: Array[String] = _declared_sprite_dirs()
 	var passed: bool = not dirs.is_empty()
@@ -25,7 +40,9 @@ func test_declared_sprite_sets_build_walk_and_idle() -> bool:
 		var frames: SpriteFrames = Enemy.frames_for(sprite_dir)
 		passed = passed and frames.has_animation(SpriteSheet.ANIM_IDLE)
 		passed = passed and frames.has_animation(SpriteSheet.ANIM_WALK)
-		passed = passed and frames.get_frame_count(SpriteSheet.ANIM_WALK) == WALK_FRAME_COUNT
+		var declared: int = _strip_frame_count(sprite_dir.path_join("walk.png"))
+		passed = passed and declared >= MIN_WALK_FRAMES
+		passed = passed and frames.get_frame_count(SpriteSheet.ANIM_WALK) == declared
 		passed = passed and (
 			frames.get_animation_speed(SpriteSheet.ANIM_WALK) == Enemy.WALK_FPS
 		)

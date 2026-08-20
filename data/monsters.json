@@ -282,6 +282,7 @@
       "damage_per_scale": 3.0,
       "leash_px": 420.0,
       "leash_fade_sec": 1.6
-    }
+    },
+    "sprite": "res://asset/monsters/geuseundae"
   }
 }
