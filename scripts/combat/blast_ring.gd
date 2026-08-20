@@ -12,6 +12,14 @@ signal finished(ring: BlastRing)
 
 enum Style { EXPLOSION, WAVE }
 
+## N9-72 wavefront flares: small sprites ON the expanding rim, at native size.
+## A single sheet stretched to a 200px blast becomes an opaque band that hides
+## whatever is inside it (tried and reverted in N9-70); a scatter of authored-
+## size marks says "the front is here" and hides nothing.
+const FRONT_EFFECT := "hit_lightning"
+const FRONT_FLARES := 7
+const FRONT_FLARE_PX := 30.0
+const FRONT_ALPHA := 0.85
 const RIM_WIDTH_MAX := 5.0
 const RIM_WIDTH_MIN := 1.5
 const RIM_POINTS := 32
@@ -47,6 +55,8 @@ var _duration: float = 0.0
 var _radius: float = 0.0
 var _color: Color = UiPalette.WEAPON_FIRE
 var _style: Style = Style.EXPLOSION
+## N9-72: wavefront flares, built once and reused by this pooled ring.
+var _front_art: Array[EffectSprite] = []
 
 
 func burst(
@@ -59,6 +69,8 @@ func burst(
 	_age = 0.0
 	_color = color
 	_style = style
+	if style == Style.WAVE:
+		_flare_front()
 	queue_redraw()
 
 
@@ -76,6 +88,31 @@ func _draw() -> void:
 		_draw_wave(progress)
 	else:
 		_draw_explosion(progress)
+
+
+## N9-72 (owner: 진언 reads as thin). Marks scattered around the wave's own
+## radius when it fires. Only for WAVE — an explosion already has its fire fill
+## and core, and adding sparks there would just be noise on top of noise.
+##
+## The angles are offset by the blast's position so two shockwaves in the same
+## place do not print identical rings.
+func _flare_front() -> void:
+	if not EffectSprite.available(FRONT_EFFECT) or _radius <= 0.0:
+		return
+	var phase: float = global_position.angle()
+	for i: int in range(FRONT_FLARES):
+		if i >= _front_art.size():
+			var sprite := EffectSprite.new()
+			sprite.name = "Front%d" % i
+			add_child(sprite)
+			_front_art.append(sprite)
+		var angle: float = phase + TAU * float(i) / float(FRONT_FLARES)
+		var at: Vector2 = global_position + Vector2.from_angle(angle) * _radius
+		_front_art[i].play_effect(
+			FRONT_EFFECT, at, FRONT_FLARE_PX, Color(_color, FRONT_ALPHA)
+		)
+		_front_art[i].global_position = at
+		_front_art[i].rotation = angle
 
 
 ## Ease-out expansion: fast opening, soft landing at the true blast radius so
