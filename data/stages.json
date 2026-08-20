@@ -31,7 +31,7 @@
       "guarantee_offset_px": 160.0
     },
     "spawning": {
-      "live_cap": 84,
+      "live_cap": 130,
       "spawn_margin_px": 48.0,
       "despawn_margin_px": 480.0,
       "contact_cooldown_sec": 1.0
@@ -52,199 +52,199 @@
       {
         "at_sec": 30,
         "monster_id": "forest_goblin",
-        "count": 15,
+        "count": 24,
         "interval_sec": 1.19
       },
       {
         "at_sec": 60,
         "monster_id": "forest_goblin",
-        "count": 18,
+        "count": 29,
         "interval_sec": 1.19
       },
       {
         "at_sec": 60,
         "monster_id": "forest_spirit",
-        "count": 8,
+        "count": 13,
         "interval_sec": 1.87
       },
       {
         "at_sec": 90,
         "monster_id": "forest_goblin",
-        "count": 20,
+        "count": 32,
         "interval_sec": 1.02
       },
       {
         "at_sec": 90,
         "monster_id": "forest_spirit",
-        "count": 10,
+        "count": 16,
         "interval_sec": 1.7
       },
       {
         "at_sec": 120,
         "monster_id": "forest_goblin",
-        "count": 20,
+        "count": 32,
         "interval_sec": 0.94
       },
       {
         "at_sec": 120,
         "monster_id": "forest_spirit",
-        "count": 11,
+        "count": 18,
         "interval_sec": 1.53
       },
       {
         "at_sec": 120.0,
         "monster_id": "geuseundae",
-        "count": 1,
+        "count": 2,
         "interval_sec": 1.0
       },
       {
         "at_sec": 140,
         "monster_id": "bamboo_brute_elite",
-        "count": 1,
+        "count": 2,
         "interval_sec": 1.0
       },
       {
         "at_sec": 150,
         "monster_id": "forest_goblin",
-        "count": 22,
+        "count": 35,
         "interval_sec": 0.85
       },
       {
         "at_sec": 150,
         "monster_id": "forest_spirit",
-        "count": 12,
+        "count": 19,
         "interval_sec": 1.36
       },
       {
         "at_sec": 150,
         "monster_id": "bamboo_brute",
-        "count": 8,
+        "count": 13,
         "interval_sec": 1.87
       },
       {
         "at_sec": 175,
         "monster_id": "bamboo_brute_elite",
-        "count": 1,
+        "count": 2,
         "interval_sec": 1.0
       },
       {
         "at_sec": 190,
         "monster_id": "forest_goblin",
-        "count": 25,
+        "count": 40,
         "interval_sec": 0.77
       },
       {
         "at_sec": 190,
         "monster_id": "forest_spirit",
-        "count": 14,
+        "count": 22,
         "interval_sec": 1.27
       },
       {
         "at_sec": 200.0,
         "monster_id": "geuseundae",
-        "count": 1,
+        "count": 2,
         "interval_sec": 1.0
       },
       {
         "at_sec": 210,
         "monster_id": "bamboo_brute_elite",
-        "count": 1,
+        "count": 2,
         "interval_sec": 1.0
       },
       {
         "at_sec": 210,
         "monster_id": "bamboo_brute",
-        "count": 8,
+        "count": 13,
         "interval_sec": 1.7
       },
       {
         "at_sec": 230,
         "monster_id": "forest_goblin",
-        "count": 28,
+        "count": 45,
         "interval_sec": 0.68
       },
       {
         "at_sec": 230,
         "monster_id": "forest_spirit",
-        "count": 15,
+        "count": 24,
         "interval_sec": 1.19
       },
       {
         "at_sec": 250,
         "monster_id": "bamboo_brute_elite",
-        "count": 1,
+        "count": 2,
         "interval_sec": 1.0
       },
       {
         "at_sec": 270,
         "monster_id": "forest_goblin",
-        "count": 32,
+        "count": 51,
         "interval_sec": 0.59
       },
       {
         "at_sec": 270,
         "monster_id": "forest_spirit",
-        "count": 18,
+        "count": 29,
         "interval_sec": 1.02
       },
       {
         "at_sec": 270,
         "monster_id": "bamboo_brute",
-        "count": 10,
+        "count": 16,
         "interval_sec": 1.36
       },
       {
         "at_sec": 280.0,
         "monster_id": "geuseundae",
-        "count": 1,
+        "count": 2,
         "interval_sec": 1.0
       },
       {
         "at_sec": 290,
         "monster_id": "bamboo_brute_elite",
-        "count": 1,
+        "count": 2,
         "interval_sec": 1.0
       },
       {
         "at_sec": 300,
         "monster_id": "forest_goblin",
-        "count": 55,
+        "count": 88,
         "interval_sec": 0.26
       },
       {
         "at_sec": 300,
         "monster_id": "forest_spirit",
-        "count": 32,
+        "count": 51,
         "interval_sec": 0.47
       },
       {
         "at_sec": 300,
         "monster_id": "bamboo_brute",
-        "count": 18,
+        "count": 29,
         "interval_sec": 0.77
       },
       {
         "at_sec": 310,
         "monster_id": "bamboo_brute_elite",
-        "count": 1,
+        "count": 2,
         "interval_sec": 1.0
       },
       {
         "at_sec": 325,
         "monster_id": "bamboo_brute_elite",
-        "count": 1,
+        "count": 2,
         "interval_sec": 1.0
       },
       {
         "at_sec": 340,
         "monster_id": "forest_goblin",
-        "count": 35,
+        "count": 56,
         "interval_sec": 0.77
       },
       {
         "at_sec": 340,
         "monster_id": "forest_spirit",
-        "count": 15,
+        "count": 24,
         "interval_sec": 1.02
       }
     ],
