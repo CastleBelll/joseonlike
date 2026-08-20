@@ -21,6 +21,7 @@ const TEMP_PATH := USER_DIR + TEMP_FILE
 const BUS_MASTER := "Master"
 const BUS_MUSIC := "Music"
 const BUS_EFFECTS := "Effects"
+const ACHIEVEMENTS_PATH := "res://data/achievements.json"
 const BUS_BY_SETTING := {
 	"master_volume": BUS_MASTER,
 	"music_volume": BUS_MUSIC,
@@ -39,6 +40,9 @@ var _write_locked: bool = false
 ## both by the newer-build guard and by every harness that swaps in a throwaway
 ## profile, and one message for both told the reader the wrong thing.
 var _write_lock_reason: String = "writes locked"
+## N9-65: achievements completed by the most recent bank_run, waiting to be
+## shown once on the result screen.
+var _earned_achievements: Array[Dictionary] = []
 
 
 func _init() -> void:
@@ -138,10 +142,41 @@ func mark_bestiary_seen() -> void:
 
 ## Banks a finished run into the permanent profile and saves.
 ## Returns the new permanent gold total for the result screen.
-func bank_run(elapsed_sec: float, kills: int, run_gold: int, boss_killed: bool) -> int:
+## N9-65: the run also folds into the career counters and awards whatever that
+## completed, in the SAME write. Two saves would leave a window where the
+## counters had moved but the achievement they completed had not been given.
+func bank_run(
+	elapsed_sec: float, kills: int, run_gold: int, boss_killed: bool,
+	run: Dictionary = {}
+) -> int:
 	profile = SaveProfile.apply_run_result(profile, elapsed_sec, kills, run_gold, boss_killed)
+	var folded: Dictionary = run.duplicate()
+	folded["character"] = selected_character()
+	folded["kills"] = kills
+	folded["boss_killed"] = boss_killed
+	folded["elapsed_sec"] = elapsed_sec
+	profile = Achievements.fold_run(profile, folded)
+	var result: Dictionary = Achievements.evaluate(profile, achievement_data())
+	profile = result["profile"]
+	_earned_achievements = result["earned"]
 	save_profile()
 	return gold()
+
+
+## Achievement entries that completed on the last banked run, handed over once.
+## The result screen is the only place they are shown, and showing them twice
+## would read as earning them twice.
+func take_earned_achievements() -> Array[Dictionary]:
+	var earned: Array[Dictionary] = _earned_achievements
+	_earned_achievements = []
+	return earned
+
+
+static func achievement_data() -> Dictionary:
+	var parsed: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string(ACHIEVEMENTS_PATH)
+	)
+	return parsed if parsed is Dictionary else {}
 
 
 ## N7-1 명부수 purchase: one pure fold produces the new profile (gold and rank

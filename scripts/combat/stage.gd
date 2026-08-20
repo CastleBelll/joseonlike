@@ -136,6 +136,9 @@ var _duration_sec: float = 0.0
 ## N9-60: seconds until the endless night sends the boss back. Zero when none
 ## is pending.
 var _boss_return_wait: float = 0.0
+## N9-65: evolutions performed this run, folded into the career counters when
+## the run banks.
+var _evolutions: int = 0
 var _boss: Enemy
 var _boss_hp_max: float = 0.0
 # N9-49 boss patterns: the attack table for the live boss and the seconds since
@@ -716,7 +719,18 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 	var summary: Dictionary = RunFlow.build_summary(
 		_run_elapsed, _kills, _gold, _player.last_hit_source
 	)
-	summary["total_gold"] = SaveService.instance.bank_run(_run_elapsed, _kills, _gold, boss_killed)
+	summary["total_gold"] = SaveService.instance.bank_run(
+		_run_elapsed, _kills, _gold, boss_killed,
+		{
+			"victory": outcome == RunFlow.OUTCOME_VICTORY,
+			"level": _run_state.level,
+			"evolutions": _evolutions,
+		}
+	)
+	# N9-65: whatever the run just completed is announced on the result screen.
+	# An achievement that lands silently is one the player never learns the
+	# rule for, and the rule is the reason it exists.
+	summary["earned"] = SaveService.instance.take_earned_achievements()
 	# N9-22: surviving the night opens the next tier of the ladder.
 	if outcome == RunFlow.OUTCOME_VICTORY:
 		var config: Dictionary = Difficulty.load_config()
@@ -940,6 +954,9 @@ func _on_choice_picked(payload: Dictionary) -> void:
 				_run_state.inventory, String(mod.get("loot_id", ""))
 			)
 			_apply_weapon_mod(mod)
+			# N9-65: counted for the 개조의 길 achievement. Recorded where the
+			# mod is actually applied, not where a card was offered.
+			_evolutions += 1
 		_:
 			push_error("stage: unknown popup payload " + str(payload))
 	# N5-5: a chest reward screen consumes no pending level-up.

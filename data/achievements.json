@@ -1,58 +1,86 @@
 {
-  "first_boss": {
-    "name_ko": "첫 보스 처치",
-    "name_en": "First Boss Clear",
-    "counter_key": "boss_defeated",
+  "_note": "N9-65 업적. counter는 프로필의 counters에서 읽고, character가 있으면 그 캐릭터 몫만 센다(예: taoist.victories). grants는 data/unlocks.json의 id이며, 모든 해금은 정확히 하나의 업적이 준다 —아무도 주지 않는 해금은 도달 불가 콘텐츠이고 검증기가 막는다. 골드로는 해금을 살 수 없다(오너 지시).",
+  "bamboo_pathfinder": {
+    "name_ko": "죽림 답파",
+    "name_en": "Bamboo Pathfinder",
+    "desc_ko": "도사로 대나무숲의 밤을 끝까지 넘긴다. 길을 한 번 걸어본 자만이 그 길을 그릴 수 있다.",
+    "desc_en": "Survive the bamboo night as the 도사. Only someone who has walked it can draw it.",
+    "character": "taoist",
+    "counter": "victories",
     "target": 1,
-    "reward": { "type": "gold", "amount": 100 }
+    "grants": "map",
+    "reward_gold": 150
+  },
+  "first_boss": {
+    "name_ko": "첫 괴수 처치",
+    "name_en": "First Boss Felled",
+    "desc_ko": "밤을 지키던 것을 쓰러뜨린다.",
+    "desc_en": "Fell the thing that guards the night.",
+    "counter": "bosses",
+    "target": 1,
+    "reward_gold": 100
   },
   "boss_slayer": {
-    "name_ko": "요괴 사냥꾼",
+    "name_ko": "괴수 사냥꾼",
     "name_en": "Boss Slayer",
-    "counter_key": "boss_defeated",
+    "desc_ko": "밤의 주인을 열 번 쓰러뜨린다.",
+    "desc_en": "Fell the night's master ten times.",
+    "counter": "bosses",
     "target": 10,
-    "reward": { "type": "gold", "amount": 500 }
+    "reward_gold": 500
   },
   "goblin_hunter": {
     "name_ko": "도깨비 사냥꾼",
     "name_en": "Goblin Hunter",
-    "counter_key": "enemy_killed",
+    "desc_ko": "괴이 백을 벤다.",
+    "desc_en": "Cut down a hundred 괴이.",
+    "counter": "kills",
     "target": 100,
-    "reward": { "type": "gold", "amount": 50 }
+    "reward_gold": 50
   },
   "monster_collector": {
-    "name_ko": "요괴 도감 수집가",
+    "name_ko": "괴이 수집가",
     "name_en": "Monster Collector",
-    "counter_key": "enemy_killed",
+    "desc_ko": "괴이 천을 벤다.",
+    "desc_en": "Cut down a thousand 괴이.",
+    "counter": "kills",
     "target": 1000,
-    "reward": { "type": "gold", "amount": 300 }
+    "reward_gold": 300
   },
   "survivor": {
     "name_ko": "생존자",
     "name_en": "Survivor",
-    "counter_key": "run_completed",
+    "desc_ko": "출정을 한 번 마친다. 살아 돌아오든, 그러지 못하든.",
+    "desc_en": "Finish a sortie — whether or not you walk back.",
+    "counter": "runs",
     "target": 1,
-    "reward": { "type": "gold", "amount": 150 }
+    "reward_gold": 150
   },
   "veteran_survivor": {
-    "name_ko": "백전노장",
+    "name_ko": "노련한 생존자",
     "name_en": "Veteran Survivor",
-    "counter_key": "run_completed",
+    "desc_ko": "스무 번 출정한다.",
+    "desc_en": "Set out twenty times.",
+    "counter": "runs",
     "target": 20,
-    "reward": { "type": "gold", "amount": 800 }
+    "reward_gold": 800
   },
   "rising_star": {
-    "name_ko": "떠오르는 도사",
-    "name_en": "Rising Star",
-    "counter_key": "level_reached",
+    "name_ko": "떠오르는 술사",
+    "name_en": "Rising Adept",
+    "desc_ko": "한 판에서 15레벨에 이른다.",
+    "desc_en": "Reach level 15 in a single night.",
+    "counter": "best_level",
     "target": 15,
-    "reward": { "type": "gold", "amount": 200 }
+    "reward_gold": 200
   },
   "weapon_master": {
-    "name_ko": "무구의 달인",
-    "name_en": "Weapon Master",
-    "counter_key": "weapon_evolved",
+    "name_ko": "개조의 길",
+    "name_en": "Path of Reforging",
+    "desc_ko": "무기를 한 번 개조해낸다.",
+    "desc_en": "Reforge a weapon once.",
+    "counter": "evolutions",
     "target": 1,
-    "reward": { "type": "gold", "amount": 250 }
+    "reward_gold": 250
   }
 }

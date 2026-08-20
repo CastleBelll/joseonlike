@@ -57,7 +57,7 @@ func test_buildings_roster_and_meta_routing() -> bool:
 	var routed: Dictionary = {
 		"meta": "res://scenes/meta_tree.tscn",
 		"bestiary": "res://scenes/bestiary.tscn",
-		"unlocks": "res://scenes/unlocks.tscn",
+		"achievements": "res://scenes/achievements.tscn",
 	}
 	for building: Dictionary in buildings:
 		if String(building["label"]).is_empty():

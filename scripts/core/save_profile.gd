@@ -52,6 +52,11 @@ static func default_profile() -> Dictionary:
 		# unlock data happens at the consumer (Unlocks.owned), the same split
 		# meta_tree and bestiary already use.
 		Unlocks.PROFILE_KEY: [],
+		# N9-65: career counters every achievement reads, and the ids already
+		# earned. Counters carry both a global and a per-character key, so a
+		# condition can be about the career or about one character.
+		Achievements.COUNTERS_KEY: {},
+		Achievements.EARNED_KEY: [],
 	}
 
 
@@ -127,6 +132,21 @@ static func migrate(profile: Dictionary) -> Dictionary:
 		if not id.is_empty() and not unlocks.has(id):
 			unlocks.append(id)
 	merged[Unlocks.PROFILE_KEY] = unlocks
+	# N9-65: same coercion for the earned list, and counters forced to numbers.
+	# Consumers do arithmetic on these, and a hand-edited string would abort
+	# whatever ran first.
+	var earned: Array = []
+	for raw: Variant in (merged.get(Achievements.EARNED_KEY, []) as Array):
+		var id: String = "%s" % raw
+		if not id.is_empty() and not earned.has(id):
+			earned.append(id)
+	merged[Achievements.EARNED_KEY] = earned
+	var counters: Dictionary = {}
+	for key: Variant in (merged.get(Achievements.COUNTERS_KEY, {}) as Dictionary):
+		counters["%s" % key] = float(
+			(merged[Achievements.COUNTERS_KEY] as Dictionary)[key]
+		)
+	merged[Achievements.COUNTERS_KEY] = counters
 	return merged
 
 

@@ -232,10 +232,18 @@ func _check_audio() -> void:
 		_fail("audio " + issue)
 
 
-## N9-58: an unlock without a price or a name is a row the screen cannot draw.
+## N9-58/N9-65: an unlock the screen cannot draw, and — the rule that matters —
+## an unlock no achievement grants, which is content the player can never
+## reach.
 func _check_unlocks() -> void:
-	for issue: String in Unlocks.data_issues(_load(DATA_DIR + "/unlocks.json")):
+	var unlocks: Dictionary = _load(DATA_DIR + "/unlocks.json")
+	for issue: String in Unlocks.data_issues(unlocks):
 		_fail("unlocks " + issue)
+	for issue: String in Achievements.data_issues(
+		_load(DATA_DIR + "/achievements.json"), unlocks,
+		_load(DATA_DIR + "/characters.json")
+	):
+		_fail("achievements " + issue)
 
 
 func _check_field_passives() -> void:

@@ -186,18 +186,21 @@ func _field_passive_probe() -> void:
 func _minimap_probe() -> void:
 	if _stage.get_node_or_null("Hud/Minimap") != null:
 		push_error("pickup_check: the map exists without the unlock")
-	# Funded first, in memory only: the dev profile on disk carries whatever
-	# gold it happens to have, and a refused purchase would leave the map
-	# locked while this probe reported nothing at all.
+	# N9-65: the map is EARNED, not bought. Granted here the way a finished run
+	# grants it — through the achievement — so this probe still exercises the
+	# real path rather than writing the id in by hand.
 	SaveService.instance._write_locked = true
 	SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
-	var funded: Dictionary = SaveService.instance.profile.duplicate(true)
-	funded["gold"] = Unlocks.cost(_unlock_data(), Unlocks.MAP)
-	var bought: Dictionary = Unlocks.purchase(funded, _unlock_data(), Unlocks.MAP)
-	if not bool(bought["ok"]):
-		push_error("pickup_check: could not buy the map (%s)" % String(bought["reason"]))
+	var profile: Dictionary = SaveService.instance.profile.duplicate(true)
+	profile[Achievements.COUNTERS_KEY] = {"victories": 1.0, "taoist.victories": 1.0}
+	profile["selected_character"] = "taoist"
+	var awarded: Dictionary = Achievements.evaluate(
+		profile, SaveService.instance.achievement_data()
+	)
+	SaveService.instance.profile = awarded["profile"]
+	if not Unlocks.is_unlocked(SaveService.instance.profile, Unlocks.MAP):
+		push_error("pickup_check: the achievement did not grant the map")
 		return
-	SaveService.instance.profile = bought["profile"]
 	# Something to actually mark: a drop placed away from the player.
 	var far: Pickup = _stage._pickup_pool.acquire()
 	far.launch_pickup(
@@ -215,13 +218,6 @@ func _minimap_probe() -> void:
 		return
 	print("PICKUP minimap: drawn at %s with the unlock owned" % str(map.position))
 	await _shot("minimap")
-
-
-func _unlock_data() -> Dictionary:
-	var parsed: Variant = JSON.parse_string(
-		FileAccess.get_file_as_string(UnlocksScreen.UNLOCKS_PATH)
-	)
-	return parsed if parsed is Dictionary else {}
 
 
 ## N9-62 (owner: "자석 아이템 먹었을 때 다른 오브젝트 파괴하고 나온 아이템들은

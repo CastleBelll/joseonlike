@@ -1,15 +1,20 @@
-class_name UnlocksScreen
+class_name AchievementsScreen
 extends Control
-## 해금 screen (N9-58): the permanent things gold can buy that are not stat
-## ranks. One full-width row card per entry, in the camp's existing card
-## language (DESIGN.md §3).
+## 업적 screen (N9-65). One full-width row card per achievement, in the camp's
+## existing card language (DESIGN.md §3).
 ##
-## Every row states its price and whether it is affordable BEFORE the tap.
-## Letting the player press and then explaining why nothing happened is the
-## pattern this project keeps having to undo.
+## Nothing here is pressable. Achievements are not bought or claimed — they
+## complete on their own when a run banks, and their reward is already in the
+## profile by the time this screen can be opened. A button that only ever says
+## "already done" is the dead tap this project keeps removing.
+##
+## Every row shows its condition, how far along it is, and what it grants, so
+## the screen answers "what do I do to get the 지도" rather than only listing
+## what is missing.
 
 const CAMP_SCENE := "res://scenes/camp.tscn"
 const UNLOCKS_PATH := "res://data/unlocks.json"
+const ACHIEVEMENTS_PATH := "res://data/achievements.json"
 
 const MARGIN_SIDE := 24
 const MARGIN_TOP := 24
@@ -27,15 +32,20 @@ const PILL_PADDING_Y := 2
 const LOCKED_ALPHA := 0.75
 
 var _data: Dictionary = {}
+var _unlocks: Dictionary = {}
 var _rows_box: VBoxContainer
-var _gold_label: Label
+var _count_label: Label
 
 
 func _ready() -> void:
 	var parsed: Variant = JSON.parse_string(
-		FileAccess.get_file_as_string(UNLOCKS_PATH)
+		FileAccess.get_file_as_string(ACHIEVEMENTS_PATH)
 	)
 	_data = parsed if parsed is Dictionary else {}
+	var unlocks: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string(UNLOCKS_PATH)
+	)
+	_unlocks = unlocks if unlocks is Dictionary else {}
 	var background := ColorRect.new()
 	background.name = "Background"
 	background.color = UiPalette.NIGHT
@@ -89,18 +99,18 @@ func _build_header() -> Control:
 	header.add_child(back)
 
 	var title := _label(
-		UiLocale.text("unlocks.title"), UiPalette.FONT_SIZE_TITLE, UiPalette.GOLD
+		UiLocale.text("achievements.title"), UiPalette.FONT_SIZE_TITLE, UiPalette.GOLD
 	)
 	title.name = "Title"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 
 	var pill := PanelContainer.new()
-	pill.name = "GoldPill"
+	pill.name = "CountPill"
 	pill.add_theme_stylebox_override("panel", _pill_box(UiPalette.CARD_BG))
-	_gold_label = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
-	_gold_label.name = "GoldValue"
-	pill.add_child(_gold_label)
+	_count_label = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
+	_count_label.name = "CountValue"
+	pill.add_child(_count_label)
 	header.add_child(pill)
 	return header
 
@@ -109,50 +119,48 @@ func _refresh() -> void:
 	for child: Node in _rows_box.get_children():
 		child.queue_free()
 	var profile: Dictionary = _profile()
-	_gold_label.text = "%d냥" % int(profile.get("gold", 0))
-	for row: Dictionary in Unlocks.rows(profile, _data, UiLocale.current_locale):
+	var rows: Array[Dictionary] = Achievements.rows(
+		profile, _data, _unlocks, UiLocale.current_locale
+	)
+	var done: int = 0
+	for row: Dictionary in rows:
+		if bool(row["earned"]):
+			done += 1
+	_count_label.text = "%d/%d" % [done, rows.size()]
+	for row: Dictionary in rows:
 		_rows_box.add_child(_build_row(row))
 
 
 func _build_row(row: Dictionary) -> Control:
-	var owned: bool = bool(row["owned"])
-	var affordable: bool = bool(row["affordable"])
-	var card := Button.new()
+	var earned: bool = bool(row["earned"])
+	var card := PanelContainer.new()
 	card.name = "Row_" + String(row["id"])
-	# NOT flat: a flat Button skips its stylebox entirely, which left the rows
-	# as bare text floating on the background with no card behind them.
 	card.custom_minimum_size = Vector2(0.0, CARD_MIN_HEIGHT)
-	for state: String in ["normal", "hover", "pressed", "focus", "disabled"]:
-		card.add_theme_stylebox_override(state, _card_box(owned))
-	# An owned row is no longer a button; leaving it pressable would invite a
-	# tap that can only ever be refused.
-	card.disabled = owned
-	if not owned:
-		card.pressed.connect(_on_row_pressed.bind(String(row["id"])))
+	card.add_theme_stylebox_override("panel", _card_box(earned))
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
+	var margin := MarginContainer.new()
+	margin.name = "Body"
+	margin.add_theme_constant_override("margin_left", CARD_PADDING)
+	margin.add_theme_constant_override("margin_right", CARD_PADDING)
+	margin.add_theme_constant_override("margin_top", CARD_PADDING)
+	margin.add_theme_constant_override("margin_bottom", CARD_PADDING)
+	card.add_child(margin)
 	var box := VBoxContainer.new()
-	box.name = "Body"
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.set_anchors_preset(Control.PRESET_FULL_RECT)
-	box.offset_left = CARD_PADDING
-	box.offset_right = -CARD_PADDING
-	box.offset_top = CARD_PADDING
-	box.offset_bottom = -CARD_PADDING
 	box.add_theme_constant_override("separation", UiPalette.SPACE_XS)
-	card.add_child(box)
+	margin.add_child(box)
 
 	var top := HBoxContainer.new()
 	top.name = "TopLine"
-	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top.add_theme_constant_override("separation", UiPalette.SPACE_SM)
 	var name_label: Label = _label(
 		String(row["name"]), UiPalette.FONT_SIZE_BODY,
-		UiPalette.TEXT_ON_DARK if owned or affordable else UiPalette.TEXT_MUTED_ON_DARK
+		UiPalette.TEXT_ON_DARK if earned else UiPalette.TEXT_MUTED_ON_DARK
 	)
 	name_label.name = "Name"
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(name_label)
-	top.add_child(_status_pill(owned, affordable, int(row["cost"])))
+	top.add_child(_status_pill(row))
 	box.add_child(top)
 
 	var desc: Label = _label(
@@ -160,42 +168,52 @@ func _build_row(row: Dictionary) -> Control:
 	)
 	desc.name = "Desc"
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.modulate.a = 1.0 if owned or affordable else LOCKED_ALPHA
+	desc.modulate.a = 1.0 if earned else LOCKED_ALPHA
 	box.add_child(desc)
+
+	# The reward line only appears when there is one, so an achievement that
+	# grants nothing does not pretend otherwise with an empty row.
+	var reward: String = _reward_text(row)
+	if not reward.is_empty():
+		var reward_label: Label = _label(
+			reward, UiPalette.FONT_SIZE_LABEL,
+			UiPalette.SUCCESS if earned else UiPalette.GOLD
+		)
+		reward_label.name = "Reward"
+		box.add_child(reward_label)
 	return card
 
 
-## Owned reads as a state, not a price. Unaffordable still shows the price —
-## the number IS the goal, so hiding it removes the reason to save.
-func _status_pill(owned: bool, affordable: bool, cost: int) -> Control:
+## What completing it hands over. Named rather than described as "an unlock":
+## the point of the line is to tell the player the 지도 is what they are
+## working toward.
+func _reward_text(row: Dictionary) -> String:
+	var parts: Array[String] = []
+	var grants: String = String(row["grants"])
+	if not grants.is_empty():
+		parts.append(grants + " " + UiLocale.text("achievements.unlocked"))
+	var gold: int = int(row["reward_gold"])
+	if gold > 0:
+		parts.append("%d냥" % gold)
+	return " · ".join(parts)
+
+
+## Earned reads as a state; everything else shows PROGRESS. A locked row that
+## only said "locked" would hide the one number that says whether the player
+## is nearly there.
+func _status_pill(row: Dictionary) -> Control:
 	var pill := PanelContainer.new()
 	pill.name = "Status"
 	pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var fill: Color = UiPalette.CARD_BG
-	var text: String = "%d냥" % cost
-	var color: Color = UiPalette.GOLD if affordable else UiPalette.TEXT_MUTED_ON_DARK
-	if owned:
-		fill = UiPalette.SUCCESS
-		text = UiLocale.text("unlocks.owned")
-		color = UiPalette.INK
+	var earned: bool = bool(row["earned"])
+	var fill: Color = UiPalette.SUCCESS if earned else UiPalette.CARD_BG
+	var color: Color = UiPalette.INK if earned else UiPalette.TEXT_MUTED_ON_DARK
+	var text: String = UiLocale.text("achievements.earned") if earned else "%d/%d" % [
+		int(row["have"]), int(row["need"])
+	]
 	pill.add_theme_stylebox_override("panel", _pill_box(fill))
 	pill.add_child(_label(text, UiPalette.FONT_SIZE_LABEL, color))
 	return pill
-
-
-func _on_row_pressed(unlock_id: String) -> void:
-	var result: Dictionary = Unlocks.purchase(_profile(), _data, unlock_id)
-	if not bool(result.get("ok", false)):
-		# Silent by design: the row already stated the price and whether it was
-		# affordable, so the only refusal reachable here is a double-tap racing
-		# the refresh.
-		return
-	if SaveService.instance != null:
-		SaveService.instance.profile = result["profile"]
-		SaveService.instance.save_profile()
-	if SfxService.instance != null:
-		SfxService.instance.play("levelup")
-	_refresh()
 
 
 func _profile() -> Dictionary:
@@ -204,12 +222,12 @@ func _profile() -> Dictionary:
 	return SaveService.instance.profile
 
 
-func _card_box(owned: bool) -> StyleBoxFlat:
+func _card_box(earned: bool) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = UiPalette.CARD_BG
 	box.set_corner_radius_all(CARD_CORNER_RADIUS)
 	box.set_border_width_all(CARD_BORDER_WIDTH)
-	box.border_color = UiPalette.SUCCESS if owned else UiPalette.CARD_BORDER_DIM
+	box.border_color = UiPalette.SUCCESS if earned else UiPalette.CARD_BORDER_DIM
 	return box
 
 
