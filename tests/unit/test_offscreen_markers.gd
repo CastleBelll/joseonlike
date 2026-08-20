@@ -91,3 +91,58 @@ func test_target_at_the_exact_centre_is_not_an_arrow() -> bool:
 	# pointing at an arbitrary heading.
 	var bounds := Rect2(Vector2.ZERO, Vector2(100.0, 100.0))
 	return not bool(OffscreenMarkers.edge_marker(Vector2(50.0, 50.0), bounds)["needed"])
+
+
+## N9-63 motion (owner: "지금은 너무 정적이네"). The arrow moves, but its job is
+## still to point at something — so what is asserted is that the sway stays
+## SMALL. An arrow free to swing past its target is worse than a still one.
+func test_sway_never_leaves_its_bearing() -> bool:
+	var worst: float = 0.0
+	for step: int in range(200):
+		var angle: float = OffscreenMarkers.wobble_angle(float(step) * 0.037, 0.0)
+		worst = maxf(worst, absf(angle))
+	# A quarter turn would let the arrow point at open field.
+	return worst <= OffscreenMarkers.WOBBLE_MAX_RAD + EPSILON and worst < PI / 4.0
+
+
+func test_sway_actually_moves() -> bool:
+	# The whole point of the change: a constant would be the static arrow the
+	# owner rejected.
+	var seen_low: bool = false
+	var seen_high: bool = false
+	for step: int in range(200):
+		var angle: float = OffscreenMarkers.wobble_angle(float(step) * 0.037, 0.0)
+		if angle < -OffscreenMarkers.WOBBLE_MAX_RAD * 0.8:
+			seen_low = true
+		if angle > OffscreenMarkers.WOBBLE_MAX_RAD * 0.8:
+			seen_high = true
+	return seen_low and seen_high
+
+
+func test_bob_stays_within_a_few_pixels() -> bool:
+	var worst: float = 0.0
+	for step: int in range(200):
+		worst = maxf(worst, absf(OffscreenMarkers.bob_offset(float(step) * 0.041, 0.0)))
+	return worst <= OffscreenMarkers.BOB_PX + EPSILON
+
+
+func test_arrows_do_not_move_in_lockstep() -> bool:
+	# Identical motion on every arrow reads as one animated ornament rather
+	# than as several separate things out there.
+	var first: float = OffscreenMarkers.wobble_angle(0.5, 0.0)
+	var second: float = OffscreenMarkers.wobble_angle(0.5, OffscreenMarkers.PHASE_STEP)
+	return absf(first - second) > 0.01
+
+
+func test_motion_is_centred_on_zero() -> bool:
+	# A biased sway would leave every arrow permanently mis-aimed to one side.
+	# Averaged over WHOLE periods. Any other window leaves part of a cycle
+	# hanging and the mean drifts for reasons that have nothing to do with bias.
+	var period: float = 1.0 / OffscreenMarkers.WOBBLE_HZ
+	var samples: int = 900
+	var total: float = 0.0
+	for step: int in range(samples):
+		total += OffscreenMarkers.wobble_angle(
+			period * 3.0 * float(step) / float(samples), 0.0
+		)
+	return absf(total / float(samples)) < 0.01

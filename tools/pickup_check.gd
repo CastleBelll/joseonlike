@@ -147,6 +147,23 @@ func _field_passive_probe() -> void:
 	# thing looks like lying on the ground, which is the only state a player
 	# ever has to spot from a distance.
 	await _shot("field_passive")
+	# N9-63: a second frame after the sway has moved on, so the two shots
+	# together are the proof the arrows animate — a still image cannot show it
+	# and a numeric test cannot show it reaching the screen.
+	# The pixel diff between two frames cannot separate a moving arrow from a
+	# moving monster behind it, so the clock the animation runs on is checked
+	# directly: if it never advances, the arrows are frozen whatever the
+	# sway math says.
+	var markers: OffscreenMarkers = _stage.get_node_or_null("Hud/OffscreenMarkers")
+	var before: float = 0.0 if markers == null else markers._elapsed
+	await get_tree().create_timer(0.55).timeout
+	if markers == null:
+		push_error("pickup_check: no arrow layer to animate")
+	elif markers._elapsed <= before:
+		push_error("pickup_check: the arrow animation clock never advanced")
+	else:
+		print("PICKUP arrows animating: clock %.2fs -> %.2fs" % [before, markers._elapsed])
+	await _shot("field_passive_moved")
 	_attract()
 	await get_tree().create_timer(0.6).timeout
 	var taken_after: int = _stage._passive_stacks.size()

@@ -27,13 +27,44 @@ const OUTLINE_WIDTH := 1.5
 const MIN_ALPHA := 0.35
 const FADE_START_PX := 700.0
 const FADE_END_PX := 2000.0
+## Motion. Slow and small on purpose: several arrows can be on screen at once
+## and anything faster turns the screen edge into a flicker.
+const WOBBLE_HZ := 0.6
+const WOBBLE_MAX_RAD := 0.22
+const BOB_HZ := 0.9
+const BOB_PX := 3.0
+## Each arrow starts at its own point in the cycle. In lockstep they read as
+## one animated ornament rather than as several separate things out there.
+const PHASE_STEP := 1.1
 
 var _targets: Array[Vector2] = []
+var _elapsed: float = 0.0
 
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_preset(Control.PRESET_FULL_RECT)
+
+
+func _process(delta: float) -> void:
+	if _targets.is_empty():
+		return
+	_elapsed += delta
+	queue_redraw()
+
+
+## Sway, in radians, around the direction the arrow points (owner: the markers
+## read as too static). It SWAYS rather than spins: a full rotation would make
+## an arrow point somewhere its target is not, which is the one thing this
+## marker exists to get right.
+static func wobble_angle(time_sec: float, phase: float) -> float:
+	return sin(time_sec * WOBBLE_HZ * TAU + phase) * WOBBLE_MAX_RAD
+
+
+## Travel along the pointing axis, so the arrow also nudges toward its target
+## instead of only tilting.
+static func bob_offset(time_sec: float, phase: float) -> float:
+	return sin(time_sec * BOB_HZ * TAU + phase) * BOB_PX
 
 
 ## Where an arrow for `target` belongs, in the same screen space as `bounds`.
@@ -92,17 +123,19 @@ func _draw() -> void:
 	var canvas: Transform2D = get_viewport().get_canvas_transform()
 	var bounds: Rect2 = marker_bounds(size)
 	var player_at: Vector2 = bounds.position + bounds.size / 2.0
-	for world: Vector2 in _targets:
-		var on_screen: Vector2 = canvas * world
+	for index: int in range(_targets.size()):
+		var on_screen: Vector2 = canvas * _targets[index]
 		var marker: Dictionary = edge_marker(on_screen, bounds)
 		if not bool(marker["needed"]):
 			continue
+		var phase: float = PHASE_STEP * float(index)
+		var angle: float = float(marker["angle"]) + wobble_angle(_elapsed, phase)
+		var at: Vector2 = marker["at"] + Vector2.from_angle(
+			float(marker["angle"])
+		) * bob_offset(_elapsed, phase)
 		# Distance is measured to the TARGET, not to the clamped arrow: the
 		# arrow is always at the edge, so its own distance says nothing.
-		_draw_arrow(
-			marker["at"], float(marker["angle"]),
-			distance_alpha(player_at.distance_to(on_screen))
-		)
+		_draw_arrow(at, angle, distance_alpha(player_at.distance_to(on_screen)))
 
 
 func _draw_arrow(at: Vector2, angle: float, alpha: float) -> void:
