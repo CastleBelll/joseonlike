@@ -17,7 +17,7 @@ const BOSS_DIR := "res://asset/monsters/dudueori"
 const EXPECTED_HEIGHTS: Dictionary = {
 	"res://asset/monsters/forest_goblin": 27.0,
 	"res://asset/monsters/forest_spirit": 29.0,
-	"res://asset/monsters/bamboo_brute": 44.0,
+	"res://asset/monsters/bamboo_brute": 45.0,
 	BOSS_DIR: 84.0,
 }
 const PLAYER_HEIGHT := 38.0

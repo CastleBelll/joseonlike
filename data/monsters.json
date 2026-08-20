@@ -8,7 +8,7 @@
     "speed": 55.0,
     "xp_drop": 3,
     "behaviour": "chase",
-    "collision_radius": 9.5,
+    "collision_radius": 8.5,
     "sprite": "res://asset/monsters/forest_goblin"
   },
   "forest_spirit": {
