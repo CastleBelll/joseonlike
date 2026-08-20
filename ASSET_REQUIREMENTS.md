@@ -203,6 +203,11 @@ Fallback:  IN USE — hit flash + pooled death-puff ring on shatter.
 
 ## 투사체 · 이펙트 스프라이트 시트 — 오너 작업 대기 (2026-08-20)
 
+> **배경 날린 원본은 `new_asset/needs_sprite/`에 모여 있다.** 10장 전부 투명
+> PNG이고, 같은 폴더의 `README.md`가 파일마다 목표 경로 · 셀 크기 · 권장 프레임
+> 수를 적어둔다. `python asset/build_sprite_requests.py`로 다시 만든다.
+
+
 N9-78에서 무기 아이콘 9종, 투사체 10종, 신장/석장 원호는 생성 이미지를 잘라
 실제 경로에 넣었다. 아래 둘은 **가로 스트립(애니메이션)** 이라 한 장짜리
 그림으로 대체할 수 없다. 참고용 원본은 `new_asset/generated/`에 있고, 프레임만
