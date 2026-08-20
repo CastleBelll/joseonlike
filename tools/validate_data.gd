@@ -239,6 +239,7 @@ func _check_combat_cross_references() -> void:
 	)
 	var sprite_effects: Dictionary = effects.get("sprite_effects", {})
 	_check_sprite_effects(sprite_effects)
+	_check_weapon_keys(weapons)
 	_check_weapon_art(weapons, sprite_effects)
 	_check_props()
 	_check_shadow_monsters()
@@ -975,6 +976,36 @@ func _check_sprite_effects(sprites: Dictionary) -> void:
 		var file: String = String(entry.get("file", ""))
 		if not FileAccess.file_exists(file):
 			_fail("effects.sprite_effects.%s file missing: %s" % [effect_id, file])
+
+
+## N9-90: every key a weapon entry carries must be one the code consumes.
+## Three knobs sat dead in the data for months — `evolves_to` duplicated what
+## weapon_mods.json already routes, `area_scale` was a pre-N4-4a hitbox scale
+## nothing read (and later collided with the passive of the same name), and
+## `self_drain_hp_per_sec` was 귀철검's designed downside that never got
+## implemented. A grep cannot catch these (the passive id "area_scale" made
+## the weapon key look consumed), so the vocabulary is explicit: a new knob
+## must land here in the same commit as the code that reads it.
+const WEAPON_ALLOWED_KEYS: Array[String] = [
+	"name_ko", "name_en", "category", "grade", "mechanic", "damage",
+	"cooldown_sec", "projectile_count", "pierce", "pierce_retention", "speed",
+	"range_px", "max_level", "per_level", "milestones", "evolution_only",
+	"explosion", "chain", "arc", "orbit", "ward", "summon", "shockwave",
+	"on_hit_status", "on_hit_seal", "lifesteal", "hit_effect", "travel_sprite",
+	"travel_frames",
+]
+
+
+func _check_weapon_keys(weapons: Dictionary) -> void:
+	for weapon_id: String in weapons:
+		if weapon_id.begins_with("_"):
+			continue
+		for key: String in (weapons[weapon_id] as Dictionary):
+			if key not in WEAPON_ALLOWED_KEYS:
+				_fail(
+					"weapons.%s carries '%s', which no code reads — wire it or drop it"
+					% [weapon_id, key]
+				)
 
 
 ## N9-80 flight-animation contract. A travel sprite is a horizontal strip of
