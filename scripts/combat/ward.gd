@@ -8,6 +8,14 @@ extends Node2D
 signal ticked(amount: float, at: Vector2, boss_hit: bool, crit: bool)
 signal finished(ward: Ward)
 
+## N9-71 rim flare: small sprites placed ON the ward's edge each time a tick
+## lands. Native size, never stretched — a 46px sheet blown up to a 200px ward
+## turns into an opaque band that hides the enemies standing in it, which is
+## the one thing the player has to see (tried and reverted in N9-70).
+const RIM_EFFECT := "hit_paper"
+const RIM_FLARES := 6
+const RIM_FLARE_PX := 26.0
+const RIM_ALPHA := 0.9
 const FILL_ALPHA := 0.1
 const RING_WIDTH := 2.5
 const RING_POINTS := 40
@@ -42,6 +50,8 @@ var _pulse_age: float = INF
 var _caught: Array[Enemy] = []  # per-tick scratch, reused without alloc
 var _positions: Array[Vector2] = []
 var _sigil: Sprite2D
+## N9-71: the rim flares, built once and reused for the ward's whole life.
+var _rim_art: Array[EffectSprite] = []
 
 
 func _ready() -> void:
@@ -118,6 +128,7 @@ func _tick() -> void:
 		_caught.append(enemies[i])
 	if not _caught.is_empty():
 		_pulse_age = 0.0  # N3-17: a landed tick fires the visible pulse
+		_flare_rim()
 	for enemy: Enemy in _caught:
 		if CombatMath.is_dead(enemy.hp):
 			continue
@@ -137,6 +148,32 @@ func _tick() -> void:
 			tick_damage *= _crit_multiplier
 		enemy.take_damage(tick_damage)
 		ticked.emit(tick_damage, at, boss_hit, crit)
+
+
+## N9-71 (owner: the ward reads as thin). Six small flares around the rim on
+## every tick that bites, spun a little each time so they never land on the
+## same six spots twice.
+##
+## Placed at the TRUE radius, so the flare ring is the damage boundary rather
+## than a decoration near it. They are pooled per ward and reused; a tick every
+## half second across a long ward would otherwise allocate steadily.
+func _flare_rim() -> void:
+	if not EffectSprite.available(RIM_EFFECT) or _radius <= 0.0:
+		return
+	for i: int in range(RIM_FLARES):
+		if i >= _rim_art.size():
+			var sprite := EffectSprite.new()
+			sprite.name = "Rim%d" % i
+			add_child(sprite)
+			_rim_art.append(sprite)
+		var angle: float = _spin + TAU * float(i) / float(RIM_FLARES)
+		_rim_art[i].play_effect(
+			RIM_EFFECT, global_position + Vector2.from_angle(angle) * _radius,
+			RIM_FLARE_PX, Color(_color, RIM_ALPHA)
+		)
+		_rim_art[i].global_position = (
+			global_position + Vector2.from_angle(angle) * _radius
+		)
 
 
 ## N9-5c 결계 look: the authored 부적진 texture (Sigil child) carries the
