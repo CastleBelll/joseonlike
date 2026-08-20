@@ -565,7 +565,8 @@
           "knockback_scale": 0.4
         }
       }
-    }
+    },
+    "hit_effect": "hit_neutral"
   },
   "ghost_staff": {
     "name_ko": "귀철 석장",
@@ -628,7 +629,8 @@
           "knockback_scale": 0.4
         }
       }
-    }
+    },
+    "hit_effect": "hit_curse"
   },
   "honbul": {
     "name_ko": "혼불",
@@ -700,7 +702,8 @@
           "orb_radius_px": 2.0
         }
       }
-    }
+    },
+    "hit_effect": "hit_fire"
   },
   "flame_honbul": {
     "name_ko": "화령 혼불",
@@ -772,7 +775,8 @@
           "orb_radius_px": 2.0
         }
       }
-    }
+    },
+    "hit_effect": "hit_fire"
   },
   "gyeolgye": {
     "name_ko": "결계",
@@ -835,7 +839,8 @@
           "radius_px": 6.0
         }
       }
-    }
+    },
+    "hit_effect": "hit_paper"
   },
   "hwayeom_gyeolgye": {
     "name_ko": "화염 결계",
@@ -903,7 +908,8 @@
           "radius_px": 6.0
         }
       }
-    }
+    },
+    "hit_effect": "hit_fire"
   },
   "sinjang": {
     "name_ko": "신장 소환",
@@ -967,7 +973,8 @@
           "attack_cooldown_sec": -0.04
         }
       }
-    }
+    },
+    "hit_effect": "hit_neutral"
   },
   "noe_sinjang": {
     "name_ko": "뇌정 신장",
@@ -1036,7 +1043,8 @@
           "attack_cooldown_sec": -0.04
         }
       }
-    }
+    },
+    "hit_effect": "hit_lightning"
   },
   "jineon": {
     "name_ko": "진언",
@@ -1099,7 +1107,8 @@
           "stun_sec": 0.2
         }
       }
-    }
+    },
+    "hit_effect": "hit_lightning"
   },
   "bongin_jineon": {
     "name_ko": "봉인 진언",
@@ -1166,7 +1175,8 @@
           "stun_sec": 0.2
         }
       }
-    }
+    },
+    "hit_effect": "hit_lightning"
   },
   "sal": {
     "name_ko": "살",
@@ -1326,7 +1336,8 @@
       "5": {
         "pierce": 1
       }
-    }
+    },
+    "hit_effect": "hit_neutral"
   },
   "twin_sword": {
     "name_ko": "쌍환도",
@@ -1346,7 +1357,8 @@
       "cooldown_sec": -0.03
     },
     "evolution_only": true,
-    "sprite": "res://asset/weapon/icons/twin_sword.png"
+    "sprite": "res://asset/weapon/icons/twin_sword.png",
+    "hit_effect": "hit_neutral"
   },
   "sharp_sword": {
     "name_ko": "예리한 환도",
@@ -1371,7 +1383,8 @@
       "5": {
         "pierce": 1
       }
-    }
+    },
+    "hit_effect": "hit_neutral"
   },
   "ghost_sword": {
     "name_ko": "귀철도",
@@ -1393,7 +1406,8 @@
     "evolution_only": true,
     "lifesteal": 0.15,
     "self_drain_hp_per_sec": 2.0,
-    "sprite": "res://asset/weapon/icons/ghost_sword.png"
+    "sprite": "res://asset/weapon/icons/ghost_sword.png",
+    "hit_effect": "hit_curse"
   },
   "flame_sword": {
     "name_ko": "화염도",
@@ -1413,7 +1427,8 @@
       "cooldown_sec": -0.04
     },
     "evolution_only": true,
-    "sprite": "res://asset/weapon/icons/flame_sword.png"
+    "sprite": "res://asset/weapon/icons/flame_sword.png",
+    "hit_effect": "hit_fire"
   },
   "bow": {
     "name_ko": "각궁",
@@ -1439,7 +1454,8 @@
       "5": {
         "projectile_count": 1
       }
-    }
+    },
+    "hit_effect": "hit_neutral"
   },
   "divine_bow": {
     "name_ko": "신궁",
@@ -1459,6 +1475,7 @@
       "cooldown_sec": -0.03
     },
     "evolution_only": true,
-    "sprite": "res://asset/weapon/icons/divine_bow.png"
+    "sprite": "res://asset/weapon/icons/divine_bow.png",
+    "hit_effect": "hit_paper"
   }
 }

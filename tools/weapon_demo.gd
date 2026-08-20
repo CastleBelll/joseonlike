@@ -11,6 +11,11 @@ extends Node
 const STAGE_SCENE := "res://scenes/stage.tscn"
 const SHOT_TIMES: Array[float] = [6.0, 8.0, 10.0, 12.0, 14.0, 16.0]
 const QUIT_AT_SEC := 18.0
+## N9-69: the mark count is sampled through the show and reported at the end.
+## Zero for a weapon that lands hits is the bug this exists to catch — the
+## non-projectile weapons had exactly that, and no screenshot at a fixed second
+## is guaranteed to catch a mark that lives a fraction of one.
+const MARK_SAMPLE_SEC := 0.05
 ## The demo watches mechanics, not survival — the player must outlive the swarm.
 const HUGE_HP := 99999.0
 
@@ -24,6 +29,9 @@ var _weapon_id: String = ""
 var _active_id: String = ""
 var _active_fires: int = 0
 var _shots_done: int = 0
+var _peak_marks: int = 0
+var _mark_shot_done: bool = false
+var _hits_seen: int = 0
 var _hit_shots: int = 0
 var _last_hit_shot: float = -HIT_SHOT_GAP_SEC
 
@@ -83,8 +91,39 @@ func _process(_delta: float) -> void:
 			and elapsed >= ACTIVE_FIRE_TIMES[_active_fires]:
 		_active_fires += 1
 		_fire_active()
+	_sample_marks()
 	if elapsed >= QUIT_AT_SEC:
+		print("DEMO %s: hits %d, peak impact marks %d" % [
+			_weapon_id, _hits_seen, _peak_marks
+		])
+		if _hits_seen > 0 and _peak_marks == 0:
+			push_error(
+				"weapon_demo: %s landed %d hits and never showed a mark"
+				% [_weapon_id, _hits_seen]
+			)
 		get_tree().quit(0)
+
+
+## N9-69: samples the weapon's live mark count. A screenshot at a fixed second
+## can miss a mark that lives a fraction of one, so the count is watched
+## continuously instead of inferred from a picture.
+func _sample_marks() -> void:
+	for weapon: AutoWeapon in _stage._weapon_nodes.values():
+		if weapon.weapon_id != _weapon_id:
+			continue
+		if not weapon.hit_landed.is_connected(_count_hit):
+			weapon.hit_landed.connect(_count_hit)
+		_peak_marks = maxi(_peak_marks, weapon._live_marks)
+		# Captured on a frame that HAS a mark, rather than at a fixed second and
+		# hoping: a mark lives a fraction of a second and a timed shot mostly
+		# lands between them.
+		if weapon._live_marks > 0 and not _mark_shot_done:
+			_mark_shot_done = true
+			_capture("user://demo_%s_mark.png" % _weapon_id)
+
+
+func _count_hit(_amount: float, _at: Vector2, _boss: bool, _crit: bool) -> void:
+	_hits_seen += 1
 
 
 ## Demo bypass: call the effect directly so a 45s-cooldown emergency button

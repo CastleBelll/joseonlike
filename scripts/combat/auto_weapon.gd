@@ -56,6 +56,10 @@ const TINTS: Dictionary = {
 
 ## Fan spread between adjacent multishot projectiles when the data omits
 ## _targeting.multishot_spread_deg (N4-8).
+## N9-69 impact marks. The ceiling is per weapon: a ward ticking across a
+## crowd reports dozens of hits a second, and the screen has to stay readable.
+const MAX_LIVE_MARKS := 14
+const CRIT_MARK_SCALE := 1.45
 const FAN_SPREAD_DEG := 10.0
 
 var weapon_id: String = ""
@@ -105,6 +109,8 @@ var _orb_recent: Dictionary = {}
 var _arc_flash: ArcFlash
 var _flash_pool: NodePool
 var _impact_effect: String = ""
+## N9-69: impact marks currently on screen from THIS weapon, against the cap.
+var _live_marks: int = 0
 var _impact_pool: NodePool
 # N3-17 effect state: chain-jump bolts and the shockwave camera thump.
 var _bolt_pool: NodePool
@@ -137,6 +143,13 @@ func setup(
 	_impact_effect = String(_base_stats.get("hit_effect", ""))
 	if EffectSprite.available(_impact_effect):
 		_impact_pool = NodePool.new(self, _create_impact_sprite)
+		# N9-69 (owner: "몬스터 타격 표시가 필요할거같아"): connected to the
+		# weapon's OWN report of a hit, which every attack shape already emits.
+		# Spawning from the projectile path — where it used to live — left the
+		# arc, orbit, ward, summon and shockwave weapons with nothing at the
+		# point of contact but a tenth of a second of white flash, and at 130
+		# monsters that flash is invisible.
+		hit_landed.connect(_mark_hit)
 	_grades = WeaponGrade.config(weapons)
 	_grade = String(_base_stats.get("grade", ""))
 	var targeting: Dictionary = (weapons as Dictionary).get("_targeting", {})
@@ -586,16 +599,41 @@ func _create_projectile() -> Projectile:
 
 func _on_projectile_hit(amount: float, at: Vector2, boss_hit: bool, crit: bool) -> void:
 	_after_hit(amount)
-	if _impact_pool != null:
-		var sprite: EffectSprite = _impact_pool.acquire()
-		sprite.play_effect(_impact_effect, at, 0.0, Color.WHITE)
+	# The mark is spawned by _mark_hit off this signal, not here: one place for
+	# every attack shape, so a weapon added later cannot forget to show a hit.
 	hit_landed.emit(amount, at, boss_hit, crit)
+
+
+## One impact mark per reported hit. Rotated to face away from the caster, so
+## the mark says where the blow came from rather than sitting flat.
+##
+## Capped: a ward ticking across a crowd of 130 reports dozens of hits a
+## second, and an uncapped pool would carpet the screen in white and allocate
+## a sprite for each. Past the ceiling the hit still lands, still counts, and
+## still makes its number and its sound — it just does not add another mark to
+## a place already covered in them.
+func _mark_hit(_amount: float, at: Vector2, _boss_hit: bool, crit: bool) -> void:
+	if _impact_pool == null or _live_marks >= MAX_LIVE_MARKS:
+		return
+	_live_marks += 1
+	var sprite: EffectSprite = _impact_pool.acquire()
+	sprite.play_effect(
+		_impact_effect, at, 0.0,
+		UiPalette.CRIT_TEXT if crit else Color.WHITE
+	)
+	# A crit already has its own number and sound; the bigger mark is what
+	# makes it read when the eye is on the other side of the screen.
+	sprite.scale *= CRIT_MARK_SCALE if crit else 1.0
+	if _player != null:
+		sprite.rotation = (at - _player.global_position).angle()
 
 
 func _create_impact_sprite() -> EffectSprite:
 	var sprite := EffectSprite.new()
 	sprite.finished_effect.connect(
-		func(done: EffectSprite) -> void: _impact_pool.release(done)
+		func(done: EffectSprite) -> void:
+			_live_marks = maxi(_live_marks - 1, 0)
+			_impact_pool.release(done)
 	)
 	return sprite
 

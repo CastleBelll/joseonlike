@@ -161,6 +161,7 @@ func _check_combat_cross_references() -> void:
 	_check_weapon_grades(weapons)
 	_check_weapon_targeting(weapons)
 	_check_weapon_mechanics(weapons)
+	_check_weapon_hit_effects(weapons)
 	var achievements: Dictionary = _load(DATA_DIR + "/achievements.json")
 	for character_id: String in characters:
 		_require_positive_numbers(
@@ -402,6 +403,30 @@ func _check_weapon_grades(weapons: Dictionary) -> void:
 ## N4-4a mechanic contract: every weapon's mechanic must be one the runtime
 ## implements, its mechanic block must carry sane numbers, and the optional
 ## status/seal/lifesteal branches must be well-formed.
+## N9-69: every weapon must show something where it lands. The impact mark
+## used to be spawned only by the projectile path, so the arc, orbit, ward,
+## summon and shockwave weapons hit with nothing but a flash — invisible in a
+## crowd. A weapon without a declared, existing hit effect FAILS here.
+func _check_weapon_hit_effects(weapons: Dictionary) -> void:
+	var effects: Dictionary = (
+		_load(DATA_DIR + "/effects.json") as Dictionary
+	).get("sprite_effects", {})
+	for weapon_id: String in weapons:
+		if weapon_id.begins_with("_"):
+			continue
+		var weapon: Variant = weapons[weapon_id]
+		if weapon is not Dictionary:
+			continue
+		var effect: String = String((weapon as Dictionary).get("hit_effect", ""))
+		if effect.is_empty():
+			_fail("weapons.%s declares no hit_effect — its hits would show nothing"
+				% weapon_id)
+		elif not effects.has(effect):
+			_fail("weapons.%s.hit_effect '%s' is not in effects.sprite_effects" % [
+				weapon_id, effect
+			])
+
+
 func _check_weapon_mechanics(weapons: Dictionary) -> void:
 	for weapon_id: String in weapons:
 		if weapon_id.begins_with("_"):
