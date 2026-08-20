@@ -36,6 +36,29 @@ static func loop_frames(path: String, fps: float, anim: String = ANIM_IDLE) -> S
 	return frames
 
 
+## Replaces an already-built idle animation with ONE frame taken from a walk
+## strip. Some sheets have a separate idle drawing that does not sit well beside
+## its own walk cycle — a pose from the cycle is guaranteed to match it, because
+## it came from it.
+##
+## Out-of-range indices are clamped rather than rejected: a bad number should
+## show the wrong pose, never no character at all.
+static func idle_from_strip(frames: SpriteFrames, path: String, index: int) -> void:
+	var strip: Texture2D = load(path)
+	if strip == null:
+		push_error("sprite_sheet: cannot load " + path)
+		return
+	var side: float = strip.get_size().y
+	var count: int = maxi(int(strip.get_size().x / side), 1)
+	frames.clear(ANIM_IDLE)
+	var frame := AtlasTexture.new()
+	frame.atlas = strip
+	frame.region = Rect2(
+		Vector2(side * float(clampi(index, 0, count - 1)), 0.0), Vector2(side, side)
+	)
+	frames.add_frame(ANIM_IDLE, frame)
+
+
 static func _add_strip_frames(frames: SpriteFrames, anim: String, path: String) -> void:
 	var strip: Texture2D = load(path)
 	if strip == null:

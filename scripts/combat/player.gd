@@ -20,6 +20,10 @@ const SPRITE_EXPORT_SCALE := SpriteSheet.EXPORT_SCALE
 const WALK_FRAME_COUNT := 8
 const WALK_FPS := 8.0
 const IDLE_FPS := 1.0  # single idle frame; the speed value is inert
+## Which walk frame stands still. Frame 1 has the narrowest stance in the strip
+## (measured: 240px of leg spread against 304 at the widest), which is what
+## makes it read as standing rather than as a walk caught mid-step.
+const IDLE_WALK_FRAME := 1
 const ANIM_IDLE := SpriteSheet.ANIM_IDLE
 const ANIM_WALK := SpriteSheet.ANIM_WALK
 
@@ -230,7 +234,19 @@ func _build_sprite_visual() -> void:
 ## without a SceneTree (same pattern as TitleScreen.build_ui). The actual
 ## strip slicing lives in SpriteSheet, shared with the monster path (N3-12).
 static func build_sprite_frames() -> SpriteFrames:
-	return SpriteSheet.build_frames(IDLE_TEXTURE_PATH, WALK_TEXTURE_PATH, WALK_FPS, IDLE_FPS)
+	var frames: SpriteFrames = SpriteSheet.build_frames(
+		IDLE_TEXTURE_PATH, WALK_TEXTURE_PATH, WALK_FPS, IDLE_FPS
+	)
+	# N9-64 (owner: "가만히 있을 때 애셋이 이상해서 걷는 폼 중에 서있는 자세를
+	# 기본 자세로"). The standing pose is taken from the walk cycle instead of
+	# the separate idle drawing, whose hat and posture read as a different
+	# character the moment the player stops.
+	#
+	# idle.png is left alone rather than overwritten: build_walk.py uses it as
+	# the reference the walk frames are aligned to, so replacing it with one of
+	# those frames would make the pipeline feed on its own output.
+	SpriteSheet.idle_from_strip(frames, WALK_TEXTURE_PATH, IDLE_WALK_FRAME)
+	return frames
 
 
 func _build_hp_bar() -> void:
