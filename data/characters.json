@@ -57,11 +57,10 @@
     "hit_invuln_sec": 0.8,
     "starting_weapon": "sword",
     "unlock": {
-      "type": "achievement",
-      "achievement_id": "goblin_hunter"
+      "type": "coming_soon"
     },
-    "unlock_text_ko": "업적 '도깨비 사냥꾼' 달성 시 해금",
-    "unlock_text_en": "Unlocks with the 'Goblin Hunter' achievement",
+    "unlock_text_ko": "무기와 술법이 아직 없다. 도사의 밤이 끝나면 온다.",
+    "unlock_text_en": "His weapons and arts are not built yet — he comes after the taoist's night is finished.",
     "weapon_categories": [
       "melee"
     ]
@@ -81,11 +80,10 @@
     "hit_invuln_sec": 0.8,
     "starting_weapon": "bow",
     "unlock": {
-      "type": "gold",
-      "cost": 500
+      "type": "coming_soon"
     },
-    "unlock_text_ko": "500냥으로 해금",
-    "unlock_text_en": "Unlocks for 500 coins",
+    "unlock_text_ko": "무기와 술법이 아직 없다. 도사의 밤이 끝나면 온다.",
+    "unlock_text_en": "Her weapons and arts are not built yet — she comes after the taoist's night is finished.",
     "weapon_categories": [
       "ranged"
     ]

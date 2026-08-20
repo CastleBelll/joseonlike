@@ -428,7 +428,10 @@ func test_screen_branch_tabs_switch_and_lock() -> bool:
 		and not screen._node_buttons.has("iron_bones")
 	var cta: Button = screen.get_node_or_null("Layout/Column/CtaButton")
 	passed = passed and cta.visible
-	# A locked character's branch: node visible, CTA hidden, unlock named.
+	# A locked character's branch: node visible, CTA hidden, and the reason
+	# NAMED — whatever it says. N9-73 changed that text from a promise nothing
+	# could keep ("earn 도깨비 사냥꾼") to the truth ("not built yet"), so the
+	# rule under test is that a locked branch explains itself, not the wording.
 	screen.select_node("hwando_hone")
 	var info_label: Label = screen.get_node_or_null(
 		"Layout/Column/DetailCard/DetailRow/DetailLines/DetailInfo"
@@ -436,7 +439,7 @@ func test_screen_branch_tabs_switch_and_lock() -> bool:
 	passed = passed and screen._current_tab == "warrior" \
 		and screen._node_buttons.has("hwando_hone") \
 		and not cta.visible \
-		and info_label != null and info_label.text.contains("도깨비 사냥꾼")
+		and info_label != null and not info_label.text.is_empty()
 	# Even a forced CTA press on a locked branch buys nothing.
 	screen._profile["gold"] = 99999
 	screen._selected_id = "hwando_hone"

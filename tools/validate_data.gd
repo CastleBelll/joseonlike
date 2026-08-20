@@ -12,7 +12,12 @@ const CHARACTER_FIELDS: Array[String] = ["base_hp", "base_speed", "hit_invuln_se
 const CHARACTER_TEXT_FIELDS: Array[String] = [
 	"name_ko", "name_en", "name_hanja", "title_ko", "title_en", "quote_ko", "quote_en"
 ]
-const UNLOCK_TYPES: Array[String] = ["default", "achievement", "gold"]
+## N9-73: "coming_soon" is a character that is not built yet — no weapons, no
+## actives. It is a type of its own rather than an achievement nobody can
+## honour: the card used to promise 전사 to whoever earned 도깨비 사냥꾼, and
+## the code locks every non-default character regardless, so the promise
+## could never be kept.
+const UNLOCK_TYPES: Array[String] = ["default", "achievement", "gold", "coming_soon"]
 const UNLOCK_TEXT_FIELDS: Array[String] = ["unlock_text_ko", "unlock_text_en"]
 const MONSTER_FIELDS: Array[String] = ["hp", "damage", "speed", "collision_radius", "xp_drop"]
 # N3-12: a declared sprite set must ship both animation files.
@@ -305,6 +310,16 @@ func _check_character_card(
 		for field: String in UNLOCK_TEXT_FIELDS:
 			if String(character.get(field, "")).is_empty():
 				_fail("%s.%s missing or empty" % [label, field])
+	# N9-73: a character that names a way in must be able to come in. Nothing
+	# unlocks a character today — CharacterSelectScreen.is_locked() locks every
+	# non-default one outright — so "achievement" or "gold" on a card is a
+	# promise the game cannot keep, and 전사 carried one for weeks. Anything not
+	# playable yet says coming_soon until the code that opens it exists.
+	if unlock_type in ["achievement", "gold"]:
+		_fail(
+			"%s.unlock.type '%s' promises a way in that nothing implements — use "
+			% [label, unlock_type] + "coming_soon until it does"
+		)
 
 
 ## N4-4b actives: optional per character, but every declared entry must be a

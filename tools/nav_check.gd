@@ -15,6 +15,11 @@ extends Node
 ## Run: godot --headless --path . res://tools/nav_check.tscn
 
 const SETTLE_FRAMES := 3
+## Reached from boot or from a finished run rather than from the camp grid.
+const STANDALONE_SCREENS: Array[String] = [
+	"res://scenes/title.tscn",
+	"res://scenes/character_select.tscn",
+]
 
 var _failed: bool = false
 
@@ -31,6 +36,7 @@ func _ready() -> void:
 		SaveService.instance._write_locked = true
 		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 	await _check_buildings()
+	await _check_standalone_screens()
 	print("NAV CHECK: " + ("FAIL" if _failed else "PASS"))
 	get_tree().quit(1 if _failed else 0)
 
@@ -60,6 +66,18 @@ func _check_buildings() -> void:
 		await _open(label, scene)
 
 
+## Screens the camp does not route to, and which therefore had nothing checking
+## they still build: the title, the roster and the result screen. They are
+## reached from the run or the boot path, so a break in one of them shows up
+## only when a person walks that way.
+func _check_standalone_screens() -> void:
+	for path: String in STANDALONE_SCREENS:
+		if not ResourceLoader.exists(path):
+			_fail("standalone screen missing: " + path)
+			continue
+		await _open(path.get_file(), path)
+
+
 ## Instantiates a destination and lets it build. A screen that errors in
 ## _ready still returns a node, so the assertion is that it actually PRODUCED
 ## something — an empty screen is the shape a failed build leaves behind.
@@ -72,6 +90,7 @@ func _open(label: String, scene_path: String) -> void:
 	add_child(screen)
 	for _i: int in range(SETTLE_FRAMES):
 		await get_tree().process_frame
+	await _capture(label)
 	var labels: int = _visible_labels(screen)
 	if labels == 0:
 		_fail("%s opened but drew no text at all" % label)
@@ -79,6 +98,17 @@ func _open(label: String, scene_path: String) -> void:
 		print("NAV %s: %s built %d text nodes" % [label, scene_path, labels])
 	screen.queue_free()
 	await get_tree().process_frame
+
+
+## Rendered runs only: one shot per screen, which is what makes "it built" and
+## "it looks right" separable claims.
+func _capture(label: String) -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	await RenderingServer.frame_post_draw
+	var path: String = "user://nav_%s.png" % label.replace(".tscn", "")
+	get_viewport().get_texture().get_image().save_png(path)
+	print("NAV shot: " + ProjectSettings.globalize_path(path))
 
 
 func _visible_labels(node: Node) -> int:
