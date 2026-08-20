@@ -375,7 +375,6 @@
   "noebu": {
     "name_ko": "뇌부",
     "name_en": "Thunder Charm",
-    "travel_sprite": "res://asset/weapon/travel/noebu.png",
     "hit_effect": "hit_lightning",
     "category": "spiritual",
     "grade": "common",
@@ -439,7 +438,6 @@
   "noejeongbu": {
     "name_ko": "뇌정부",
     "name_en": "Thunderbolt Charm",
-    "travel_sprite": "res://asset/weapon/travel/noejeongbu.png",
     "hit_effect": "hit_lightning",
     "category": "spiritual",
     "grade": "epic",

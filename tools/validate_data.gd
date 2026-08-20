@@ -947,6 +947,17 @@ func _check_weapon_art(weapons: Dictionary, sprite_effects: Dictionary) -> void:
 			var travel: String = String(weapon.get("travel_sprite", ""))
 			if travel.is_empty() or not FileAccess.file_exists(travel):
 				_fail("weapons.%s.travel_sprite file missing: %s" % [weapon_id, travel])
+			# N9-79 (owner: 뇌부는 애초에 투사체가 아니라 번개다). A chain weapon
+			# resolves on the enemy it aimed at with no flight (AutoWeapon's
+			# strike_now, Projectile._instant) and ChainBolt draws the jump, so a
+			# travel sprite on one is art nobody will ever see. 뇌부 and 뇌정부
+			# both carried one — exactly the kind of thing a file-exists check
+			# passes and a player never does.
+			if String(weapon.get("mechanic", "")) == "chain":
+				_fail(
+					"weapons.%s is a chain weapon and never travels; drop travel_sprite"
+					% weapon_id
+				)
 		if weapon.has("hit_effect"):
 			var hit_effect: String = String(weapon.get("hit_effect", ""))
 			if not sprite_effects.has(hit_effect):

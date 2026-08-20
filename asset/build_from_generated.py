@@ -14,6 +14,11 @@ Two kinds of target:
 * projectile and FX sprites are authored at 1x, so they go straight down to
   their final size and stop there.
 
+뇌부/뇌정부 are absent on purpose: a chain weapon never flies (AutoWeapon
+resolves it on the enemy it aimed at and ChainBolt draws the jump), so a
+travel sprite for one would be art nobody sees. validate_data now fails any
+chain weapon that declares one.
+
 Not everything can land this way. asset/effect/hit_phoenix.png (5 frames) and
 asset/weapon/fx/swing_arc.png (2 frames) are horizontal STRIPS; a single still
 cannot replace an animation, so those two stay in new_asset/generated as
@@ -58,8 +63,6 @@ INSTALL = [
     ("travel_bongmageom", "asset/weapon/travel/bongmageom.png", False),
     ("travel_hwabu", "asset/weapon/travel/hwabu.png", False),
     ("travel_hwaryeongbu", "asset/weapon/travel/hwaryeongbu.png", False),
-    ("travel_noebu", "asset/weapon/travel/noebu.png", False),
-    ("travel_noejeongbu", "asset/weapon/travel/noejeongbu.png", False),
     ("travel_sal", "asset/weapon/travel/sal.png", False),
     ("travel_gwisal", "asset/weapon/travel/gwisal.png", False),
     ("fx_sinjang", "asset/weapon/fx/sinjang.png", False),
