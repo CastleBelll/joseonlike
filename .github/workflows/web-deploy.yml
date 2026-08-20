@@ -9,7 +9,26 @@ name: Web deploy
 on:
   push:
     branches: [main]
+    # N9-84: a Vercel free account allows 100 deployments a DAY across every
+    # project, and this workflow spent the whole allowance on commits that
+    # could not change the build. Docs, screenshots and the art drop boxes are
+    # never read by the exported game, so a commit touching only those has
+    # nothing to deploy.
+    paths-ignore:
+      - "**/*.md"
+      - "captures/**"
+      - "new_asset/**"
+      - "docs/**"
+      - ".github/**"
   workflow_dispatch:
+
+# The deploy is a publish, not a check: only the newest commit on main is worth
+# putting live. Without this a burst of pushes deploys every one of them in
+# turn, each superseded seconds later, which is the other half of how the daily
+# allowance ran out.
+concurrency:
+  group: web-deploy
+  cancel-in-progress: true
 
 env:
   # Pinned to the same build as ci.yml. A floating "latest" here would let the

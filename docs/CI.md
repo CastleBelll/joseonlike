@@ -154,6 +154,22 @@ environment.
 Pushing to `main` builds the `Web` preset (WASM) and publishes it, so the game
 can be handed to playtesters as a URL. `workflow_dispatch` runs it on demand.
 
+**A Vercel free account allows 100 deployments a day, across every project.**
+On 2026-08-20 a run of art and docs commits spent the whole allowance, and
+every push after 05:57 failed on the last line — build green, 99.6 MB
+uploaded, `api-deployments-free-per-day`. Nothing was wrong with the pipeline;
+the account was out. Two settings keep it from recurring:
+
+- `paths-ignore` skips commits that touch only `*.md`, `captures/`,
+  `new_asset/`, `docs/` or `.github/`. None of those reach the export, so there
+  is nothing new to publish.
+- `concurrency: web-deploy` with `cancel-in-progress` publishes the newest
+  commit of a burst instead of publishing every one of them in turn.
+
+If the allowance does run out there is no workaround: it resets on its own and
+the next qualifying push deploys normally. Re-running the failed job before the
+reset only spends another attempt.
+
 **Cross-origin isolation is mandatory, not optional.** Godot 4's web runtime
 uses `SharedArrayBuffer` and refuses to start without
 `Cross-Origin-Opener-Policy: same-origin` and
