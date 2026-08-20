@@ -513,19 +513,62 @@ class LightHalo:
 	# pool at a fraction of the weight, while the outermost step still lands
 	# exactly on the damage radius, so what the player sees is still what the
 	# rule uses.
-	const RING_COUNT := 18
-	const CORE_ALPHA := 0.11
+	## N9-86: the pool has to end where the RULE ends. CombatMath.is_lit is a
+	## hard circle at `radius`, but the shipped curve reached alpha 0.0001 by
+	## 0.9R and nothing past that — so a shadow monster standing at 0.8R took
+	## damage while looking like it stood in the dark. That is the N3-18
+	## contract ("what you see is what hits") broken by a falloff, which is
+	## exactly the kind nobody notices.
+	##
+	## A floor under the whole disc fixes it without flooding the field: the
+	## light stays a soft pool, and the floor cutting to zero AT the radius is
+	## what draws the edge.
+	const RING_COUNT := 28
+	const CORE_ALPHA := 0.39
+	## Held across the whole disc so the boundary is legible; the step from this
+	## to nothing at `radius` is the edge the player reads.
+	const FLOOR_ALPHA := 0.03
 	## Higher is tighter: light stays near the fire instead of washing the field.
 	const FALLOFF_POWER := 2.4
+	## A thin line right on the true radius — the treatment N9-71 gave the
+	## ward's rim: the boundary is where the rule bites, not near it.
+	const RIM_ALPHA := 0.07
+	const RIM_WIDTH := 1.5
+	const RIM_POINTS := 48
 
 	var radius: float = 0.0
 
+	## Cumulative alpha the pool shows at `t` = distance / radius. Pure, so the
+	## suite can pin the property that was wrong rather than the drawing.
+	## The radius itself counts as lit, because CombatMath.is_lit compares with
+	## <= and a point exactly on the boundary is one the rule damages. Excluding
+	## it here would put the disagreement back a pixel further out.
+	static func pool_alpha(t: float) -> float:
+		if t < 0.0 or t > 1.0:
+			return 0.0
+		return FLOOR_ALPHA + CORE_ALPHA * pow(1.0 - t, FALLOFF_POWER)
+
 	func _draw() -> void:
+		if radius <= 0.0:
+			return
+		# Painted outside in, each disc adding only the DIFFERENCE between its
+		# band's target and what is already down. Stacking a fixed alpha per
+		# ring is what produced eighteen countable steps; solving for the step
+		# that lands on the curve means the curve is what you see.
+		var painted: float = 0.0
 		for ring: int in range(RING_COUNT, 0, -1):
 			var t: float = float(ring) / float(RING_COUNT)
+			var target: float = pool_alpha(t - 0.5 / float(RING_COUNT))
+			if target <= painted or painted >= 1.0:
+				continue
 			var color := UiPalette.LIGHT_HALO
-			color.a = CORE_ALPHA * pow(1.0 - t, FALLOFF_POWER)
+			color.a = (target - painted) / (1.0 - painted)
 			draw_circle(Vector2.ZERO, radius * t, color)
+			painted = target
+		draw_arc(
+			Vector2.ZERO, radius, 0.0, TAU, RIM_POINTS,
+			Color(UiPalette.LIGHT_HALO, RIM_ALPHA), RIM_WIDTH
+		)
 
 
 ## N9-32 contact shadow: a squashed, layered ellipse under a solid prop so it
