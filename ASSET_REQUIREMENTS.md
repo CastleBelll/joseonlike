@@ -225,7 +225,7 @@ Note:      타격 표시라 1프레임에서 가장 크고 마지막에 흩어�
 ```
 
 ```
-[NEEDS FRAMES] swing_arc — asset/weapon/fx/swing_arc.png
+[NEEDS FRAMES] swing_arc — asset/effect/swing_arc.png
 Size:      20px 정사각 프레임, 현재 2프레임 (40x20)
 Used by:   근접 휘두름 궤적 (N9-70)
 Reference: new_asset/generated/fx_swing_arc.png (양끝이 뾰족한 베기 자국)

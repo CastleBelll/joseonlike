@@ -30,7 +30,7 @@
 | 파일 | 목표 경로 | 셀 크기 | 권장 프레임 | 무엇 |
 |---|---|---|---|---|
 | `fx_hit_phoenix.png` | `asset/effect/hit_phoenix.png` | 48x48 | 5 | 봉황 타격 표시. 1프레임이 가장 크고 마지막에 흩어져 사라진다 |
-| `fx_swing_arc.png` | `asset/weapon/fx/swing_arc.png` | 20x20 | 2 | 근접 휘두름 궤적. 초승달이 아니라 베기 자국 — 양끝이 바늘처럼 가늘다 |
+| `fx_swing_arc.png` | `asset/effect/swing_arc.png` | 20x20 | 2 | 근접 휘두름 궤적. 초승달이 아니라 베기 자국 — 양끝이 바늘처럼 가늘다 |
 | `travel_hwabu.png` | `asset/weapon/travel/hwabu.png` | 18x18 | 4 | 화부 불덩이. 불꽃이 흔들려야 불로 읽힌다 |
 | `travel_hwaryeongbu.png` | `asset/weapon/travel/hwaryeongbu.png` | 16x18 | 4 | 화령부 불덩이. 화부보다 세게 |
 | `travel_sal.png` | `asset/weapon/travel/sal.png` | 18x18 | 4 | 살 저주 연기. 일렁여야 한다 |
