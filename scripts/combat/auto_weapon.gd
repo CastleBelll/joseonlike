@@ -82,6 +82,8 @@ var _damage_scale: float = 1.0
 var _cooldown_scale: float = 1.0
 var _speed_scale: float = 1.0
 var _extra_projectiles: int = 0
+## N9-88: mechanic-reshaping passive effects, folded in _recompute.
+var _field_effects: Dictionary = {}
 var _crit_chance: float = 0.0
 var _crit_multiplier: float = 1.0
 ## Set by _roll_damage and read at the emit that immediately follows it. A
@@ -214,6 +216,16 @@ func set_extra_projectiles(count: int) -> void:
 	_recompute()
 
 
+## N9-88 field passives that reshape the MECHANIC rather than scale a number:
+## 연쇄 확장 (chain_jumps), 봉인 가속 (seal_burst), 불씨 정통 (burn_dps),
+## 광역 확장 (area_radius). Same effect vocabulary as the meta tree, applied
+## through the same fold — but at _recompute time rather than setup, because
+## passives change with every level-up pick while meta is fixed for the run.
+func set_field_effects(effects: Dictionary) -> void:
+	_field_effects = effects
+	_recompute()
+
+
 ## N9-18 치명타 확률: run-wide crit chance/multiplier from passives. Rolled
 ## per shot in _roll_damage so every mechanic — projectile, arc, ward tick,
 ## orbit graze — crits through one path.
@@ -240,6 +252,10 @@ func _recompute() -> void:
 		# _base_stats and compound on every recompute.
 		_stats = _stats.duplicate(true)
 		_stats["projectile_count"] = int(_stats.get("projectile_count", 1)) + _extra_projectiles
+	if not _field_effects.is_empty():
+		# Safe against the same corruption: modified_weapon_stats deep-copies
+		# before touching anything, so recomputes never compound.
+		_stats = MetaTree.modified_weapon_stats(_stats, _field_effects)
 	_speed = float(_stats.get("speed", 0.0)) * _speed_scale
 	_range = float(_stats.get("range_px", 0.0))
 	_lifesteal = float(_stats.get("lifesteal", 0.0))

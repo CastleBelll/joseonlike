@@ -41,10 +41,15 @@ const UNKNOWN_RESULT := "???"
 ## projectile_speed (AutoWeapon speed scale) wired and offered; N9-3g adds
 ## defense (damage-taken scale, floored) and projectile_count (flat bonus
 ## folded into effective weapon stats).
+## N9-88 adds the five mechanic-reshaping picks (도력/광역 확장/불씨 정통/
+## 연쇄 확장/봉인 가속). They sat in passives.json unoffered since N4 — data
+## that looked implemented and was not, which is exactly the trap
+## test_offerable_passives_are_consumed now guards.
 const OFFERABLE_PASSIVES: Array[String] = [
 	"attack_damage", "attack_speed", "move_speed", "max_hp", "magnet_radius",
 	"xp_gain", "luck", "projectile_speed", "defense", "projectile_count",
-	"crit_chance", "crit_damage"
+	"crit_chance", "crit_damage", "skill_power", "area_scale", "burn_power",
+	"chain_amount", "seal_haste"
 ]
 
 ## Mechanics the AutoWeapon runtime implements (N4-4a); a data entry with an

@@ -286,6 +286,20 @@ static func modified_weapon_stats(stats: Dictionary, effects: Dictionary) -> Dic
 	var seal: Dictionary = result.get("on_hit_seal", {})
 	if seal_ease > 0 and not seal.is_empty():
 		seal["burst_at"] = maxi(int(seal.get("burst_at", 0)) - seal_ease, MIN_SEAL_BURST)
+	# N9-88: two more effect kinds, added for the field passives (불씨 정통 and
+	# 광역 확장) but usable by any future tree node — this function is the one
+	# place "effects fold into weapon stats" lives, whoever supplies them.
+	var burn_dps_scale: float = float(effects.get("burn_dps", 0.0))
+	if burn_dps_scale > 0.0 and String(status.get("id", "")) == "burn":
+		status["dps"] = float(status.get("dps", 0.0)) * (1.0 + burn_dps_scale)
+	var area_scale: float = float(effects.get("area_radius", 0.0))
+	if area_scale > 0.0:
+		# The AREA mechanics only: a chain's reach and an orbit's ring have
+		# their own knobs, and scaling them here would double-dip.
+		for block_name: String in ["explosion", "ward", "shockwave"]:
+			if result.has(block_name):
+				var block: Dictionary = result[block_name]
+				block["radius_px"] = float(block.get("radius_px", 0.0)) * (1.0 + area_scale)
 	return result
 
 

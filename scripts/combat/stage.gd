@@ -820,7 +820,10 @@ func _execute_blink(active: Dictionary) -> void:
 func _execute_burst(active: Dictionary) -> void:
 	var origin: Vector2 = _player.global_position
 	var radius: float = float(active.get("radius_px", 0.0))
-	var damage: float = float(active.get("damage", 0.0))
+	# N9-88 도력: the one number an active-skill build can grow.
+	var damage: float = (
+		float(active.get("damage", 0.0)) * (1.0 + _passive_bonus("skill_power"))
+	)
 	# N3-18: a clean expanding wave that lands exactly on the damage radius —
 	# the N3-17 DeathPuff reuse opened as an opaque gold pancake covering half
 	# the screen. The short screen flash stays as the "emergency" punctuation.
@@ -1292,10 +1295,23 @@ func _refresh_weapon_scales() -> void:
 	# x2 plus every 치명 일격 stack.
 	var crit_chance: float = _passive_bonus("crit_chance")
 	var crit_multiplier: float = CRIT_MULTIPLIER + _passive_bonus("crit_damage")
+	# N9-88 mechanic-reshaping passives, same vocabulary as the meta tree.
+	# Built once per refresh and handed to every weapon; a weapon whose
+	# mechanic has none of these blocks folds them as no-ops.
+	var field_effects: Dictionary = {}
+	if _passive_bonus("chain_amount") > 0.0:
+		field_effects["chain_jumps"] = _passive_bonus("chain_amount")
+	if _passive_bonus("seal_haste") > 0.0:
+		field_effects["seal_burst"] = _passive_bonus("seal_haste")
+	if _passive_bonus("burn_power") > 0.0:
+		field_effects["burn_dps"] = _passive_bonus("burn_power")
+	if _passive_bonus("area_scale") > 0.0:
+		field_effects["area_radius"] = _passive_bonus("area_scale")
 	for weapon_id: String in _weapon_nodes:
 		var weapon: AutoWeapon = _weapon_nodes[weapon_id]
 		weapon.set_scales(damage_scale, cooldown_scale, speed_scale)
 		weapon.set_extra_projectiles(extra_projectiles)
+		weapon.set_field_effects(field_effects)
 		# N9-27: grade is a per-WEAPON crit specialisation on top of the run-wide
 		# passive crit, which is what makes it a different question from level
 		# rather than a second copy of it.
