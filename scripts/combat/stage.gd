@@ -1548,7 +1548,20 @@ func _minimap_blips() -> Dictionary:
 		Minimap.KIND_LOOT: loot,
 		Minimap.KIND_CHEST: chests,
 		Minimap.KIND_PASSIVE: passives,
+		Minimap.KIND_TERRAIN: _solid_prop_positions(),
 	}
+
+
+## N9-66: solid props, drawn on the map as 산줄기 chevrons. Real positions
+## rather than decoration — a printed ridge where nothing stands would make
+## the map lie, and this one is earned.
+func _solid_prop_positions() -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	for child: Node in _field.get_children():
+		var body := child as StaticBody2D
+		if body != null and body.visible:
+			out.append(body.global_position)
+	return out
 
 
 func _map_unlocked() -> bool:
