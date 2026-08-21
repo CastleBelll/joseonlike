@@ -135,6 +135,8 @@ var _live_marks: int = 0
 ## N9-70: the crescent that rides the swing.
 var _swing_art: EffectSprite
 var _impact_pool: NodePool
+var _cast_effect: String = ""
+var _bolt_art: bool = false
 # N3-17 effect state: chain-jump bolts and the shockwave camera thump.
 var _bolt_pool: NodePool
 var _nudge_left: float = 0.0
@@ -164,8 +166,15 @@ func setup(
 	weapon_id = id
 	_base_stats = MetaTree.modified_weapon_stats(weapons[id], meta_effects)
 	_impact_effect = String(_base_stats.get("hit_effect", ""))
-	if EffectSprite.available(_impact_effect):
+	# N9-116 (owner: 시작 이펙트): optional cast flash at the caster, data-
+	# driven exactly like hit_effect — weapons without the key are untouched.
+	_cast_effect = String(_base_stats.get("cast_effect", ""))
+	_bolt_art = bool((_base_stats.get("chain", {}) as Dictionary).get("bolt_art", false))
+	if not EffectSprite.available(_cast_effect):
+		_cast_effect = ""
+	if EffectSprite.available(_impact_effect) or not _cast_effect.is_empty():
 		_impact_pool = NodePool.new(self, _create_impact_sprite)
+	if EffectSprite.available(_impact_effect):
 		# N9-69 (owner: "몬스터 타격 표시가 필요할거같아"): connected to the
 		# weapon's OWN report of a hit, which every attack shape already emits.
 		# Spawning from the projectile path — where it used to live — left the
@@ -397,6 +406,7 @@ func _fire() -> void:
 		direction = Vector2.RIGHT  # target exactly on the player; any heading hits
 	# N4-8 multishot: projectile mechanics fire projectile_count shots fanned
 	# around the aim; count 1 keeps the exact single-shot behaviour.
+	_spawn_cast()
 	for shot_direction: Vector2 in WeaponMath.fan_directions(
 		direction, int(_stats.get("projectile_count", 1)), deg_to_rad(_fan_spread_deg)
 	):
@@ -438,16 +448,22 @@ func _fire_arc(enemies: Array[Enemy], positions: Array[Vector2], aim_point: Vect
 		origin, aim, arc_rad, _range, _tint(), WeaponEffects.value("arc_sweep_sec")
 	)
 	# N5-5: the swing also smashes destructible props caught in the sector.
+	# N9-116 fix: hit indices must resolve against the SNAPSHOT — breaking a
+	# prop erases it from _spawner.breakables synchronously (N9-101), so
+	# re-indexing the live array walked past its new end mid-swing.
+	var break_targets: Array[Breakable] = []
 	var break_positions: Array[Vector2] = []
 	var break_radii: Array[float] = []
 	for breakable: Breakable in _spawner.breakables:
+		break_targets.append(breakable)
 		break_positions.append(breakable.global_position)
 		break_radii.append(breakable.hit_radius)
 	for i: int in WeaponMath.arc_hits(
 		origin, aim, arc_rad, _range, break_positions, break_radii
 	):
-		if _spawner.breakables[i].alive():
-			_spawner.breakables[i].take_weapon_damage(_damage)
+		var target: Breakable = break_targets[i]
+		if is_instance_valid(target) and target.alive():
+			target.take_weapon_damage(_damage)
 
 
 ## 혼불 (N4-4a): orbs ride a ring around the player; contact deals the weapon
@@ -762,14 +778,24 @@ func _on_projectile_exploded(at: Vector2, radius: float) -> void:
 			)
 
 
+## N9-116: the cast flash at the caster the moment the weapon actually fires.
+func _spawn_cast() -> void:
+	if _impact_pool == null or _cast_effect.is_empty():
+		return
+	var sprite: EffectSprite = _impact_pool.acquire()
+	sprite.play_effect(_cast_effect, _player.global_position, 0.0, Color.WHITE)
+
+
 ## 뇌부 (N3-17): the jump leg between two chained enemies gets its lightning.
+## N9-116: chain blocks that opt in (bolt_art) stretch the owner's authored
+## body strips over the leg instead of the code polyline.
 func _on_projectile_chained(from: Vector2, to: Vector2) -> void:
 	if _bolt_pool == null:
 		return
 	var bolt: ChainBolt = _bolt_pool.acquire()
 	bolt.show_bolt(
 		from, to, _tint(), WeaponEffects.value("chain_bolt_sec"),
-		WeaponEffects.value("chain_bolt_jitter_px")
+		WeaponEffects.value("chain_bolt_jitter_px"), _bolt_art
 	)
 
 

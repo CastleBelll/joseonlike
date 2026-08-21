@@ -74,6 +74,28 @@ func test_projectile_travel_art_resolves_with_missing_fallback() -> bool:
 	return passed
 
 
+func test_bolt_art_strips_resolve_and_divide() -> bool:
+	# N9-116 (owner sheet): each authored bolt-body pattern must exist and
+	# split evenly into its declared frame count, or the stretch draw would
+	# slice mid-drawing. bolt_frame plays once and holds the last frame.
+	var passed: bool = true
+	for path: String in ChainBolt.BOLT_ART:
+		if not ResourceLoader.exists(path, "Texture2D"):
+			push_error("test_weapon_effects: missing bolt art " + path)
+			passed = false
+			continue
+		var texture: Texture2D = load(path)
+		if texture.get_width() % ChainBolt.BOLT_ART_FRAMES != 0:
+			push_error("test_weapon_effects: %s width %d not divisible by %d frames"
+				% [path, texture.get_width(), ChainBolt.BOLT_ART_FRAMES])
+			passed = false
+	passed = passed and ChainBolt.bolt_frame(0.0, 4) == 0
+	passed = passed and ChainBolt.bolt_frame(0.5, 4) == 2
+	passed = passed and ChainBolt.bolt_frame(0.999, 4) == 3
+	passed = passed and ChainBolt.bolt_frame(1.2, 4) == 3
+	return passed
+
+
 func test_bolt_points_anchor_endpoints() -> bool:
 	var from := Vector2(10.0, 20.0)
 	var to := Vector2(110.0, 20.0)

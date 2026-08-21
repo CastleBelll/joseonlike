@@ -475,6 +475,12 @@ func _check_weapon_hit_effects(weapons: Dictionary) -> void:
 			_fail("weapons.%s.hit_effect '%s' is not in effects.sprite_effects" % [
 				weapon_id, effect
 			])
+		# N9-116: cast_effect is optional, but a declared one must resolve.
+		var cast: String = String((weapon as Dictionary).get("cast_effect", ""))
+		if not cast.is_empty() and not effects.has(cast):
+			_fail("weapons.%s.cast_effect '%s' is not in effects.sprite_effects" % [
+				weapon_id, cast
+			])
 
 
 func _check_weapon_mechanics(weapons: Dictionary) -> void:
@@ -996,7 +1002,7 @@ const WEAPON_ALLOWED_KEYS: Array[String] = [
 	"range_px", "max_level", "per_level", "milestones", "evolution_only",
 	"explosion", "chain", "arc", "orbit", "ward", "summon", "shockwave",
 	"on_hit_status", "on_hit_seal", "lifesteal", "hit_effect", "travel_sprite",
-	"travel_frames",
+	"travel_frames", "cast_effect",
 ]
 
 

@@ -110,6 +110,16 @@
    "file": "res://asset/effect/hit_old_talisman.png",
    "fps": 30.0,
    "logical_px": 32.0
+  },
+  "hit_noebu": {
+   "file": "res://asset/effect/hit_noebu.png",
+   "fps": 30.0,
+   "logical_px": 34.0
+  },
+  "cast_noebu": {
+   "file": "res://asset/effect/cast_noebu.png",
+   "fps": 24.0,
+   "logical_px": 30.0
   }
  }
 }

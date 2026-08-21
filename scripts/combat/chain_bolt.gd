@@ -14,16 +14,48 @@ const TIP_WIDTH_SCALE := 0.3
 const CORE_WIDTH_SCALE := 0.4
 const CORE_ALPHA := 0.9
 
+## N9-116 (owner sheet): four authored bolt-body patterns, each a horizontal
+## strip of BOLT_ART_FRAMES cells, stretched between the two chained enemies.
+## A missing file keeps that slot on the code-drawn polyline — art never
+## blocks the weapon.
+const BOLT_ART: Array[String] = [
+	"res://asset/weapon/fx/chain_bolt_a.png", "res://asset/weapon/fx/chain_bolt_b.png",
+	"res://asset/weapon/fx/chain_bolt_c.png", "res://asset/weapon/fx/chain_bolt_d.png",
+]
+const BOLT_ART_FRAMES := 4
+
+static var _art_cache: Array[Texture2D] = []
+
 var _age: float = 0.0
 var _duration: float = 0.0
 var _color: Color = UiPalette.WEAPON_LIGHTNING
 var _points: PackedVector2Array = PackedVector2Array()
 var _noise: Array[float] = []
+var _texture: Texture2D = null
+var _target_local := Vector2.ZERO
 
 
 func _init() -> void:
 	_points.resize(SEGMENTS + 1)
 	_noise.resize(SEGMENTS + 1)
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
+
+## The strip frame for a bolt `progress` of the way through its life: plays
+## once across the duration, clamped so the last frame holds to the end.
+static func bolt_frame(progress: float, frames: int) -> int:
+	return clampi(int(progress * float(frames)), 0, frames - 1)
+
+
+static func _pick_art() -> Texture2D:
+	if _art_cache.is_empty():
+		for path: String in BOLT_ART:
+			var texture: Texture2D = load(path) if ResourceLoader.exists(path, "Texture2D") else null
+			if texture != null:
+				_art_cache.append(texture)
+		if _art_cache.is_empty():
+			return null
+	return _art_cache[randi() % _art_cache.size()]
 
 
 ## Local-space bolt vertices from `from` toward `to`, written into `points`
@@ -44,15 +76,19 @@ static func fill_bolt_points(
 
 
 func show_bolt(
-	from: Vector2, to: Vector2, color: Color, duration: float, jitter_px: float
+	from: Vector2, to: Vector2, color: Color, duration: float, jitter_px: float,
+	use_art: bool = false
 ) -> void:
 	global_position = from
 	_color = color
 	_duration = maxf(duration, 0.01)
 	_age = 0.0
-	for i: int in range(_noise.size()):
-		_noise[i] = randf_range(-1.0, 1.0)
-	fill_bolt_points(_points, Vector2.ZERO, to - from, jitter_px, _noise)
+	_target_local = to - from
+	_texture = _pick_art() if use_art else null
+	if _texture == null:
+		for i: int in range(_noise.size()):
+			_noise[i] = randf_range(-1.0, 1.0)
+		fill_bolt_points(_points, Vector2.ZERO, _target_local, jitter_px, _noise)
 	queue_redraw()
 
 
@@ -66,6 +102,22 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var fade: float = 1.0 - clampf(_age / _duration, 0.0, 1.0)
+	if _texture != null:
+		# Authored body: one pattern strip stretched root-to-target; the four
+		# frames carry the flicker-and-decay, so no alpha fade on top.
+		var frame_w: float = _texture.get_width() / float(BOLT_ART_FRAMES)
+		var frame_h: float = float(_texture.get_height())
+		var length: float = _target_local.length()
+		if length < 1.0:
+			return
+		var frame: int = bolt_frame(_age / _duration, BOLT_ART_FRAMES)
+		draw_set_transform(Vector2.ZERO, _target_local.angle(), Vector2(length / frame_w, 1.0))
+		draw_texture_rect_region(
+			_texture,
+			Rect2(Vector2(0.0, -frame_h / 2.0), Vector2(frame_w, frame_h)),
+			Rect2(Vector2(frame_w * float(frame), 0.0), Vector2(frame_w, frame_h))
+		)
+		return
 	# N3-18: root width from data — the 3.5px N3-17 bolt vanished at 540x960.
 	var width_root: float = WeaponEffects.value("chain_bolt_width_px")
 	for i: int in range(_points.size() - 1):
