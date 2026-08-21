@@ -219,6 +219,10 @@ func _check_combat_cross_references() -> void:
 		_require_positive_numbers(passive, PASSIVE_FIELDS, "passives." + passive_id)
 		if String(passive.get("name_ko", "")).is_empty():
 			_fail("passives.%s.name_ko missing or empty" % passive_id)
+		# N9-105 (owner: a bare % never says what it touches): the card body
+		# leads with this line, so a passive without one ships a mute card.
+		if String(passive.get("desc_ko", "")).is_empty():
+			_fail("passives.%s.desc_ko missing or empty" % passive_id)
 	for offered_id: String in LevelUp.OFFERABLE_PASSIVES:
 		if not passives.has(offered_id):
 			_fail("LevelUp.OFFERABLE_PASSIVES id '%s' not in passives.json" % offered_id)

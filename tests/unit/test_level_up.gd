@@ -413,10 +413,12 @@ func test_describe_new_weapon_shows_base_stats() -> bool:
 
 
 func test_describe_passive_percent_at_several_stacks() -> bool:
+	# N9-105: the body leads with the desc (what the % touches); a fixture
+	# without one falls back to the name so the card is never blank.
 	var choice := {"kind": LevelUp.KIND_PASSIVE, "id": "attack_damage"}
 	var first: String = LevelUp.describe(choice, {}, PASSIVES, {}, {})
 	var second: String = LevelUp.describe(choice, {}, PASSIVES, {}, {"attack_damage": 1})
-	return first == "공격력 +6% (1/2)" and second == "공격력 +6% (2/2)"
+	return first == "공격력 — +6% (1/2)" and second == "공격력 — +6% (2/2)"
 
 
 func test_describe_passive_flat_amount() -> bool:
@@ -424,7 +426,21 @@ func test_describe_passive_flat_amount() -> bool:
 		"projectile_count": {"name_ko": "다중 투사", "per_stack": 1.0, "max_stacks": 2}
 	}
 	var choice := {"kind": LevelUp.KIND_PASSIVE, "id": "projectile_count"}
-	return LevelUp.describe(choice, {}, passives, {}, {}) == "다중 투사 +1 (1/2)"
+	return LevelUp.describe(choice, {}, passives, {}, {}) == "다중 투사 — +1 (1/2)"
+
+
+func test_describe_passive_leads_with_its_desc() -> bool:
+	# N9-105 (owner: a bare % never says what it touches): with a desc in
+	# data the body explains the effect instead of repeating the title.
+	var passives := {
+		"area_scale": {
+			"name_ko": "광역 확장", "desc_ko": "폭발·장판·파동의 반경이 넓어진다",
+			"per_stack": 0.08, "max_stacks": 5,
+		}
+	}
+	var choice := {"kind": LevelUp.KIND_PASSIVE, "id": "area_scale"}
+	var line: String = LevelUp.describe(choice, {}, passives, {}, {})
+	return line == "폭발·장판·파동의 반경이 넓어진다 — +8% (1/5)"
 
 
 func test_apply_weapon_up_bumps_exactly_that_weapon() -> bool:

@@ -1,121 +1,155 @@
 {
-  "attack_damage": {
-    "name_ko": "공격력",
-    "name_en": "Attack Damage",
-    "stat": "attack_damage",
-    "per_stack": 0.06,
-    "max_stacks": 5
-  },
-  "attack_speed": {
-    "name_ko": "공격 속도",
-    "name_en": "Attack Speed",
-    "stat": "attack_speed",
-    "per_stack": 0.08,
-    "max_stacks": 5
-  },
-  "move_speed": {
-    "name_ko": "이동 속도",
-    "name_en": "Move Speed",
-    "stat": "move_speed",
-    "per_stack": 0.05,
-    "max_stacks": 5
-  },
-  "crit_chance": {
-    "name_ko": "치명타 확률",
-    "name_en": "Crit Chance",
-    "stat": "crit_chance",
-    "per_stack": 0.05,
-    "max_stacks": 6
-  },
-  "max_hp": {
-    "name_ko": "최대 체력",
-    "name_en": "Max HP",
-    "stat": "max_hp",
-    "per_stack": 0.1,
-    "max_stacks": 5
-  },
-  "xp_gain": {
-    "name_ko": "경험치 획득",
-    "name_en": "XP Gain",
-    "stat": "xp_gain",
-    "per_stack": 0.1,
-    "max_stacks": 5
-  },
-  "luck": {
-    "name_ko": "행운",
-    "name_en": "Luck",
-    "stat": "luck",
-    "per_stack": 0.05,
-    "max_stacks": 5
-  },
-  "skill_power": {
-    "name_ko": "도력",
-    "name_en": "Skill Power",
-    "stat": "skill_power",
-    "per_stack": 0.1,
-    "max_stacks": 5
-  },
-  "projectile_count": {
-    "name_ko": "다중 투사",
-    "name_en": "Multi Shot",
-    "stat": "projectile_count",
-    "per_stack": 1.0,
-    "max_stacks": 2
-  },
-  "projectile_speed": {
-    "name_ko": "신속 투사",
-    "name_en": "Swift Shot",
-    "stat": "projectile_speed",
-    "per_stack": 0.1,
-    "max_stacks": 5
-  },
-  "area_scale": {
-    "name_ko": "광역 확장",
-    "name_en": "Area Up",
-    "stat": "area_scale",
-    "per_stack": 0.08,
-    "max_stacks": 5
-  },
-  "defense": {
-    "name_ko": "방비",
-    "name_en": "Defense",
-    "stat": "defense",
-    "per_stack": 0.05,
-    "max_stacks": 4
-  },
-  "magnet_radius": {
-    "name_ko": "끌어당김",
-    "name_en": "Magnet",
-    "stat": "magnet_radius",
-    "per_stack": 0.15,
-    "max_stacks": 5
-  },
-  "burn_power": {
-    "name_ko": "불씨 정통",
-    "name_en": "Ember Mastery",
-    "stat": "burn_power",
-    "per_stack": 0.2,
-    "max_stacks": 3
-  },
-  "chain_amount": {
-    "name_ko": "연쇄 확장",
-    "name_en": "Chain Reach",
-    "stat": "chain_amount",
-    "per_stack": 1.0,
-    "max_stacks": 2
-  },
-  "seal_haste": {
-    "name_ko": "봉인 가속",
-    "name_en": "Seal Haste",
-    "stat": "seal_haste",
-    "per_stack": 1.0,
-    "max_stacks": 2
-  },
-  "crit_damage": {
-    "name_ko": "치명 일격",
-    "name_en": "Crit Damage",
-    "stat": "crit_damage",
-    "per_stack": 0.25,
-    "max_stacks": 4
-  }
+ "attack_damage": {
+  "name_ko": "공격력",
+  "name_en": "Attack Damage",
+  "stat": "attack_damage",
+  "per_stack": 0.06,
+  "max_stacks": 5,
+  "desc_ko": "모든 무기의 피해가 오른다",
+  "desc_en": "All weapon damage up"
+ },
+ "attack_speed": {
+  "name_ko": "공격 속도",
+  "name_en": "Attack Speed",
+  "stat": "attack_speed",
+  "per_stack": 0.08,
+  "max_stacks": 5,
+  "desc_ko": "모든 무기의 쿨다운이 줄어 더 자주 발동한다",
+  "desc_en": "All weapons fire more often"
+ },
+ "move_speed": {
+  "name_ko": "이동 속도",
+  "name_en": "Move Speed",
+  "stat": "move_speed",
+  "per_stack": 0.05,
+  "max_stacks": 5,
+  "desc_ko": "이동 속도가 빨라진다",
+  "desc_en": "You move faster"
+ },
+ "crit_chance": {
+  "name_ko": "치명타 확률",
+  "name_en": "Crit Chance",
+  "stat": "crit_chance",
+  "per_stack": 0.05,
+  "max_stacks": 6,
+  "desc_ko": "모든 타격의 치명타 확률이 오른다",
+  "desc_en": "Every hit crits more often"
+ },
+ "max_hp": {
+  "name_ko": "최대 체력",
+  "name_en": "Max HP",
+  "stat": "max_hp",
+  "per_stack": 0.1,
+  "max_stacks": 5,
+  "desc_ko": "최대 체력이 늘어난다",
+  "desc_en": "Maximum health up"
+ },
+ "xp_gain": {
+  "name_ko": "경험치 획득",
+  "name_en": "XP Gain",
+  "stat": "xp_gain",
+  "per_stack": 0.1,
+  "max_stacks": 5,
+  "desc_ko": "구슬로 얻는 경험치가 늘어난다",
+  "desc_en": "Orbs grant more XP"
+ },
+ "luck": {
+  "name_ko": "행운",
+  "name_en": "Luck",
+  "stat": "luck",
+  "per_stack": 0.05,
+  "max_stacks": 5,
+  "desc_ko": "괴이가 개조 재료를 떨어뜨릴 확률이 오른다",
+  "desc_en": "Monsters drop materials more often"
+ },
+ "skill_power": {
+  "name_ko": "도력",
+  "name_en": "Skill Power",
+  "stat": "skill_power",
+  "per_stack": 0.1,
+  "max_stacks": 5,
+  "desc_ko": "축지·벽사진 등 술법의 피해가 오른다",
+  "desc_en": "Active arts hit harder"
+ },
+ "projectile_count": {
+  "name_ko": "다중 투사",
+  "name_en": "Multi Shot",
+  "stat": "projectile_count",
+  "per_stack": 1.0,
+  "max_stacks": 2,
+  "desc_ko": "투사체 무기가 한 발씩 더 쏜다",
+  "desc_en": "Projectile weapons fire one more shot"
+ },
+ "projectile_speed": {
+  "name_ko": "신속 투사",
+  "name_en": "Swift Shot",
+  "stat": "projectile_speed",
+  "per_stack": 0.1,
+  "max_stacks": 5,
+  "desc_ko": "투사체가 더 빨리 날아간다",
+  "desc_en": "Projectiles travel faster"
+ },
+ "area_scale": {
+  "name_ko": "광역 확장",
+  "name_en": "Area Up",
+  "stat": "area_scale",
+  "per_stack": 0.08,
+  "max_stacks": 5,
+  "desc_ko": "폭발·장판·파동의 반경이 넓어진다",
+  "desc_en": "Explosions, wards and shockwaves reach wider"
+ },
+ "defense": {
+  "name_ko": "방비",
+  "name_en": "Defense",
+  "stat": "defense",
+  "per_stack": 0.05,
+  "max_stacks": 4,
+  "desc_ko": "받는 피해가 줄어든다",
+  "desc_en": "You take less damage"
+ },
+ "magnet_radius": {
+  "name_ko": "끌어당김",
+  "name_en": "Magnet",
+  "stat": "magnet_radius",
+  "per_stack": 0.15,
+  "max_stacks": 5,
+  "desc_ko": "경험치 구슬을 더 멀리서 끌어당긴다",
+  "desc_en": "Pull XP orbs from farther away"
+ },
+ "burn_power": {
+  "name_ko": "불씨 정통",
+  "name_en": "Ember Mastery",
+  "stat": "burn_power",
+  "per_stack": 0.2,
+  "max_stacks": 3,
+  "desc_ko": "화상의 초당 지속 피해가 오른다",
+  "desc_en": "Burn ticks for more damage"
+ },
+ "chain_amount": {
+  "name_ko": "연쇄 확장",
+  "name_en": "Chain Reach",
+  "stat": "chain_amount",
+  "per_stack": 1.0,
+  "max_stacks": 2,
+  "desc_ko": "번개 연쇄가 한 번씩 더 도약한다",
+  "desc_en": "Lightning chains jump once more"
+ },
+ "seal_haste": {
+  "name_ko": "봉인 가속",
+  "name_en": "Seal Haste",
+  "stat": "seal_haste",
+  "per_stack": 1.0,
+  "max_stacks": 2,
+  "desc_ko": "봉인이 더 적은 타격으로 터진다",
+  "desc_en": "Seals burst after fewer hits"
+ },
+ "crit_damage": {
+  "name_ko": "치명 일격",
+  "name_en": "Crit Damage",
+  "stat": "crit_damage",
+  "per_stack": 0.25,
+  "max_stacks": 4,
+  "desc_ko": "치명타의 피해 배율이 오른다",
+  "desc_en": "Crits hit for more"
+ }
 }

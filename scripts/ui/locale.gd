@@ -227,3 +227,11 @@ static func data_name(entry: Dictionary, fallback: String = "-") -> String:
 	if localized is String and not (localized as String).is_empty():
 		return localized
 	return String(entry.get("name_" + DEFAULT_LOCALE, fallback))
+
+
+## desc_ko/desc_en twin of data_name (N9-105) — same fallback ladder.
+static func data_desc(entry: Dictionary, fallback: String = "") -> String:
+	var localized: Variant = entry.get("desc_" + current_locale)
+	if localized is String and not (localized as String).is_empty():
+		return localized
+	return String(entry.get("desc_" + DEFAULT_LOCALE, fallback))

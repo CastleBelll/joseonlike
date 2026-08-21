@@ -665,8 +665,12 @@ static func describe(
 				"+%d" % int(round(per_stack)) if per_stack >= 1.0
 				else "+%d%%" % int(round(per_stack * 100.0))
 			)
-			return "%s %s (%d/%d)" % [
-				UiLocale.data_name(passive, id), amount, next_stack, max_stacks
+			# N9-105 (owner: a bare % never says WHAT it touches): the body
+			# leads with the data desc — the name already sits in the title,
+			# repeating it here was the line the explanation now fills.
+			return "%s — %s (%d/%d)" % [
+				UiLocale.data_desc(passive, UiLocale.data_name(passive, id)),
+				amount, next_stack, max_stacks,
 			]
 	return ""
 
