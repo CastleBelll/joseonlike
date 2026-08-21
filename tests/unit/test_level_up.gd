@@ -429,6 +429,62 @@ func test_describe_passive_flat_amount() -> bool:
 	return LevelUp.describe(choice, {}, passives, {}, {}) == "다중 투사 — +1 (1/2)"
 
 
+func test_mechanic_passives_need_a_customer_weapon() -> bool:
+	# N9-110 (owner: 연쇄 확장 같은 건 한 기술에 국한돼 잘 안 쓴다): a
+	# mechanic-bound passive only appears while an owned weapon can use it.
+	var weapons := {
+		"sword": {"max_level": 8},
+		"noebu": {"max_level": 8, "chain": {"jumps": 2}},
+	}
+	var passives := {
+		"chain_amount": {"name_ko": "연쇄 확장", "per_stack": 1.0, "max_stacks": 2},
+		"attack_damage": {"name_ko": "공격력", "per_stack": 0.06, "max_stacks": 5},
+	}
+	var no_chain: Array[Dictionary] = LevelUp.candidates(weapons, passives, {"sword": 1}, {})
+	for choice: Dictionary in no_chain:
+		if String(choice.get("id", "")) == "chain_amount":
+			push_error("test_level_up: chain_amount offered with no chain weapon owned")
+			return false
+	var with_chain: Array[Dictionary] = LevelUp.candidates(weapons, passives, {"noebu": 1}, {})
+	var offered: bool = false
+	for choice: Dictionary in with_chain:
+		if String(choice.get("id", "")) == "chain_amount":
+			offered = true
+	if not offered:
+		push_error("test_level_up: chain_amount missing despite an owned chain weapon")
+		return false
+	# An invested stack keeps growing even after a mod swaps the weapon away.
+	var stacked: Array[Dictionary] = LevelUp.candidates(
+		weapons, passives, {"sword": 1}, {"chain_amount": 1}
+	)
+	for choice: Dictionary in stacked:
+		if String(choice.get("id", "")) == "chain_amount":
+			return true
+	push_error("test_level_up: a stacked chain_amount stopped being offered")
+	return false
+
+
+func test_burn_passive_needs_a_burn_weapon() -> bool:
+	var weapons := {
+		"sword": {"max_level": 8},
+		"honbul": {"max_level": 8, "on_hit_status": {"id": "burn", "dps": 4.0}},
+	}
+	var passives := {
+		"burn_power": {"name_ko": "불씨 정통", "per_stack": 0.2, "max_stacks": 3},
+	}
+	var without: Array[Dictionary] = LevelUp.candidates(weapons, passives, {"sword": 1}, {})
+	for choice: Dictionary in without:
+		if String(choice.get("id", "")) == "burn_power":
+			push_error("test_level_up: burn_power offered with nothing that burns")
+			return false
+	var with_burn: Array[Dictionary] = LevelUp.candidates(weapons, passives, {"honbul": 1}, {})
+	for choice: Dictionary in with_burn:
+		if String(choice.get("id", "")) == "burn_power":
+			return true
+	push_error("test_level_up: burn_power missing despite an owned burn weapon")
+	return false
+
+
 func test_describe_passive_leads_with_its_desc() -> bool:
 	# N9-105 (owner: a bare % never says what it touches): with a desc in
 	# data the body explains the effect instead of repeating the title.

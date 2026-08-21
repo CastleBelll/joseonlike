@@ -178,6 +178,13 @@ static func candidates(
 		# while a slot is free.
 		if stacks == 0 and not passive_slots_left:
 			continue
+		# N9-110 (owner: 연쇄 확장 같은 건 한 기술에 국한돼 잘 안 쓴다): a
+		# mechanic-bound passive is only OFFERED while an owned weapon can
+		# actually use it — a card that does nothing is a wasted slot. An
+		# already-stacked one keeps growing regardless: a mod can swap the
+		# build under the investment, and punishing the pick would be worse.
+		if stacks == 0 and not _passive_has_a_customer(passive_id, weapons, owned_levels):
+			continue
 		pool.append({"kind": KIND_PASSIVE, "id": passive_id})
 	if not pool.is_empty():
 		return pool
@@ -193,6 +200,35 @@ static func candidates(
 
 
 ## Passives actually in the build — a zero-stack entry is not taken.
+## Which weapon data blocks each mechanic-bound passive feeds. Passives not
+## listed here (and not burn_power) apply to every build and are always
+## offerable. Base stats are enough to judge: no milestone in the data ever
+## introduces one of these blocks or a new status id (checked N9-110).
+const MECHANIC_PASSIVE_BLOCKS: Dictionary = {
+	"chain_amount": ["chain"],
+	"seal_haste": ["on_hit_seal"],
+	"area_scale": ["explosion", "ward", "shockwave"],
+}
+
+
+static func _passive_has_a_customer(
+	passive_id: String, weapons: Dictionary, owned_levels: Dictionary
+) -> bool:
+	if not MECHANIC_PASSIVE_BLOCKS.has(passive_id) and passive_id != "burn_power":
+		return true
+	for weapon_id: String in owned_levels:
+		var stats: Dictionary = weapons.get(weapon_id, {})
+		if passive_id == "burn_power":
+			var status: Dictionary = stats.get("on_hit_status", {})
+			if String(status.get("id", "")) == "burn":
+				return true
+			continue
+		for block: String in MECHANIC_PASSIVE_BLOCKS[passive_id] as Array:
+			if stats.has(block):
+				return true
+	return false
+
+
 static func _taken_passives(passive_stacks: Dictionary) -> int:
 	var count: int = 0
 	for passive_id: String in passive_stacks:
