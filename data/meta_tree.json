@@ -12,7 +12,12 @@
       "hit_invuln": 0.2,
       "luck": 0.5,
       "burn_duration": 0.5,
-      "ward_radius": 0.24
+      "ward_radius": 0.24,
+      "crit_chance": 0.06,
+      "crit_damage": 0.4,
+      "projectile_speed": 0.1,
+      "burn_dps": 0.3,
+      "area_radius": 0.16
     },
     "revive": {
       "hp_ratio": 0.3,
@@ -546,6 +551,123 @@
       "pos": [
         0.5,
         1
+      ]
+    },
+    {
+      "id": "tiger_eye",
+      "name_ko": "범의 눈",
+      "name_en": "Tiger's Eye",
+      "desc_ko": "치명타 확률 +3%",
+      "desc_en": "Crit chance +3%",
+      "icon": "beast_fang",
+      "effect": {
+        "stat": "crit_chance",
+        "per_rank": 0.03
+      },
+      "costs": [
+        1200,
+        1900
+      ],
+      "requires": [
+        "luck"
+      ],
+      "pos": [
+        0.72,
+        7
+      ]
+    },
+    {
+      "id": "fang_grind",
+      "name_ko": "이빨 갈기",
+      "name_en": "Whetted Fang",
+      "desc_ko": "치명타 피해 +20%",
+      "desc_en": "Crit damage +20%",
+      "icon": "whetstone",
+      "effect": {
+        "stat": "crit_damage",
+        "per_rank": 0.2
+      },
+      "costs": [
+        1450,
+        2200
+      ],
+      "requires": [
+        "tiger_eye"
+      ],
+      "pos": [
+        0.72,
+        8
+      ]
+    },
+    {
+      "id": "swift_charms",
+      "name_ko": "빠른 부적",
+      "name_en": "Swift Charms",
+      "desc_ko": "투사체 속도 +5%",
+      "desc_en": "Projectile speed +5%",
+      "icon": "talisman_paper",
+      "effect": {
+        "stat": "projectile_speed",
+        "per_rank": 0.05
+      },
+      "costs": [
+        1600,
+        2400
+      ],
+      "requires": [
+        "stone_skin"
+      ],
+      "pos": [
+        0.28,
+        7
+      ]
+    },
+    {
+      "id": "ember_core",
+      "name_ko": "불씨 심지",
+      "name_en": "Ember Core",
+      "desc_ko": "화상 초당 피해 +15%",
+      "desc_en": "Burn damage per second +15%",
+      "icon": "fire_spirit_stone",
+      "effect": {
+        "stat": "burn_dps",
+        "per_rank": 0.15
+      },
+      "costs": [
+        850,
+        1400
+      ],
+      "requires": [
+        "seal_ease"
+      ],
+      "character": "taoist",
+      "pos": [
+        0.28,
+        3
+      ]
+    },
+    {
+      "id": "wide_rites",
+      "name_ko": "넓은 법식",
+      "name_en": "Wide Rites",
+      "desc_ko": "폭발·장판·파동 반경 +8%",
+      "desc_en": "Blast, ward and wave radius +8%",
+      "icon": "cinnabar",
+      "effect": {
+        "stat": "area_radius",
+        "per_rank": 0.08
+      },
+      "costs": [
+        900,
+        1500
+      ],
+      "requires": [
+        "seal_ease"
+      ],
+      "character": "taoist",
+      "pos": [
+        0.72,
+        3
       ]
     }
   ]

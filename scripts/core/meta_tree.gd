@@ -25,7 +25,10 @@ const NO_NEXT_COST := -1
 ## inert node cannot ship. Grouped by where the run applies it:
 ## run-wide scalars folded into Stage._refresh_run_scalars / the HP grant.
 const SCALAR_STATS: Array[String] = [
-	"max_hp", "move_speed", "attack_damage", "attack_speed", "magnet_radius"
+	"max_hp", "move_speed", "attack_damage", "attack_speed", "magnet_radius",
+	# N9-93 (owner: the tree is too small): three more run-wide scalars, wired
+	# into the same _passive_bonus + _meta_bonus expressions the others use.
+	"crit_chance", "crit_damage", "projectile_speed"
 ]
 ## Run economy multipliers (Stage gold/xp pickup paths; luck scales the
 ## special-material drop odds in the loot roll — N4-9).
@@ -36,14 +39,18 @@ const START_STATS: Array[String] = ["start_level", "choice_count", "first_find"]
 const SURVIVAL_STATS: Array[String] = ["revive", "damage_reduction", "hit_invuln"]
 ## 술법 weapon-stat modifiers (AutoWeapon via modified_weapon_stats).
 const WEAPON_STATS: Array[String] = [
-	"burn_duration", "chain_jumps", "ward_radius", "orbit_count", "seal_burst"
+	"burn_duration", "chain_jumps", "ward_radius", "orbit_count", "seal_burst",
+	# N9-93: the two fold keys N9-88 added for the field passives — one fold,
+	# both suppliers, so a tree node gets them for the price of a data entry.
+	"burn_dps", "area_radius"
 ]
 ## Fractional stats that MUST declare a positive config.stat_caps entry; the
 ## integer counters above are capped by their rank ladders instead.
 const CAPPED_STATS: Array[String] = [
 	"max_hp", "move_speed", "attack_damage", "attack_speed", "magnet_radius",
 	"gold_gain", "xp_gain", "luck", "damage_reduction", "hit_invuln",
-	"burn_duration", "ward_radius"
+	"burn_duration", "ward_radius", "crit_chance", "crit_damage",
+	"projectile_speed", "burn_dps", "area_radius"
 ]
 ## Sealed weapons must always need at least this many stacks to burst.
 const MIN_SEAL_BURST := 2

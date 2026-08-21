@@ -1172,10 +1172,14 @@ func _pause_stat_lines() -> Array[Dictionary]:
 	var attack_speed: float = 1.0 + _passive_bonus("attack_speed") + _meta_bonus("attack_speed")
 	var defense: float = _meta_bonus("damage_reduction") + _passive_bonus("defense")
 	var magnet: float = 1.0 + _passive_bonus("magnet_radius") + _meta_bonus("magnet_radius")
-	var projectile_speed: float = 1.0 + _passive_bonus("projectile_speed")
+	var projectile_speed: float = (
+		1.0 + _passive_bonus("projectile_speed") + _meta_bonus("projectile_speed")
+	)
 	var extra_projectiles: int = int(round(_passive_bonus("projectile_count")))
-	var crit_chance: float = _passive_bonus("crit_chance")
-	var crit_multiplier: float = CRIT_MULTIPLIER + _passive_bonus("crit_damage")
+	var crit_chance: float = _passive_bonus("crit_chance") + _meta_bonus("crit_chance")
+	var crit_multiplier: float = (
+		CRIT_MULTIPLIER + _passive_bonus("crit_damage") + _meta_bonus("crit_damage")
+	)
 	var xp_gain: float = 1.0 + _meta_bonus("xp_gain") + _passive_bonus("xp_gain")
 	var luck: float = _meta_bonus("luck") + _passive_bonus("luck")
 	# The damage floor is the one applied in _refresh_run_scalars; showing the
@@ -1289,12 +1293,16 @@ func _refresh_weapon_scales() -> void:
 	var cooldown_scale: float = 1.0 / (
 		1.0 + _passive_bonus("attack_speed") + _meta_bonus("attack_speed")
 	)
-	var speed_scale: float = 1.0 + _passive_bonus("projectile_speed")
+	var speed_scale: float = (
+		1.0 + _passive_bonus("projectile_speed") + _meta_bonus("projectile_speed")
+	)
 	var extra_projectiles: int = int(round(_passive_bonus("projectile_count")))
 	# N9-18/N9-19 치명타: chance from 치명타 확률, multiplier from the base
 	# x2 plus every 치명 일격 stack.
-	var crit_chance: float = _passive_bonus("crit_chance")
-	var crit_multiplier: float = CRIT_MULTIPLIER + _passive_bonus("crit_damage")
+	var crit_chance: float = _passive_bonus("crit_chance") + _meta_bonus("crit_chance")
+	var crit_multiplier: float = (
+		CRIT_MULTIPLIER + _passive_bonus("crit_damage") + _meta_bonus("crit_damage")
+	)
 	# N9-88 mechanic-reshaping passives, same vocabulary as the meta tree.
 	# Built once per refresh and handed to every weapon; a weapon whose
 	# mechanic has none of these blocks folds them as no-ops.
