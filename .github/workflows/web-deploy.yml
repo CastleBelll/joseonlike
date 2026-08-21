@@ -161,6 +161,26 @@ jobs:
             echo "::error::the letterbox CSS lost its !important — mobile will render tiny"
             exit 1
           fi
+          # N9-108 (owner: 모바일 웹에 변경이 반영 안 된다): stable filenames
+          # plus 'immutable' caching pinned returning browsers to year-old
+          # builds — index.pck never changed its name, so a phone that loaded
+          # it once never asked again. Fingerprint every file except
+          # index.html with the commit sha so immutable is actually true; the
+          # html itself is no-cache and hands each visitor the fresh set.
+          # Proven locally: the renamed build boots end to end.
+          STAMP="g${GITHUB_SHA:0:10}"
+          for f in "$EXPORT_DIR"/index.*; do
+            base="$(basename "$f")"
+            [ "$base" = "index.html" ] && continue
+            mv "$f" "$EXPORT_DIR/${base/index./$STAMP.}"
+          done
+          sed -i "s/index\./${STAMP}./g; s/\"executable\":\"index\"/\"executable\":\"${STAMP}\"/" \
+            "$EXPORT_DIR/index.html"
+          # A missed reference would 404 the engine loader on the live site.
+          if grep -Eq '"index[."]' "$EXPORT_DIR/index.html"; then
+            echo "::error::fingerprint rename left an index.* reference behind"
+            exit 1
+          fi
           cp vercel.json "$EXPORT_DIR/vercel.json"
           echo "### Web export" >> "$GITHUB_STEP_SUMMARY"
           du -h "$EXPORT_DIR"/* | sort -h >> "$GITHUB_STEP_SUMMARY"
