@@ -457,6 +457,11 @@ func _on_pause_pressed() -> void:
 	get_tree().paused = true
 	if build_provider.is_valid():
 		_refresh_build_summary(build_provider.call())
+	# N9-106 (owner: the popup hid behind the skill buttons): the overlay is
+	# built in _ready but ActiveCluster is added at run start, AFTER it in
+	# tree order. Raising on every open beats fixing one insertion order —
+	# it stays on top no matter what the HUD grows later.
+	_pause_overlay.move_to_front()
 	_pause_overlay.visible = true
 	_resume_button.grab_focus()
 
@@ -545,9 +550,15 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		var header := _label(UiLocale.t("개조 경로"), UiPalette.FONT_SIZE_LABEL, UiPalette.VERMILION)
 		box.add_child(header)
 		for line_text: Variant in evolutions:
-			box.add_child(_label(
+			var row_label: Label = _label(
 				String(line_text), UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
-			))
+			)
+			# N9-106 (owner: the panel drifted right): an unwrapped long
+			# recipe line inflates the panel's minimum width past the band,
+			# and with offset_left fixed the excess spills right only.
+			row_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			row_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			box.add_child(row_label)
 		_build_section.add_child(box)
 		extra_height += (evolutions.size() + 1) * BUILD_PASSIVE_ROW_HEIGHT + UiPalette.SPACE_SM
 
