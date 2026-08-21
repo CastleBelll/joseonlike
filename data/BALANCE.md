@@ -3194,3 +3194,18 @@ seed-7 normal bot, before → after: kills 343 → 722 (x2.1), one run measured
 avg 59 on desktop (prior floor 59-60 — slightly down, acceptable; mobile web
 needs an owner device check). Opening (0-60s) untouched: FTUE and the
 opening-contract validator see the same schedule.
+
+
+## N9-100 idle-orb throttle (2026-08-21, owner: make it light — and the orb
+## sea must stay, every orb collectable)
+
+Instrumentation found the per-frame culprit: 678 live XP orbs at peak, each
+measuring its distance to the player every physics frame. Nothing despawns
+and nothing merges — an orb OUTSIDE the magnet radius now re-checks every 4th
+frame (phase-seeded per launch so checks spread across frames), inside it
+every frame as before. Worst case the magnet grabs ~3 frames late, invisible
+next to the pull itself. Pickup and LootDrop inherit the loop and the saving.
+
+Effect at seed 7: surge fps min held at 56 while peak live climbed 143 → 200
+of the 210 cap — the same frame budget now runs more massacre. peak orbs 717,
+kills 894. Mobile web still wants an owner device check.

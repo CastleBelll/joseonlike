@@ -122,6 +122,8 @@ var _hint_shown: bool = false
 var _hint_shot_done: bool = true
 var _fps_min_all: float = 1e9
 var _peak_live: int = 0
+var _peak_orbs: int = 0
+var _orb_probe: int = 0
 var _overlap_sum: float = 0.0
 var _overlap_samples: int = 0
 var _overlap_timer: float = 0.0
@@ -544,6 +546,16 @@ func _physics_process(delta: float) -> void:
 		return
 	_pick_wait = PICK_COOLDOWN_SEC
 	_peak_live = maxi(_peak_live, _spawner.active_enemies().size())
+	# N9-100 instrumentation: at horde density an fps dip needs a culprit, not
+	# a guess. Counted every ~30 frames — walking the child list is itself work.
+	_orb_probe += 1
+	if _orb_probe >= 30:
+		_orb_probe = 0
+		var orbs: int = 0
+		for child: Node in _stage.get_children():
+			if child is XpOrb and (child as CanvasItem).visible:
+				orbs += 1
+		_peak_orbs = maxi(_peak_orbs, orbs)
 	_overlap_timer -= delta
 	if _overlap_timer <= 0.0:
 		_overlap_timer = OVERLAP_SAMPLE_SEC
@@ -843,11 +855,11 @@ func _report_and_quit() -> void:
 		_damage_total, _damage_total / maxf(elapsed, 0.001), elapsed
 	])
 	print("PLAYTEST level: %d" % _stage._run_state.level)
-	print("PLAYTEST kills: %d" % _stage._run_state.kills)
+	print("PLAYTEST kills: %d gold: %d" % [_stage._kills, _stage._gold])
 	print("PLAYTEST surge fps: min %d avg %d over %d samples" % [
 		int(_fps_min), int(_fps_sum / float(maxi(_fps_samples, 1))), _fps_samples
 	])
-	print("PLAYTEST crowd peak live: %d" % _peak_live)
+	print("PLAYTEST crowd peak live: %d, peak xp orbs: %d" % [_peak_live, _peak_orbs])
 	if _stage._boss != null:
 		print("PLAYTEST boss hp left: %.0f / %.0f" % [_stage._boss.hp, _stage._boss_hp_max])
 	get_tree().quit(0)
@@ -896,6 +908,7 @@ func _finish() -> void:
 	print("PLAYTEST fps floor (whole run): %.0f" % (
 		_fps_min_all if _fps_min_all < 1e9 else 0.0
 	))
+	print("PLAYTEST peak xp orbs: %d" % _peak_orbs)
 	print("PLAYTEST crowd: peak live %d, avg stacked %.2f over %d samples" % [
 		_peak_live, _overlap_sum / float(maxi(_overlap_samples, 1)), _overlap_samples
 	])

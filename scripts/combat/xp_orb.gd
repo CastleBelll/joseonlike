@@ -9,6 +9,15 @@ signal collected(orb: XpOrb)
 const GLOW_RADIUS := 5.0
 const CORE_RADIUS := 3.0
 const GLOW_ALPHA := 0.45
+## N9-100 (owner: make it light, and the orb sea stays — every orb must
+## remain collectable). At horde density 678 orbs were live at once, each
+## measuring its distance to the player every physics frame. An orb OUTSIDE
+## the magnet radius now re-checks only every 4th frame; inside it, every
+## frame as before. Nothing despawns, nothing merges — an idle orb just
+## glances up less often. The player crosses a few px per frame, so the worst
+## case is the magnet grabbing ~3 frames late, invisible next to the pull
+## animation itself. Pickup and LootDrop inherit this loop and the saving.
+const IDLE_CHECK_FRAMES := 4
 
 var xp_value: int = 0
 
@@ -18,6 +27,10 @@ var _collect_radius_squared: float = 0.0
 var _acceleration: float = 0.0
 var _max_speed: float = 0.0
 var _speed: float = 0.0
+## Frames left before an idle orb bothers measuring again. Seeded per launch
+## so hundreds of orbs spread their checks across frames instead of all
+## waking on the same one.
+var _idle_skip: int = 0
 
 
 func launch(at: Vector2, xp: int, player: Player, orb_config: Dictionary) -> void:
@@ -31,6 +44,7 @@ func launch(at: Vector2, xp: int, player: Player, orb_config: Dictionary) -> voi
 	_acceleration = float(orb_config.get("magnet_accel_px_s2", 0.0))
 	_max_speed = float(orb_config.get("max_speed_px_s", 0.0))
 	_speed = 0.0
+	_idle_skip = randi() % IDLE_CHECK_FRAMES
 
 
 ## N5-5 magnet pickup: pull this orb in from anywhere on the field, ignoring
@@ -40,11 +54,15 @@ func attract_now() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if _idle_skip > 0:
+		_idle_skip -= 1
+		return
 	var distance_squared: float = global_position.distance_squared_to(_player.global_position)
 	if distance_squared <= _collect_radius_squared:
 		collected.emit(self)
 		return
 	if distance_squared > _magnet_radius_squared:
+		_idle_skip = IDLE_CHECK_FRAMES - 1
 		return
 	_speed = CombatMath.accelerated_speed(_speed, _acceleration, delta, _max_speed)
 	var direction: Vector2 = CombatMath.chase_direction(
