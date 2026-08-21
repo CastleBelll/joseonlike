@@ -148,7 +148,7 @@ func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 		true, tint,
 		WeaponEffects.value(
 			"blade_trail_sec" if config.has("size") else "paper_trail_sec"
-		)
+		) * float(config.get("trail_scale", 1.0))
 	)
 	_apply_shape(config.get("size", paper_size()))
 

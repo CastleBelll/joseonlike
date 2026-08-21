@@ -66,6 +66,15 @@ const SWING_ART_ALPHA := 0.8
 const SWING_ART_SPAN := 0.55
 const MAX_LIVE_MARKS := 14
 const CRIT_MARK_SCALE := 1.45
+## N9-95 evolved-weapon flourishes: mark scale, the echo flare beside each
+## hit, and the ring of flares on an evolved blast's true radius.
+const EVOLVED_MARK_SCALE := 1.25
+const EVOLVED_ECHO_SCALE := 0.7
+const EVOLVED_ECHO_OFFSET_PX := 12.0
+const EVOLVED_ECHO_ALPHA := 0.85
+const BLAST_FLARES := 6
+const BLAST_FLARE_ALPHA := 0.9
+const EVOLVED_TRAIL_SCALE := 1.6
 const FAN_SPREAD_DEG := 10.0
 
 var weapon_id: String = ""
@@ -78,6 +87,10 @@ var _fan_spread_deg: float = FAN_SPREAD_DEG
 var _level: int = 1
 var _grade: String = ""
 var _grades: Dictionary = {}
+## N9-95: an evolved (evolution_only) weapon hits harder and shows richer —
+## the tier multiplier and the visual flourishes both key off this.
+var _evolved: bool = false
+var _evolution_mult: float = 1.0
 var _damage_scale: float = 1.0
 var _cooldown_scale: float = 1.0
 var _speed_scale: float = 1.0
@@ -161,6 +174,10 @@ func setup(
 		# monsters that flash is invisible.
 		hit_landed.connect(_mark_hit)
 	_grades = WeaponGrade.config(weapons)
+	_evolved = bool(_base_stats.get("evolution_only", false))
+	_evolution_mult = float(
+		((weapons as Dictionary).get("_evolution", {}) as Dictionary).get("damage_mult", 1.0)
+	)
 	_grade = String(_base_stats.get("grade", ""))
 	var targeting: Dictionary = (weapons as Dictionary).get("_targeting", {})
 	_view_margin = float(targeting.get("view_margin_px", 0.0))
@@ -275,6 +292,12 @@ func _recompute() -> void:
 	if not seal.is_empty():
 		seal["burst_at"] = maxi(int(seal.get("burst_at", 0)), MetaTree.MIN_SEAL_BURST)
 	_damage = WeaponGrade.stat_at(_stats, "damage", _level, _grade, _grades) * _damage_scale
+	# N9-95 (owner: evolving does not feel like an upgrade — and measured, it
+	# was not: 봉마검 22.8 dps against 법검's 61.7 in the same forced-build
+	# harness). Evolved weapons carry a global multiplier from _evolution so
+	# the whole tier can be tuned as one number.
+	if _evolved:
+		_damage *= _evolution_mult
 	_cooldown = maxf(
 		WeaponGrade.stat_at(_stats, "cooldown_sec", _level, _grade, _grades) * _cooldown_scale,
 		MIN_COOLDOWN_SEC
@@ -285,6 +308,10 @@ func _recompute() -> void:
 ## cooldown move with levels/grades/passives).
 func _build_shot_config() -> Dictionary:
 	var config: Dictionary = {}
+	if _evolved:
+		# N9-95: an evolved shot drags a longer trail — the cheapest honest
+		# "this one is stronger" a projectile can wear in flight.
+		config["trail_scale"] = EVOLVED_TRAIL_SCALE
 	var travel_sprite: String = String(_stats.get("travel_sprite", ""))
 	if not travel_sprite.is_empty():
 		config["travel_sprite"] = travel_sprite
@@ -654,8 +681,23 @@ func _mark_hit(_amount: float, at: Vector2, _boss_hit: bool, crit: bool) -> void
 	# A crit already has its own number and sound; the bigger mark is what
 	# makes it read when the eye is on the other side of the screen.
 	sprite.scale *= CRIT_MARK_SCALE if crit else 1.0
+	if _evolved:
+		sprite.scale *= EVOLVED_MARK_SCALE
 	if _player != null:
 		sprite.rotation = (at - _player.global_position).angle()
+	# N9-95 (owner: effects too simple for the genre): an evolved hit lands a
+	# second, smaller flare beside the first. Two staggered shapes read as
+	# rich where one bigger shape just reads as bigger; the pair still counts
+	# against MAX_LIVE_MARKS so crowds stay legible.
+	if _evolved and _live_marks < MAX_LIVE_MARKS:
+		_live_marks += 1
+		var echo: EffectSprite = _impact_pool.acquire()
+		echo.play_effect(
+			_impact_effect,
+			at + Vector2.from_angle(randf() * TAU) * EVOLVED_ECHO_OFFSET_PX,
+			0.0, Color(_tint(), EVOLVED_ECHO_ALPHA)
+		)
+		echo.scale *= EVOLVED_ECHO_SCALE
 
 
 ## N9-70 (owner: "근접 공격 이펙트 … 좀 빈약해"). A crescent from the pack sheet
@@ -703,6 +745,21 @@ func _on_projectile_exploded(at: Vector2, radius: float) -> void:
 		return
 	var flash: BlastRing = _flash_pool.acquire()
 	flash.burst(at, radius, WeaponEffects.value("explosion_ring_sec"), _tint())
+	# N9-95: flares ON the blast's true radius, the treatment the ward (N9-71)
+	# and the shockwave (N9-72) already wear — the ring alone read as a thin
+	# outline, not a detonation. Placed at the damage boundary so the flourish
+	# is still the truth (N3-18).
+	if _impact_pool != null:
+		for i: int in range(BLAST_FLARES):
+			if _live_marks >= MAX_LIVE_MARKS:
+				break
+			_live_marks += 1
+			var flare: EffectSprite = _impact_pool.acquire()
+			var angle: float = TAU * float(i) / float(BLAST_FLARES) + randf() * 0.5
+			flare.play_effect(
+				_impact_effect, at + Vector2.from_angle(angle) * radius,
+				0.0, Color(_tint(), BLAST_FLARE_ALPHA)
+			)
 
 
 ## 뇌부 (N3-17): the jump leg between two chained enemies gets its lightning.

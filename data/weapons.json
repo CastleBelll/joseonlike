@@ -1434,5 +1434,8 @@
     },
     "evolution_only": true,
     "hit_effect": "hit_paper"
+  },
+  "_evolution": {
+    "damage_mult": 1.4
   }
 }

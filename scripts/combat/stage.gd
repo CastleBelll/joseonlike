@@ -14,6 +14,8 @@ const CHOICES_PER_LEVEL := 3
 const POWER_UP_HEADER := "파워 업!"
 ## N5-5 chest sequence header: one card per screen, (n/total) so the payoff
 ## reads as a counted sequence, not an endless wall.
+## N9-95: radius of the gold wave that marks an evolution landing.
+const EVOLUTION_RING_PX := 170.0
 const CHEST_HEADER := "보물 상자! (%d/%d)"
 const LOOT_SCATTER_PX := 14.0
 ## N9-18 치명타 확률: a crit deals double damage.
@@ -1038,6 +1040,16 @@ func _apply_weapon_mod(mod: Dictionary) -> void:
 	_add_weapon_node(result_id)
 	(_weapon_nodes[result_id] as AutoWeapon).set_level(int(_owned_levels[result_id]))
 	_set_owned_grade(result_id, carried)
+	# N9-95 (owner: evolving did not feel like anything): the moment itself
+	# gets the emergency-burst treatment — gold wave, screen flash, ERUPT
+	# punch. A weapon changing what it IS deserves at least what 벽사진 gets.
+	var ring: BlastRing = _burst_ring_pool.acquire()
+	ring.burst(
+		_player.global_position, EVOLUTION_RING_PX,
+		WeaponEffects.value("burst_ring_sec"), UiPalette.GOLD, BlastRing.Style.WAVE
+	)
+	_hud.flash_screen(UiPalette.GOLD, WeaponEffects.value("screen_flash_sec"))
+	_punch(Impact.ERUPT)
 	_replaced_weapons.append(base_id)
 	var sweep: Dictionary = Loot.salvage_dead(
 		_run_state.inventory, _loot_data, _mods_data, _owned_levels, _replaced_weapons
