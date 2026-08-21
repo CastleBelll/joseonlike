@@ -130,6 +130,21 @@
    "file": "res://asset/effect/wave_jineon.png",
    "fps": 24.0,
    "logical_px": 120.0
+  },
+  "hit_hwabu": {
+   "file": "res://asset/effect/hit_hwabu.png",
+   "fps": 24.0,
+   "logical_px": 40.0
+  },
+  "hit_hwaryeongbu": {
+   "file": "res://asset/effect/hit_hwaryeongbu.png",
+   "fps": 24.0,
+   "logical_px": 46.0
+  },
+  "hit_fire_talisman": {
+   "file": "res://asset/effect/hit_fire_talisman.png",
+   "fps": 24.0,
+   "logical_px": 38.0
   }
  }
 }
