@@ -13,8 +13,10 @@ extends Node
 
 const STAGE_SCENE := "res://scenes/stage.tscn"
 const TIME_SCALE := 24.0
-## Comfortably past bamboo_forest's 420s duration and its 340s boss.
-const WATCH_UNTIL_SEC := 560.0
+## Past bamboo_forest's 420s duration AND its second boss: first boss 340s,
+## boss_repeat_sec 220s puts the return at ~560s — watching until exactly 560
+## was a zero-margin race that CI lost (kills 1) while local runs at 562 won.
+const WATCH_UNTIL_SEC := 620.0
 
 var _stage: Stage
 var _spawner: Spawner

@@ -151,16 +151,27 @@ func _prop_hp_snapshot() -> Dictionary:
 	return snapshot
 
 
-## True when a prop that existed at the previous poll has lost HP since. Props
-## appearing or disappearing never count — only one that was there and got hit.
+## True when a prop that existed at the previous poll has lost HP since —
+## including one that BROKE: since N9-101 a broken prop is erased from the
+## lists and freed immediately, so "damaged to death" looks like a vanished
+## instance, not a zero-hp entry. A prop merely distance-culled from the
+## spawner list is still alive and does not count.
 func _damaged_prop() -> String:
+	var present: Dictionary = {}
 	for breakable: Breakable in _spawner.breakables:
 		var id: int = breakable.get_instance_id()
+		present[id] = true
 		if not _prop_hp.has(id):
 			continue
 		var before: float = float(_prop_hp[id])
 		if breakable.hp < before:
 			return "%.0f -> %.0f" % [before, breakable.hp]
+	for id: int in _prop_hp:
+		if present.has(id):
+			continue
+		var node: Object = instance_from_id(id)
+		if node == null or not (node as Breakable).alive():
+			return "%.0f -> broke" % float(_prop_hp[id])
 	return ""
 
 
