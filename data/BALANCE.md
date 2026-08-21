@@ -3158,3 +3158,25 @@ Static audit of milestone totals, all 19 mod pairs. Two classes:
 test_evolution_superset holds the rule from now on; deleting one patch makes
 it fail. Spot race, worst pair, seed 11: 화령부 116.2 dps vs 화부 107.0,
 both surviving the window — the tier multiplier and the restored axis land.
+
+
+## N9-98 the tier goes to x2.0, and the metric changes (2026-08-21)
+
+The owner's third read was also right: x1.4 left the bot-run gap at +9%,
+which does not feel like anything. Two findings on the way to x2.0:
+
+* Bot-run dps is the WRONG metric for weapon power. It saturates on spawn
+  density (a stronger weapon just overkills the same monsters) and swings 2x
+  on a fixed seed (화부 measured 107.0 then 139.6; 화령부 116.2 then 73.1 —
+  same seed each time). It stays useful as a trivialization guard, nothing
+  more.
+* Per-shot damage is deterministic, is what the on-screen damage numbers
+  print, and is what "feels stronger" actually is. At the carry level (L5),
+  x2.0 puts every same-mechanic evolution at x2.1–x3.1 per shot over its
+  base. Mechanic-changing pairs sit at x1.4–1.75 by design — their value is
+  the new mechanic, not the number.
+
+test_evolutions_hit_at_least_twice_as_hard_per_shot pins the floor at x2.0;
+dropping the multiplier back to 1.4 fails 12 pairs. Normal seed-7 run stays
+in its prior band (106.6 dps, survived) — no trivialization signal; the
+maxed-nopick guard is untouched since nopick runs never evolve.

@@ -1467,6 +1467,6 @@
     }
   },
   "_evolution": {
-    "damage_mult": 1.4
+    "damage_mult": 2.0
   }
 }

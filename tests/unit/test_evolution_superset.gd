@@ -57,14 +57,53 @@ func test_same_mechanic_evolutions_keep_the_growth_axis() -> bool:
 	return passed
 
 
-## The tier multiplier that makes an evolution hit harder per shot must exist
-## and actually favour the evolution.
-func test_the_evolution_tier_multiplier_is_a_buff() -> bool:
+## N9-98 (owner: still does not feel dramatically stronger — twice): the
+## per-shot check that IS the feel. Bot-run dps saturates on spawn density
+## and swings 2x on a fixed seed, so it can neither prove nor disprove power;
+## per-shot damage is a pure function of data and is what the damage numbers
+## on screen print. At the carry level a same-mechanic evolution must hit for
+## at least double.
+const CARRY_LEVEL := 5
+const MIN_PER_SHOT_RATIO := 2.0
+
+
+func test_evolutions_hit_at_least_twice_as_hard_per_shot() -> bool:
 	var weapons: Dictionary = _load(WEAPONS_PATH)
+	var mods: Dictionary = _load(MODS_PATH)
 	var mult: float = float(
 		(weapons.get("_evolution", {}) as Dictionary).get("damage_mult", 0.0)
 	)
-	return mult > 1.0
+	if mult <= 1.0:
+		push_error("test_evolution_superset: _evolution.damage_mult is not a buff")
+		return false
+	var passed: bool = true
+	for mod_id: String in mods:
+		if mod_id.begins_with("_"):
+			continue
+		var mod: Dictionary = mods[mod_id]
+		var base: Dictionary = weapons.get(String(mod.get("weapon_id", "")), {})
+		var evo: Dictionary = weapons.get(String(mod.get("result_weapon", "")), {})
+		if base.is_empty() or evo.is_empty():
+			continue
+		if String(base.get("mechanic", "")) != String(evo.get("mechanic", "")):
+			continue
+		var ratio: float = _shot_damage(evo, CARRY_LEVEL) * mult / _shot_damage(base, CARRY_LEVEL)
+		if ratio < MIN_PER_SHOT_RATIO:
+			push_error(
+				"test_evolution_superset: %s -> %s per-shot ratio x%.2f at L%d, needs x%.1f"
+				% [mod.get("weapon_id"), mod.get("result_weapon"), ratio,
+					CARRY_LEVEL, MIN_PER_SHOT_RATIO]
+			)
+			passed = false
+	return passed
+
+
+func _shot_damage(entry: Dictionary, level: int) -> float:
+	var per_level: Dictionary = entry.get("per_level", {})
+	return (
+		float(entry.get("damage", 0.0))
+		+ float(level - 1) * float(per_level.get("damage", 0.0))
+	)
 
 
 func _milestone_totals(entry: Dictionary) -> Dictionary:
