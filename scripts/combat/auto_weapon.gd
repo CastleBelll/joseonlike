@@ -136,6 +136,7 @@ var _live_marks: int = 0
 var _swing_art: EffectSprite
 var _impact_pool: NodePool
 var _cast_effect: String = ""
+var _wave_effect: String = ""
 var _bolt_art: bool = false
 # N3-17 effect state: chain-jump bolts and the shockwave camera thump.
 var _bolt_pool: NodePool
@@ -169,10 +170,16 @@ func setup(
 	# N9-116 (owner: 시작 이펙트): optional cast flash at the caster, data-
 	# driven exactly like hit_effect — weapons without the key are untouched.
 	_cast_effect = String(_base_stats.get("cast_effect", ""))
+	_wave_effect = String(_base_stats.get("wave_effect", ""))
 	_bolt_art = bool((_base_stats.get("chain", {}) as Dictionary).get("bolt_art", false))
 	if not EffectSprite.available(_cast_effect):
 		_cast_effect = ""
-	if EffectSprite.available(_impact_effect) or not _cast_effect.is_empty():
+	if not EffectSprite.available(_wave_effect):
+		_wave_effect = ""
+	if (
+		EffectSprite.available(_impact_effect)
+		or not _cast_effect.is_empty() or not _wave_effect.is_empty()
+	):
 		_impact_pool = NodePool.new(self, _create_impact_sprite)
 	if EffectSprite.available(_impact_effect):
 		# N9-69 (owner: "몬스터 타격 표시가 필요할거같아"): connected to the
@@ -554,13 +561,20 @@ func _pulse_shockwave() -> void:
 	var stun_sec: float = float(_shockwave.get("stun_sec", 0.0))
 	var knockback: float = float(_shockwave.get("knockback_scale", 1.0))
 	var seal: Dictionary = _stats.get("on_hit_seal", {})
-	var flash: BlastRing = _flash_pool.acquire()
-	# N3-18: a control pulse is a clean double ring, not a detonation — enemies
-	# inside the stun space stay readable.
-	flash.burst(
-		origin, radius, WeaponEffects.value("shockwave_ring_sec"), _tint(),
-		BlastRing.Style.WAVE
-	)
+	# N9-117 (owner: 진언 스프라이트는 스킬 이펙트): the authored 16-frame wave
+	# IS the pulse on screen, sized to the stun radius; the code-drawn double
+	# ring stays as the missing-art fallback.
+	if not _wave_effect.is_empty() and _impact_pool != null:
+		var wave: EffectSprite = _impact_pool.acquire()
+		wave.play_effect(_wave_effect, origin, radius * 2.0, Color.WHITE)
+	else:
+		var flash: BlastRing = _flash_pool.acquire()
+		# N3-18: a control pulse is a clean double ring, not a detonation —
+		# enemies inside the stun space stay readable.
+		flash.burst(
+			origin, radius, WeaponEffects.value("shockwave_ring_sec"), _tint(),
+			BlastRing.Style.WAVE
+		)
 	_start_nudge()
 	var enemies: Array[Enemy] = _spawner.active_enemies()
 	_positions.clear()

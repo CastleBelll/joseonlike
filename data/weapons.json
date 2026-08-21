@@ -188,7 +188,7 @@
   "name_ko": "봉마검",
   "name_en": "Sealing Sword",
   "travel_sprite": "res://asset/weapon/travel/bongmageom.png",
-  "hit_effect": "hit_neutral",
+  "hit_effect": "hit_bongmageom",
   "category": "spiritual",
   "grade": "epic",
   "mechanic": "pierce",
@@ -1099,7 +1099,8 @@
     }
    }
   },
-  "hit_effect": "hit_lightning"
+  "hit_effect": "hit_lightning",
+  "wave_effect": "wave_jineon"
  },
  "bongin_jineon": {
   "name_ko": "봉인 진언",
@@ -1167,7 +1168,8 @@
     }
    }
   },
-  "hit_effect": "hit_lightning"
+  "hit_effect": "hit_lightning",
+  "wave_effect": "wave_jineon"
  },
  "sal": {
   "name_ko": "살",
