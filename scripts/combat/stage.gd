@@ -1245,7 +1245,7 @@ func _evolution_lines() -> Array[String]:
 			UiLocale.data_name(_weapons_data.get(base_id, {}) as Dictionary, base_id),
 			UiLocale.data_name(_weapons_data.get(result_id, {}) as Dictionary, result_id),
 			UiLocale.data_name(_loot_data.get(loot_id, {}) as Dictionary, loot_id),
-			" ✓" if held else UiLocale.t(" 필요"),
+			" √" if held else UiLocale.t(" 필요"),
 			gate,
 		])
 	return lines

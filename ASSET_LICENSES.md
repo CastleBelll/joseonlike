@@ -5,6 +5,7 @@ Every asset under `asset/` must have a row here before it ships. No row, no comm
 | Path | Source | License | Attribution required | Added |
 |---|---|---|---|---|
 | `asset/font/neodgm.ttf` (Neo둥근모) | https://github.com/neodgm/neodgm v1.530 | SIL OFL 1.1 | Credit in-game before release (RZ) | 2026-08-14 (relocated) |
+| `asset/font/galmuri_fallback.ttf` (Galmuri11, pyftsubset to the glyphs neodgm lacks: nav/arrow/star marks + the 9 hanja in character/monster names; name/licence records kept in the file) | https://github.com/quiple/galmuri | SIL OFL 1.1 | Credit in-game before release (RZ) | 2026-08-21 (N9-103) |
 | `asset/effect/swing_arc.png` | Owner-dropped pack `new_asset/owner/Effects` (sprAttackSwing; copied unmodified — already a square-frame strip) | Free to use — owner confirmed 2026-08-20 that every pack he dropped states free licensing. No licence file ships inside the pack itself | None stated | 2026-08-20 (N9-70) |
 | `asset/monsters/geuseundae/{idle,walk}.png` | Owner-authored sheet `new_asset/owner/monster/그슨대 스프라이트.png`, re-laid from a 4x2 grid into a horizontal strip by `asset/monsters/geuseundae/build_assets.py` | Owner original | None | 2026-08-20 (N9-75) |
 | `asset/sfx/*.wav` (8 effects) | Generated in-repo by `tools/make_sfx.gd` from the synth definitions in that file — no third-party audio | None — original output of this project | None | 2026-08-19 (N9-52) |
