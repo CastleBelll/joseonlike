@@ -1,95 +1,122 @@
 extends Node
-## Pause-overlay build summary check (N9-3e): builds the real CombatHud,
-## installs a representative build_provider (6 weapons + 5 passives), opens
-## the pause overlay and screenshots it. Run:
-##   godot --path . res://tools/pause_check.tscn
+## N9-111 evidence (owner: 일시정지, 톱니 눌러도 안 멈추는데): boots the real
+## stage, CLICKS the pause button and the gear through the real input chain
+## (viewport push_input, not pressed.emit), and asserts the tree actually
+## freezes — the run clock must stop moving. pressed.emit() would bypass
+## every input-eating regression this harness exists to catch (a full-rect
+## control with the wrong mouse_filter, a sibling drawn over the corner).
+## Also screenshots the open pause popup over the minimap for the z-order
+## record. Run: godot --path . res://tools/pause_check.tscn
 
-const SHOT_PATH := "user://pause_check.png"
+const STAGE_SCENE := "res://scenes/stage.tscn"
+const SETTLE_SEC := 1.2
+const FREEZE_OBSERVE_SEC := 0.6
+
+var _stage: Stage
+var _failed: bool = false
+var _elapsed: float = 0.0
+var _started: bool = false
 
 
 func _ready() -> void:
-	var hud := CombatHud.new()
-	hud.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(hud)
-	hud.build_provider = func() -> Dictionary:
-		return {
-			# N9-27: every rung appears exactly once, so a missing colour-table
-			# entry or a cell that lost its grade row shows up in the shot.
-			"weapons": [
-				{"id": "old_talisman", "name": "낡은 부적", "level": 5,
-					"grade": "rare", "grade_ko": "희귀"},
-				{"id": "noebu", "name": "뇌부", "level": 3,
-					"grade": "common", "grade_ko": "일반"},
-				{"id": "gyeolgye", "name": "결계", "level": 4,
-					"grade": "uncommon", "grade_ko": "고급"},
-				{"id": "honbul", "name": "혼불", "level": 2,
-					"grade": "epic", "grade_ko": "영웅"},
-				{"id": "seokjang", "name": "석장", "level": 6,
-					"grade": "common", "grade_ko": "일반"},
-				{"id": "gwisal", "name": "귀살", "level": 8,
-					"grade": "mythic", "grade_ko": "신화"},
-			],
-			"passives": [
-				{"name": "공격력", "stacks": 3, "max": 5},
-				{"name": "이동 속도", "stacks": 1, "max": 5},
-				{"name": "최대 체력", "stacks": 2, "max": 5},
-				{"name": "행운", "stacks": 4, "max": 5},
-				{"name": "경험치 획득", "stacks": 5, "max": 5},
-			],
-			# N9-25 character sheet, in the shape Stage._pause_build_summary
-			# actually produces: a mix of moved and untouched lines so the
-			# highlight rule is visible in the shot, and the full 12-line count
-			# so the panel is measured at its tallest.
-			"stats": [
-				{"name": "체력", "value": "118/150", "modified": false},
-				{"name": "이동 속도", "value": "104", "modified": true},
-				{"name": "공격력", "value": "118%", "modified": true},
-				{"name": "공격 속도", "value": "100%", "modified": false},
-				{"name": "치명타 확률", "value": "15%", "modified": true},
-				{"name": "치명타 피해", "value": "x2.3", "modified": true},
-				{"name": "투사체", "value": "+1", "modified": true},
-				{"name": "투사체 속도", "value": "100%", "modified": false},
-				{"name": "피해 감소", "value": "0%", "modified": false},
-				{"name": "자석 범위", "value": "100%", "modified": false},
-				{"name": "경험치 획득", "value": "125%", "modified": true},
-				{"name": "행운", "value": "+20%", "modified": true},
-			],
-			"evolutions": [
-				"낡은 부적 → 뇌부 · 뇌정석 ✓",
-				"낡은 부적 → 살 · 도깨비불 필요",
-				"결계 → 화염 결계 · 화령석 필요",
-			],
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	if SaveService.instance != null:
+		var profile: Dictionary = SaveProfile.default_profile()
+		(profile["stats"] as Dictionary)["runs_played"] = 1
+		profile[Ftue.FTUE_KEY] = {
+			Ftue.MOVE_HINT_SEEN: true, Ftue.MOD_EXPLAINED: true,
+			Ftue.GUIDE_SEEN: true, Ftue.LEVELUP_EXPLAINED: true,
 		}
-	hud._on_pause_pressed()
+		# The map unlock matters: the popup once hid behind the late-added
+		# minimap, so the shot must include it.
+		profile[Unlocks.PROFILE_KEY] = [Unlocks.MAP]
+		SaveService.instance.profile = profile
+		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
+	_stage = (load(STAGE_SCENE) as PackedScene).instantiate()
+	# The probe root runs ALWAYS so it can click while paused; the stage must
+	# not inherit that, or the harness itself would defeat the pause under test.
+	_stage.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(_stage)
+
+
+func _process(delta: float) -> void:
+	_elapsed += delta
+	if _started or _elapsed < SETTLE_SEC:
+		return
+	_started = true
+	_run_probes()
+
+
+func _run_probes() -> void:
+	var hud: CombatHud = _stage.get_node("Hud/CombatHud")
+	# --- pause button stops the world
+	_click(hud.get_node("CornerButtons/PauseButton") as Button)
+	await get_tree().process_frame
+	if not get_tree().paused:
+		_fail("pause button click did not pause the tree")
+	var overlay: Control = hud.get_node("OverlayLayer/PauseOverlay")
+	if not overlay.visible:
+		_fail("pause popup did not open from the click")
+	var frozen: float = _stage._run_elapsed
+	await _wait_real(FREEZE_OBSERVE_SEC)
+	if absf(_stage._run_elapsed - frozen) > 0.0001:
+		_fail("run clock kept moving while paused (%.3f -> %.3f)"
+			% [frozen, _stage._run_elapsed])
+	await _shot("pause_over_minimap")
+	_click(overlay.find_child("ResumeButton", true, false) as Button)
+	await get_tree().process_frame
+	if get_tree().paused:
+		_fail("resume did not unpause the tree")
+	# --- gear freezes exactly like pause and hands it back on close
+	_click(hud.get_node("SettingsButton") as Button)
+	await get_tree().process_frame
+	if not get_tree().paused:
+		_fail("gear click did not pause the tree")
+	var popup: SettingsPopup = hud._settings_popup
+	if popup == null or not popup.visible:
+		_fail("gear click did not open the settings popup")
+	frozen = _stage._run_elapsed
+	await _wait_real(FREEZE_OBSERVE_SEC)
+	if absf(_stage._run_elapsed - frozen) > 0.0001:
+		_fail("run clock kept moving under the settings popup")
+	await _shot("gear_settings_open")
+	if popup != null:
+		popup._on_close_pressed()
+	await get_tree().process_frame
+	if get_tree().paused:
+		_fail("closing settings did not resume the run")
+	print("PAUSE CHECK %s" % ("FAIL" if _failed else "PASS"))
+	get_tree().quit(1 if _failed else 0)
+
+
+## A real click through the input pipeline: press and release at the button's
+## on-screen centre, exactly what a finger or the mouse would deliver.
+func _click(button: Button) -> void:
+	if button == null:
+		_fail("probe target button is missing from the tree")
+		return
+	var center: Vector2 = button.get_global_rect().get_center()
+	for pressed: bool in [true, false]:
+		var event := InputEventMouseButton.new()
+		event.button_index = MOUSE_BUTTON_LEFT
+		event.pressed = pressed
+		event.position = center
+		event.global_position = center
+		get_viewport().push_input(event)
+
+
+func _wait_real(seconds: float) -> void:
+	await get_tree().create_timer(seconds, true, false, true).timeout
+
+
+func _shot(name_stem: String) -> void:
 	await RenderingServer.frame_post_draw
-	await RenderingServer.frame_post_draw
-	get_viewport().get_texture().get_image().save_png(SHOT_PATH)
-	print("PAUSE shot: " + ProjectSettings.globalize_path(SHOT_PATH))
-	var grid: GridContainer = hud.get_node_or_null(
-		"PauseOverlay/PaperPanel/Pad/Layout/BuildSummary/WeaponGrid"
-	)
-	var passives: GridContainer = hud.get_node_or_null(
-		"PauseOverlay/PaperPanel/Pad/Layout/BuildSummary/PassiveGrid"
-	)
-	var stats: GridContainer = hud.get_node_or_null(
-		"PauseOverlay/PaperPanel/Pad/Layout/BuildSummary/StatLines/StatGrid"
-	)
-	# The panel must also still fit the 960px screen at this worst case; a
-	# summary that renders every row but runs off the bottom is not a pass.
-	var panel: Control = hud.get_node_or_null("PauseOverlay/PaperPanel")
-	var fits: bool = panel != null and panel.size.y <= hud.size.y
-	# Each weapon cell is icon well + Lv line + grade line. A cell that lost its
-	# grade row drops to two children, which is the regression this counts.
-	var graded: int = 0
-	if grid != null:
-		for cell: Node in grid.get_children():
-			if cell.get_child_count() >= 3:
-				graded += 1
-	if grid != null and grid.get_child_count() == 6 and graded == 6 \
-			and passives != null and passives.get_child_count() == 5 \
-			and stats != null and stats.get_child_count() == 12 and fits:
-		print("PASS pause_check: 6 weapons + 5 passives + 12 stat lines, panel %.0fpx" % panel.size.y)
-	else:
-		push_error("FAIL pause_check: build summary rows missing or panel overflows")
-	get_tree().paused = false
-	get_tree().quit(0)
+	var out_path: String = "user://pause_check_%s.png" % name_stem
+	get_viewport().get_texture().get_image().save_png(out_path)
+	print("PAUSE CHECK shot: " + ProjectSettings.globalize_path(out_path))
+
+
+func _fail(reason: String) -> void:
+	_failed = true
+	push_error("pause_check: " + reason)

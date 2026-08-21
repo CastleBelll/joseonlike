@@ -118,7 +118,6 @@ func build_ui() -> void:
 	column.add_child(_notice_label)
 
 	column.add_child(_build_menu())
-	_build_settings_button()
 
 
 ## GOLD title left, coin + permanent gold right (meta grammar, capture _02).
@@ -134,6 +133,7 @@ func _build_header(summary: Dictionary) -> Control:
 	var gold := _label(str(int(summary["gold"])), UiPalette.FONT_SIZE_TITLE, UiPalette.TEXT_ON_DARK)
 	gold.name = "GoldValue"
 	header.add_child(gold)
+	header.add_child(_build_settings_button())
 	return header
 
 
@@ -186,25 +186,15 @@ func _build_buildings() -> Control:
 
 ## The night the player is about to walk into: which tier, how long. Locked
 ## tiers are simply not in the cycle — clearing one adds the next.
-## Flat icon in the top-left, matching the title screen and the combat HUD's
-## pause glyph — settings never wears wood-button chrome (owner direction).
-## Anchored to the screen rather than the column so the growing menu below can
-## never push it around.
-func _build_settings_button() -> void:
+## N9-111 (owner: 본거지 설정 아이콘 우측 상단으로): a flat gear at the right
+## end of the header row, after the gold counter. Riding the header keeps it
+## clear of the title text without a screen-anchored collision.
+func _build_settings_button() -> Control:
 	var settings := Button.new()
 	settings.name = "SettingsButton"
 	settings.flat = true
 	settings.tooltip_text = UiLocale.text("title.settings")
-	# Bottom-left, not the top corner the title screen uses: 본거지's header
-	# already occupies the top-left with its name and the top-right with the
-	# gold counter, and an icon there lands on top of the title text.
-	settings.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	settings.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	settings.position = Vector2(
-		UiPalette.SPACE_SM, -UTILITY_BUTTON_SIZE - UiPalette.SPACE_SM
-	)
 	settings.custom_minimum_size = Vector2(UTILITY_BUTTON_SIZE, UTILITY_BUTTON_SIZE)
-	settings.size = settings.custom_minimum_size
 	var icon: TextureRect = UiIcons.icon_rect(
 		UiIcons.hud_icon("settings"), UTILITY_BUTTON_SIZE * 0.6
 	)
@@ -214,7 +204,7 @@ func _build_settings_button() -> void:
 		if _settings_popup != null:
 			_settings_popup.open()
 	)
-	add_child(settings)
+	return settings
 
 
 func _build_departure_settings() -> Control:

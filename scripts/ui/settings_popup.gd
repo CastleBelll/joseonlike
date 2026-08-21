@@ -9,6 +9,9 @@ extends CanvasLayer
 ## One wood CTA closes it — no quit button anywhere (mobile).
 
 signal locale_changed
+## N9-111: the combat HUD's gear button pauses the tree to open this popup
+## and needs the moment it closes to hand the pause back.
+signal closed
 
 const LAYER_ABOVE_TITLE := 10
 const PANEL_MARGIN_X := 48.0
@@ -85,6 +88,7 @@ func open() -> void:
 func _on_close_pressed() -> void:
 	SaveService.instance.save_profile()
 	visible = false
+	closed.emit()
 
 
 func _on_slider_changed(key: String, value: float) -> void:
@@ -208,12 +212,13 @@ func _select_tab(tab: String) -> void:
 		(_tab_pages[key] as Control).visible = key == tab
 	for key: String in _tab_buttons.keys():
 		var button: Button = _tab_buttons[key]
-		var style := _tab_box(key == tab)
+		var style := tab_box(key == tab)
 		for state: String in ["normal", "hover", "pressed", "focus"]:
 			button.add_theme_stylebox_override(state, style)
 
 
-func _tab_box(selected: bool) -> StyleBoxFlat:
+## Static so the pause popup's tabs (N9-112) share the exact same look.
+static func tab_box(selected: bool) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = UiPalette.WOOD if selected else UiPalette.PAPER_CARD
 	box.border_color = UiPalette.GOLD if selected else UiPalette.WOOD_BORDER

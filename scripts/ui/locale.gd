@@ -96,6 +96,8 @@ const INLINE_EN := {
 	"패시브": "Passives",
 	"능력치": "Stats",
 	"개조 경로": "Remake Path",
+	"빌드": "Build",
+	"열린 개조 경로 없음": "No remake path open",
 	"%s %d  (칸 %d + 주움 %d)": "%s %d  (slots %d + found %d)",
 	"  (가득 참)": "  (full)",
 	"  Lv.%d 필요": "  needs Lv.%d",

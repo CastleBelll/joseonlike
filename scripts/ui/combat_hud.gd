@@ -28,6 +28,12 @@ const COUNTER_STACK_WIDTH := 144.0
 # counter icons read ~30 logical px, and 2x NEAREST stays pixel-crisp.
 const ICON_SIZE := 32.0
 const CORNER_ICON_SIZE := 32.0
+## Above the Hud canvas layer (1) and anything the stage adds to it — the
+## pause overlay and the settings popup must never lose a z fight again.
+const OVERLAY_CANVAS_LAYER := 10
+const PAUSE_TAB_HEIGHT := 44.0
+const PAUSE_TAB_BUILD := "build"
+const PAUSE_TAB_EVOLUTIONS := "evolutions"
 const OVERLAY_PANEL_MARGIN_X := 64.0
 const OVERLAY_PANEL_HEIGHT := 260.0
 const OVERLAY_BUTTON_HEIGHT := 56.0
@@ -64,6 +70,11 @@ var _level_label: Label
 var _kill_label: Label
 var _gold_label: Label
 var _pause_overlay: Control
+var _overlay_layer: CanvasLayer
+## N9-112 pause tabs: 빌드 (weapons/passives/stats) and 개조 경로.
+var _evolution_section: VBoxContainer
+var _pause_tab_buttons: Dictionary = {}  # tab id -> Button
+var _pause_tab_heights: Dictionary = {}  # tab id -> content height px
 var _pause_panel: PanelContainer
 var _build_section: VBoxContainer
 var _resume_button: Button
@@ -255,6 +266,15 @@ func _build_corner_buttons() -> void:
 	info.visible = false
 	row.add_child(info)
 	add_child(row)
+	# N9-111 (owner: 설정은 우측 상단 톱니로): the gear pauses the run and
+	# opens settings directly — it left the pause popup.
+	var settings := _flat_button("SettingsButton")
+	settings.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	settings.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	settings.position = Vector2(-BUTTON_SIZE - UiPalette.SPACE_MD, TOP_MARGIN)
+	settings.add_child(_corner_icon("settings"))
+	settings.pressed.connect(_on_settings_pressed)
+	add_child(settings)
 
 
 func _build_timer() -> void:
@@ -394,6 +414,15 @@ func _build_screen_flash() -> void:
 
 ## Paper-panel pause overlay (§3 grammar): resume + quit-to-title only.
 func _build_pause_overlay() -> void:
+	# N9-111 (owner: the popup still hid behind the map): the minimap is a
+	# LATE-added sibling of CombatHud on the same Hud canvas layer, so no
+	# child reordering inside this control can win. The overlay (and the
+	# settings popup) live on their own higher canvas layer instead — above
+	# everything the HUD or the stage will ever add to layer one.
+	_overlay_layer = CanvasLayer.new()
+	_overlay_layer.name = "OverlayLayer"
+	_overlay_layer.layer = OVERLAY_CANVAS_LAYER
+	add_child(_overlay_layer)
 	_pause_overlay = Control.new()
 	_pause_overlay.name = "PauseOverlay"
 	# Must keep taking input while the paused tree is frozen.
@@ -427,20 +456,62 @@ func _build_pause_overlay() -> void:
 	var title := _label(UiLocale.t("일시 정지"), UiPalette.FONT_SIZE_TITLE, UiPalette.VERMILION)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	layout.add_child(title)
+	# N9-112 (owner: 개조 경로를 탭으로 빼자): the recipe list left the one
+	# long scroll — a tab bar under the title switches 빌드 / 개조 경로.
+	layout.add_child(_make_pause_tab_bar())
 	_build_section = VBoxContainer.new()
 	_build_section.name = "BuildSummary"
 	_build_section.add_theme_constant_override("separation", UiPalette.SPACE_SM)
 	layout.add_child(_build_section)
+	_evolution_section = VBoxContainer.new()
+	_evolution_section.name = "EvolutionSummary"
+	_evolution_section.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	_evolution_section.visible = false
+	layout.add_child(_evolution_section)
 	_resume_button = _overlay_button("ResumeButton", UiLocale.t("계속하기"), _on_resume_pressed)
 	layout.add_child(_resume_button)
-	# N9-35 (owner request): mid-run, the pause screen was the only thing
-	# between the player and the title, so changing the volume meant abandoning
-	# the run. The popup runs on PROCESS_MODE_ALWAYS, so it works while the
-	# tree is paused.
-	layout.add_child(_overlay_button("SettingsButton", UiLocale.t("설정"), _on_settings_pressed))
+	# N9-111 (owner direction): settings left this popup for the top-right
+	# gear button — the popup keeps only resume and quit.
 	layout.add_child(_overlay_button("QuitButton", UiLocale.t("타이틀로"), _on_quit_pressed))
 	_pause_panel = panel
-	add_child(_pause_overlay)
+	_overlay_layer.add_child(_pause_overlay)
+
+
+func _make_pause_tab_bar() -> Control:
+	var bar := HBoxContainer.new()
+	bar.name = "PauseTabBar"
+	bar.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	for tab: String in [PAUSE_TAB_BUILD, PAUSE_TAB_EVOLUTIONS]:
+		var button := Button.new()
+		button.name = "Tab_" + tab
+		button.custom_minimum_size = Vector2(0.0, PAUSE_TAB_HEIGHT)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_color_override("font_color", UiPalette.WOOD_TEXT)
+		button.add_theme_color_override("font_hover_color", UiPalette.WOOD_TEXT)
+		button.add_theme_color_override("font_pressed_color", UiPalette.WOOD_TEXT)
+		button.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
+		button.text = UiLocale.t("빌드" if tab == PAUSE_TAB_BUILD else "개조 경로")
+		button.pressed.connect(_select_pause_tab.bind(tab))
+		bar.add_child(button)
+		_pause_tab_buttons[tab] = button
+	return bar
+
+
+func _select_pause_tab(tab: String) -> void:
+	_build_section.visible = tab == PAUSE_TAB_BUILD
+	_evolution_section.visible = tab == PAUSE_TAB_EVOLUTIONS
+	for key: String in _pause_tab_buttons:
+		var button: Button = _pause_tab_buttons[key]
+		var style: StyleBoxFlat = SettingsPopup.tab_box(key == tab)
+		for state: String in ["normal", "hover", "pressed", "focus"]:
+			button.add_theme_stylebox_override(state, style)
+	# Each tab carries its own content height; the centered panel resizes so
+	# neither tab shows the other's empty space.
+	var half: float = (
+		OVERLAY_PANEL_HEIGHT + float(_pause_tab_heights.get(tab, 0.0))
+	) / 2.0
+	_pause_panel.offset_top = -half
+	_pause_panel.offset_bottom = half
 
 
 func _overlay_button(button_name: String, text: String, handler: Callable) -> Button:
@@ -457,11 +528,6 @@ func _on_pause_pressed() -> void:
 	get_tree().paused = true
 	if build_provider.is_valid():
 		_refresh_build_summary(build_provider.call())
-	# N9-106 (owner: the popup hid behind the skill buttons): the overlay is
-	# built in _ready but ActiveCluster is added at run start, AFTER it in
-	# tree order. Raising on every open beats fixing one insertion order —
-	# it stays on top no matter what the HUD grows later.
-	_pause_overlay.move_to_front()
 	_pause_overlay.visible = true
 	_resume_button.grab_focus()
 
@@ -471,6 +537,8 @@ func _on_pause_pressed() -> void:
 ## reliable after a layout pass, which a freshly shown overlay hasn't had).
 func _refresh_build_summary(summary: Dictionary) -> void:
 	for child: Node in _build_section.get_children():
+		child.queue_free()
+	for child: Node in _evolution_section.get_children():
 		child.queue_free()
 	var weapons: Array = summary.get("weapons", [])
 	var passives: Array = summary.get("passives", [])
@@ -541,30 +609,38 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		var stat_rows: int = ceili(float(stats.size()) / float(BUILD_PASSIVE_COLUMNS))
 		extra_height += (stat_rows + 1) * BUILD_PASSIVE_ROW_HEIGHT + UiPalette.SPACE_SM
 
-	# N9-9: evolution paths open to this build — base → result · material,
-	# ✓ when the material is already in the run inventory.
+	# N9-9 → N9-112: evolution paths (base → result · material, √ when the
+	# material is held) now live on their own tab instead of stretching the
+	# build scroll (owner: 개조 경로를 탭으로 빼자).
 	var evolutions: Array = summary.get("evolutions", [])
-	if not evolutions.is_empty():
-		var box := VBoxContainer.new()
-		box.name = "EvolutionLines"
-		var header := _label(UiLocale.t("개조 경로"), UiPalette.FONT_SIZE_LABEL, UiPalette.VERMILION)
-		box.add_child(header)
-		for line_text: Variant in evolutions:
-			var row_label: Label = _label(
-				String(line_text), UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
-			)
-			# N9-106 (owner: the panel drifted right): an unwrapped long
-			# recipe line inflates the panel's minimum width past the band,
-			# and with offset_left fixed the excess spills right only.
-			row_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			row_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			box.add_child(row_label)
-		_build_section.add_child(box)
-		extra_height += (evolutions.size() + 1) * BUILD_PASSIVE_ROW_HEIGHT + UiPalette.SPACE_SM
+	var evolution_height: float = 0.0
+	if evolutions.is_empty():
+		# Empty state stays explicit — a blank tab reads as broken (QA-2).
+		var none := _label(
+			UiLocale.t("열린 개조 경로 없음"),
+			UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
+		)
+		none.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_evolution_section.add_child(none)
+		evolution_height = BUILD_PASSIVE_ROW_HEIGHT
+	for line_text: Variant in evolutions:
+		var row_label: Label = _label(
+			String(line_text), UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
+		)
+		# N9-106 (owner: the panel drifted right): an unwrapped long recipe
+		# line inflates the panel's minimum width past the band, and with
+		# offset_left fixed the excess spills right only.
+		row_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		row_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_evolution_section.add_child(row_label)
+		evolution_height += BUILD_PASSIVE_ROW_HEIGHT
 
-	var half: float = (OVERLAY_PANEL_HEIGHT + extra_height) / 2.0
-	_pause_panel.offset_top = -half
-	_pause_panel.offset_bottom = half
+	_pause_tab_heights = {
+		PAUSE_TAB_BUILD: extra_height + PAUSE_TAB_HEIGHT,
+		PAUSE_TAB_EVOLUTIONS: evolution_height + PAUSE_TAB_HEIGHT,
+	}
+	# Every open lands on the build tab — the one the player checks most.
+	_select_pause_tab(PAUSE_TAB_BUILD)
 
 
 ## "무기 3/4" — reads GOLD while a slot is open and muted once the build is
@@ -631,11 +707,21 @@ func _build_weapon_cell(entry: Dictionary) -> Control:
 	return cell
 
 
+## N9-111: the gear freezes the fight exactly like pause while the popup is
+## up, then hands the pause back on close — unless the pause popup is open
+## underneath (gear pressed while paused), which keeps the tree frozen.
 func _on_settings_pressed() -> void:
 	if _settings_popup == null:
 		_settings_popup = SettingsPopup.new()
-		add_child(_settings_popup)
+		_overlay_layer.add_child(_settings_popup)
+		_settings_popup.closed.connect(_on_settings_closed)
+	get_tree().paused = true
 	_settings_popup.open()
+
+
+func _on_settings_closed() -> void:
+	if not _pause_overlay.visible:
+		get_tree().paused = false
 
 
 func _on_resume_pressed() -> void:

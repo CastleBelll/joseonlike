@@ -31,11 +31,17 @@ func test_build_and_update() -> bool:
 	passed = passed and bar.max_value == 10.0 and bar.value == 4.0
 	hud.set_xp(0, 0)  # degenerate curve must not break the bar range
 	passed = passed and bar.max_value == 1.0 and bar.value == 0.0
-	var overlay: Control = hud.get_node("PauseOverlay")
+	# N9-111: the overlay rides its own high canvas layer so late-added Hud
+	# siblings (minimap, skill discs) can never draw over it; settings moved
+	# to the top-right gear and out of the popup.
+	var overlay: Control = hud.get_node("OverlayLayer/PauseOverlay")
 	passed = passed and not overlay.visible
 	passed = passed and overlay.process_mode == Node.PROCESS_MODE_ALWAYS
+	passed = passed and (hud.get_node("OverlayLayer") as CanvasLayer).layer > 1
 	passed = passed and overlay.find_child("ResumeButton", true, false) is Button
 	passed = passed and overlay.find_child("QuitButton", true, false) is Button
+	passed = passed and overlay.find_child("SettingsButton", true, false) == null
+	passed = passed and hud.get_node("SettingsButton") is Button
 	hud.free()
 	if not passed:
 		push_error("test_combat_hud: HUD construction or updates broken")
