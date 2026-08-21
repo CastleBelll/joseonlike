@@ -361,6 +361,10 @@
         "projectile_count": 1,
         "on_hit_status": {
           "dps": 2.0
+        },
+        "explosion": {
+          "radius_px": 8.0,
+          "edge_falloff": 0.05
         }
       }
     }
@@ -489,7 +493,8 @@
       },
       "8": {
         "chain": {
-          "jumps": 2
+          "jumps": 2,
+          "falloff": 0.06
         }
       }
     }
@@ -888,7 +893,8 @@
       },
       "8": {
         "ward": {
-          "radius_px": 6.0
+          "radius_px": 10.0,
+          "duration_sec": 0.4
         }
       }
     },
@@ -1021,7 +1027,8 @@
       "8": {
         "summon": {
           "lifetime_sec": 2.0,
-          "attack_cooldown_sec": -0.04
+          "attack_cooldown_sec": -0.04,
+          "speed": 20.0
         }
       }
     },
@@ -1151,7 +1158,8 @@
       "8": {
         "shockwave": {
           "radius_px": 12.0,
-          "stun_sec": 0.2
+          "stun_sec": 0.2,
+          "knockback_scale": 0.2
         }
       }
     },
@@ -1330,7 +1338,12 @@
       "cooldown_sec": -0.03
     },
     "evolution_only": true,
-    "hit_effect": "hit_neutral"
+    "hit_effect": "hit_neutral",
+    "milestones": {
+      "8": {
+        "pierce": 1
+      }
+    }
   },
   "sharp_sword": {
     "name_ko": "예리한 환도",
@@ -1374,7 +1387,12 @@
     },
     "evolution_only": true,
     "lifesteal": 0.15,
-    "hit_effect": "hit_curse"
+    "hit_effect": "hit_curse",
+    "milestones": {
+      "8": {
+        "pierce": 1
+      }
+    }
   },
   "flame_sword": {
     "name_ko": "화염도",
@@ -1393,7 +1411,12 @@
       "cooldown_sec": -0.04
     },
     "evolution_only": true,
-    "hit_effect": "hit_fire"
+    "hit_effect": "hit_fire",
+    "milestones": {
+      "8": {
+        "pierce": 1
+      }
+    }
   },
   "bow": {
     "name_ko": "각궁",
@@ -1436,7 +1459,12 @@
       "cooldown_sec": -0.03
     },
     "evolution_only": true,
-    "hit_effect": "hit_paper"
+    "hit_effect": "hit_paper",
+    "milestones": {
+      "8": {
+        "projectile_count": 1
+      }
+    }
   },
   "_evolution": {
     "damage_mult": 1.4

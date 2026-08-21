@@ -3139,3 +3139,22 @@ carries x1.56 damage per shot (mult included) plus burn — a strict superset.
 
 Measured with the N9-96 harness fix: the grace-timeout path used to discard
 the dps accounting for precisely the runs that performed best.
+
+
+## N9-97 growth-axis audit across every evolution pair (2026-08-21)
+
+Static audit of milestone totals, all 19 mod pairs. Two classes:
+
+* Same-mechanic evolutions must be strict supersets. Eight were not — the
+  화염 부적 defect repeated: 화령부 grew blast radius 34 vs 화부's 42,
+  뇌정부 had no jump-damage-retention milestones, 화염 결계 grew its ward
+  less, 뇌신장's summon never gained speed, 봉인 진언 never grew knockback,
+  and the warrior/archer lines dropped pierce or projectile milestones.
+  Each deficit added at L8 so the axis totals match the base.
+* Mechanic-CHANGING evolutions (낡은/화염 부적 → 화부/뇌부/살) keep their
+  "losses" on purpose: shedding pierce when you stop being a pierce weapon
+  is the identity change.
+
+test_evolution_superset holds the rule from now on; deleting one patch makes
+it fail. Spot race, worst pair, seed 11: 화령부 116.2 dps vs 화부 107.0,
+both surviving the window — the tier multiplier and the restored axis land.
