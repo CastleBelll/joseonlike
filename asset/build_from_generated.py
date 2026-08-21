@@ -92,7 +92,12 @@ INSTALL = [
     ("passive_chain_amount", "asset/ui/passive_icons/chain_amount.png", True),
     ("passive_seal_haste", "asset/ui/passive_icons/seal_haste.png", True),
     # The one true pickup gap: 14px sits between the 12px herb and 16px coin.
-    ("passive_pickup_magnet", "asset/pickups/magnet.png", "14x14"),
+    ("passive_pickup_magnet2", "asset/pickups/magnet.png", "14x14"),
+    # N9-93 (owner: 약초 벽력부 자석 궤짝 새로 생성): the remaining three,
+    # each at the size its consumer already draws 1:1.
+    ("passive_pickup_health2", "asset/pickups/health.png", "12x12"),
+    ("passive_pickup_nuke", "asset/pickups/nuke.png", "24x24"),
+    ("passive_pickup_chest", "asset/pickups/chest.png", "32x32"),
 ]
 
 
