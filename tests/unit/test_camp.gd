@@ -20,6 +20,20 @@ func test_first_boot_routes_straight_to_stage() -> bool:
 	return Camp.destination_after_select_exit(fresh) == Camp.DEST_TITLE
 
 
+func test_mid_tutorial_quit_routes_to_camp() -> bool:
+	# N9-104 (owner: quitting mid-tutorial re-skipped the camp): a sortie that
+	# STARTED but never finished must land the next launch in camp, while the
+	# tutorial content itself stays armed (is_first_run still true).
+	var quit_early: Dictionary = Ftue.mark_first_sortie_started(SaveProfile.default_profile())
+	if Camp.destination_after_title(quit_early) != Camp.DEST_CAMP:
+		push_error("test_camp: a started-but-unfinished tutorial must route to camp")
+		return false
+	if not Ftue.is_first_run(quit_early):
+		push_error("test_camp: an unfinished tutorial must still count as the first run")
+		return false
+	return Camp.destination_after_select_exit(quit_early) == Camp.DEST_CAMP
+
+
 func test_returning_profile_routes_to_camp() -> bool:
 	var returning: Dictionary = _returning_profile()
 	if Camp.destination_after_title(returning) != Camp.DEST_CAMP:

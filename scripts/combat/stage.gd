@@ -327,6 +327,14 @@ func _ready() -> void:
 	# N6-1 FTUE: the scripted first-run drop table only arms on a profile that
 	# has never finished a run, and the move hint only until first dismissal.
 	var profile: Dictionary = _profile()
+	# N9-104: record that the tutorial sortie began, so quitting mid-run does
+	# not send the next launch straight back into the stage (title routing).
+	if (
+		Ftue.is_first_run(profile)
+		and not Ftue.has_started_first_sortie(profile)
+		and SaveService.instance != null
+	):
+		SaveService.instance.mark_first_sortie_started()
 	if Ftue.is_first_run(profile):
 		_first_run_drops = stage_entry.get("first_run_drops", [])
 		_guarantee_offset_px = float(

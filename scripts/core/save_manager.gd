@@ -100,6 +100,14 @@ func mark_guide_seen() -> void:
 	save_profile()
 
 
+## N9-104: written when the first sortie BEGINS so a mid-tutorial quit still
+## routes the next launch to camp; callers gate on the reader to avoid
+## rewriting the profile every run start.
+func mark_first_sortie_started() -> void:
+	profile = Ftue.mark_first_sortie_started(profile)
+	save_profile()
+
+
 ## N9-22: a cleared difficulty opens the next rung; no write when repeated.
 func mark_difficulty_cleared(id: String) -> void:
 	var result: Dictionary = Difficulty.mark_cleared(profile, id)

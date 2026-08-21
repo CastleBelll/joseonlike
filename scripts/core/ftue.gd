@@ -73,11 +73,18 @@ const GUIDE_PAGES: Array[Dictionary] = [
 const LEVELUP_EXPLAINED := "levelup_explained"
 const LEVELUP_EXPLAIN_HEADER := "첫 파워 업! 하나를 골라 강해지자"
 
+## N9-104 (owner: quitting mid-tutorial re-skipped the camp forever): set the
+## moment the first sortie BEGINS, while is_first_run only flips when a run
+## ENDS. Title routing keys on this so a player who quit mid-tutorial lands
+## in camp on the next launch; the tutorial content itself (forced taoist,
+## scripted drops, guide) still keys on is_first_run until a run completes.
+const FIRST_SORTIE_STARTED := "first_sortie_started"
+
 
 static func default_flags() -> Dictionary:
 	return {
 		MOVE_HINT_SEEN: false, MOD_EXPLAINED: false, GUIDE_SEEN: false,
-		LEVELUP_EXPLAINED: false,
+		LEVELUP_EXPLAINED: false, FIRST_SORTIE_STARTED: false,
 	}
 
 
@@ -95,6 +102,14 @@ static func route_character(profile: Dictionary) -> String:
 	if is_first_run(profile):
 		return SaveProfile.DEFAULT_CHARACTER
 	return String(profile.get("selected_character", SaveProfile.DEFAULT_CHARACTER))
+
+
+static func has_started_first_sortie(profile: Dictionary) -> bool:
+	return _flag(profile, FIRST_SORTIE_STARTED)
+
+
+static func mark_first_sortie_started(profile: Dictionary) -> Dictionary:
+	return _with_flag(profile, FIRST_SORTIE_STARTED)
 
 
 static func should_show_move_hint(profile: Dictionary) -> bool:

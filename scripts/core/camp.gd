@@ -24,19 +24,21 @@ const BUILDINGS: Array[Dictionary] = [
 const NOT_READY_NOTICE := "준비 중"
 
 
-## Where the title's single start button goes (GDD §28): the first run skips
-## camp and character select entirely; from the second visit on the player
-## lands in camp and departs from there.
+## Where the title's single start button goes (GDD §28): only a profile that
+## has never even ENTERED the tutorial skips camp. Keying this on
+## is_first_run alone meant quitting mid-tutorial re-skipped the camp on
+## every relaunch (N9-104, owner report) — runs_played only counts finishes.
 static func destination_after_title(profile: Dictionary) -> String:
-	if Ftue.is_first_run(profile):
+	if Ftue.is_first_run(profile) and not Ftue.has_started_first_sortie(profile):
 		return DEST_STAGE
 	return DEST_CAMP
 
 
-## Where character select's back button goes. Camp only exists for returning
-## profiles, so a fresh profile (title corner detour) returns to the title.
+## Where character select's back button goes. Camp only exists once a sortie
+## has happened, so a truly fresh profile (title corner detour) returns to
+## the title.
 static func destination_after_select_exit(profile: Dictionary) -> String:
-	if Ftue.is_first_run(profile):
+	if Ftue.is_first_run(profile) and not Ftue.has_started_first_sortie(profile):
 		return DEST_TITLE
 	return DEST_CAMP
 
