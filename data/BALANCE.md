@@ -3180,3 +3180,17 @@ test_evolutions_hit_at_least_twice_as_hard_per_shot pins the floor at x2.0;
 dropping the multiplier back to 1.4 fails 12 pairs. Normal seed-7 run stays
 in its prior band (106.6 dps, survived) — no trivialization signal; the
 maxed-nopick guard is untouched since nopick runs never evolve.
+
+
+## N9-99 horde density (2026-08-21, owner: no VS-style massacre feel)
+
+Raising live_cap alone (130→210) exposed the real bottleneck: peak live hit
+only 53 of the 210 allowed — INFLOW was the limit, not the cap. The bot
+killed faster than the schedule spawned. Post-60s wave counts x1.6 AND
+intervals x0.55 fix the faucet, not just the tank.
+
+seed-7 normal bot, before → after: kills 343 → 722 (x2.1), one run measured
+211.8 dps over a full survived window (prior band ~106). surge fps min 56 /
+avg 59 on desktop (prior floor 59-60 — slightly down, acceptable; mobile web
+needs an owner device check). Opening (0-60s) untouched: FTUE and the
+opening-contract validator see the same schedule.

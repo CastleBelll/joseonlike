@@ -843,6 +843,11 @@ func _report_and_quit() -> void:
 		_damage_total, _damage_total / maxf(elapsed, 0.001), elapsed
 	])
 	print("PLAYTEST level: %d" % _stage._run_state.level)
+	print("PLAYTEST kills: %d" % _stage._run_state.kills)
+	print("PLAYTEST surge fps: min %d avg %d over %d samples" % [
+		int(_fps_min), int(_fps_sum / float(maxi(_fps_samples, 1))), _fps_samples
+	])
+	print("PLAYTEST crowd peak live: %d" % _peak_live)
 	if _stage._boss != null:
 		print("PLAYTEST boss hp left: %.0f / %.0f" % [_stage._boss.hp, _stage._boss_hp_max])
 	get_tree().quit(0)
