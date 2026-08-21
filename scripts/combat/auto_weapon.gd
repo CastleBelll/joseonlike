@@ -785,13 +785,13 @@ func _start_nudge() -> void:
 
 
 ## A mod swap can queue_free this weapon mid-punch; never leave the camera
-## stuck off 1.0 zoom.
+## stuck off the base zoom.
 func _exit_tree() -> void:
 	if _nudge_left <= 0.0:
 		return
 	var camera: Camera2D = get_viewport().get_camera_2d()
 	if camera != null:
-		camera.zoom = Vector2.ONE
+		camera.zoom = Vector2.ONE * Stage.CAMERA_BASE_ZOOM
 
 
 func _decay_nudge(delta: float) -> void:
@@ -805,7 +805,9 @@ func _decay_nudge(delta: float) -> void:
 	var punch: float = (
 		WeaponEffects.value("shockwave_nudge_px") / maxf(get_viewport_rect().size.y, 1.0)
 	)
-	camera.zoom = Vector2.ONE * (1.0 + punch * (_nudge_left / nudge_sec))
+	camera.zoom = (
+		Vector2.ONE * Stage.CAMERA_BASE_ZOOM * (1.0 + punch * (_nudge_left / nudge_sec))
+	)
 
 
 func _create_ward() -> Ward:

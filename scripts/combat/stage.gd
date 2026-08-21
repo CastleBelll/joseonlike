@@ -4,6 +4,10 @@ extends Node2D
 ## forest art (N3-10) via Ground/StageField, falling back to palette-token
 ## placeholders when a texture is missing.
 
+## N9-115 (owner: 핸드폰으로 보니 애셋이 전부 좀 작다): the whole field renders
+## slightly magnified. Every zoom write in the run (shockwave punch, resets)
+## multiplies from this base, never from 1.0.
+const CAMERA_BASE_ZOOM := 1.15
 const WEAPONS_PATH := "res://data/weapons.json"
 const PASSIVES_PATH := "res://data/passives.json"
 const LOOT_PATH := "res://data/loot.json"
@@ -183,6 +187,9 @@ var _run_length: Dictionary = {}
 
 
 func _ready() -> void:
+	var start_camera: Camera2D = get_node_or_null("World/Player/Camera2D")
+	if start_camera != null:
+		start_camera.zoom = Vector2.ONE * CAMERA_BASE_ZOOM
 	var props_config: Dictionary = StageField.load_config()
 	var field_config: Dictionary = props_config.get("field", {})
 	_ground_size = Vector2(
@@ -738,7 +745,7 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 	# for the whole result screen (physics stops while paused) — reset first.
 	var camera: Camera2D = get_viewport().get_camera_2d()
 	if camera != null:
-		camera.zoom = Vector2.ONE
+		camera.zoom = Vector2.ONE * CAMERA_BASE_ZOOM
 		# N9-67: and its shake offset, or the result screen sits crooked for as
 		# long as it is open — physics is paused, so nothing would decay it.
 		camera.offset = Vector2.ZERO
