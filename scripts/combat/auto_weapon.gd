@@ -137,6 +137,7 @@ var _swing_art: EffectSprite
 var _impact_pool: NodePool
 var _cast_effect: String = ""
 var _wave_effect: String = ""
+var _swing_effect: String = SWING_EFFECT
 var _bolt_art: bool = false
 # N3-17 effect state: chain-jump bolts and the shockwave camera thump.
 var _bolt_pool: NodePool
@@ -171,6 +172,11 @@ func setup(
 	# driven exactly like hit_effect — weapons without the key are untouched.
 	_cast_effect = String(_base_stats.get("cast_effect", ""))
 	_wave_effect = String(_base_stats.get("wave_effect", ""))
+	# N9-121 (owner: 근접은 궤적을 스프라이트로): per-weapon swing art with
+	# the shared tinted crescent as the missing-art fallback.
+	_swing_effect = String(_base_stats.get("swing_effect", SWING_EFFECT))
+	if not EffectSprite.available(_swing_effect):
+		_swing_effect = SWING_EFFECT
 	_bolt_art = bool((_base_stats.get("chain", {}) as Dictionary).get("bolt_art", false))
 	if not EffectSprite.available(_cast_effect):
 		_cast_effect = ""
@@ -738,15 +744,21 @@ func _mark_hit(_amount: float, at: Vector2, _boss_hit: bool, crit: bool) -> void
 ## a flourish ON that shape, placed at two thirds of the reach so it reads as
 ## the blade passing through rather than as a second, smaller hitbox.
 func _play_swing_art(origin: Vector2, aim: float) -> void:
-	if not EffectSprite.available(SWING_EFFECT):
+	if not EffectSprite.available(_swing_effect):
 		return
 	if _swing_art == null:
 		_swing_art = EffectSprite.new()
 		_swing_art.name = "SwingArt"
 		add_child(_swing_art)
+	# Authored per-weapon art carries its own colour; the shared crescent is
+	# the only one that still needs the weapon tint painted on.
+	var tint: Color = (
+		Color.WHITE if _swing_effect != SWING_EFFECT
+		else Color(_swing_tint(), SWING_ART_ALPHA)
+	)
 	_swing_art.play_effect(
-		SWING_EFFECT, origin + Vector2.from_angle(aim) * _range * SWING_ART_REACH,
-		_range * SWING_ART_SPAN, Color(_swing_tint(), SWING_ART_ALPHA)
+		_swing_effect, origin + Vector2.from_angle(aim) * _range * SWING_ART_REACH,
+		_range * SWING_ART_SPAN, tint
 	)
 	_swing_art.rotation = aim
 

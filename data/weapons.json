@@ -563,7 +563,8 @@
     }
    }
   },
-  "hit_effect": "hit_neutral"
+  "hit_effect": "hit_neutral",
+  "swing_effect": "swing_seokjang"
  },
  "ghost_staff": {
   "name_ko": "귀철 석장",
@@ -626,7 +627,8 @@
     }
    }
   },
-  "hit_effect": "hit_curse"
+  "hit_effect": "hit_curse",
+  "swing_effect": "swing_ghost_staff"
  },
  "honbul": {
   "name_ko": "혼불",
@@ -698,7 +700,7 @@
     }
    }
   },
-  "hit_effect": "hit_fire"
+  "hit_effect": "hit_honbul"
  },
  "flame_honbul": {
   "name_ko": "화령 혼불",
@@ -770,7 +772,7 @@
     }
    }
   },
-  "hit_effect": "hit_fire"
+  "hit_effect": "hit_flame_honbul"
  },
  "gyeolgye": {
   "name_ko": "결계",
@@ -902,7 +904,7 @@
     }
    }
   },
-  "hit_effect": "hit_fire"
+  "hit_effect": "hit_hwayeom_gyeolgye"
  },
  "sinjang": {
   "name_ko": "신장 소환",
@@ -1417,7 +1419,7 @@
    "cooldown_sec": -0.04
   },
   "evolution_only": true,
-  "hit_effect": "hit_fire",
+  "hit_effect": "hit_flame_sword",
   "milestones": {
    "8": {
     "pierce": 1

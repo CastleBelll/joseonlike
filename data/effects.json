@@ -145,6 +145,36 @@
    "file": "res://asset/effect/hit_fire_talisman.png",
    "fps": 24.0,
    "logical_px": 38.0
+  },
+  "hit_honbul": {
+   "file": "res://asset/effect/hit_honbul.png",
+   "fps": 22.0,
+   "logical_px": 36.0
+  },
+  "hit_flame_honbul": {
+   "file": "res://asset/effect/hit_flame_honbul.png",
+   "fps": 22.0,
+   "logical_px": 38.0
+  },
+  "hit_hwayeom_gyeolgye": {
+   "file": "res://asset/effect/hit_hwayeom_gyeolgye.png",
+   "fps": 24.0,
+   "logical_px": 44.0
+  },
+  "hit_flame_sword": {
+   "file": "res://asset/effect/hit_flame_sword.png",
+   "fps": 24.0,
+   "logical_px": 38.0
+  },
+  "swing_seokjang": {
+   "file": "res://asset/effect/swing_seokjang.png",
+   "fps": 20.0,
+   "logical_px": 96.0
+  },
+  "swing_ghost_staff": {
+   "file": "res://asset/effect/swing_ghost_staff.png",
+   "fps": 20.0,
+   "logical_px": 96.0
   }
  }
 }
