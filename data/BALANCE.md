@@ -3114,3 +3114,28 @@ fps가 133으로 떨어진다. 데스크톱에선 8% 남짓이지만 오너는 *
 부작용 하나 기록: 겹침 지표(avg stacked)가 0.08 → 최대 0.77로 올랐다. 분리
 조향(N3-14)이 처리하는 범위 안이지만, 밀도를 더 올릴 거면 다음 병목은 fps가
 아니라 **겹쳐 보이는 것**이다.
+
+
+## N9-96 evolution dps (2026-08-21, seed-11 forced builds, speed 6)
+
+The owner's read was right twice. Before any change, both measurable
+evolutions ran BELOW their base. After N9-95's tier multiplier (x1.4) the
+sword pair flipped but 화염 부적 still lost to 낡은 부적, because the base
+grows +5 pierce through its milestones and the evolution capped at +2 — the
+evolution never inherited its base's growth axis.
+
+| run | dps | outcome |
+|---|---|---|
+| 법검 (base) | 24.0 – 61.7 | two runs, same seed |
+| 봉마검 (evo, x1.4) | 61.1 | 459s |
+| 낡은 부적 (base) | 52.1 – 118.1 | two runs, same seed |
+| 화염 부적 (evo, x1.4, pierce 2→5) | 100.4 | survived the window |
+
+Single-run spread on a fixed seed is large (the bot's timing rides wall fps),
+so the closing argument is arithmetic, not a race: at L8 화염 부적 now
+matches 낡은 부적's pierce 5 / 3 projectiles / cooldown curve exactly and
+carries x1.56 damage per shot (mult included) plus burn — a strict superset.
+봉마검 over 법검 is the same shape at x1.52 plus seal.
+
+Measured with the N9-96 harness fix: the grace-timeout path used to discard
+the dps accounting for precisely the runs that performed best.

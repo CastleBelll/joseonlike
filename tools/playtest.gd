@@ -460,8 +460,14 @@ func _process(delta: float) -> void:
 	_real_elapsed += delta
 	_clear_guide()
 	if _real_elapsed > _duration + TIMEOUT_GRACE_SEC:
-		print("PLAYTEST FAIL: run did not finish within grace window")
-		get_tree().quit(1)
+		# N9-96: this used to print one FAIL line and quit — which threw away
+		# the dps accounting for exactly the runs that performed BEST (a bot
+		# still alive at duration+grace with the boss unfinished). A balance
+		# sweep that cannot see its strongest results reads them as missing
+		# data; the N9-95 evolution measurements hit precisely that hole. The
+		# timeout still bounds the run, but it now reports like any outcome.
+		print("PLAYTEST outcome: survived-timeout at %.1fs" % _stage._run_elapsed)
+		_report_and_quit()
 		return
 	var elapsed: float = _stage._run_elapsed
 	if not get_tree().paused:
@@ -826,6 +832,20 @@ func _capture(path: String) -> void:
 	var image: Image = get_viewport().get_texture().get_image()
 	image.save_png(path)
 	print("PLAYTEST shot: " + ProjectSettings.globalize_path(path))
+
+
+## N9-96 timeout path: the damage accounting the balance sweeps read, without
+## the full end-of-run ceremony (no result screen exists yet — the run is
+## still going, we are just done watching it).
+func _report_and_quit() -> void:
+	var elapsed: float = _stage._run_elapsed
+	print("PLAYTEST damage total: %.0f (%.1f dps over %.1fs)" % [
+		_damage_total, _damage_total / maxf(elapsed, 0.001), elapsed
+	])
+	print("PLAYTEST level: %d" % _stage._run_state.level)
+	if _stage._boss != null:
+		print("PLAYTEST boss hp left: %.0f / %.0f" % [_stage._boss.hp, _stage._boss_hp_max])
+	get_tree().quit(0)
 
 
 func _finish() -> void:

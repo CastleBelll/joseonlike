@@ -115,7 +115,8 @@
       "4": {
         "on_hit_status": {
           "duration_sec": 0.5
-        }
+        },
+        "pierce": 1
       },
       "5": {
         "projectile_count": 1
@@ -123,7 +124,8 @@
       "6": {
         "on_hit_status": {
           "dps": 1.5
-        }
+        },
+        "pierce": 1
       },
       "7": {
         "pierce": 1
@@ -132,7 +134,8 @@
         "on_hit_status": {
           "dps": 2.0
         },
-        "projectile_count": 1
+        "projectile_count": 1,
+        "pierce": 1
       }
     }
   },
