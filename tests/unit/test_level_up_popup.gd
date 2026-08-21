@@ -190,3 +190,15 @@ func test_panel_fits_portrait_screen() -> bool:
 			% [unclamped, limit]
 		)
 	return passed
+
+
+func test_panel_top_centers_the_expand_extra_height() -> bool:
+	# N9-113 (owner: 파워 업 모달이 너무 위로): at the 960 design height the
+	# top is exactly PANEL_TOP; a taller expand viewport splits its extra
+	# height evenly, and a shorter-than-design one never pulls the top up.
+	var passed: bool = LevelUpPopup.panel_top_for(960.0) == LevelUpPopup.PANEL_TOP
+	passed = passed and LevelUpPopup.panel_top_for(1200.0) == LevelUpPopup.PANEL_TOP + 120.0
+	passed = passed and LevelUpPopup.panel_top_for(900.0) == LevelUpPopup.PANEL_TOP
+	if not passed:
+		push_error("test_level_up_popup: panel_top_for mis-centers the expand height")
+	return passed

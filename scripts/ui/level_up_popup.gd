@@ -26,6 +26,8 @@ const GRADE_PILL_COLORS := {
 const LAYER_ABOVE_HUD := 10
 const PANEL_MARGIN_X := 24.0
 const PANEL_TOP := 96.0
+## The project's design viewport height; aspect "expand" can hand a taller one.
+const DESIGN_HEIGHT := 960.0
 const HEADER_HEIGHT := 64.0
 const BODY_MARGIN := 20.0
 ## Cards grow with their wrapped description (N3-17); this is the floor that
@@ -168,13 +170,18 @@ func open(
 	if display_cards.is_empty():
 		heights.append(CARD_HEIGHT_MIN)
 		cards.add_child(_make_close_button())
+	# N9-113 (owner: 파워 업 모달이 너무 위로): aspect "expand" grows a tall
+	# phone's viewport past the 960 design height, and a fixed 96px top left
+	# the popup hugging the top edge — the extra height splits evenly instead.
+	var top: float = panel_top_for(_root_size().y)
 	var panel_height: float = minf(
 		panel_height_for(heights, _panel_style_margins_y()),
-		_root_size().y - PANEL_TOP - OWNED_STRIP_RESERVE
+		_root_size().y - top - OWNED_STRIP_RESERVE
 	)
-	_panel.offset_bottom = PANEL_TOP + panel_height
+	_panel.offset_top = top
+	_panel.offset_bottom = top + panel_height
 	_owned_row.position = Vector2(
-		PANEL_MARGIN_X, PANEL_TOP + panel_height + UiPalette.SPACE_MD
+		PANEL_MARGIN_X, top + panel_height + UiPalette.SPACE_MD
 	)
 	# The strip's rect width is what the flow container wraps against.
 	_owned_row.size = Vector2(
@@ -277,6 +284,13 @@ static func card_height_for(
 
 ## Unclamped panel height for a card stack: header, body/scroll margins, the
 ## cards and their gaps, plus the panel stylebox's own content margins.
+## N9-113: where the panel starts on this screen. At the 960 design height
+## this is exactly PANEL_TOP; anything a taller (aspect "expand") viewport
+## adds is split evenly above and below so the popup stays centred.
+static func panel_top_for(root_height: float) -> float:
+	return PANEL_TOP + maxf(root_height - DESIGN_HEIGHT, 0.0) / 2.0
+
+
 static func panel_height_for(card_heights: Array[float], style_margins_y: float) -> float:
 	var cards_total: float = 0.0
 	for height: float in card_heights:
@@ -406,7 +420,12 @@ func _build_owned_row(owned_levels: Dictionary, weapons: Dictionary) -> void:
 		var icon: Texture2D = UiIcons.weapon_icon(weapon_id)
 		if icon != null:
 			var rect: TextureRect = UiIcons.icon_rect(icon, OWNED_ICON_SIZE)
-			rect.set_anchors_preset(Control.PRESET_CENTER)
+			# N9-113 (owner: icons hung out of the wells): a CENTER preset on
+			# a zero-size rect anchors its top-left at the well's middle and
+			# lets the icon spill bottom-right; place it explicitly like the
+			# card wells do.
+			rect.position = Vector2.ONE * ((OWNED_WELL_SIZE - OWNED_ICON_SIZE) / 2.0)
+			rect.size = Vector2(OWNED_ICON_SIZE, OWNED_ICON_SIZE)
 			well.add_child(rect)
 		else:
 			# Missing-icon fallback, same rule as the card wells.
