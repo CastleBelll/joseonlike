@@ -400,6 +400,7 @@ func _physics_process(delta: float) -> void:
 	_tick_field_passives(delta)
 	_tick_minimap(delta)
 	_tick_impact(delta)
+	_tick_breakable_cull(delta)
 	_refresh_hp_hud()
 	_stream_field_chunks()
 	_tick_boss_return(delta)
@@ -1477,6 +1478,17 @@ func _material_cue(loot_id: String, loot_name: String) -> String:
 ## then one roll on the data table — most breaks give nothing or small gold on
 ## purpose; the exciting kinds stay uncommon (validator-enforced shares).
 func _on_breakable_broke(breakable: Breakable) -> void:
+	# N9-101: a broken prop used to park invisibly in the field forever. With
+	# streamed chunks that is an unbounded pile of dead nodes; nothing ever
+	# reuses one, so it is freed. The record list drops it too — deferred,
+	# because this handler runs from the prop's own broke signal.
+	_field.breakables.erase(breakable)
+	# Both lists, immediately: the spawner's culled list is rebuilt only once
+	# a second, and a weapon walking it between the free and the next rebuild
+	# would touch a dead object. (Before the first cull the two are the same
+	# array, so the second erase is a harmless no-op.)
+	_spawner.breakables.erase(breakable)
+	breakable.queue_free()
 	var puff: DeathPuff = _puff_pool.acquire()
 	puff.puff(
 		breakable.global_position,
@@ -1495,6 +1507,36 @@ func _on_breakable_broke(breakable: Breakable) -> void:
 ## Places a passive on the map every interval_sec, on a ring beyond the screen
 ## edge so it has to be walked to. The cap counts what is still lying out
 ## there — collecting one immediately makes room for the next.
+## N9-101 (owner: catch the frame and garbage-data costs): the breakable list
+## only ever grew — every streamed chunk appended, broken props stayed
+## forever, and six weapon paths walk the whole list per shot per frame. On an
+## endless run that is an unbounded per-frame cost for props three provinces
+## away. Once a second the spawner's list is rebuilt to hold only LIVE props
+## near the view; the weapons keep their own alive() checks and notice
+## nothing. The full record stays in _field.breakables for chunk bookkeeping.
+const BREAKABLE_CULL_SEC := 1.0
+const BREAKABLE_CULL_RADIUS_PX := 720.0
+var _breakable_cull_left: float = 0.0
+## Reused between rebuilds — the rebuild must not itself allocate garbage.
+var _near_breakables: Array[Breakable] = []
+
+
+func _tick_breakable_cull(delta: float) -> void:
+	_breakable_cull_left -= delta
+	if _breakable_cull_left > 0.0:
+		return
+	_breakable_cull_left = BREAKABLE_CULL_SEC
+	var centre: Vector2 = _player.global_position
+	var reach: float = BREAKABLE_CULL_RADIUS_PX * BREAKABLE_CULL_RADIUS_PX
+	_near_breakables.clear()
+	for breakable: Breakable in _field.breakables:
+		if not is_instance_valid(breakable) or not breakable.alive():
+			continue
+		if centre.distance_squared_to(breakable.global_position) <= reach:
+			_near_breakables.append(breakable)
+	_spawner.breakables = _near_breakables
+
+
 func _tick_field_passives(delta: float) -> void:
 	var block: Dictionary = _pickups_data.get("field_passive", {})
 	if block.is_empty():
