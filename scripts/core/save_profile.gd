@@ -31,7 +31,10 @@ static func default_profile() -> Dictionary:
 		"gold": 0,
 		"selected_character": DEFAULT_CHARACTER,
 		"settings": {
-			"master_volume": 1.0,
+			# N9-109 (owner: 기본 세팅 사운드를 지금보다 30% 낮춰): default
+			# loudness only — the sliders still reach 1.0, and an existing
+			# profile keeps whatever the player already set.
+			"master_volume": 0.7,
 			"music_volume": 1.0,
 			"effects_volume": 1.0,
 			"joystick_opacity": JOYSTICK_OPACITY_MAX,
