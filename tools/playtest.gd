@@ -759,7 +759,10 @@ func _pick_card() -> void:
 		# Capture the 개조 card on the open popup before pressing anything.
 		_mod_shot_done = true
 		await _capture(MOD_SHOT_PATH)
-	chosen.pressed.emit()
+	# The capture await spans frames; the popup (and its buttons) can be
+	# dismissed and freed underneath it, so pressing must re-check liveness.
+	if is_instance_valid(chosen):
+		chosen.pressed.emit()
 
 
 ## N4-3 forced policy: only cards that grow the forced weapon (its 개조,
@@ -808,6 +811,8 @@ func _collect_buttons(node: Node, found: Array[Button]) -> void:
 
 
 func _button_has_label(button: Button, text: String) -> bool:
+	if not is_instance_valid(button):
+		return false
 	for child: Node in button.get_children():
 		if child is Label and (child as Label).text.begins_with(text):
 			return true

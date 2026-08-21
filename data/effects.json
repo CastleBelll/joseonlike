@@ -1,110 +1,115 @@
 {
-  "hit_feedback": {
-    "enemy_flash_sec": 0.1,
-    "knockback_speed_px_s": 160.0,
-    "knockback_decay_px_s2": 900.0,
-    "boss_knockback_scale": 0.12,
-    "death_puff_sec": 0.3,
-    "death_puff_radius_scale": 1.6,
-    "player_vignette_sec": 0.35,
-    "low_hp_threshold": 0.25,
-    "low_hp_pulse_sec": 0.9,
-    "_impact_note": "N9-67 타격감. hitstop은 드물고 의미 있는 사건에만 건다 — 평타는 초당 수십 번이라 0이어야 하고, 검증기가 그것을 강제한다. shake는 kind별로 더해지되 max에서 잘리고 decay_per_sec로 선형 감쇠한다. 사용자 설정 screen_shake(0~1)가 최종 진폭에 곱해진다.",
-    "hitstop": {
-      "hit": 0.0,
-      "crit": 0.045,
-      "kill": 0.0,
-      "elite_kill": 0.07,
-      "boss_hit": 0.03,
-      "erupt": 0.09,
-      "nuke": 0.11
-    },
-    "shake": {
-      "max": 7.0,
-      "decay_per_sec": 26.0,
-      "hit": 0.0,
-      "crit": 1.1,
-      "kill": 0.8,
-      "elite_kill": 2.6,
-      "boss_hit": 0.9,
-      "erupt": 4.5,
-      "nuke": 6.0
-    }
+ "hit_feedback": {
+  "enemy_flash_sec": 0.1,
+  "knockback_speed_px_s": 160.0,
+  "knockback_decay_px_s2": 900.0,
+  "boss_knockback_scale": 0.12,
+  "death_puff_sec": 0.3,
+  "death_puff_radius_scale": 1.6,
+  "player_vignette_sec": 0.35,
+  "low_hp_threshold": 0.25,
+  "low_hp_pulse_sec": 0.9,
+  "_impact_note": "N9-67 타격감. hitstop은 드물고 의미 있는 사건에만 건다 — 평타는 초당 수십 번이라 0이어야 하고, 검증기가 그것을 강제한다. shake는 kind별로 더해지되 max에서 잘리고 decay_per_sec로 선형 감쇠한다. 사용자 설정 screen_shake(0~1)가 최종 진폭에 곱해진다.",
+  "hitstop": {
+   "hit": 0.0,
+   "crit": 0.045,
+   "kill": 0.0,
+   "elite_kill": 0.07,
+   "boss_hit": 0.03,
+   "erupt": 0.09,
+   "nuke": 0.11
   },
-  "separation": {
-    "weight": 2.0,
-    "pad_px": 6.0,
-    "cell_px": 96.0
-  },
-  "weapon_effects": {
-    "explosion_ring_sec": 0.45,
-    "explosion_spark_px": 4.0,
-    "chain_bolt_sec": 0.3,
-    "chain_bolt_jitter_px": 8.0,
-    "chain_bolt_width_px": 5.0,
-    "chain_first_leg_px": 44.0,
-    "arc_sweep_sec": 0.26,
-    "blade_trail_sec": 0.24,
-    "paper_width_px": 7.0,
-    "paper_length_px": 14.0,
-    "paper_trail_sec": 0.14,
-    "blade_width_px": 5.0,
-    "blade_length_px": 32.0,
-    "orbit_trail_sec": 0.15,
-    "ward_pulse_sec": 0.35,
-    "ward_spin_deg_s": 40.0,
-    "summon_strike_sec": 0.2,
-    "summon_strike_px": 18.0,
-    "shockwave_ring_sec": 0.5,
-    "shockwave_nudge_px": 8.0,
-    "shockwave_nudge_sec": 0.18,
-    "curse_jump_sec": 0.45,
-    "curse_creep_sag_px": 14.0,
-    "status_flicker_hz": 6.0,
-    "blink_puff_sec": 0.3,
-    "screen_flash_sec": 0.22,
-    "burst_ring_sec": 0.55
-  },
-  "sprite_effects": {
-    "blink_puff": {
-      "file": "res://asset/effect/blink_puff.png",
-      "fps": 24.0,
-      "logical_px": 56.0
-    },
-    "hit_fire": {
-      "file": "res://asset/effect/hit_fire.png",
-      "fps": 32.0,
-      "logical_px": 32.0
-    },
-    "hit_lightning": {
-      "file": "res://asset/effect/hit_lightning.png",
-      "fps": 36.0,
-      "logical_px": 28.0
-    },
-    "hit_curse": {
-      "file": "res://asset/effect/hit_curse.png",
-      "fps": 30.0,
-      "logical_px": 30.0
-    },
-    "hit_neutral": {
-      "file": "res://asset/effect/hit_neutral.png",
-      "fps": 32.0,
-      "logical_px": 26.0
-    },
-    "hit_paper": {
-      "file": "res://asset/effect/hit_paper.png",
-      "fps": 28.0,
-      "logical_px": 26.0
-    },
-    "hit_phoenix": {
-      "file": "res://asset/effect/hit_phoenix.png",
-      "fps": 30.0,
-      "logical_px": 44.0
-    },
-    "swing_arc": {
-      "file": "res://asset/effect/swing_arc.png",
-      "fps": 18.0,
-      "logical_px": 20.0
-    }
+  "shake": {
+   "max": 7.0,
+   "decay_per_sec": 26.0,
+   "hit": 0.0,
+   "crit": 1.1,
+   "kill": 0.8,
+   "elite_kill": 2.6,
+   "boss_hit": 0.9,
+   "erupt": 4.5,
+   "nuke": 6.0
   }
+ },
+ "separation": {
+  "weight": 2.0,
+  "pad_px": 6.0,
+  "cell_px": 96.0
+ },
+ "weapon_effects": {
+  "explosion_ring_sec": 0.45,
+  "explosion_spark_px": 4.0,
+  "chain_bolt_sec": 0.3,
+  "chain_bolt_jitter_px": 8.0,
+  "chain_bolt_width_px": 5.0,
+  "chain_first_leg_px": 44.0,
+  "arc_sweep_sec": 0.26,
+  "blade_trail_sec": 0.24,
+  "paper_width_px": 7.0,
+  "paper_length_px": 14.0,
+  "paper_trail_sec": 0.14,
+  "blade_width_px": 5.0,
+  "blade_length_px": 32.0,
+  "orbit_trail_sec": 0.15,
+  "ward_pulse_sec": 0.35,
+  "ward_spin_deg_s": 40.0,
+  "summon_strike_sec": 0.2,
+  "summon_strike_px": 18.0,
+  "shockwave_ring_sec": 0.5,
+  "shockwave_nudge_px": 8.0,
+  "shockwave_nudge_sec": 0.18,
+  "curse_jump_sec": 0.45,
+  "curse_creep_sag_px": 14.0,
+  "status_flicker_hz": 6.0,
+  "blink_puff_sec": 0.3,
+  "screen_flash_sec": 0.22,
+  "burst_ring_sec": 0.55
+ },
+ "sprite_effects": {
+  "blink_puff": {
+   "file": "res://asset/effect/blink_puff.png",
+   "fps": 24.0,
+   "logical_px": 56.0
+  },
+  "hit_fire": {
+   "file": "res://asset/effect/hit_fire.png",
+   "fps": 32.0,
+   "logical_px": 32.0
+  },
+  "hit_lightning": {
+   "file": "res://asset/effect/hit_lightning.png",
+   "fps": 36.0,
+   "logical_px": 28.0
+  },
+  "hit_curse": {
+   "file": "res://asset/effect/hit_curse.png",
+   "fps": 30.0,
+   "logical_px": 30.0
+  },
+  "hit_neutral": {
+   "file": "res://asset/effect/hit_neutral.png",
+   "fps": 32.0,
+   "logical_px": 26.0
+  },
+  "hit_paper": {
+   "file": "res://asset/effect/hit_paper.png",
+   "fps": 28.0,
+   "logical_px": 26.0
+  },
+  "hit_phoenix": {
+   "file": "res://asset/effect/hit_phoenix.png",
+   "fps": 30.0,
+   "logical_px": 44.0
+  },
+  "swing_arc": {
+   "file": "res://asset/effect/swing_arc.png",
+   "fps": 18.0,
+   "logical_px": 20.0
+  },
+  "hit_old_talisman": {
+   "file": "res://asset/effect/hit_old_talisman.png",
+   "fps": 30.0,
+   "logical_px": 32.0
+  }
+ }
 }

@@ -1,1472 +1,1472 @@
 {
-  "_targeting": {
-    "view_margin_px": 48.0,
-    "multishot_spread_deg": 12.0
-  },
-  "_grades": {
-    "ladder": [
-      "common",
-      "uncommon",
-      "rare",
-      "epic",
-      "mythic"
-    ],
-    "steps": {
-      "uncommon": {
-        "add": {
-          "crit_chance": 0.07
-        }
-      },
-      "rare": {
-        "add": {
-          "crit_damage": 0.4
-        }
-      },
-      "epic": {
-        "add": {
-          "crit_chance": 0.07
-        }
-      },
-      "mythic": {
-        "add": {
-          "crit_damage": 0.6
-        },
-        "tinted": true
-      }
+ "_targeting": {
+  "view_margin_px": 48.0,
+  "multishot_spread_deg": 12.0
+ },
+ "_grades": {
+  "ladder": [
+   "common",
+   "uncommon",
+   "rare",
+   "epic",
+   "mythic"
+  ],
+  "steps": {
+   "uncommon": {
+    "add": {
+     "crit_chance": 0.07
     }
-  },
-  "old_talisman": {
-    "name_ko": "낡은 부적",
-    "name_en": "Old Talisman",
-    "travel_sprite": "res://asset/weapon/travel/old_talisman.png",
-    "hit_effect": "hit_paper",
-    "category": "spiritual",
-    "grade": "common",
-    "mechanic": "straight",
-    "damage": 11.0,
-    "cooldown_sec": 1.1,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 260.0,
-    "range_px": 420.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 4.0,
-      "cooldown_sec": -0.05
-    },
-    "evolution_only": false,
-    "milestones": {
-      "2": {
-        "pierce": 1
-      },
-      "3": {
-        "projectile_count": 1
-      },
-      "4": {
-        "pierce": 1
-      },
-      "5": {
-        "pierce": 1
-      },
-      "6": {
-        "pierce": 1
-      },
-      "7": {
-        "pierce": 1
-      },
-      "8": {
-        "projectile_count": 1
-      }
+   },
+   "rare": {
+    "add": {
+     "crit_damage": 0.4
     }
-  },
-  "fire_talisman": {
-    "name_ko": "화염 부적",
-    "name_en": "Fire Talisman",
-    "travel_sprite": "res://asset/weapon/travel/fire_talisman.png",
-    "hit_effect": "hit_fire",
-    "category": "spiritual",
-    "grade": "rare",
-    "damage": 14.0,
-    "cooldown_sec": 1.1,
-    "projectile_count": 1,
-    "pierce": 1,
-    "speed": 260.0,
-    "range_px": 420.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 4.2,
-      "cooldown_sec": -0.05
-    },
-    "evolution_only": true,
-    "on_hit_status": {
-      "id": "burn",
-      "dps": 4.0,
-      "duration_sec": 3.0
-    },
-    "milestones": {
-      "2": {
-        "on_hit_status": {
-          "dps": 1.0
-        }
-      },
-      "3": {
-        "pierce": 1
-      },
-      "4": {
-        "on_hit_status": {
-          "duration_sec": 0.5
-        },
-        "pierce": 1
-      },
-      "5": {
-        "projectile_count": 1
-      },
-      "6": {
-        "on_hit_status": {
-          "dps": 1.5
-        },
-        "pierce": 1
-      },
-      "7": {
-        "pierce": 1
-      },
-      "8": {
-        "on_hit_status": {
-          "dps": 2.0
-        },
-        "projectile_count": 1,
-        "pierce": 1
-      }
+   },
+   "epic": {
+    "add": {
+     "crit_chance": 0.07
     }
-  },
-  "beopgeom": {
-    "name_ko": "법검",
-    "name_en": "Ritual Sword",
-    "travel_sprite": "res://asset/weapon/travel/beopgeom.png",
-    "hit_effect": "hit_neutral",
-    "category": "spiritual",
-    "grade": "common",
-    "mechanic": "pierce",
-    "damage": 8.5,
-    "cooldown_sec": 1.1,
-    "projectile_count": 1,
-    "pierce": 99,
-    "speed": 340.0,
-    "range_px": 460.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.4,
-      "cooldown_sec": -0.04
+   },
+   "mythic": {
+    "add": {
+     "crit_damage": 0.6
     },
-    "evolution_only": false,
-    "pierce_retention": 0.95,
-    "milestones": {
-      "2": {
-        "pierce_retention": 0.01
-      },
-      "3": {
-        "projectile_count": 1
-      },
-      "4": {
-        "pierce_retention": 0.01
-      },
-      "5": {
-        "projectile_count": 1
-      },
-      "6": {
-        "pierce_retention": 0.01
-      },
-      "7": {
-        "projectile_count": 1
-      },
-      "8": {
-        "pierce_retention": 0.02
-      }
-    }
-  },
-  "bongmageom": {
-    "name_ko": "봉마검",
-    "name_en": "Sealing Sword",
-    "travel_sprite": "res://asset/weapon/travel/bongmageom.png",
-    "hit_effect": "hit_neutral",
-    "category": "spiritual",
-    "grade": "epic",
-    "mechanic": "pierce",
-    "damage": 10.5,
-    "cooldown_sec": 1.0,
-    "projectile_count": 1,
-    "pierce": 99,
-    "speed": 360.0,
-    "range_px": 470.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.5,
-      "cooldown_sec": -0.03
-    },
-    "evolution_only": true,
-    "on_hit_seal": {
-      "burst_at": 4,
-      "burst_damage_scale": 3.0
-    },
-    "pierce_retention": 0.95,
-    "milestones": {
-      "2": {
-        "pierce_retention": 0.01
-      },
-      "3": {
-        "projectile_count": 1
-      },
-      "4": {
-        "pierce_retention": 0.01
-      },
-      "5": {
-        "on_hit_seal": {
-          "burst_at": -1
-        }
-      },
-      "6": {
-        "projectile_count": 1
-      },
-      "7": {
-        "pierce_retention": 0.01
-      },
-      "8": {
-        "pierce_retention": 0.02,
-        "projectile_count": 1
-      }
-    }
-  },
-  "hwabu": {
-    "name_ko": "화부",
-    "name_en": "Fire Charm",
-    "travel_sprite": "res://asset/weapon/travel/hwabu.png",
-    "hit_effect": "hit_fire",
-    "category": "spiritual",
-    "grade": "common",
-    "mechanic": "explosion",
-    "damage": 10.0,
-    "cooldown_sec": 1.45,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 240.0,
-    "range_px": 420.0,
-    "explosion": {
-      "radius_px": 90.0,
-      "edge_falloff": 0.7
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 4.0,
-      "cooldown_sec": -0.06
-    },
-    "evolution_only": true,
-    "milestones": {
-      "2": {
-        "explosion": {
-          "radius_px": 10.0
-        }
-      },
-      "3": {
-        "explosion": {
-          "radius_px": 10.0
-        }
-      },
-      "4": {
-        "explosion": {
-          "edge_falloff": 0.05
-        }
-      },
-      "5": {
-        "explosion": {
-          "radius_px": 12.0
-        }
-      },
-      "6": {
-        "explosion": {
-          "radius_px": 10.0
-        }
-      },
-      "7": {
-        "explosion": {
-          "edge_falloff": 0.05
-        }
-      },
-      "8": {
-        "projectile_count": 1
-      }
-    }
-  },
-  "hwaryeongbu": {
-    "name_ko": "화령부",
-    "name_en": "Fire Spirit Charm",
-    "travel_sprite": "res://asset/weapon/travel/hwaryeongbu.png",
-    "hit_effect": "hit_fire",
-    "category": "spiritual",
-    "grade": "epic",
-    "mechanic": "explosion",
-    "damage": 13.0,
-    "cooldown_sec": 1.35,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 240.0,
-    "range_px": 420.0,
-    "explosion": {
-      "radius_px": 105.0,
-      "edge_falloff": 0.7
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 4.2,
-      "cooldown_sec": -0.05
-    },
-    "evolution_only": true,
-    "on_hit_status": {
-      "id": "burn",
-      "dps": 5.0,
-      "duration_sec": 3.0,
-      "spread_radius_px": 90.0
-    },
-    "milestones": {
-      "2": {
-        "explosion": {
-          "radius_px": 10.0
-        }
-      },
-      "3": {
-        "on_hit_status": {
-          "dps": 2.0
-        }
-      },
-      "4": {
-        "explosion": {
-          "edge_falloff": 0.05
-        }
-      },
-      "5": {
-        "explosion": {
-          "radius_px": 12.0
-        }
-      },
-      "6": {
-        "on_hit_status": {
-          "spread_radius_px": 20.0
-        }
-      },
-      "7": {
-        "explosion": {
-          "radius_px": 12.0
-        }
-      },
-      "8": {
-        "projectile_count": 1,
-        "on_hit_status": {
-          "dps": 2.0
-        },
-        "explosion": {
-          "radius_px": 8.0,
-          "edge_falloff": 0.05
-        }
-      }
-    }
-  },
-  "noebu": {
-    "name_ko": "뇌부",
-    "name_en": "Thunder Charm",
-    "hit_effect": "hit_lightning",
-    "category": "spiritual",
-    "grade": "common",
-    "mechanic": "chain",
-    "damage": 8.5,
-    "cooldown_sec": 1.4,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 300.0,
-    "range_px": 440.0,
-    "chain": {
-      "jumps": 3,
-      "falloff": 0.7,
-      "range_px": 150.0
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.2,
-      "cooldown_sec": -0.05
-    },
-    "evolution_only": true,
-    "milestones": {
-      "2": {
-        "chain": {
-          "range_px": 15.0
-        }
-      },
-      "3": {
-        "chain": {
-          "jumps": 1
-        }
-      },
-      "4": {
-        "chain": {
-          "falloff": 0.03
-        }
-      },
-      "5": {
-        "chain": {
-          "jumps": 1
-        }
-      },
-      "6": {
-        "chain": {
-          "range_px": 20.0
-        }
-      },
-      "7": {
-        "chain": {
-          "falloff": 0.03
-        }
-      },
-      "8": {
-        "chain": {
-          "jumps": 2
-        }
-      }
-    }
-  },
-  "noejeongbu": {
-    "name_ko": "뇌정부",
-    "name_en": "Thunderbolt Charm",
-    "hit_effect": "hit_lightning",
-    "category": "spiritual",
-    "grade": "epic",
-    "mechanic": "chain",
-    "damage": 10.5,
-    "cooldown_sec": 1.3,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 320.0,
-    "range_px": 450.0,
-    "chain": {
-      "jumps": 5,
-      "falloff": 0.7,
-      "range_px": 170.0
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.6,
-      "cooldown_sec": -0.04
-    },
-    "evolution_only": true,
-    "on_hit_status": {
-      "id": "shock",
-      "slow_scale": 0.55,
-      "duration_sec": 1.5
-    },
-    "milestones": {
-      "2": {
-        "chain": {
-          "range_px": 15.0
-        }
-      },
-      "3": {
-        "chain": {
-          "jumps": 1
-        }
-      },
-      "4": {
-        "on_hit_status": {
-          "duration_sec": 0.4
-        }
-      },
-      "5": {
-        "chain": {
-          "jumps": 1
-        }
-      },
-      "6": {
-        "chain": {
-          "range_px": 20.0
-        }
-      },
-      "7": {
-        "on_hit_status": {
-          "duration_sec": 0.4
-        }
-      },
-      "8": {
-        "chain": {
-          "jumps": 2,
-          "falloff": 0.06
-        }
-      }
-    }
-  },
-  "seokjang": {
-    "name_ko": "석장",
-    "name_en": "Ringed Staff",
-    "category": "spiritual",
-    "grade": "common",
-    "mechanic": "melee_arc",
-    "damage": 10.0,
-    "cooldown_sec": 1.5,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 0.0,
-    "range_px": 118.0,
-    "arc": {
-      "angle_deg": 160.0,
-      "knockback_scale": 2.5
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.8,
-      "cooldown_sec": -0.06
-    },
-    "evolution_only": false,
-    "milestones": {
-      "2": {
-        "arc": {
-          "angle_deg": 15.0
-        }
-      },
-      "3": {
-        "arc": {
-          "knockback_scale": 0.3
-        }
-      },
-      "4": {
-        "arc": {
-          "angle_deg": 15.0
-        }
-      },
-      "5": {
-        "arc": {
-          "angle_deg": 20.0
-        }
-      },
-      "6": {
-        "arc": {
-          "knockback_scale": 0.3
-        }
-      },
-      "7": {
-        "arc": {
-          "angle_deg": 15.0
-        }
-      },
-      "8": {
-        "arc": {
-          "angle_deg": 25.0,
-          "knockback_scale": 0.4
-        }
-      }
-    },
-    "hit_effect": "hit_neutral"
-  },
-  "ghost_staff": {
-    "name_ko": "귀철 석장",
-    "name_en": "Ghost Iron Staff",
-    "category": "spiritual",
-    "grade": "epic",
-    "mechanic": "melee_arc",
-    "damage": 13.0,
-    "cooldown_sec": 1.4,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 0.0,
-    "range_px": 128.0,
-    "arc": {
-      "angle_deg": 170.0,
-      "knockback_scale": 2.8
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 4.2,
-      "cooldown_sec": -0.05
-    },
-    "evolution_only": true,
-    "lifesteal": 0.12,
-    "milestones": {
-      "2": {
-        "arc": {
-          "angle_deg": 15.0
-        }
-      },
-      "3": {
-        "arc": {
-          "knockback_scale": 0.3
-        }
-      },
-      "4": {
-        "arc": {
-          "angle_deg": 15.0
-        }
-      },
-      "5": {
-        "arc": {
-          "angle_deg": 20.0
-        }
-      },
-      "6": {
-        "arc": {
-          "knockback_scale": 0.3
-        }
-      },
-      "7": {
-        "arc": {
-          "angle_deg": 15.0
-        }
-      },
-      "8": {
-        "arc": {
-          "angle_deg": 25.0,
-          "knockback_scale": 0.4
-        }
-      }
-    },
-    "hit_effect": "hit_curse"
-  },
-  "honbul": {
-    "name_ko": "혼불",
-    "name_en": "Soul Flame",
-    "category": "spiritual",
-    "grade": "common",
-    "mechanic": "orbit",
-    "damage": 10.2,
-    "cooldown_sec": 0.9,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 0.0,
-    "range_px": 80.0,
-    "orbit": {
-      "radius_px": 84.0,
-      "speed_deg_s": 170.0,
-      "orb_radius_px": 13.0
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 2.1,
-      "cooldown_sec": -0.05
-    },
-    "evolution_only": false,
-    "on_hit_status": {
-      "id": "burn",
-      "dps": 3.0,
-      "duration_sec": 2.0
-    },
-    "milestones": {
-      "2": {
-        "orbit": {
-          "radius_px": 8.0,
-          "speed_deg_s": 10.0
-        }
-      },
-      "3": {
-        "projectile_count": 1,
-        "orbit": {
-          "radius_px": 6.0
-        }
-      },
-      "4": {
-        "on_hit_status": {
-          "dps": 1.0
-        }
-      },
-      "5": {
-        "projectile_count": 1,
-        "orbit": {
-          "orb_radius_px": 1.5
-        }
-      },
-      "6": {
-        "orbit": {
-          "radius_px": 6.0,
-          "speed_deg_s": 12.0
-        }
-      },
-      "7": {
-        "orbit": {
-          "speed_deg_s": 15.0
-        }
-      },
-      "8": {
-        "projectile_count": 1,
-        "orbit": {
-          "orb_radius_px": 2.0
-        }
-      }
-    },
-    "hit_effect": "hit_fire"
-  },
-  "flame_honbul": {
-    "name_ko": "화령 혼불",
-    "name_en": "Flame Soul",
-    "category": "spiritual",
-    "grade": "epic",
-    "mechanic": "orbit",
-    "damage": 10.8,
-    "cooldown_sec": 0.8,
-    "projectile_count": 2,
-    "pierce": 0,
-    "speed": 0.0,
-    "range_px": 90.0,
-    "orbit": {
-      "radius_px": 88.0,
-      "speed_deg_s": 190.0,
-      "orb_radius_px": 14.0
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 2.7,
-      "cooldown_sec": -0.04
-    },
-    "evolution_only": true,
-    "on_hit_status": {
-      "id": "burn",
-      "dps": 7.0,
-      "duration_sec": 3.0
-    },
-    "milestones": {
-      "2": {
-        "orbit": {
-          "radius_px": 8.0,
-          "speed_deg_s": 10.0
-        }
-      },
-      "3": {
-        "projectile_count": 1,
-        "orbit": {
-          "radius_px": 6.0
-        }
-      },
-      "4": {
-        "on_hit_status": {
-          "dps": 1.5
-        }
-      },
-      "5": {
-        "projectile_count": 1,
-        "orbit": {
-          "orb_radius_px": 1.5
-        }
-      },
-      "6": {
-        "orbit": {
-          "radius_px": 6.0,
-          "speed_deg_s": 12.0
-        }
-      },
-      "7": {
-        "orbit": {
-          "speed_deg_s": 15.0
-        }
-      },
-      "8": {
-        "projectile_count": 1,
-        "orbit": {
-          "orb_radius_px": 2.0
-        }
-      }
-    },
-    "hit_effect": "hit_fire"
-  },
-  "gyeolgye": {
-    "name_ko": "결계",
-    "name_en": "Ward Circle",
-    "category": "spiritual",
-    "grade": "common",
-    "mechanic": "ward",
-    "damage": 2.6,
-    "cooldown_sec": 4.0,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 0.0,
-    "range_px": 260.0,
-    "ward": {
-      "radius_px": 45.0,
-      "duration_sec": 3.5,
-      "tick_sec": 0.6,
-      "slow_scale": 0.6
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 1.25,
-      "cooldown_sec": -0.1
-    },
-    "evolution_only": false,
-    "milestones": {
-      "2": {
-        "ward": {
-          "radius_px": 4.0
-        }
-      },
-      "3": {
-        "ward": {
-          "duration_sec": 0.3
-        }
-      },
-      "4": {
-        "ward": {
-          "radius_px": 4.0
-        }
-      },
-      "5": {
-        "ward": {
-          "duration_sec": 0.3
-        }
-      },
-      "6": {
-        "ward": {
-          "radius_px": 5.0
-        }
-      },
-      "7": {
-        "ward": {
-          "duration_sec": 0.4
-        }
-      },
-      "8": {
-        "ward": {
-          "radius_px": 6.0
-        }
-      }
-    },
-    "hit_effect": "hit_paper"
-  },
-  "hwayeom_gyeolgye": {
-    "name_ko": "화염 결계",
-    "name_en": "Flame Ward",
-    "category": "spiritual",
-    "grade": "epic",
-    "mechanic": "ward",
-    "damage": 3.2,
-    "cooldown_sec": 3.6,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 0.0,
-    "range_px": 260.0,
-    "ward": {
-      "radius_px": 50.0,
-      "duration_sec": 3.9,
-      "tick_sec": 0.6,
-      "slow_scale": 0.55
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 1.5,
-      "cooldown_sec": -0.08
-    },
-    "evolution_only": true,
-    "on_hit_status": {
-      "id": "burn",
-      "dps": 5.0,
-      "duration_sec": 2.0
-    },
-    "milestones": {
-      "2": {
-        "ward": {
-          "radius_px": 4.0
-        }
-      },
-      "3": {
-        "ward": {
-          "duration_sec": 0.3
-        }
-      },
-      "4": {
-        "on_hit_status": {
-          "dps": 1.5
-        }
-      },
-      "5": {
-        "ward": {
-          "duration_sec": 0.3
-        }
-      },
-      "6": {
-        "ward": {
-          "radius_px": 5.0
-        }
-      },
-      "7": {
-        "on_hit_status": {
-          "dps": 1.5
-        }
-      },
-      "8": {
-        "ward": {
-          "radius_px": 10.0,
-          "duration_sec": 0.4
-        }
-      }
-    },
-    "hit_effect": "hit_fire"
-  },
-  "sinjang": {
-    "name_ko": "신장 소환",
-    "name_en": "Spirit General",
-    "category": "spiritual",
-    "grade": "common",
-    "mechanic": "summon",
-    "damage": 12.0,
-    "cooldown_sec": 3.5,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 0.0,
-    "range_px": 460.0,
-    "summon": {
-      "lifetime_sec": 11.0,
-      "speed": 150.0,
-      "leash_px": 320.0,
-      "attack_cooldown_sec": 0.65
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.2,
-      "cooldown_sec": -0.2
-    },
-    "evolution_only": false,
-    "milestones": {
-      "2": {
-        "summon": {
-          "attack_cooldown_sec": -0.03
-        }
-      },
-      "3": {
-        "summon": {
-          "lifetime_sec": 1.0
-        }
-      },
-      "4": {
-        "summon": {
-          "speed": 10.0
-        }
-      },
-      "5": {
-        "summon": {
-          "lifetime_sec": 1.0
-        }
-      },
-      "6": {
-        "summon": {
-          "attack_cooldown_sec": -0.03
-        }
-      },
-      "7": {
-        "summon": {
-          "speed": 10.0
-        }
-      },
-      "8": {
-        "summon": {
-          "lifetime_sec": 2.0,
-          "attack_cooldown_sec": -0.04
-        }
-      }
-    },
-    "hit_effect": "hit_neutral"
-  },
-  "noe_sinjang": {
-    "name_ko": "뇌정 신장",
-    "name_en": "Thunder General",
-    "category": "spiritual",
-    "grade": "epic",
-    "mechanic": "summon",
-    "damage": 14.0,
-    "cooldown_sec": 3.0,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 0.0,
-    "range_px": 460.0,
-    "summon": {
-      "lifetime_sec": 12.0,
-      "speed": 160.0,
-      "leash_px": 340.0,
-      "attack_cooldown_sec": 0.55
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.6,
-      "cooldown_sec": -0.15
-    },
-    "evolution_only": true,
-    "on_hit_status": {
-      "id": "shock",
-      "slow_scale": 0.5,
-      "duration_sec": 1.5
-    },
-    "milestones": {
-      "2": {
-        "summon": {
-          "attack_cooldown_sec": -0.03
-        }
-      },
-      "3": {
-        "summon": {
-          "lifetime_sec": 1.0
-        }
-      },
-      "4": {
-        "on_hit_status": {
-          "duration_sec": 0.3
-        }
-      },
-      "5": {
-        "summon": {
-          "lifetime_sec": 1.0
-        }
-      },
-      "6": {
-        "summon": {
-          "attack_cooldown_sec": -0.03
-        }
-      },
-      "7": {
-        "on_hit_status": {
-          "duration_sec": 0.3
-        }
-      },
-      "8": {
-        "summon": {
-          "lifetime_sec": 2.0,
-          "attack_cooldown_sec": -0.04,
-          "speed": 20.0
-        }
-      }
-    },
-    "hit_effect": "hit_lightning"
-  },
-  "jineon": {
-    "name_ko": "진언",
-    "name_en": "True Word",
-    "category": "spiritual",
-    "grade": "common",
-    "mechanic": "shockwave",
-    "damage": 10.0,
-    "cooldown_sec": 2.5,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 0.0,
-    "range_px": 130.0,
-    "shockwave": {
-      "radius_px": 130.0,
-      "stun_sec": 0.8,
-      "knockback_scale": 2.0
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.5,
-      "cooldown_sec": -0.12
-    },
-    "evolution_only": false,
-    "milestones": {
-      "2": {
-        "shockwave": {
-          "radius_px": 8.0
-        }
-      },
-      "3": {
-        "shockwave": {
-          "stun_sec": 0.1
-        }
-      },
-      "4": {
-        "shockwave": {
-          "radius_px": 8.0
-        }
-      },
-      "5": {
-        "shockwave": {
-          "knockback_scale": 0.2
-        }
-      },
-      "6": {
-        "shockwave": {
-          "radius_px": 10.0
-        }
-      },
-      "7": {
-        "shockwave": {
-          "stun_sec": 0.1
-        }
-      },
-      "8": {
-        "shockwave": {
-          "radius_px": 12.0,
-          "stun_sec": 0.2
-        }
-      }
-    },
-    "hit_effect": "hit_lightning"
-  },
-  "bongin_jineon": {
-    "name_ko": "봉인 진언",
-    "name_en": "Sealing Word",
-    "category": "spiritual",
-    "grade": "epic",
-    "mechanic": "shockwave",
-    "damage": 13.0,
-    "cooldown_sec": 2.2,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 0.0,
-    "range_px": 145.0,
-    "shockwave": {
-      "radius_px": 145.0,
-      "stun_sec": 1.0,
-      "knockback_scale": 2.2
-    },
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.6,
-      "cooldown_sec": -0.1
-    },
-    "evolution_only": true,
-    "on_hit_seal": {
-      "burst_at": 4,
-      "burst_damage_scale": 3.0
-    },
-    "milestones": {
-      "2": {
-        "shockwave": {
-          "radius_px": 8.0
-        }
-      },
-      "3": {
-        "shockwave": {
-          "stun_sec": 0.1
-        }
-      },
-      "4": {
-        "shockwave": {
-          "radius_px": 8.0
-        }
-      },
-      "5": {
-        "on_hit_seal": {
-          "burst_at": -1
-        }
-      },
-      "6": {
-        "shockwave": {
-          "radius_px": 10.0
-        }
-      },
-      "7": {
-        "shockwave": {
-          "stun_sec": 0.1
-        }
-      },
-      "8": {
-        "shockwave": {
-          "radius_px": 12.0,
-          "stun_sec": 0.2,
-          "knockback_scale": 0.2
-        }
-      }
-    },
-    "hit_effect": "hit_lightning"
-  },
-  "sal": {
-    "name_ko": "살",
-    "name_en": "Hex Bolt",
-    "travel_sprite": "res://asset/weapon/travel/sal.png",
-    "hit_effect": "hit_curse",
-    "category": "spiritual",
-    "grade": "common",
-    "mechanic": "curse",
-    "damage": 7.0,
-    "cooldown_sec": 1.6,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 300.0,
-    "range_px": 440.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 2.8,
-      "cooldown_sec": -0.06
-    },
-    "evolution_only": true,
-    "on_hit_status": {
-      "id": "curse",
-      "dps": 5.0,
-      "duration_sec": 4.0,
-      "spread_radius_px": 110.0,
-      "spread_count": 3
-    },
-    "milestones": {
-      "2": {
-        "on_hit_status": {
-          "spread_radius_px": 12.0
-        }
-      },
-      "3": {
-        "on_hit_status": {
-          "spread_count": 1
-        }
-      },
-      "4": {
-        "on_hit_status": {
-          "duration_sec": 0.5
-        }
-      },
-      "5": {
-        "on_hit_status": {
-          "spread_count": 1
-        }
-      },
-      "6": {
-        "on_hit_status": {
-          "spread_radius_px": 14.0
-        }
-      },
-      "7": {
-        "on_hit_status": {
-          "dps": 2.0
-        }
-      },
-      "8": {
-        "on_hit_status": {
-          "spread_count": 2,
-          "dps": 2.0
-        }
-      }
-    }
-  },
-  "gwisal": {
-    "name_ko": "귀살",
-    "name_en": "Ghost Hex",
-    "travel_sprite": "res://asset/weapon/travel/gwisal.png",
-    "hit_effect": "hit_curse",
-    "category": "spiritual",
-    "grade": "epic",
-    "mechanic": "curse",
-    "damage": 9.0,
-    "cooldown_sec": 1.4,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 320.0,
-    "range_px": 450.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.2,
-      "cooldown_sec": -0.05
-    },
-    "evolution_only": true,
-    "on_hit_status": {
-      "id": "curse",
-      "dps": 7.0,
-      "duration_sec": 4.5,
-      "spread_radius_px": 130.0,
-      "spread_count": 4
-    },
-    "milestones": {
-      "2": {
-        "on_hit_status": {
-          "spread_radius_px": 12.0
-        }
-      },
-      "3": {
-        "on_hit_status": {
-          "spread_count": 1
-        }
-      },
-      "4": {
-        "on_hit_status": {
-          "duration_sec": 0.5
-        }
-      },
-      "5": {
-        "on_hit_status": {
-          "spread_count": 1
-        }
-      },
-      "6": {
-        "on_hit_status": {
-          "spread_radius_px": 14.0
-        }
-      },
-      "7": {
-        "on_hit_status": {
-          "dps": 2.5
-        }
-      },
-      "8": {
-        "on_hit_status": {
-          "spread_count": 2,
-          "dps": 2.5
-        }
-      }
-    }
-  },
-  "sword": {
-    "name_ko": "환도",
-    "name_en": "Sword",
-    "category": "melee",
-    "grade": "common",
-    "damage": 16.0,
-    "cooldown_sec": 0.8,
-    "projectile_count": 1,
-    "pierce": 2,
-    "speed": 0.0,
-    "range_px": 90.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.5,
-      "cooldown_sec": -0.04
-    },
-    "evolution_only": false,
-    "milestones": {
-      "5": {
-        "pierce": 1
-      }
-    },
-    "hit_effect": "hit_neutral"
-  },
-  "twin_sword": {
-    "name_ko": "쌍환도",
-    "name_en": "Twin Sword",
-    "category": "melee",
-    "grade": "rare",
-    "damage": 22.0,
-    "cooldown_sec": 0.65,
-    "projectile_count": 2,
-    "pierce": 3,
-    "speed": 0.0,
-    "range_px": 90.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 4.5,
-      "cooldown_sec": -0.03
-    },
-    "evolution_only": true,
-    "hit_effect": "hit_neutral",
-    "milestones": {
-      "8": {
-        "pierce": 1
-      }
-    }
-  },
-  "sharp_sword": {
-    "name_ko": "예리한 환도",
-    "name_en": "Sharp Sword",
-    "category": "melee",
-    "grade": "rare",
-    "damage": 20.0,
-    "cooldown_sec": 0.75,
-    "projectile_count": 1,
-    "pierce": 3,
-    "speed": 0.0,
-    "range_px": 90.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 4.0,
-      "cooldown_sec": -0.04
-    },
-    "evolution_only": true,
-    "milestones": {
-      "5": {
-        "pierce": 1
-      }
-    },
-    "hit_effect": "hit_neutral"
-  },
-  "ghost_sword": {
-    "name_ko": "귀철도",
-    "name_en": "Ghost Iron Sword",
-    "category": "melee",
-    "grade": "epic",
-    "damage": 26.0,
-    "cooldown_sec": 0.8,
-    "projectile_count": 1,
-    "pierce": 2,
-    "speed": 0.0,
-    "range_px": 90.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 5.0,
-      "cooldown_sec": -0.03
-    },
-    "evolution_only": true,
-    "lifesteal": 0.15,
-    "hit_effect": "hit_curse",
-    "milestones": {
-      "8": {
-        "pierce": 1
-      }
-    }
-  },
-  "flame_sword": {
-    "name_ko": "화염도",
-    "name_en": "Flame Sword",
-    "category": "melee",
-    "grade": "epic",
-    "damage": 18.0,
-    "cooldown_sec": 0.8,
-    "projectile_count": 1,
-    "pierce": 2,
-    "speed": 0.0,
-    "range_px": 100.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.5,
-      "cooldown_sec": -0.04
-    },
-    "evolution_only": true,
-    "hit_effect": "hit_fire",
-    "milestones": {
-      "8": {
-        "pierce": 1
-      }
-    }
-  },
-  "bow": {
-    "name_ko": "각궁",
-    "name_en": "Bow",
-    "category": "ranged",
-    "grade": "common",
-    "damage": 10.0,
-    "cooldown_sec": 0.9,
-    "projectile_count": 1,
-    "pierce": 0,
-    "speed": 380.0,
-    "range_px": 500.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 2.5,
-      "cooldown_sec": -0.03
-    },
-    "evolution_only": false,
-    "milestones": {
-      "5": {
-        "projectile_count": 1
-      }
-    },
-    "hit_effect": "hit_neutral"
-  },
-  "divine_bow": {
-    "name_ko": "신궁",
-    "name_en": "Divine Bow",
-    "category": "ranged",
-    "grade": "rare",
-    "damage": 15.0,
-    "cooldown_sec": 0.7,
-    "projectile_count": 2,
-    "pierce": 1,
-    "speed": 420.0,
-    "range_px": 520.0,
-    "max_level": 8,
-    "per_level": {
-      "damage": 3.5,
-      "cooldown_sec": -0.03
-    },
-    "evolution_only": true,
-    "hit_effect": "hit_paper",
-    "milestones": {
-      "8": {
-        "projectile_count": 1
-      }
-    }
-  },
-  "_evolution": {
-    "damage_mult": 2.0
+    "tinted": true
+   }
   }
+ },
+ "old_talisman": {
+  "name_ko": "낡은 부적",
+  "name_en": "Old Talisman",
+  "travel_sprite": "res://asset/weapon/travel/old_talisman.png",
+  "hit_effect": "hit_old_talisman",
+  "category": "spiritual",
+  "grade": "common",
+  "mechanic": "straight",
+  "damage": 11.0,
+  "cooldown_sec": 1.1,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 260.0,
+  "range_px": 420.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 4.0,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": false,
+  "milestones": {
+   "2": {
+    "pierce": 1
+   },
+   "3": {
+    "projectile_count": 1
+   },
+   "4": {
+    "pierce": 1
+   },
+   "5": {
+    "pierce": 1
+   },
+   "6": {
+    "pierce": 1
+   },
+   "7": {
+    "pierce": 1
+   },
+   "8": {
+    "projectile_count": 1
+   }
+  }
+ },
+ "fire_talisman": {
+  "name_ko": "화염 부적",
+  "name_en": "Fire Talisman",
+  "travel_sprite": "res://asset/weapon/travel/fire_talisman.png",
+  "hit_effect": "hit_fire",
+  "category": "spiritual",
+  "grade": "rare",
+  "damage": 14.0,
+  "cooldown_sec": 1.1,
+  "projectile_count": 1,
+  "pierce": 1,
+  "speed": 260.0,
+  "range_px": 420.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 4.2,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": true,
+  "on_hit_status": {
+   "id": "burn",
+   "dps": 4.0,
+   "duration_sec": 3.0
+  },
+  "milestones": {
+   "2": {
+    "on_hit_status": {
+     "dps": 1.0
+    }
+   },
+   "3": {
+    "pierce": 1
+   },
+   "4": {
+    "on_hit_status": {
+     "duration_sec": 0.5
+    },
+    "pierce": 1
+   },
+   "5": {
+    "projectile_count": 1
+   },
+   "6": {
+    "on_hit_status": {
+     "dps": 1.5
+    },
+    "pierce": 1
+   },
+   "7": {
+    "pierce": 1
+   },
+   "8": {
+    "on_hit_status": {
+     "dps": 2.0
+    },
+    "projectile_count": 1,
+    "pierce": 1
+   }
+  }
+ },
+ "beopgeom": {
+  "name_ko": "법검",
+  "name_en": "Ritual Sword",
+  "travel_sprite": "res://asset/weapon/travel/beopgeom.png",
+  "hit_effect": "hit_neutral",
+  "category": "spiritual",
+  "grade": "common",
+  "mechanic": "pierce",
+  "damage": 8.5,
+  "cooldown_sec": 1.1,
+  "projectile_count": 1,
+  "pierce": 99,
+  "speed": 340.0,
+  "range_px": 460.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.4,
+   "cooldown_sec": -0.04
+  },
+  "evolution_only": false,
+  "pierce_retention": 0.95,
+  "milestones": {
+   "2": {
+    "pierce_retention": 0.01
+   },
+   "3": {
+    "projectile_count": 1
+   },
+   "4": {
+    "pierce_retention": 0.01
+   },
+   "5": {
+    "projectile_count": 1
+   },
+   "6": {
+    "pierce_retention": 0.01
+   },
+   "7": {
+    "projectile_count": 1
+   },
+   "8": {
+    "pierce_retention": 0.02
+   }
+  }
+ },
+ "bongmageom": {
+  "name_ko": "봉마검",
+  "name_en": "Sealing Sword",
+  "travel_sprite": "res://asset/weapon/travel/bongmageom.png",
+  "hit_effect": "hit_neutral",
+  "category": "spiritual",
+  "grade": "epic",
+  "mechanic": "pierce",
+  "damage": 10.5,
+  "cooldown_sec": 1.0,
+  "projectile_count": 1,
+  "pierce": 99,
+  "speed": 360.0,
+  "range_px": 470.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.5,
+   "cooldown_sec": -0.03
+  },
+  "evolution_only": true,
+  "on_hit_seal": {
+   "burst_at": 4,
+   "burst_damage_scale": 3.0
+  },
+  "pierce_retention": 0.95,
+  "milestones": {
+   "2": {
+    "pierce_retention": 0.01
+   },
+   "3": {
+    "projectile_count": 1
+   },
+   "4": {
+    "pierce_retention": 0.01
+   },
+   "5": {
+    "on_hit_seal": {
+     "burst_at": -1
+    }
+   },
+   "6": {
+    "projectile_count": 1
+   },
+   "7": {
+    "pierce_retention": 0.01
+   },
+   "8": {
+    "pierce_retention": 0.02,
+    "projectile_count": 1
+   }
+  }
+ },
+ "hwabu": {
+  "name_ko": "화부",
+  "name_en": "Fire Charm",
+  "travel_sprite": "res://asset/weapon/travel/hwabu.png",
+  "hit_effect": "hit_fire",
+  "category": "spiritual",
+  "grade": "common",
+  "mechanic": "explosion",
+  "damage": 10.0,
+  "cooldown_sec": 1.45,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 240.0,
+  "range_px": 420.0,
+  "explosion": {
+   "radius_px": 90.0,
+   "edge_falloff": 0.7
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 4.0,
+   "cooldown_sec": -0.06
+  },
+  "evolution_only": true,
+  "milestones": {
+   "2": {
+    "explosion": {
+     "radius_px": 10.0
+    }
+   },
+   "3": {
+    "explosion": {
+     "radius_px": 10.0
+    }
+   },
+   "4": {
+    "explosion": {
+     "edge_falloff": 0.05
+    }
+   },
+   "5": {
+    "explosion": {
+     "radius_px": 12.0
+    }
+   },
+   "6": {
+    "explosion": {
+     "radius_px": 10.0
+    }
+   },
+   "7": {
+    "explosion": {
+     "edge_falloff": 0.05
+    }
+   },
+   "8": {
+    "projectile_count": 1
+   }
+  }
+ },
+ "hwaryeongbu": {
+  "name_ko": "화령부",
+  "name_en": "Fire Spirit Charm",
+  "travel_sprite": "res://asset/weapon/travel/hwaryeongbu.png",
+  "hit_effect": "hit_fire",
+  "category": "spiritual",
+  "grade": "epic",
+  "mechanic": "explosion",
+  "damage": 13.0,
+  "cooldown_sec": 1.35,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 240.0,
+  "range_px": 420.0,
+  "explosion": {
+   "radius_px": 105.0,
+   "edge_falloff": 0.7
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 4.2,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": true,
+  "on_hit_status": {
+   "id": "burn",
+   "dps": 5.0,
+   "duration_sec": 3.0,
+   "spread_radius_px": 90.0
+  },
+  "milestones": {
+   "2": {
+    "explosion": {
+     "radius_px": 10.0
+    }
+   },
+   "3": {
+    "on_hit_status": {
+     "dps": 2.0
+    }
+   },
+   "4": {
+    "explosion": {
+     "edge_falloff": 0.05
+    }
+   },
+   "5": {
+    "explosion": {
+     "radius_px": 12.0
+    }
+   },
+   "6": {
+    "on_hit_status": {
+     "spread_radius_px": 20.0
+    }
+   },
+   "7": {
+    "explosion": {
+     "radius_px": 12.0
+    }
+   },
+   "8": {
+    "projectile_count": 1,
+    "on_hit_status": {
+     "dps": 2.0
+    },
+    "explosion": {
+     "radius_px": 8.0,
+     "edge_falloff": 0.05
+    }
+   }
+  }
+ },
+ "noebu": {
+  "name_ko": "뇌부",
+  "name_en": "Thunder Charm",
+  "hit_effect": "hit_lightning",
+  "category": "spiritual",
+  "grade": "common",
+  "mechanic": "chain",
+  "damage": 8.5,
+  "cooldown_sec": 1.4,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 300.0,
+  "range_px": 440.0,
+  "chain": {
+   "jumps": 3,
+   "falloff": 0.7,
+   "range_px": 150.0
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.2,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": true,
+  "milestones": {
+   "2": {
+    "chain": {
+     "range_px": 15.0
+    }
+   },
+   "3": {
+    "chain": {
+     "jumps": 1
+    }
+   },
+   "4": {
+    "chain": {
+     "falloff": 0.03
+    }
+   },
+   "5": {
+    "chain": {
+     "jumps": 1
+    }
+   },
+   "6": {
+    "chain": {
+     "range_px": 20.0
+    }
+   },
+   "7": {
+    "chain": {
+     "falloff": 0.03
+    }
+   },
+   "8": {
+    "chain": {
+     "jumps": 2
+    }
+   }
+  }
+ },
+ "noejeongbu": {
+  "name_ko": "뇌정부",
+  "name_en": "Thunderbolt Charm",
+  "hit_effect": "hit_lightning",
+  "category": "spiritual",
+  "grade": "epic",
+  "mechanic": "chain",
+  "damage": 10.5,
+  "cooldown_sec": 1.3,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 320.0,
+  "range_px": 450.0,
+  "chain": {
+   "jumps": 5,
+   "falloff": 0.7,
+   "range_px": 170.0
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.6,
+   "cooldown_sec": -0.04
+  },
+  "evolution_only": true,
+  "on_hit_status": {
+   "id": "shock",
+   "slow_scale": 0.55,
+   "duration_sec": 1.5
+  },
+  "milestones": {
+   "2": {
+    "chain": {
+     "range_px": 15.0
+    }
+   },
+   "3": {
+    "chain": {
+     "jumps": 1
+    }
+   },
+   "4": {
+    "on_hit_status": {
+     "duration_sec": 0.4
+    }
+   },
+   "5": {
+    "chain": {
+     "jumps": 1
+    }
+   },
+   "6": {
+    "chain": {
+     "range_px": 20.0
+    }
+   },
+   "7": {
+    "on_hit_status": {
+     "duration_sec": 0.4
+    }
+   },
+   "8": {
+    "chain": {
+     "jumps": 2,
+     "falloff": 0.06
+    }
+   }
+  }
+ },
+ "seokjang": {
+  "name_ko": "석장",
+  "name_en": "Ringed Staff",
+  "category": "spiritual",
+  "grade": "common",
+  "mechanic": "melee_arc",
+  "damage": 10.0,
+  "cooldown_sec": 1.5,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 0.0,
+  "range_px": 118.0,
+  "arc": {
+   "angle_deg": 160.0,
+   "knockback_scale": 2.5
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.8,
+   "cooldown_sec": -0.06
+  },
+  "evolution_only": false,
+  "milestones": {
+   "2": {
+    "arc": {
+     "angle_deg": 15.0
+    }
+   },
+   "3": {
+    "arc": {
+     "knockback_scale": 0.3
+    }
+   },
+   "4": {
+    "arc": {
+     "angle_deg": 15.0
+    }
+   },
+   "5": {
+    "arc": {
+     "angle_deg": 20.0
+    }
+   },
+   "6": {
+    "arc": {
+     "knockback_scale": 0.3
+    }
+   },
+   "7": {
+    "arc": {
+     "angle_deg": 15.0
+    }
+   },
+   "8": {
+    "arc": {
+     "angle_deg": 25.0,
+     "knockback_scale": 0.4
+    }
+   }
+  },
+  "hit_effect": "hit_neutral"
+ },
+ "ghost_staff": {
+  "name_ko": "귀철 석장",
+  "name_en": "Ghost Iron Staff",
+  "category": "spiritual",
+  "grade": "epic",
+  "mechanic": "melee_arc",
+  "damage": 13.0,
+  "cooldown_sec": 1.4,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 0.0,
+  "range_px": 128.0,
+  "arc": {
+   "angle_deg": 170.0,
+   "knockback_scale": 2.8
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 4.2,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": true,
+  "lifesteal": 0.12,
+  "milestones": {
+   "2": {
+    "arc": {
+     "angle_deg": 15.0
+    }
+   },
+   "3": {
+    "arc": {
+     "knockback_scale": 0.3
+    }
+   },
+   "4": {
+    "arc": {
+     "angle_deg": 15.0
+    }
+   },
+   "5": {
+    "arc": {
+     "angle_deg": 20.0
+    }
+   },
+   "6": {
+    "arc": {
+     "knockback_scale": 0.3
+    }
+   },
+   "7": {
+    "arc": {
+     "angle_deg": 15.0
+    }
+   },
+   "8": {
+    "arc": {
+     "angle_deg": 25.0,
+     "knockback_scale": 0.4
+    }
+   }
+  },
+  "hit_effect": "hit_curse"
+ },
+ "honbul": {
+  "name_ko": "혼불",
+  "name_en": "Soul Flame",
+  "category": "spiritual",
+  "grade": "common",
+  "mechanic": "orbit",
+  "damage": 10.2,
+  "cooldown_sec": 0.9,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 0.0,
+  "range_px": 80.0,
+  "orbit": {
+   "radius_px": 84.0,
+   "speed_deg_s": 170.0,
+   "orb_radius_px": 13.0
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 2.1,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": false,
+  "on_hit_status": {
+   "id": "burn",
+   "dps": 3.0,
+   "duration_sec": 2.0
+  },
+  "milestones": {
+   "2": {
+    "orbit": {
+     "radius_px": 8.0,
+     "speed_deg_s": 10.0
+    }
+   },
+   "3": {
+    "projectile_count": 1,
+    "orbit": {
+     "radius_px": 6.0
+    }
+   },
+   "4": {
+    "on_hit_status": {
+     "dps": 1.0
+    }
+   },
+   "5": {
+    "projectile_count": 1,
+    "orbit": {
+     "orb_radius_px": 1.5
+    }
+   },
+   "6": {
+    "orbit": {
+     "radius_px": 6.0,
+     "speed_deg_s": 12.0
+    }
+   },
+   "7": {
+    "orbit": {
+     "speed_deg_s": 15.0
+    }
+   },
+   "8": {
+    "projectile_count": 1,
+    "orbit": {
+     "orb_radius_px": 2.0
+    }
+   }
+  },
+  "hit_effect": "hit_fire"
+ },
+ "flame_honbul": {
+  "name_ko": "화령 혼불",
+  "name_en": "Flame Soul",
+  "category": "spiritual",
+  "grade": "epic",
+  "mechanic": "orbit",
+  "damage": 10.8,
+  "cooldown_sec": 0.8,
+  "projectile_count": 2,
+  "pierce": 0,
+  "speed": 0.0,
+  "range_px": 90.0,
+  "orbit": {
+   "radius_px": 88.0,
+   "speed_deg_s": 190.0,
+   "orb_radius_px": 14.0
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 2.7,
+   "cooldown_sec": -0.04
+  },
+  "evolution_only": true,
+  "on_hit_status": {
+   "id": "burn",
+   "dps": 7.0,
+   "duration_sec": 3.0
+  },
+  "milestones": {
+   "2": {
+    "orbit": {
+     "radius_px": 8.0,
+     "speed_deg_s": 10.0
+    }
+   },
+   "3": {
+    "projectile_count": 1,
+    "orbit": {
+     "radius_px": 6.0
+    }
+   },
+   "4": {
+    "on_hit_status": {
+     "dps": 1.5
+    }
+   },
+   "5": {
+    "projectile_count": 1,
+    "orbit": {
+     "orb_radius_px": 1.5
+    }
+   },
+   "6": {
+    "orbit": {
+     "radius_px": 6.0,
+     "speed_deg_s": 12.0
+    }
+   },
+   "7": {
+    "orbit": {
+     "speed_deg_s": 15.0
+    }
+   },
+   "8": {
+    "projectile_count": 1,
+    "orbit": {
+     "orb_radius_px": 2.0
+    }
+   }
+  },
+  "hit_effect": "hit_fire"
+ },
+ "gyeolgye": {
+  "name_ko": "결계",
+  "name_en": "Ward Circle",
+  "category": "spiritual",
+  "grade": "common",
+  "mechanic": "ward",
+  "damage": 2.6,
+  "cooldown_sec": 4.0,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 0.0,
+  "range_px": 260.0,
+  "ward": {
+   "radius_px": 45.0,
+   "duration_sec": 3.5,
+   "tick_sec": 0.6,
+   "slow_scale": 0.6
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 1.25,
+   "cooldown_sec": -0.1
+  },
+  "evolution_only": false,
+  "milestones": {
+   "2": {
+    "ward": {
+     "radius_px": 4.0
+    }
+   },
+   "3": {
+    "ward": {
+     "duration_sec": 0.3
+    }
+   },
+   "4": {
+    "ward": {
+     "radius_px": 4.0
+    }
+   },
+   "5": {
+    "ward": {
+     "duration_sec": 0.3
+    }
+   },
+   "6": {
+    "ward": {
+     "radius_px": 5.0
+    }
+   },
+   "7": {
+    "ward": {
+     "duration_sec": 0.4
+    }
+   },
+   "8": {
+    "ward": {
+     "radius_px": 6.0
+    }
+   }
+  },
+  "hit_effect": "hit_paper"
+ },
+ "hwayeom_gyeolgye": {
+  "name_ko": "화염 결계",
+  "name_en": "Flame Ward",
+  "category": "spiritual",
+  "grade": "epic",
+  "mechanic": "ward",
+  "damage": 3.2,
+  "cooldown_sec": 3.6,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 0.0,
+  "range_px": 260.0,
+  "ward": {
+   "radius_px": 50.0,
+   "duration_sec": 3.9,
+   "tick_sec": 0.6,
+   "slow_scale": 0.55
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 1.5,
+   "cooldown_sec": -0.08
+  },
+  "evolution_only": true,
+  "on_hit_status": {
+   "id": "burn",
+   "dps": 5.0,
+   "duration_sec": 2.0
+  },
+  "milestones": {
+   "2": {
+    "ward": {
+     "radius_px": 4.0
+    }
+   },
+   "3": {
+    "ward": {
+     "duration_sec": 0.3
+    }
+   },
+   "4": {
+    "on_hit_status": {
+     "dps": 1.5
+    }
+   },
+   "5": {
+    "ward": {
+     "duration_sec": 0.3
+    }
+   },
+   "6": {
+    "ward": {
+     "radius_px": 5.0
+    }
+   },
+   "7": {
+    "on_hit_status": {
+     "dps": 1.5
+    }
+   },
+   "8": {
+    "ward": {
+     "radius_px": 10.0,
+     "duration_sec": 0.4
+    }
+   }
+  },
+  "hit_effect": "hit_fire"
+ },
+ "sinjang": {
+  "name_ko": "신장 소환",
+  "name_en": "Spirit General",
+  "category": "spiritual",
+  "grade": "common",
+  "mechanic": "summon",
+  "damage": 12.0,
+  "cooldown_sec": 3.5,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 0.0,
+  "range_px": 460.0,
+  "summon": {
+   "lifetime_sec": 11.0,
+   "speed": 150.0,
+   "leash_px": 320.0,
+   "attack_cooldown_sec": 0.65
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.2,
+   "cooldown_sec": -0.2
+  },
+  "evolution_only": false,
+  "milestones": {
+   "2": {
+    "summon": {
+     "attack_cooldown_sec": -0.03
+    }
+   },
+   "3": {
+    "summon": {
+     "lifetime_sec": 1.0
+    }
+   },
+   "4": {
+    "summon": {
+     "speed": 10.0
+    }
+   },
+   "5": {
+    "summon": {
+     "lifetime_sec": 1.0
+    }
+   },
+   "6": {
+    "summon": {
+     "attack_cooldown_sec": -0.03
+    }
+   },
+   "7": {
+    "summon": {
+     "speed": 10.0
+    }
+   },
+   "8": {
+    "summon": {
+     "lifetime_sec": 2.0,
+     "attack_cooldown_sec": -0.04
+    }
+   }
+  },
+  "hit_effect": "hit_neutral"
+ },
+ "noe_sinjang": {
+  "name_ko": "뇌정 신장",
+  "name_en": "Thunder General",
+  "category": "spiritual",
+  "grade": "epic",
+  "mechanic": "summon",
+  "damage": 14.0,
+  "cooldown_sec": 3.0,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 0.0,
+  "range_px": 460.0,
+  "summon": {
+   "lifetime_sec": 12.0,
+   "speed": 160.0,
+   "leash_px": 340.0,
+   "attack_cooldown_sec": 0.55
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.6,
+   "cooldown_sec": -0.15
+  },
+  "evolution_only": true,
+  "on_hit_status": {
+   "id": "shock",
+   "slow_scale": 0.5,
+   "duration_sec": 1.5
+  },
+  "milestones": {
+   "2": {
+    "summon": {
+     "attack_cooldown_sec": -0.03
+    }
+   },
+   "3": {
+    "summon": {
+     "lifetime_sec": 1.0
+    }
+   },
+   "4": {
+    "on_hit_status": {
+     "duration_sec": 0.3
+    }
+   },
+   "5": {
+    "summon": {
+     "lifetime_sec": 1.0
+    }
+   },
+   "6": {
+    "summon": {
+     "attack_cooldown_sec": -0.03
+    }
+   },
+   "7": {
+    "on_hit_status": {
+     "duration_sec": 0.3
+    }
+   },
+   "8": {
+    "summon": {
+     "lifetime_sec": 2.0,
+     "attack_cooldown_sec": -0.04,
+     "speed": 20.0
+    }
+   }
+  },
+  "hit_effect": "hit_lightning"
+ },
+ "jineon": {
+  "name_ko": "진언",
+  "name_en": "True Word",
+  "category": "spiritual",
+  "grade": "common",
+  "mechanic": "shockwave",
+  "damage": 10.0,
+  "cooldown_sec": 2.5,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 0.0,
+  "range_px": 130.0,
+  "shockwave": {
+   "radius_px": 130.0,
+   "stun_sec": 0.8,
+   "knockback_scale": 2.0
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.5,
+   "cooldown_sec": -0.12
+  },
+  "evolution_only": false,
+  "milestones": {
+   "2": {
+    "shockwave": {
+     "radius_px": 8.0
+    }
+   },
+   "3": {
+    "shockwave": {
+     "stun_sec": 0.1
+    }
+   },
+   "4": {
+    "shockwave": {
+     "radius_px": 8.0
+    }
+   },
+   "5": {
+    "shockwave": {
+     "knockback_scale": 0.2
+    }
+   },
+   "6": {
+    "shockwave": {
+     "radius_px": 10.0
+    }
+   },
+   "7": {
+    "shockwave": {
+     "stun_sec": 0.1
+    }
+   },
+   "8": {
+    "shockwave": {
+     "radius_px": 12.0,
+     "stun_sec": 0.2
+    }
+   }
+  },
+  "hit_effect": "hit_lightning"
+ },
+ "bongin_jineon": {
+  "name_ko": "봉인 진언",
+  "name_en": "Sealing Word",
+  "category": "spiritual",
+  "grade": "epic",
+  "mechanic": "shockwave",
+  "damage": 13.0,
+  "cooldown_sec": 2.2,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 0.0,
+  "range_px": 145.0,
+  "shockwave": {
+   "radius_px": 145.0,
+   "stun_sec": 1.0,
+   "knockback_scale": 2.2
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.6,
+   "cooldown_sec": -0.1
+  },
+  "evolution_only": true,
+  "on_hit_seal": {
+   "burst_at": 4,
+   "burst_damage_scale": 3.0
+  },
+  "milestones": {
+   "2": {
+    "shockwave": {
+     "radius_px": 8.0
+    }
+   },
+   "3": {
+    "shockwave": {
+     "stun_sec": 0.1
+    }
+   },
+   "4": {
+    "shockwave": {
+     "radius_px": 8.0
+    }
+   },
+   "5": {
+    "on_hit_seal": {
+     "burst_at": -1
+    }
+   },
+   "6": {
+    "shockwave": {
+     "radius_px": 10.0
+    }
+   },
+   "7": {
+    "shockwave": {
+     "stun_sec": 0.1
+    }
+   },
+   "8": {
+    "shockwave": {
+     "radius_px": 12.0,
+     "stun_sec": 0.2,
+     "knockback_scale": 0.2
+    }
+   }
+  },
+  "hit_effect": "hit_lightning"
+ },
+ "sal": {
+  "name_ko": "살",
+  "name_en": "Hex Bolt",
+  "travel_sprite": "res://asset/weapon/travel/sal.png",
+  "hit_effect": "hit_curse",
+  "category": "spiritual",
+  "grade": "common",
+  "mechanic": "curse",
+  "damage": 7.0,
+  "cooldown_sec": 1.6,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 300.0,
+  "range_px": 440.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 2.8,
+   "cooldown_sec": -0.06
+  },
+  "evolution_only": true,
+  "on_hit_status": {
+   "id": "curse",
+   "dps": 5.0,
+   "duration_sec": 4.0,
+   "spread_radius_px": 110.0,
+   "spread_count": 3
+  },
+  "milestones": {
+   "2": {
+    "on_hit_status": {
+     "spread_radius_px": 12.0
+    }
+   },
+   "3": {
+    "on_hit_status": {
+     "spread_count": 1
+    }
+   },
+   "4": {
+    "on_hit_status": {
+     "duration_sec": 0.5
+    }
+   },
+   "5": {
+    "on_hit_status": {
+     "spread_count": 1
+    }
+   },
+   "6": {
+    "on_hit_status": {
+     "spread_radius_px": 14.0
+    }
+   },
+   "7": {
+    "on_hit_status": {
+     "dps": 2.0
+    }
+   },
+   "8": {
+    "on_hit_status": {
+     "spread_count": 2,
+     "dps": 2.0
+    }
+   }
+  }
+ },
+ "gwisal": {
+  "name_ko": "귀살",
+  "name_en": "Ghost Hex",
+  "travel_sprite": "res://asset/weapon/travel/gwisal.png",
+  "hit_effect": "hit_curse",
+  "category": "spiritual",
+  "grade": "epic",
+  "mechanic": "curse",
+  "damage": 9.0,
+  "cooldown_sec": 1.4,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 320.0,
+  "range_px": 450.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.2,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": true,
+  "on_hit_status": {
+   "id": "curse",
+   "dps": 7.0,
+   "duration_sec": 4.5,
+   "spread_radius_px": 130.0,
+   "spread_count": 4
+  },
+  "milestones": {
+   "2": {
+    "on_hit_status": {
+     "spread_radius_px": 12.0
+    }
+   },
+   "3": {
+    "on_hit_status": {
+     "spread_count": 1
+    }
+   },
+   "4": {
+    "on_hit_status": {
+     "duration_sec": 0.5
+    }
+   },
+   "5": {
+    "on_hit_status": {
+     "spread_count": 1
+    }
+   },
+   "6": {
+    "on_hit_status": {
+     "spread_radius_px": 14.0
+    }
+   },
+   "7": {
+    "on_hit_status": {
+     "dps": 2.5
+    }
+   },
+   "8": {
+    "on_hit_status": {
+     "spread_count": 2,
+     "dps": 2.5
+    }
+   }
+  }
+ },
+ "sword": {
+  "name_ko": "환도",
+  "name_en": "Sword",
+  "category": "melee",
+  "grade": "common",
+  "damage": 16.0,
+  "cooldown_sec": 0.8,
+  "projectile_count": 1,
+  "pierce": 2,
+  "speed": 0.0,
+  "range_px": 90.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.5,
+   "cooldown_sec": -0.04
+  },
+  "evolution_only": false,
+  "milestones": {
+   "5": {
+    "pierce": 1
+   }
+  },
+  "hit_effect": "hit_neutral"
+ },
+ "twin_sword": {
+  "name_ko": "쌍환도",
+  "name_en": "Twin Sword",
+  "category": "melee",
+  "grade": "rare",
+  "damage": 22.0,
+  "cooldown_sec": 0.65,
+  "projectile_count": 2,
+  "pierce": 3,
+  "speed": 0.0,
+  "range_px": 90.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 4.5,
+   "cooldown_sec": -0.03
+  },
+  "evolution_only": true,
+  "hit_effect": "hit_neutral",
+  "milestones": {
+   "8": {
+    "pierce": 1
+   }
+  }
+ },
+ "sharp_sword": {
+  "name_ko": "예리한 환도",
+  "name_en": "Sharp Sword",
+  "category": "melee",
+  "grade": "rare",
+  "damage": 20.0,
+  "cooldown_sec": 0.75,
+  "projectile_count": 1,
+  "pierce": 3,
+  "speed": 0.0,
+  "range_px": 90.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 4.0,
+   "cooldown_sec": -0.04
+  },
+  "evolution_only": true,
+  "milestones": {
+   "5": {
+    "pierce": 1
+   }
+  },
+  "hit_effect": "hit_neutral"
+ },
+ "ghost_sword": {
+  "name_ko": "귀철도",
+  "name_en": "Ghost Iron Sword",
+  "category": "melee",
+  "grade": "epic",
+  "damage": 26.0,
+  "cooldown_sec": 0.8,
+  "projectile_count": 1,
+  "pierce": 2,
+  "speed": 0.0,
+  "range_px": 90.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 5.0,
+   "cooldown_sec": -0.03
+  },
+  "evolution_only": true,
+  "lifesteal": 0.15,
+  "hit_effect": "hit_curse",
+  "milestones": {
+   "8": {
+    "pierce": 1
+   }
+  }
+ },
+ "flame_sword": {
+  "name_ko": "화염도",
+  "name_en": "Flame Sword",
+  "category": "melee",
+  "grade": "epic",
+  "damage": 18.0,
+  "cooldown_sec": 0.8,
+  "projectile_count": 1,
+  "pierce": 2,
+  "speed": 0.0,
+  "range_px": 100.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.5,
+   "cooldown_sec": -0.04
+  },
+  "evolution_only": true,
+  "hit_effect": "hit_fire",
+  "milestones": {
+   "8": {
+    "pierce": 1
+   }
+  }
+ },
+ "bow": {
+  "name_ko": "각궁",
+  "name_en": "Bow",
+  "category": "ranged",
+  "grade": "common",
+  "damage": 10.0,
+  "cooldown_sec": 0.9,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 380.0,
+  "range_px": 500.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 2.5,
+   "cooldown_sec": -0.03
+  },
+  "evolution_only": false,
+  "milestones": {
+   "5": {
+    "projectile_count": 1
+   }
+  },
+  "hit_effect": "hit_neutral"
+ },
+ "divine_bow": {
+  "name_ko": "신궁",
+  "name_en": "Divine Bow",
+  "category": "ranged",
+  "grade": "rare",
+  "damage": 15.0,
+  "cooldown_sec": 0.7,
+  "projectile_count": 2,
+  "pierce": 1,
+  "speed": 420.0,
+  "range_px": 520.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.5,
+   "cooldown_sec": -0.03
+  },
+  "evolution_only": true,
+  "hit_effect": "hit_paper",
+  "milestones": {
+   "8": {
+    "projectile_count": 1
+   }
+  }
+ },
+ "_evolution": {
+  "damage_mult": 2.0
+ }
 }
