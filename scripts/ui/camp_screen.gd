@@ -96,6 +96,7 @@ func build_ui() -> void:
 
 	var summary: Dictionary = Camp.summary(_profile())
 	column.add_child(_build_header(summary))
+	add_child(_build_settings_button())
 	column.add_child(_build_stats(summary))
 	column.add_child(_build_buildings())
 
@@ -133,7 +134,14 @@ func _build_header(summary: Dictionary) -> Control:
 	var gold := _label(str(int(summary["gold"])), UiPalette.FONT_SIZE_TITLE, UiPalette.TEXT_ON_DARK)
 	gold.name = "GoldValue"
 	header.add_child(gold)
-	header.add_child(_build_settings_button())
+	# N9-146: the screen-anchored gear owns the corner now; this spacer keeps
+	# the gold counter from sliding underneath it.
+	var gear_gap := Control.new()
+	gear_gap.name = "GearGap"
+	gear_gap.custom_minimum_size = Vector2(
+		UTILITY_BUTTON_SIZE + UiPalette.SPACE_MD * 2.0 - MARGIN_SIDE, 0.0
+	)
+	header.add_child(gear_gap)
 	return header
 
 
@@ -186,12 +194,17 @@ func _build_buildings() -> Control:
 
 ## The night the player is about to walk into: which tier, how long. Locked
 ## tiers are simply not in the cycle — clearing one adds the next.
-## N9-111 (owner: 본거지 설정 아이콘 우측 상단으로): a flat gear at the right
-## end of the header row, after the gold counter. Riding the header keeps it
-## clear of the title text without a screen-anchored collision.
+## N9-146 (owner: 톱니바퀴는 모든 화면 우측 상단 고정): the gear leaves the
+## header row for a screen-anchored top-right corner, matching combat and the
+## title screen. The header keeps its slot count so gold stays right-aligned.
 func _build_settings_button() -> Control:
 	var settings := Button.new()
 	settings.name = "SettingsButton"
+	settings.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	settings.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	settings.position = Vector2(
+		-UTILITY_BUTTON_SIZE - UiPalette.SPACE_MD, UiPalette.SPACE_MD
+	)
 	settings.flat = true
 	settings.tooltip_text = UiLocale.text("title.settings")
 	settings.custom_minimum_size = Vector2(UTILITY_BUTTON_SIZE, UTILITY_BUTTON_SIZE)

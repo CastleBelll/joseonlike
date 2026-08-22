@@ -184,7 +184,11 @@ func _pixel_texture_rect(node_name: String, texture_path: String) -> TextureRect
 func _build_utilities() -> void:
 	var row := HBoxContainer.new()
 	row.name = "CornerUtilities"
-	row.position = Vector2(UiPalette.SPACE_MD, UiPalette.SPACE_MD)
+	# N9-146 (owner: 톱니바퀴는 모든 화면 우측 상단 고정): screen-anchored
+	# top-right, matching the combat gear's corner.
+	row.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	row.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	row.position = Vector2(-UTILITY_BUTTON_SIZE - UiPalette.SPACE_MD, UiPalette.SPACE_MD)
 	row.add_theme_constant_override("separation", UiPalette.SPACE_SM)
 
 	var settings := Button.new()
