@@ -1,19 +1,17 @@
 name: Web deploy
 
-# Builds the Godot web (WASM) export and publishes it to Vercel so the owner
-# can hand friends a URL instead of a build. The build always runs — it is a
-# real check that the project still exports — while the deploy only runs when
-# the Vercel secrets exist, so a fork or a fresh clone is never broken by a
-# missing token.
+# Builds the Godot web (WASM) export and publishes it to itch.io via butler
+# (owner 2026-08-22: Vercel is retired, itch.io is the only web channel). The
+# build always runs — it is a real check that the project still exports —
+# while the deploy only runs when the butler secret and target exist, so a
+# fork or a fresh clone is never broken by a missing token.
 
 on:
   push:
     branches: [main]
-    # N9-84: a Vercel free account allows 100 deployments a DAY across every
-    # project, and this workflow spent the whole allowance on commits that
-    # could not change the build. Docs, screenshots and the art drop boxes are
-    # never read by the exported game, so a commit touching only those has
-    # nothing to deploy.
+    # N9-84 (kept for build minutes): docs, screenshots and the art drop
+    # boxes are never read by the exported game, so a commit touching only
+    # those has nothing to deploy.
     paths-ignore:
       - "**/*.md"
       - "captures/**"
@@ -161,32 +159,14 @@ jobs:
             echo "::error::the letterbox CSS lost its !important — mobile will render tiny"
             exit 1
           fi
-          # N9-108 (owner: 모바일 웹에 변경이 반영 안 된다): stable filenames
-          # plus 'immutable' caching pinned returning browsers to year-old
-          # builds — index.pck never changed its name, so a phone that loaded
-          # it once never asked again. Fingerprint every file except
-          # index.html with the commit sha so immutable is actually true; the
-          # html itself is no-cache and hands each visitor the fresh set.
-          # Proven locally: the renamed build boots end to end.
-          STAMP="g${GITHUB_SHA:0:10}"
-          for f in "$EXPORT_DIR"/index.*; do
-            base="$(basename "$f")"
-            [ "$base" = "index.html" ] && continue
-            mv "$f" "$EXPORT_DIR/${base/index./$STAMP.}"
-          done
-          sed -i "s/index\./${STAMP}./g; s/\"executable\":\"index\"/\"executable\":\"${STAMP}\"/" \
-            "$EXPORT_DIR/index.html"
-          # A missed reference would 404 the engine loader on the live site.
-          if grep -Eq '"index[."]' "$EXPORT_DIR/index.html"; then
-            echo "::error::fingerprint rename left an index.* reference behind"
-            exit 1
-          fi
-          cp vercel.json "$EXPORT_DIR/vercel.json"
+          # itch.io serves uploads from its own CDN and butler versions every
+          # push, so the N9-108 sha-fingerprint rename that Vercel needed is
+          # retired with Vercel itself — the export ships pristine.
           echo "### Web export" >> "$GITHUB_STEP_SUMMARY"
           du -h "$EXPORT_DIR"/* | sort -h >> "$GITHUB_STEP_SUMMARY"
 
-      # Uploaded unconditionally: without Vercel secrets this artifact is still
-      # a playable build the owner can download and serve.
+      # Uploaded unconditionally: without the butler secret this artifact is
+      # still a playable build the owner can download and hand-upload.
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -194,30 +174,32 @@ jobs:
           path: ${{ env.EXPORT_DIR }}
           retention-days: 14
 
-      - name: Check for Vercel credentials
+      - name: Check for butler credentials
         id: creds
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_TARGET: ${{ vars.ITCH_TARGET }}
         run: |
-          if [ -n "$VERCEL_TOKEN" ]; then
+          if [ -n "$BUTLER_API_KEY" ] && [ -n "$ITCH_TARGET" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::VERCEL_TOKEN not set — build verified, deploy skipped. Add VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID as repository secrets to publish."
+            echo "::notice::butler not configured — build verified, deploy skipped. Set the BUTLER_API_KEY secret (itch.io → Settings → API keys) and the ITCH_TARGET repository variable (e.g. account/joseonlike:html5) to publish."
           fi
 
-      - name: Deploy to Vercel
+      - name: Deploy to itch.io (butler)
         if: steps.creds.outputs.ready == 'true'
         env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_TARGET: ${{ vars.ITCH_TARGET }}
         run: |
           set -o pipefail
-          # The export directory is plain static output, so Vercel serves it
-          # as-is with vercel.json's cross-origin headers, which the Godot
-          # web runtime requires in order to start at all.
-          npx --yes vercel@latest deploy "$EXPORT_DIR" \
-            --prod --yes --token "$VERCEL_TOKEN" | tee deploy.log
-          echo "### Deployed" >> "$GITHUB_STEP_SUMMARY"
-          tail -n 1 deploy.log >> "$GITHUB_STEP_SUMMARY"
+          curl -fL -o /tmp/butler.zip \
+            "https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default"
+          unzip -q /tmp/butler.zip -d /tmp/butler
+          chmod +x /tmp/butler/butler
+          # --userversion ties the itch build number to the commit that made it.
+          /tmp/butler/butler push "$EXPORT_DIR" "$ITCH_TARGET" \
+            --userversion "g${GITHUB_SHA:0:10}" | tee deploy.log
+          echo "### Deployed to itch.io" >> "$GITHUB_STEP_SUMMARY"
+          tail -n 2 deploy.log >> "$GITHUB_STEP_SUMMARY"

@@ -149,61 +149,45 @@ running CI-driven release exports must configure them as CI secrets (e.g. GitHub
 Actions repository/environment secrets); local exports read them from the shell
 environment.
 
-## Web build and Vercel deploy (`.github/workflows/web-deploy.yml`)
+## Web build and itch.io deploy (`.github/workflows/web-deploy.yml`)
 
-Pushing to `main` builds the `Web` preset (WASM) and publishes it, so the game
-can be handed to playtesters as a URL. `workflow_dispatch` runs it on demand.
-
-**A Vercel free account allows 100 deployments a day, across every project.**
-On 2026-08-20 a run of art and docs commits spent the whole allowance, and
-every push after 05:57 failed on the last line — build green, 99.6 MB
-uploaded, `api-deployments-free-per-day`. Nothing was wrong with the pipeline;
-the account was out. Two settings keep it from recurring:
+Pushing to `main` builds the `Web` preset (WASM) and publishes it to itch.io
+via butler (owner 2026-08-22: Vercel is retired; itch.io is the only web
+channel). `workflow_dispatch` runs it on demand.
 
 - `paths-ignore` skips commits that touch only `*.md`, `captures/`,
-  `new_asset/`, `docs/` or `.github/`. None of those reach the export, so there
-  is nothing new to publish.
+  `new_asset/`, `docs/` or `.github/` — none of those reach the export.
 - `concurrency: web-deploy` with `cancel-in-progress` publishes the newest
-  commit of a burst instead of publishing every one of them in turn.
-
-If the allowance does run out there is no workaround: it resets on its own and
-the next qualifying push deploys normally. Re-running the failed job before the
-reset only spends another attempt.
+  commit of a burst instead of every one in turn.
 
 **Cross-origin isolation is mandatory, not optional.** Godot 4's web runtime
 uses `SharedArrayBuffer` and refuses to start without
 `Cross-Origin-Opener-Policy: same-origin` and
-`Cross-Origin-Embedder-Policy: require-corp`. `vercel.json` sets both on every
-response and is copied into the export directory before deploying. Any other
-host has to set the same two headers or the page loads and then sits blank.
+`Cross-Origin-Embedder-Policy: require-corp`. On itch.io this is the
+**SharedArrayBuffer support** checkbox in the project's embed options — set
+once by hand when the page was created. Any other host has to send those two
+headers itself or the page loads and then sits blank.
 
-**The build always runs; the deploy is conditional.** With no `VERCEL_TOKEN`
+**The build always runs; the deploy is conditional.** Without the butler
 secret the job still exports, verifies and uploads the artifact, then logs a
-notice and stops. That keeps the export a real check on every push to main and
-keeps a fork from going red over a secret it cannot have.
+notice and stops — the export stays a real check on every push and a fork
+never goes red over a secret it cannot have.
 
-### Connecting Vercel (one-time, needs a human)
+### Connecting itch.io (one-time, needs a human)
 
-**There is no "create an empty project" button.** The Vercel dashboard only
-offers importing a Git repo or a template, and importing this repo is exactly
-what must NOT happen — Vercel cannot build Godot. The project is created by the
-CLI instead, on the first link:
+1. Create the itch.io project by hand once (kind: HTML, upload any web zip,
+   check "played in the browser", set viewport 540x960, mobile friendly, and
+   SharedArrayBuffer support).
+2. itch.io → Settings → API keys → generate a key → save it as the
+   `BUTLER_API_KEY` repository secret (Settings → Secrets and variables →
+   Actions → Secrets).
+3. Add the `ITCH_TARGET` repository **variable** (same page, Variables tab):
+   `<account>/<project>:html5`, e.g. `owner/joseonlike:html5`.
 
-```sh
-npx vercel login
-npx vercel link          # answer "create a new project", pick a name
-cat .vercel/project.json # -> {"orgId": "...", "projectId": "..."}
-```
-
-`.vercel/` is gitignored: it is per-checkout local state, not project config.
-
-Then add three repository secrets (Settings → Secrets and variables → Actions):
-`VERCEL_TOKEN` (Account Settings → Tokens), `VERCEL_ORG_ID` and
-`VERCEL_PROJECT_ID` from the file above.
-
-If the project ends up connected to Git by accident, disconnect it in Project
-Settings → Git. A connected project would try to build the repo itself on every
-push and fail, racing the deploy that Actions is doing correctly.
+butler pushes are diffs, so repeat deploys are fast; `--userversion` stamps
+each itch build with the commit sha that produced it. The N9-108
+sha-fingerprint rename existed only for Vercel's immutable cache and is
+retired with it — itch serves uploads from its own versioned CDN.
 
 ### Two traps this workflow guards, and why
 
