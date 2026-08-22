@@ -16,8 +16,6 @@ const WEAPONS_PATH := "res://data/weapons.json"
 ## Cooldown can shrink per level and per attack-speed stacks; never let it
 ## reach zero or the weapon would fire every frame.
 const MIN_COOLDOWN_SEC := 0.05
-## N9-140: caster-centered wave effects stay see-through so the figure reads.
-const WAVE_ALPHA := 0.55
 ## Orb visual + hit radius fallback for the orbit mechanic (혼불) when the
 ## data omits orbit.orb_radius_px (N4-3: the real value is a data knob).
 const ORB_RADIUS_PX := 5.0
@@ -218,7 +216,11 @@ func setup(
 		MECHANIC_CHAIN:
 			_bolt_pool = NodePool.new(self, _create_chain_bolt)
 		MECHANIC_WARD:
-			_ward_pool = NodePool.new(self, _create_ward)
+			# N9-144 (owner: 결계는 바닥에 깔리는 것 — 캐릭터를 가리면 안 된다):
+			# wards pool under the stage's DecorLayer (above the ground art,
+			# below World's player/monsters) instead of under this weapon,
+			# which sits after World and drew the formation over everyone.
+			_ward_pool = NodePool.new(_ground_effect_parent(), _create_ward)
 		MECHANIC_SUMMON:
 			_summon_pool = NodePool.new(self, _create_summon)
 	_recompute()
@@ -574,11 +576,11 @@ func _pulse_shockwave() -> void:
 	# ring stays as the missing-art fallback.
 	if not _wave_effect.is_empty() and _impact_pool != null:
 		var wave: EffectSprite = _impact_pool.acquire()
-		# N9-140 (owner: 진언 이펙트가 캐릭터를 다 가린다): the wave plays
-		# centered ON the caster, so it must stay translucent — negative
-		# z_index is not an option here (canvas-wide, sinks under the ground
-		# tiles; see StageField._instantiate).
-		wave.play_effect(_wave_effect, origin, radius * 2.0, Color(1, 1, 1, WAVE_ALPHA))
+		# N9-144 (owner: 지금 이미지는 버려 — 다 가리고 깨진다): the wave art is
+		# now a hollow expanding ring (320px cells, no upscale at the 260px
+		# span), so the figure shows through the shape itself and the
+		# N9-140 translucency workaround retires with the old bloom.
+		wave.play_effect(_wave_effect, origin, radius * 2.0, Color.WHITE)
 	else:
 		var flash: BlastRing = _flash_pool.acquire()
 		# N3-18: a control pulse is a clean double ring, not a detonation —
@@ -866,6 +868,18 @@ func _decay_nudge(delta: float) -> void:
 	camera.zoom = (
 		Vector2.ONE * Stage.CAMERA_BASE_ZOOM * (1.0 + punch * (_nudge_left / nudge_sec))
 	)
+
+
+## The stage's DecorLayer sits between the ground art and World, which is
+## exactly "painted on the floor". Harness scenes without that layer keep the
+## old parent — a wrongly-layered ward beats a crash.
+func _ground_effect_parent() -> Node:
+	var stage: Node = get_parent()
+	if stage != null:
+		var decor: Node = stage.get_node_or_null("DecorLayer")
+		if decor != null:
+			return decor
+	return self
 
 
 func _create_ward() -> Ward:
