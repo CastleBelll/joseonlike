@@ -14,11 +14,14 @@ const MIN_WALK_FRAMES := 4
 const BOSS_DIR := "res://asset/monsters/dudueori"
 
 ## Expected drawn heights in logical px: opaque-pixel rows / EXPORT_SCALE.
+## N9-136: remeasured for the owner's 16-frame density-unified walk sheets —
+## the idle pose is the cycle's narrowest stance, so heights are no longer
+## round numbers.
 const EXPECTED_HEIGHTS: Dictionary = {
-	"res://asset/monsters/forest_goblin": 27.0,
-	"res://asset/monsters/forest_spirit": 29.0,
-	"res://asset/monsters/bamboo_brute": 45.0,
-	BOSS_DIR: 84.0,
+	"res://asset/monsters/forest_goblin": 29.6875,
+	"res://asset/monsters/forest_spirit": 31.5,
+	"res://asset/monsters/bamboo_brute": 43.3125,
+	BOSS_DIR: 83.75,
 }
 const PLAYER_HEIGHT := 38.0
 

@@ -14,7 +14,9 @@ signal burn_ticked(amount: float, at: Vector2)
 
 const VISUAL_HEIGHT_RATIO := 2.4  # slightly taller than wide, like the player
 const EYE_RATIO := 0.18
-const WALK_FPS := 8.0
+## N9-136: doubled with the owner's 16-frame walk sheets so the cycle keeps
+## the old 8-frame cadence.
+const WALK_FPS := 16.0
 ## The boss idle_breathe strip reads as a slow one-pixel inhale at this rate.
 const IDLE_FPS := 2.0
 const BREATHE_FILE := "idle_breathe.png"

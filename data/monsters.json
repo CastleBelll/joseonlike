@@ -8,7 +8,7 @@
     "speed": 55.0,
     "xp_drop": 3,
     "behaviour": "chase",
-    "collision_radius": 8.5,
+    "collision_radius": 8.0,
     "sprite": "res://asset/monsters/forest_goblin"
   },
   "forest_spirit": {
@@ -32,7 +32,7 @@
     "speed": 70.0,
     "xp_drop": 13,
     "behaviour": "charger",
-    "collision_radius": 18.5,
+    "collision_radius": 13.0,
     "sprite": "res://asset/monsters/bamboo_brute"
   },
   "bamboo_brute_elite": {
@@ -54,7 +54,7 @@
     "speed": 50.0,
     "xp_drop": 200,
     "behaviour": "boss",
-    "collision_radius": 33.5,
+    "collision_radius": 20.5,
     "sprite": "res://asset/monsters/dudueori",
     "attacks": [
       {

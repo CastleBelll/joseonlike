@@ -45,3 +45,7 @@ export_credentials.cfg
 # careful. The handful of owner files already tracked stay tracked: a gitignore
 # rule does not apply to files git already knows about.
 new_asset/owner/
+
+# itch.io hand-upload artifacts, built locally on demand
+joseonlike_web.zip
+itch_assets/
