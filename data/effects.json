@@ -109,12 +109,12 @@
   "hit_old_talisman": {
    "file": "res://asset/effect/hit_old_talisman.png",
    "fps": 30.0,
-   "logical_px": 32.0
+   "logical_px": 44.0
   },
   "hit_noebu": {
    "file": "res://asset/effect/hit_noebu.png",
    "fps": 30.0,
-   "logical_px": 34.0
+   "logical_px": 46.0
   },
   "cast_noebu": {
    "file": "res://asset/effect/cast_noebu.png",
@@ -124,7 +124,7 @@
   "hit_bongmageom": {
    "file": "res://asset/effect/hit_bongmageom.png",
    "fps": 32.0,
-   "logical_px": 36.0
+   "logical_px": 48.0
   },
   "wave_jineon": {
    "file": "res://asset/effect/wave_jineon.png",
@@ -134,37 +134,37 @@
   "hit_hwabu": {
    "file": "res://asset/effect/hit_hwabu.png",
    "fps": 24.0,
-   "logical_px": 40.0
+   "logical_px": 52.0
   },
   "hit_hwaryeongbu": {
    "file": "res://asset/effect/hit_hwaryeongbu.png",
    "fps": 24.0,
-   "logical_px": 46.0
+   "logical_px": 60.0
   },
   "hit_fire_talisman": {
    "file": "res://asset/effect/hit_fire_talisman.png",
    "fps": 24.0,
-   "logical_px": 38.0
+   "logical_px": 48.0
   },
   "hit_honbul": {
    "file": "res://asset/effect/hit_honbul.png",
    "fps": 22.0,
-   "logical_px": 36.0
+   "logical_px": 48.0
   },
   "hit_flame_honbul": {
    "file": "res://asset/effect/hit_flame_honbul.png",
    "fps": 22.0,
-   "logical_px": 38.0
+   "logical_px": 50.0
   },
   "hit_hwayeom_gyeolgye": {
    "file": "res://asset/effect/hit_hwayeom_gyeolgye.png",
    "fps": 24.0,
-   "logical_px": 44.0
+   "logical_px": 56.0
   },
   "hit_flame_sword": {
    "file": "res://asset/effect/hit_flame_sword.png",
    "fps": 24.0,
-   "logical_px": 38.0
+   "logical_px": 48.0
   },
   "swing_seokjang": {
    "file": "res://asset/effect/swing_seokjang.png",
@@ -179,77 +179,77 @@
   "hit_sal": {
    "file": "res://asset/effect/hit_sal.png",
    "fps": 22.0,
-   "logical_px": 38.0
+   "logical_px": 50.0
   },
   "hit_gwisal": {
    "file": "res://asset/effect/hit_gwisal.png",
    "fps": 22.0,
-   "logical_px": 42.0
+   "logical_px": 54.0
   },
   "hit_ghost_sword": {
    "file": "res://asset/effect/hit_ghost_sword.png",
    "fps": 22.0,
-   "logical_px": 38.0
+   "logical_px": 48.0
   },
   "hit_ghost_staff": {
    "file": "res://asset/effect/hit_ghost_staff.png",
    "fps": 22.0,
-   "logical_px": 38.0
+   "logical_px": 48.0
   },
   "hit_beopgeom": {
    "file": "res://asset/effect/hit_beopgeom.png",
    "fps": 26.0,
-   "logical_px": 36.0
+   "logical_px": 48.0
   },
   "hit_sword": {
    "file": "res://asset/effect/hit_sword.png",
    "fps": 26.0,
-   "logical_px": 36.0
+   "logical_px": 48.0
   },
   "hit_twin_sword": {
    "file": "res://asset/effect/hit_twin_sword.png",
    "fps": 26.0,
-   "logical_px": 36.0
+   "logical_px": 48.0
   },
   "hit_sharp_sword": {
    "file": "res://asset/effect/hit_sharp_sword.png",
    "fps": 28.0,
-   "logical_px": 36.0
+   "logical_px": 48.0
   },
   "hit_bow": {
    "file": "res://asset/effect/hit_bow.png",
    "fps": 26.0,
-   "logical_px": 36.0
+   "logical_px": 48.0
   },
   "hit_divine_bow": {
    "file": "res://asset/effect/hit_divine_bow.png",
    "fps": 26.0,
-   "logical_px": 40.0
+   "logical_px": 52.0
   },
   "hit_gyeolgye": {
    "file": "res://asset/effect/hit_gyeolgye.png",
    "fps": 24.0,
-   "logical_px": 44.0
+   "logical_px": 60.0
   },
   "hit_seokjang": {
    "file": "res://asset/effect/hit_seokjang.png",
    "fps": 24.0,
-   "logical_px": 38.0
+   "logical_px": 48.0
   },
   "hit_sinjang": {
    "file": "res://asset/effect/hit_sinjang.png",
    "fps": 24.0,
-   "logical_px": 40.0
+   "logical_px": 56.0
   },
   "hit_noe_sinjang": {
    "file": "res://asset/effect/hit_noe_sinjang.png",
    "fps": 24.0,
-   "logical_px": 40.0
+   "logical_px": 56.0
   },
   "hit_bongin_jineon": {
    "file": "res://asset/effect/hit_bongin_jineon.png",
    "fps": 24.0,
-   "logical_px": 40.0
+   "logical_px": 56.0
   }
  }
 }
