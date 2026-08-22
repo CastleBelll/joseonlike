@@ -234,6 +234,11 @@ func build_actives(actives: Array[Dictionary]) -> void:
 		var active_id: String = String(active.get("id", ""))
 		button.name = "Active_" + active_id
 		button.skill_name = UiLocale.data_name(active, active_id)
+		# N9-138: authored icon when one exists; the text stays the fallback
+		# so a new active without art still reads.
+		var icon_path: String = ActiveButton.ICON_DIR + active_id + ".png"
+		if ResourceLoader.exists(icon_path):
+			button.icon_texture = load(icon_path)
 		button.custom_minimum_size = Vector2(ACTIVE_BUTTON_SIZE, ACTIVE_BUTTON_SIZE)
 		button.pressed.connect(
 			func() -> void: active_pressed.emit(active_id)
@@ -870,8 +875,12 @@ class ActiveButton:
 	const RING_POINTS := 32
 	const COOLING_ALPHA := 0.55
 	const FONT_SIZE := 16
+	const ICON_DIR := "res://asset/ui/active_icons/"
+	## Icon fills this share of the disc; the rim ring stays visible around it.
+	const ICON_SHARE := 0.72
 
 	var skill_name: String = ""
+	var icon_texture: Texture2D = null
 	var _fraction: float = 0.0  # remaining cooldown, 1 → 0
 
 	func _init() -> void:
@@ -902,6 +911,15 @@ class ActiveButton:
 				-PI / 2.0 + TAU * _fraction, RING_POINTS,
 				UiPalette.TEXT_ON_DARK, RING_WIDTH
 			)
+		if icon_texture != null:
+			var side: float = radius * 2.0 * ICON_SHARE
+			var tint := Color(1, 1, 1, COOLING_ALPHA) if cooling else Color.WHITE
+			draw_texture_rect(
+				icon_texture,
+				Rect2(center - Vector2(side, side) / 2.0, Vector2(side, side)),
+				false, tint
+			)
+			return
 		var font: Font = get_theme_default_font()
 		var text_size: Vector2 = font.get_string_size(
 			skill_name, HORIZONTAL_ALIGNMENT_CENTER, -1.0, FONT_SIZE
