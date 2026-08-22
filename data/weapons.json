@@ -143,7 +143,7 @@
   "name_ko": "법검",
   "name_en": "Ritual Sword",
   "travel_sprite": "res://asset/weapon/travel/beopgeom.png",
-  "hit_effect": "hit_neutral",
+  "hit_effect": "hit_beopgeom",
   "category": "spiritual",
   "grade": "common",
   "mechanic": "pierce",
@@ -1327,7 +1327,7 @@
     "pierce": 1
    }
   },
-  "hit_effect": "hit_neutral"
+  "hit_effect": "hit_sword"
  },
  "twin_sword": {
   "name_ko": "쌍환도",
@@ -1346,7 +1346,7 @@
    "cooldown_sec": -0.03
   },
   "evolution_only": true,
-  "hit_effect": "hit_neutral",
+  "hit_effect": "hit_twin_sword",
   "milestones": {
    "8": {
     "pierce": 1
@@ -1375,7 +1375,7 @@
     "pierce": 1
    }
   },
-  "hit_effect": "hit_neutral"
+  "hit_effect": "hit_sharp_sword"
  },
  "ghost_sword": {
   "name_ko": "귀철도",

@@ -195,6 +195,26 @@
    "file": "res://asset/effect/hit_ghost_staff.png",
    "fps": 22.0,
    "logical_px": 38.0
+  },
+  "hit_beopgeom": {
+   "file": "res://asset/effect/hit_beopgeom.png",
+   "fps": 26.0,
+   "logical_px": 36.0
+  },
+  "hit_sword": {
+   "file": "res://asset/effect/hit_sword.png",
+   "fps": 26.0,
+   "logical_px": 36.0
+  },
+  "hit_twin_sword": {
+   "file": "res://asset/effect/hit_twin_sword.png",
+   "fps": 26.0,
+   "logical_px": 36.0
+  },
+  "hit_sharp_sword": {
+   "file": "res://asset/effect/hit_sharp_sword.png",
+   "fps": 28.0,
+   "logical_px": 36.0
   }
  }
 }
