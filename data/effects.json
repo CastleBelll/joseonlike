@@ -175,6 +175,26 @@
    "file": "res://asset/effect/swing_ghost_staff.png",
    "fps": 20.0,
    "logical_px": 96.0
+  },
+  "hit_sal": {
+   "file": "res://asset/effect/hit_sal.png",
+   "fps": 22.0,
+   "logical_px": 38.0
+  },
+  "hit_gwisal": {
+   "file": "res://asset/effect/hit_gwisal.png",
+   "fps": 22.0,
+   "logical_px": 42.0
+  },
+  "hit_ghost_sword": {
+   "file": "res://asset/effect/hit_ghost_sword.png",
+   "fps": 22.0,
+   "logical_px": 38.0
+  },
+  "hit_ghost_staff": {
+   "file": "res://asset/effect/hit_ghost_staff.png",
+   "fps": 22.0,
+   "logical_px": 38.0
   }
  }
 }

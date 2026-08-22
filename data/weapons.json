@@ -627,7 +627,7 @@
     }
    }
   },
-  "hit_effect": "hit_curse",
+  "hit_effect": "hit_ghost_staff",
   "swing_effect": "swing_ghost_staff"
  },
  "honbul": {
@@ -1177,7 +1177,7 @@
   "name_ko": "살",
   "name_en": "Hex Bolt",
   "travel_sprite": "res://asset/weapon/travel/sal.png",
-  "hit_effect": "hit_curse",
+  "hit_effect": "hit_sal",
   "category": "spiritual",
   "grade": "common",
   "mechanic": "curse",
@@ -1243,7 +1243,7 @@
   "name_ko": "귀살",
   "name_en": "Ghost Hex",
   "travel_sprite": "res://asset/weapon/travel/gwisal.png",
-  "hit_effect": "hit_curse",
+  "hit_effect": "hit_gwisal",
   "category": "spiritual",
   "grade": "epic",
   "mechanic": "curse",
@@ -1395,7 +1395,7 @@
   },
   "evolution_only": true,
   "lifesteal": 0.15,
-  "hit_effect": "hit_curse",
+  "hit_effect": "hit_ghost_sword",
   "milestones": {
    "8": {
     "pierce": 1
