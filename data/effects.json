@@ -215,6 +215,41 @@
    "file": "res://asset/effect/hit_sharp_sword.png",
    "fps": 28.0,
    "logical_px": 36.0
+  },
+  "hit_bow": {
+   "file": "res://asset/effect/hit_bow.png",
+   "fps": 26.0,
+   "logical_px": 36.0
+  },
+  "hit_divine_bow": {
+   "file": "res://asset/effect/hit_divine_bow.png",
+   "fps": 26.0,
+   "logical_px": 40.0
+  },
+  "hit_gyeolgye": {
+   "file": "res://asset/effect/hit_gyeolgye.png",
+   "fps": 24.0,
+   "logical_px": 44.0
+  },
+  "hit_seokjang": {
+   "file": "res://asset/effect/hit_seokjang.png",
+   "fps": 24.0,
+   "logical_px": 38.0
+  },
+  "hit_sinjang": {
+   "file": "res://asset/effect/hit_sinjang.png",
+   "fps": 24.0,
+   "logical_px": 40.0
+  },
+  "hit_noe_sinjang": {
+   "file": "res://asset/effect/hit_noe_sinjang.png",
+   "fps": 24.0,
+   "logical_px": 40.0
+  },
+  "hit_bongin_jineon": {
+   "file": "res://asset/effect/hit_bongin_jineon.png",
+   "fps": 24.0,
+   "logical_px": 40.0
   }
  }
 }
