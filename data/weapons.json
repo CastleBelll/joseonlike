@@ -77,7 +77,8 @@
    "8": {
     "projectile_count": 1
    }
-  }
+  },
+  "travel_frames": 4
  },
  "fire_talisman": {
   "name_ko": "화염 부적",
@@ -137,7 +138,8 @@
     "projectile_count": 1,
     "pierce": 1
    }
-  }
+  },
+  "travel_frames": 4
  },
  "beopgeom": {
   "name_ko": "법검",
@@ -182,7 +184,8 @@
    "8": {
     "pierce_retention": 0.02
    }
-  }
+  },
+  "travel_frames": 4
  },
  "bongmageom": {
   "name_ko": "봉마검",
@@ -234,7 +237,8 @@
     "pierce_retention": 0.02,
     "projectile_count": 1
    }
-  }
+  },
+  "travel_frames": 4
  },
  "hwabu": {
   "name_ko": "화부",
@@ -294,7 +298,8 @@
    "8": {
     "projectile_count": 1
    }
-  }
+  },
+  "travel_frames": 4
  },
  "hwaryeongbu": {
   "name_ko": "화령부",
@@ -367,7 +372,8 @@
      "edge_falloff": 0.05
     }
    }
-  }
+  },
+  "travel_frames": 4
  },
  "noebu": {
   "name_ko": "뇌부",
@@ -1237,7 +1243,8 @@
      "dps": 2.0
     }
    }
-  }
+  },
+  "travel_frames": 4
  },
  "gwisal": {
   "name_ko": "귀살",
@@ -1303,7 +1310,8 @@
      "dps": 2.5
     }
    }
-  }
+  },
+  "travel_frames": 4
  },
  "sword": {
   "name_ko": "환도",
