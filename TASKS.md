@@ -189,6 +189,18 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 
 큐 밖(수시): 오너가 `new_asset/`에 에셋 떨구면 가공·연결 커밋 1건.
 
+### 2026-08-22 아트 방향 확정 (오너: "무사 밀도로 전부 통일")
+
+리워크된 무사 idle(`new_asset/sheets/warrior_idle_sprite.png`, 640×640 고밀도
+그레인)이 전 캐릭터·몬스터의 픽셀 밀도 표준이다. 재작업 큐 (codex, 밀도
+앵커로 무사 idle을 반드시 참조):
+
+- [ ] 도사 idle 고밀도 리메이크 → `taoist_idle_hd_sprite.png` (진행 중,
+      task_97487c562222) — 걷기는 오너가 idle 기반으로 직접 제작
+- [ ] 대나무숲 몬스터 세트 리메이크 (도깨비/원혼/거한/정령왕 등 기존 저밀도
+      전부) — codex 주간 쿼터 리셋 후
+- [ ] 밤2 몬스터는 신작이라 근접 — 나란히 검수만
+
 ## AC-트랙 — 에셋 (codex, 별도 커밋)
 
 - [x] **AC-1 도사 캐릭터 세트** — 인월드 idle+walk4 + 선택 카드 초상
@@ -205,6 +217,10 @@ git 히스토리(`63b50c8` 이전)에만 남긴다. 구 코드/에셋 참조 금
 
 | Date | Feature | Commit |
 |---|---|---|
+| 2026-08-21 | N9-128 the sharpness pass (owner: 애셋들 화질이 너무 안좋은데 개선 못해?): two blur sources measured and killed — runtime UPSCALING (진언 wave drew 64px cells at ~1.9x, swings at 1.5x) and heavy fractional NEAREST downscales. wave_jineon reconverted at 128px cells (2048×128, logical 120), both swings kept at native 1024×128 (logical 96), and 25 hit strips' logical_px raised 40→44-60 by silhouette class so the shrink from the 64px source stays near 1:1. VRAM compression audit: lossless (mode 0) confirmed for all effect textures. tests 515/515, validate PASS, forced jineon run clean | 1f3823a |
+| 2026-08-21 | N9-126/127 night 2 designed and sprited (owner: 다음 캐릭터, 스킬, 맵도 구성해보고 컨셉에 맞게 … 생성해놔): GDD §8/§30 anchored — 무사 kit (환도 시작무기, 철벽 액티브, crimson, HP140/spd80), 폐허가 된 마을 palette (잿빛/그을린 목재/잉걸 주홍), 5 monsters + 장군 원혼 boss, props/breakables. All base sprites generated via codex and integrated into the artifact per category; generated walk cycles were REJECTED by the owner (figure inconsistency, awkward motion) — walks removed from artifact, owner authors them by hand; warrior idle reworked to match. Design docs only — no game-code wiring yet | 5157128, d5f9f8e |
+| 2026-08-21 | N9-120~125 the codex effect sweep (owner: /orchestration — needs_sprite 들을 한개씩, 하나 하고 품질 확인하고): one-at-a-time quality-gated codex pipeline delivered 26/26 authored per-weapon hit effects (fire line → curse line → steel/sacred → the rest), swing arcs for the two melee staves (swing_effect key, tinted shared crescent as fallback), and HD 4-frame travel strips for 8 projectiles + the sinjang summon body. One gate FAIL (환도 ring instead of crescent gash) reworked with explicit prohibition + exemplar reference. Edge-clip QC scan (per-frame edge alpha >6px) over everything: two early conversions reconverted, codex output clean. Artifact republished per item | 6bbbff2 … 8340607 |
+| 2026-08-21 | N9-119 진언 wave + 봉마검 hit stop wobbling: grid cells didn't match true frame centers (offset up to half a cell) and the geometric bg model ate the bright-side arcs — replaced with luminance keying, manual valley cuts, and strong-alpha centroid centering on one shared canvas (98th-pct reach, band cap, headroom). tests 515/515 | b840a0b |
 | 2026-08-21 | N9-117 봉마검 hit + 진언 wave from the owner's second sheet drop (owner: 스프라이트 추가했어 + 진언 스프라이트는 피격효과가 아니라 스킬 이팩트잖아): both 1536x1024 4x4 grids converted with the old_talisman 4-corner-median recipe plus one new eraser — the white digit labels are the only thing the background model cannot cut, so a pass drops LOW-SATURATION pixels in each cell's top band (the saturated violet/gold effect passes through). 봉마검 wears its 16f violet pierce hit. 진언 was first wired as a hit and the owner corrected it: the gold rings are the SKILL — a new optional wave_effect data key (validated like cast_effect) makes the shockwave pulse play the 16f bloom at the caster, sized to the stun radius ×2, with the code double-ring as the missing-art fallback; 진언 and 봉인 진언 both wear it, their hit stays shared lightning. The goblin 12f death sheet went to the artifact demo column, sheets renamed ascii. tests 515/515, validate PASS, forced jineon run clean (163.0 dps) | — |
 | 2026-08-21 | N9-116 뇌부 gets its authored lightning (owner: 뇌부 이펙트 스프라이트 만들어서 넣어놨거든? 파일명 손봐주고 시작 4프레임, 타격 6프레임, 연쇄는 이어붙여서): the owner's annotated spec sheet (renamed new_asset/sheets/noebu_effects_sheet.png) was segmented by a blue-dominance mask + dilation-merged components — grey labels drop out, each frame's loose sparks merge into one box; a fixed y//60 row bin misordered the hit frames (frame 03 reached into the next bin) and was replaced with centre-y clustering. Outputs: cast_noebu.png (4f), hit_noebu.png (6f), chain_bolt_a–d.png (4 patterns × 4f). Wiring: cast_effect is a new optional data key played at the caster on fire (validator checks it resolves); hit_effect swaps to hit_noebu; chain.bolt_art=true makes ChainBolt stretch a random authored pattern strip over each jump leg (frames carry the decay), polyline stays as the missing-art fallback — noebu AND noejeongbu both wear it. Guards: bolt art must exist and divide by its frame count; bolt_frame plays once and holds. Along the way the forced-noebu/free playtests caught a REAL N9-101 race: the melee arc re-indexed the LIVE breakables array after take_weapon_damage synchronously erased a broken prop from it — out-of-bounds mid-swing; hits now resolve against the snapshot. tests 515/515, validate PASS, hit burst confirmed on-screen in a forced run | — |
 | 2026-08-21 | N9-115 the field leans in (owner: 약초하고 자석은 너무 작더라, 모든 애셋들 조금씩만 키워): two moves. CAMERA_BASE_ZOOM 1.15 magnifies the whole field on every screen — and every zoom write in the run (shockwave punch decay, mid-punch weapon free, result-screen reset) now multiplies from that base instead of snapping back to 1.0. The four pickups regenerate from their 2000px raws at bigger boxes (약초 12→16, 자석 14→18, 벽력부 24→28, 궤짝 32→38) so they stay crisp at 1:1 instead of upscaling. Offscreen spawn margins key on the viewport rect, which the zoom shrinks the visible world INSIDE of — spawns stay hidden. tests 514/514, pickup_check PASS, pause_check PASS, playtest 197.6 dps · fps min 74 | — |
