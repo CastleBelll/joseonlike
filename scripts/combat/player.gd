@@ -13,17 +13,18 @@ const WALK_TEXTURE_PATH := "res://asset/characters/taoist/walk.png"
 ## 16x nearest-neighbor blocks of 40x40 logical frames, figure 38px tall,
 ## which is the intended in-world read on the 540px viewport.
 const SPRITE_EXPORT_SCALE := SpriteSheet.EXPORT_SCALE
-## N9-37: the owner's walk sheet ships eight frames. SpriteSheet derives the
-## count from the strip itself; this constant exists so a test can assert the
-## art and the code still agree — which is exactly what caught the mismatch
-## when the new sheet landed.
-const WALK_FRAME_COUNT := 8
-const WALK_FPS := 8.0
+## N9-37: the owner's run sheet ships sixteen frames (N9-134). SpriteSheet
+## derives the count from the strip itself; this constant exists so a test can
+## assert the art and the code still agree — which is exactly what caught the
+## mismatch when the new sheet landed.
+const WALK_FRAME_COUNT := 16
+## Doubled with the frame count so the 16-frame run keeps the 8-frame cadence.
+const WALK_FPS := 16.0
 const IDLE_FPS := 1.0  # single idle frame; the speed value is inert
-## Which walk frame stands still. Frame 1 has the narrowest stance in the strip
-## (measured: 240px of leg spread against 304 at the widest), which is what
-## makes it read as standing rather than as a walk caught mid-step.
-const IDLE_WALK_FRAME := 1
+## Which walk frame stands still. Frame 0 has the narrowest stance in the strip
+## (measured: 63px of source spread against 74 at the widest), which is what
+## makes it read as standing rather than as a run caught mid-step.
+const IDLE_WALK_FRAME := 0
 const ANIM_IDLE := SpriteSheet.ANIM_IDLE
 const ANIM_WALK := SpriteSheet.ANIM_WALK
 
