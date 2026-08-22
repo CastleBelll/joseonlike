@@ -51,8 +51,11 @@ const ENEMY_GOBLIN := Color("#6faa4e")
 const ENEMY_SPIRIT := Color("#d8dfd2")
 const ENEMY_BRUTE := Color("#a4763b")
 # XP orb glow per DESIGN.md §5.1 (cyan-green) and white damage numbers.
-const XP_ORB := Color("#49e0b5")
-const XP_ORB_CORE := Color("#d8fff2")
+## N9-142 (owner: 민트색이 필드의 청록과 겹친다): warm spirit-gold, matching
+## the icon_pickup_xp_orb concept — hundreds of 7px orbs read better as a
+## color change than as a downscaled texture.
+const XP_ORB := Color("#f0b43c")
+const XP_ORB_CORE := Color("#fff3d0")
 const DAMAGE_TEXT := Color("#ffffff")
 
 # N3-8 hit feedback / N5-1 boss: flash white, spirit-white death puff, and a
