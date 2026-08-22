@@ -16,6 +16,8 @@ const WEAPONS_PATH := "res://data/weapons.json"
 ## Cooldown can shrink per level and per attack-speed stacks; never let it
 ## reach zero or the weapon would fire every frame.
 const MIN_COOLDOWN_SEC := 0.05
+## N9-140: caster-centered wave effects stay see-through so the figure reads.
+const WAVE_ALPHA := 0.55
 ## Orb visual + hit radius fallback for the orbit mechanic (혼불) when the
 ## data omits orbit.orb_radius_px (N4-3: the real value is a data knob).
 const ORB_RADIUS_PX := 5.0
@@ -572,7 +574,11 @@ func _pulse_shockwave() -> void:
 	# ring stays as the missing-art fallback.
 	if not _wave_effect.is_empty() and _impact_pool != null:
 		var wave: EffectSprite = _impact_pool.acquire()
-		wave.play_effect(_wave_effect, origin, radius * 2.0, Color.WHITE)
+		# N9-140 (owner: 진언 이펙트가 캐릭터를 다 가린다): the wave plays
+		# centered ON the caster, so it must stay translucent — negative
+		# z_index is not an option here (canvas-wide, sinks under the ground
+		# tiles; see StageField._instantiate).
+		wave.play_effect(_wave_effect, origin, radius * 2.0, Color(1, 1, 1, WAVE_ALPHA))
 	else:
 		var flash: BlastRing = _flash_pool.acquire()
 		# N3-18: a control pulse is a clean double ring, not a detonation —

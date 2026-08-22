@@ -24,7 +24,9 @@ const RING_POINTS := 40
 ## ward color. It rotates with _spin; only the soft fill and the damage-tick
 ## pulse stay code-drawn.
 const SIGIL_TEXTURE := "res://asset/weapon/fx/ward_sigil.png"
-const SIGIL_ALPHA := 0.85
+## N9-140 (owner: 결계가 몬스터·캐릭터를 가린다): the formation is ground
+## markings, not a curtain — faint enough that figures inside stay readable.
+const SIGIL_ALPHA := 0.4
 ## The slow must outlive the gap between ticks or enemies stutter-step;
 ## twice the tick keeps it seamless while ending soon after the ward does.
 const SLOW_CARRY_SCALE := 2.0
