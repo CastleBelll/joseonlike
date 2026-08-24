@@ -176,6 +176,31 @@
    "fps": 20.0,
    "logical_px": 96.0
   },
+  "swing_sword": {
+   "file": "res://asset/effect/swing_sword.png",
+   "fps": 20.0,
+   "logical_px": 96.0
+  },
+  "swing_twin_sword": {
+   "file": "res://asset/effect/swing_twin_sword.png",
+   "fps": 20.0,
+   "logical_px": 96.0
+  },
+  "swing_sharp_sword": {
+   "file": "res://asset/effect/swing_sharp_sword.png",
+   "fps": 20.0,
+   "logical_px": 96.0
+  },
+  "swing_ghost_sword": {
+   "file": "res://asset/effect/swing_ghost_sword.png",
+   "fps": 20.0,
+   "logical_px": 96.0
+  },
+  "swing_flame_sword": {
+   "file": "res://asset/effect/swing_flame_sword.png",
+   "fps": 20.0,
+   "logical_px": 96.0
+  },
   "swing_ghost_staff": {
    "file": "res://asset/effect/swing_ghost_staff.png",
    "fps": 20.0,

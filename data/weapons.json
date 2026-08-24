@@ -1336,6 +1336,7 @@
    }
   },
   "hit_effect": "hit_sword",
+  "swing_effect": "swing_sword",
   "mechanic": "melee_arc",
   "arc": {
    "angle_deg": 120.0,
@@ -1360,6 +1361,7 @@
   },
   "evolution_only": true,
   "hit_effect": "hit_twin_sword",
+  "swing_effect": "swing_twin_sword",
   "milestones": {
    "8": {
     "pierce": 1
@@ -1394,6 +1396,7 @@
    }
   },
   "hit_effect": "hit_sharp_sword",
+  "swing_effect": "swing_sharp_sword",
   "mechanic": "melee_arc",
   "arc": {
    "angle_deg": 120.0,
@@ -1419,6 +1422,7 @@
   "evolution_only": true,
   "lifesteal": 0.15,
   "hit_effect": "hit_ghost_sword",
+  "swing_effect": "swing_ghost_sword",
   "milestones": {
    "8": {
     "pierce": 1
@@ -1448,6 +1452,7 @@
   },
   "evolution_only": true,
   "hit_effect": "hit_flame_sword",
+  "swing_effect": "swing_flame_sword",
   "milestones": {
    "8": {
     "pierce": 1
