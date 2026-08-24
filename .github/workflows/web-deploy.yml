@@ -149,14 +149,13 @@ jobs:
               exit 1
             fi
           done
-          # N9-56: the engine writes canvas.style.width inline from the project
-          # resolution divided by the device pixel ratio — 180px on a dpr-3
-          # phone. Only an !important rule in head_include beats an inline
-          # style, so losing it silently ships a postage-stamp canvas that
-          # nothing else in this pipeline would catch.
-          if ! grep -q 'width:min(100vw,calc(100dvh \* 540 / 960))!important' \
-              "$EXPORT_DIR/index.html"; then
-            echo "::error::the letterbox CSS lost its !important — mobile will render tiny"
+          # N9-56/N9-151: the engine writes canvas.style.width inline from the
+          # project resolution divided by the device pixel ratio — 180px on a
+          # dpr-3 phone. Only an !important rule in head_include beats an
+          # inline style. Landscape support (N9-151) turned the portrait
+          # letterbox into a full-viewport fill; the guard follows that rule.
+          if ! grep -q 'width:100vw!important' "$EXPORT_DIR/index.html"; then
+            echo "::error::the canvas fill CSS lost its !important — mobile will render tiny"
             exit 1
           fi
           # itch.io serves uploads from its own CDN and butler versions every

@@ -29,7 +29,7 @@ window/size/viewport_height=960
 window/size/resizable=false
 window/stretch/mode="viewport"
 window/stretch/aspect="expand"
-window/handheld/orientation=1
+window/handheld/orientation=6
 
 [gui]
 
