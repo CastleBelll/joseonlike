@@ -308,176 +308,200 @@
    {
     "at_sec": 0,
     "monster_id": "ash_wraith",
-    "count": 18,
+    "count": 20,
     "interval_sec": 0.59
    },
    {
     "at_sec": 17,
     "monster_id": "ash_wraith",
-    "count": 12,
+    "count": 13,
     "interval_sec": 0.59
    },
    {
     "at_sec": 30,
     "monster_id": "ash_wraith",
-    "count": 24,
+    "count": 27,
     "interval_sec": 1.19
    },
    {
     "at_sec": 45,
     "monster_id": "cursed_hound",
-    "count": 8,
+    "count": 11,
     "interval_sec": 0.4
    },
    {
     "at_sec": 60,
     "monster_id": "ash_wraith",
-    "count": 44,
+    "count": 49,
     "interval_sec": 0.65
    },
    {
     "at_sec": 60,
     "monster_id": "cursed_hound",
-    "count": 12,
+    "count": 16,
     "interval_sec": 0.8
    },
    {
     "at_sec": 90,
     "monster_id": "ash_wraith",
-    "count": 48,
+    "count": 54,
     "interval_sec": 0.56
    },
    {
     "at_sec": 90,
     "monster_id": "cursed_hound",
-    "count": 16,
+    "count": 22,
     "interval_sec": 0.7
    },
    {
     "at_sec": 120,
     "monster_id": "ash_wraith",
-    "count": 50,
+    "count": 56,
     "interval_sec": 0.52
    },
    {
     "at_sec": 120,
     "monster_id": "rusted_armor",
-    "count": 6,
+    "count": 15,
     "interval_sec": 1.6
    },
    {
     "at_sec": 130,
     "monster_id": "powder_dokkaebi",
-    "count": 6,
+    "count": 9,
     "interval_sec": 1.2
    },
    {
     "at_sec": 150,
     "monster_id": "ash_wraith",
-    "count": 54,
+    "count": 60,
     "interval_sec": 0.47
    },
    {
     "at_sec": 150,
     "monster_id": "cursed_hound",
-    "count": 20,
+    "count": 27,
     "interval_sec": 0.6
    },
    {
     "at_sec": 150,
     "monster_id": "rusted_armor",
-    "count": 10,
+    "count": 24,
     "interval_sec": 1.4
    },
    {
     "at_sec": 180,
     "monster_id": "ash_wraith",
-    "count": 56,
+    "count": 63,
     "interval_sec": 0.45
    },
    {
     "at_sec": 180,
     "monster_id": "powder_dokkaebi",
-    "count": 10,
+    "count": 15,
     "interval_sec": 1.0
    },
    {
     "at_sec": 190,
     "monster_id": "rusted_armor",
-    "count": 12,
+    "count": 28,
     "interval_sec": 1.2
+   },
+   {
+    "at_sec": 200,
+    "monster_id": "rusted_armor_elite",
+    "count": 7,
+    "interval_sec": 6.0
    },
    {
     "at_sec": 210,
     "monster_id": "ash_wraith",
-    "count": 58,
+    "count": 65,
     "interval_sec": 0.43
    },
    {
     "at_sec": 210,
     "monster_id": "cursed_hound",
-    "count": 26,
+    "count": 35,
     "interval_sec": 0.5
    },
    {
     "at_sec": 240,
     "monster_id": "ash_wraith",
-    "count": 60,
+    "count": 67,
     "interval_sec": 0.4
    },
    {
     "at_sec": 240,
     "monster_id": "rusted_armor",
-    "count": 16,
+    "count": 39,
     "interval_sec": 1.0
    },
    {
     "at_sec": 250,
     "monster_id": "powder_dokkaebi",
-    "count": 14,
+    "count": 21,
     "interval_sec": 0.8
+   },
+   {
+    "at_sec": 260,
+    "monster_id": "rusted_armor_elite",
+    "count": 10,
+    "interval_sec": 5.0
    },
    {
     "at_sec": 270,
     "monster_id": "ash_wraith",
-    "count": 62,
+    "count": 69,
     "interval_sec": 0.38
    },
    {
     "at_sec": 270,
     "monster_id": "cursed_hound",
-    "count": 30,
+    "count": 40,
     "interval_sec": 0.45
    },
    {
     "at_sec": 300,
     "monster_id": "ash_wraith",
-    "count": 90,
+    "count": 101,
     "interval_sec": 0.34
    },
    {
     "at_sec": 300,
+    "monster_id": "powder_dokkaebi",
+    "count": 27,
+    "interval_sec": 0.7
+   },
+   {
+    "at_sec": 300,
     "monster_id": "rusted_armor",
-    "count": 20,
+    "count": 48,
     "interval_sec": 0.9
    },
    {
     "at_sec": 300,
-    "monster_id": "powder_dokkaebi",
-    "count": 18,
-    "interval_sec": 0.7
+    "monster_id": "rusted_armor_elite",
+    "count": 14,
+    "interval_sec": 4.0
    },
    {
     "at_sec": 310,
     "monster_id": "ash_wraith",
-    "count": 72,
+    "count": 81,
     "interval_sec": 0.32
    },
    {
     "at_sec": 310,
     "monster_id": "cursed_hound",
-    "count": 34,
+    "count": 46,
     "interval_sec": 0.4
+   },
+   {
+    "at_sec": 320,
+    "monster_id": "powder_dokkaebi",
+    "count": 20,
+    "interval_sec": 0.6
    }
   ]
  }

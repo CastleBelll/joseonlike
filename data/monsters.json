@@ -45,6 +45,16 @@
   "size_mult": 1.6,
   "reward_mult": 6.0
  },
+ "rusted_armor_elite": {
+  "name_ko": "정예 녹슨 갑주 망령",
+  "name_en": "Elite Rusted Armor Wraith",
+  "elite_of": "rusted_armor",
+  "hp_mult": 6.0,
+  "damage_mult": 1.5,
+  "speed_mult": 0.85,
+  "size_mult": 1.6,
+  "reward_mult": 6.0
+ },
  "dudueori": {
   "name_ko": "두두리",
   "name_en": "Dudueori",
