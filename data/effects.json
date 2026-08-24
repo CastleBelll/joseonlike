@@ -276,6 +276,11 @@
    "fps": 24.0,
    "logical_px": 56.0
   },
+  "hit_jineon": {
+   "file": "res://asset/effect/hit_jineon.png",
+   "fps": 24.0,
+   "logical_px": 56.0
+  },
   "hit_bongin_jineon": {
    "file": "res://asset/effect/hit_bongin_jineon.png",
    "fps": 24.0,

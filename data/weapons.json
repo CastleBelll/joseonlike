@@ -1107,7 +1107,7 @@
     }
    }
   },
-  "hit_effect": "hit_lightning",
+  "hit_effect": "hit_jineon",
   "wave_effect": "wave_jineon"
  },
  "bongin_jineon": {
