@@ -32,6 +32,28 @@ CURSE_CORE = (238, 208, 255, 255)
 PAPER_SHADOW = (91, 79, 105, 255)
 PAPER = (160, 147, 170, 255)
 PAPER_LIGHT = (201, 190, 211, 255)
+ICON_SMOKE_SHADOW = (36, 18, 52, 255)
+ICON_SMOKE_DEEP = (57, 27, 82, 255)
+ICON_SMOKE_MID = (84, 40, 119, 255)
+ICON_SMOKE_LIGHT = (125, 60, 167, 255)
+ICON_SMOKE_HOT = (190, 79, 220, 255)
+ICON_PAPER_EDGE = (70, 59, 79, 255)
+ICON_PAPER_DARK = (104, 91, 115, 255)
+ICON_PAPER_MID = (151, 137, 160, 255)
+ICON_PAPER_PALE = (191, 180, 198, 255)
+ICON_PAPER_HIGH = (224, 214, 226, 255)
+ICON_INK_BLEED = (49, 34, 61, 255)
+ICON_PAPER_TEXTURE = (
+    (82, 69, 91, 255), (96, 82, 105, 255), (116, 101, 125, 255),
+    (128, 113, 137, 255), (143, 128, 151, 255), (159, 145, 167, 255),
+    (173, 159, 180, 255), (185, 171, 192, 255), (198, 186, 204, 255),
+    (210, 199, 215, 255), (218, 207, 221, 255), (231, 222, 232, 255),
+)
+ICON_SMOKE_TEXTURE = (
+    (45, 21, 65, 255), (51, 24, 73, 255), (64, 30, 91, 255),
+    (72, 34, 102, 255), (91, 43, 128, 255), (102, 49, 142, 255),
+    (113, 54, 154, 255), (137, 65, 177, 255),
+)
 ARROW_INK = (30, 25, 24, 255)
 ARROW_WOOD = (133, 88, 43, 255)
 ARROW_WOOD_LIGHT = (208, 157, 78, 255)
@@ -119,14 +141,17 @@ def _draw_curse_projectile(
         (17, 18), (18, 16), (17, 14),
     ]
     d.polygon([(ox + x, y + py) for x, py in inner_paper], fill=PAPER if not evolved else PAPER_LIGHT)
-    # Fold/highlight and compact abstract ghost-writing.
+    # Fold/highlight and compact non-linguistic seal marks.  Never join these
+    # into a vertical crossed by horizontal bars: at this scale that became 王.
     fold = CURSE_MID if not evolved else CURSE_MAGENTA
     d.line([ox + 28, y + 12, ox + 28, y + 18], fill=fold)
     d.line([ox + 29, y + 13, ox + 31, y + 15], fill=fold)
-    d.line([ox + 20, y + 13, ox + 25, y + 13], fill=CURSE_INK)
-    d.line([ox + 22, y + 13, ox + 22, y + 18], fill=CURSE_INK)
-    d.line([ox + 19, y + 16, ox + 25, y + 16], fill=CURSE_INK)
-    d.point((ox + 24, y + 18), fill=CURSE_INK)
+    d.line([ox + 19, y + 13, ox + 21, y + 15], fill=CURSE_INK)
+    d.point((ox + 24, y + 13), fill=CURSE_INK)
+    d.line([ox + 24, y + 15, ox + 25, y + 16], fill=CURSE_INK)
+    d.line([ox + 19, y + 18, ox + 20, y + 18], fill=CURSE_INK)
+    d.point((ox + 22, y + 17), fill=CURSE_INK)
+    d.point((ox + 25, y + 18), fill=CURSE_INK)
     if evolved:
         d.point((ox + 26, y + 15), fill=CURSE_CORE)
         d.point((ox + 11, y + 14), fill=CURSE_CORE)
@@ -140,64 +165,141 @@ def _build_curse_travel(evolved: bool) -> Image.Image:
 
 
 def _draw_curse_icon_base(evolved: bool) -> Image.Image:
-    """128px logical icon, exported 4x with nearest-neighbour pixels."""
-    image = _new((128, 128))
+    """64px review-native icon, exported 8x with nearest-neighbour pixels.
+
+    Authoring at the actual HUD size prevents detail that exists only in the
+    512px source from collapsing when the inventory renders the icon at 64px.
+    """
+    image = _new((64, 64))
     d = ImageDraw.Draw(image)
-    smoke = CURSE_MID if not evolved else CURSE_BRIGHT
-    smoke_hi = CURSE_BRIGHT if not evolved else CURSE_MAGENTA
+    smoke_mid = ICON_SMOKE_LIGHT if evolved else ICON_SMOKE_MID
+    smoke_light = ICON_SMOKE_HOT if evolved else ICON_SMOKE_LIGHT
+    seal = CURSE_MAGENTA if evolved else CURSE_MID
+    paper_mid = ICON_PAPER_PALE if evolved else ICON_PAPER_MID
+    paper_high = CURSE_CORE if evolved else ICON_PAPER_HIGH
 
-    # Large, separated brush-smoke bands behind a single torn charm.  Both
-    # evolution stages use identical shapes and differ only in energy fills.
-    bands = [
-        # One broad, stepped plume rather than limb-like separate tendrils.
-        [(4, 74), (15, 58), (10, 45), (29, 44), (36, 29), (51, 37),
-         (66, 26), (73, 43), (62, 57), (69, 70), (53, 82), (38, 76),
-         (25, 91), (12, 89)],
-        # Two short broken brush marks sell drifting script without changing
-        # the main plume into a creature silhouette.
-        [(18, 24), (27, 17), (39, 23), (34, 29), (24, 29)],
-        [(19, 99), (30, 92), (43, 96), (37, 103), (26, 106)],
+    # A single broad, angular smoke mass supports the charm.  It has cloud
+    # lobes and cut-ins, not limb-like separated tendrils.  The pair shares
+    # every geometry coordinate; evolution changes palette only.
+    smoke_outer = [
+        (2, 34), (8, 28), (5, 21), (14, 18), (14, 11), (24, 14),
+        (29, 7), (37, 13), (48, 10), (51, 18), (60, 22), (56, 30),
+        (62, 36), (55, 43), (57, 53), (47, 52), (40, 60), (31, 55),
+        (23, 62), (17, 54), (7, 55), (9, 46), (2, 41),
     ]
-    for points in bands:
-        d.polygon(points, fill=CURSE_INK)
-        # One flat interior stripe, inset by a few native pixels.
-        middle = points[1:-1]
-        d.line(middle, fill=smoke, width=5)
-        if len(middle) > 3:
-            d.line(middle[1:-1], fill=smoke_hi, width=2)
+    d.polygon(smoke_outer, fill=CURSE_INK)
+    smoke_body = [
+        (5, 34), (11, 29), (8, 23), (17, 21), (17, 15), (25, 18),
+        (30, 11), (36, 17), (46, 14), (48, 21), (56, 24), (52, 30),
+        (58, 36), (52, 41), (53, 49), (45, 48), (39, 55), (31, 51),
+        (24, 57), (18, 50), (11, 52), (13, 44), (6, 40),
+    ]
+    d.polygon(smoke_body, fill=ICON_SMOKE_DEEP)
+    # Layered cel-shaded flow bands survive the exact 64px review size.
+    d.line([(8, 36), (15, 31), (13, 25), (21, 23), (24, 17)], fill=smoke_mid, width=3)
+    d.line([(33, 14), (40, 19), (50, 18), (51, 25), (56, 27)], fill=smoke_mid, width=3)
+    d.line([(52, 35), (48, 41), (49, 47), (42, 45), (37, 53)], fill=smoke_mid, width=3)
+    d.line([(13, 45), (20, 47), (24, 54), (30, 49)], fill=ICON_SMOKE_MID, width=2)
+    d.line([(9, 34), (15, 30), (15, 26)], fill=smoke_light)
+    d.line([(35, 15), (41, 20), (48, 19)], fill=smoke_light)
+    d.line([(50, 36), (46, 41), (47, 45)], fill=smoke_light)
+    # Small negative pockets break the mass into drifting smoke folds.
+    d.polygon([(8, 21), (12, 19), (13, 23), (10, 26)], fill=TRANSPARENT)
+    d.polygon([(51, 49), (55, 47), (55, 51), (53, 54)], fill=TRANSPARENT)
+    smoke_grain = (
+        (7, 35), (11, 30), (12, 43), (18, 17), (24, 18), (31, 12),
+        (43, 16), (53, 25), (55, 38), (47, 45), (28, 55), (18, 51),
+    )
+    for index, (x, y) in enumerate(smoke_grain):
+        tone = ICON_SMOKE_TEXTURE[index % len(ICON_SMOKE_TEXTURE)]
+        if evolved and index % 3 == 0:
+            tone = CURSE_BRIGHT
+        d.line([(x, y), (x + 1, y - 1)], fill=tone)
 
-    charm = [
-        (48, 39), (58, 31), (101, 35), (121, 62), (104, 91), (59, 96),
-        (47, 88), (52, 78), (45, 68), (52, 57),
+    # Deep thickness/shadow under a vertically canted torn hanji charm.
+    paper_shadow = [
+        (22, 6), (45, 9), (51, 14), (48, 25), (52, 31), (47, 56),
+        (41, 61), (18, 57), (11, 51), (15, 38), (12, 32), (18, 9),
     ]
-    d.polygon(charm, fill=PAPER_SHADOW, outline=CURSE_INK, width=3)
-    inner = [
-        (57, 40), (96, 42), (111, 62), (99, 82), (62, 87),
-        (55, 82), (59, 71), (53, 63), (60, 51),
+    d.polygon(paper_shadow, fill=CURSE_INK)
+    paper_edge = [
+        (21, 6), (43, 8), (49, 13), (46, 25), (50, 30), (45, 54),
+        (40, 59), (18, 55), (13, 50), (17, 38), (14, 31), (19, 8),
     ]
-    d.polygon(inner, fill=PAPER if not evolved else PAPER_LIGHT)
-    d.line([94, 43, 94, 83], fill=smoke_hi, width=3)
-    d.line([95, 45, 111, 62, 96, 80], fill=smoke_hi, width=3)
+    d.polygon(paper_edge, fill=ICON_PAPER_EDGE)
+    paper = [
+        (22, 8), (42, 10), (46, 13), (43, 25), (47, 30), (42, 52),
+        (38, 55), (20, 52), (16, 49), (20, 38), (17, 31), (21, 10),
+    ]
+    d.polygon(paper, fill=paper_mid)
+    # Faceted light and shadow planes give the paper volume at 64px.
+    d.polygon([(22, 9), (39, 11), (42, 14), (38, 16), (23, 14)], fill=paper_high)
+    d.polygon([(18, 31), (22, 29), (42, 31), (44, 35), (20, 37)], fill=ICON_PAPER_DARK)
+    d.polygon([(21, 38), (44, 35), (41, 50), (37, 53), (21, 50)], fill=ICON_PAPER_PALE)
+    d.polygon([(39, 11), (46, 14), (43, 25), (47, 30), (43, 34), (40, 28)], fill=ICON_PAPER_DARK)
+    d.line([(21, 10), (19, 28), (22, 29)], fill=paper_high, width=2)
+    d.line([(20, 39), (18, 48), (22, 51)], fill=ICON_PAPER_HIGH)
 
-    # Abstract brush glyph: deliberately not a readable text character at UI
-    # scale, but unmistakably ink writing on paper.
+    # Rolled/torn caps and fold creases echo the approved talisman icons.
+    d.polygon([(20, 6), (43, 8), (46, 11), (42, 13), (22, 11), (18, 9)], fill=ICON_PAPER_DARK)
+    d.line([(22, 7), (41, 9), (44, 11)], fill=paper_high)
+    d.polygon([(18, 50), (24, 51), (38, 53), (41, 57), (38, 59), (18, 55), (13, 50)], fill=ICON_PAPER_DARK)
+    d.line([(18, 51), (24, 53), (37, 54), (39, 57)], fill=paper_high)
+    d.line([(23, 15), (20, 27)], fill=ICON_PAPER_DARK)
+    d.line([(40, 18), (42, 24)], fill=ICON_PAPER_HIGH)
+    d.line([(23, 41), (21, 47)], fill=ICON_PAPER_DARK)
+    d.line([(37, 39), (40, 48)], fill=ICON_PAPER_HIGH)
+
+    # Irregular one- and two-pixel paper grain.  These are deliberately short
+    # diagonals/chips, never aligned into handwriting strokes.
+    paper_grain = (
+        (24, 12), (29, 11), (36, 12), (41, 14), (22, 17), (25, 21),
+        (39, 19), (23, 26), (37, 23), (22, 39), (29, 38), (40, 38),
+        (25, 44), (33, 47), (38, 50), (20, 48), (42, 32), (24, 30),
+    )
+    for index, (x, y) in enumerate(paper_grain):
+        tone = ICON_PAPER_TEXTURE[index % len(ICON_PAPER_TEXTURE)]
+        if index % 4 == 0:
+            d.line([(x, y), (x + 1, y - 1)], fill=tone)
+        else:
+            d.point((x, y), fill=tone)
+
+    # Disconnected non-linguistic seal fragments.  Diamonds, diagonals,
+    # corners, dots and a broken spiral suggest ritual ink but cannot resolve
+    # into a Chinese/Korean/Japanese/Latin character or numeral.
+    bleed = ICON_INK_BLEED
     for line in (
-        (66, 47, 85, 47), (75, 46, 75, 77), (62, 59, 87, 59),
-        (66, 72, 84, 72), (65, 80, 73, 73), (82, 71, 89, 80),
+        (26, 15, 30, 12), (34, 13, 37, 15), (34, 18, 31, 20), (39, 19, 37, 22),
+        (26, 28, 29, 25), (33, 25, 36, 27), (38, 30, 35, 33), (28, 35, 25, 32),
+        (27, 43, 31, 40), (35, 41, 38, 45), (36, 48, 32, 50),
     ):
-        d.line(line, fill=CURSE_INK, width=3)
-    d.rectangle([78, 53, 81, 56], fill=smoke_hi)
-    if evolved:
-        d.rectangle([82, 61, 86, 65], fill=CURSE_CORE)
-        d.rectangle([28, 39, 31, 42], fill=CURSE_CORE)
-        d.rectangle([21, 91, 24, 94], fill=CURSE_MAGENTA)
+        d.line(line, fill=bleed, width=2)
+    for line in (
+        (26, 15, 30, 13), (34, 14, 37, 15), (34, 18, 31, 19), (39, 19, 37, 21),
+        (26, 28, 29, 26), (33, 26, 36, 27), (38, 30, 35, 32), (28, 34, 25, 32),
+        (27, 43, 31, 41), (35, 42, 37, 45), (35, 48, 32, 49),
+    ):
+        d.line(line, fill=seal)
+    for x, y in ((24, 19), (39, 13), (31, 29), (38, 36), (26, 38), (30, 46), (40, 27)):
+        d.rectangle([x, y, x + 1, y + 1], fill=seal)
 
-    # Sparse, square glyph sparks.  The base has the same bounded silhouette;
-    # upgraded colors make them flare without introducing a new creature form.
-    flecks = [(16, 37), (11, 73), (29, 104), (43, 16), (109, 25), (117, 100)]
-    for index, (x, y) in enumerate(flecks):
-        color = smoke_hi if evolved or index % 2 == 0 else smoke
-        d.rectangle([x, y, x + 2, y + 2], fill=color)
+    # Paper fibres and chips: short diagonal marks only, never character bars.
+    fibres = [
+        (24, 18, ICON_PAPER_HIGH), (40, 16, ICON_PAPER_EDGE),
+        (22, 24, ICON_PAPER_DARK), (39, 23, ICON_PAPER_HIGH),
+        (24, 34, ICON_PAPER_EDGE), (41, 34, ICON_PAPER_HIGH),
+        (22, 45, ICON_PAPER_DARK), (39, 46, ICON_PAPER_EDGE),
+        (25, 49, ICON_PAPER_HIGH), (43, 28, ICON_PAPER_EDGE),
+    ]
+    for x, y, color in fibres:
+        d.line([(x, y), (x + 1, y - 1)], fill=color)
+
+    # Identical spark silhouette in both stages; Gwisal only raises intensity.
+    for index, (x, y) in enumerate(((5, 17), (8, 48), (18, 4), (53, 13), (59, 43), (46, 59))):
+        color = smoke_light if index % 2 == 0 else smoke_mid
+        d.rectangle([x, y, x + 1, y + 1], fill=color)
+    for x, y in ((12, 34), (34, 8), (48, 48)):
+        d.point((x, y), fill=CURSE_CORE if evolved else ICON_SMOKE_LIGHT)
     return image
 
 
