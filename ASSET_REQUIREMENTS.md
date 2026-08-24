@@ -207,20 +207,12 @@ Fallback:  IN USE — hit flash + pooled death-puff ring on shatter.
 
 
 N9-78에서 무기 아이콘 9종, 투사체 10종, 신장/석장 원호는 생성 이미지를 잘라
-실제 경로에 넣었다. 아래 둘은 **가로 스트립(애니메이션)** 이라 한 장짜리
+실제 경로에 넣었다. 아래 항목은 **가로 스트립(애니메이션)** 이라 한 장짜리
 그림으로 대체할 수 없다. 참고용 원본은 `new_asset/generated/`에 있고, 프레임만
 만들어 주면 같은 경로에 그대로 들어간다.
 
 시트 규약: **정사각 프레임의 가로 스트립**. 프레임 수는 `너비 ÷ 높이`로
 읽으므로 파일 모양이 곧 선언이다 — 고정된 프레임 수를 따로 적을 필요가 없다.
-
-```
-[NEEDS FRAMES] hit_phoenix — asset/effect/hit_phoenix.png
-Size:      48px 정사각 프레임, 현재 5프레임 (240x48). 프레임 수는 늘려도 된다
-Used by:   봉황 계열 무기의 타격 표시 (EffectSprite)
-Reference: new_asset/generated/fx_hit_phoenix.png (봉황 머리 + 펼친 날개)
-Note:      타격 표시라 1프레임에서 가장 크고 마지막에 흩어져 사라져야 한다
-```
 
 ```
 [NEEDS FRAMES] swing_arc — asset/effect/swing_arc.png
@@ -257,21 +249,9 @@ Note:      초승달이 아니라 베기 자국이다 — 양끝이 바늘처럼
 4프레임이면 충분하다. 12fps로 도는데 비행이 1초 미만이라 그보다 많으면
 플레이어가 못 본다.
 
-기존 타격 이펙트 6종(`hit_neutral` / `hit_fire` / `hit_lightning` /
-`hit_curse` / `hit_paper` / `blink_puff`)은 무료 팩에서 왔고 지금 동작한다.
-오너가 "근접 공격 이펙트, 결계, 진언 애셋이 빈약하다"고 지적한 대상이 이쪽이므로
-교체 후보이지 결손은 아니다.
-
-### 살 / 귀살 투사체 톤 정정 — 오너 피드백 (2026-08-24)
-
-```
-[REGENERATE] sal / gwisal travel — asset/weapon/travel/{sal,gwisal}.png
-Size:      36px 정사각 4프레임 (144x36) — 현재 파일과 같은 규격으로 교체
-Used by:   저주 계열 무기 투사체 몸체 (data/weapons.json travel_sprite)
-Note:      오너: 지금 그림이 너무 징그럽다. 살점·핏빛 질감을 버리고
-           저주 연기 · 부적 기운 쪽으로 톤을 낮춰 재생성한다.
-           진화 연속성(살 → 귀살)은 유지.
-```
+공용 타격 이펙트 `hit_lightning` / `hit_paper` / `blink_puff`는 2026-08-24
+일관성 패스에서 제한 팔레트 픽셀 아트로 교체했다. 미참조 무료팩 이펙트
+`hit_neutral` / `hit_fire` / `hit_curse`는 레지스트리와 함께 삭제했다.
 
 ## Anticipated (not yet needed — do not pre-produce)
 

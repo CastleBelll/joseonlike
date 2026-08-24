@@ -28,26 +28,16 @@ MARKER = (255, 0, 255)
 
 # (generated stem, target path, cell size, suggested frames, what it is)
 REQUESTS = [
-    ("fx_hit_phoenix", "asset/effect/hit_phoenix.png", "48x48", 5,
-     "봉황 타격 표시. 1프레임이 가장 크고 마지막에 흩어져 사라진다"),
     ("fx_swing_arc", "asset/effect/swing_arc.png", "20x20", 2,
      "근접 휘두름 궤적. 초승달이 아니라 베기 자국 — 양끝이 바늘처럼 가늘다"),
     ("travel_hwabu", "asset/weapon/travel/hwabu.png", "18x18", 4,
      "화부 불덩이. 불꽃이 흔들려야 불로 읽힌다"),
     ("travel_hwaryeongbu", "asset/weapon/travel/hwaryeongbu.png", "16x18", 4,
      "화령부 불덩이. 화부보다 세게"),
-    ("travel_sal", "asset/weapon/travel/sal.png", "18x18", 4,
-     "살 저주 연기. 일렁여야 한다"),
-    ("travel_gwisal", "asset/weapon/travel/gwisal.png", "16x18", 4,
-     "귀살 저주 연기. 도깨비 얼굴이 일그러진다"),
     ("travel_old_talisman", "asset/weapon/travel/old_talisman.png", "18x10", 4,
      "낡은 부적. 종이가 팔랑이는 것이 이 무기의 정체다"),
     ("travel_fire_talisman", "asset/weapon/travel/fire_talisman.png", "18x10", 4,
      "화염 부적. 불길이 따라 흔들린다"),
-    ("travel_beopgeom", "asset/weapon/travel/beopgeom.png", "20x7", 4,
-     "법검 검기. 번쩍이면 좋지만 위의 것들보다 급하지 않다"),
-    ("travel_bongmageom", "asset/weapon/travel/bongmageom.png", "20x7", 4,
-     "봉마검 검기. 보랏빛이 흐른다"),
 ]
 
 

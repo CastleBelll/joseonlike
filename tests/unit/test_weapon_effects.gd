@@ -26,10 +26,11 @@ func test_config_has_every_field() -> bool:
 
 
 func test_sprite_effects_resolve() -> bool:
-	# N9-3f adds elemental hit strips beside the retained blink mist.
+	# Every shared runtime strip must stay registered and loadable. Dedicated
+	# per-weapon impacts are covered by the data-driven validator.
 	var passed: bool = true
 	for effect_id: String in [
-		"blink_puff", "hit_fire", "hit_lightning", "hit_curse", "hit_neutral",
+		"blink_puff", "hit_lightning", "hit_paper", "hit_noebu", "cast_noebu",
 	]:
 		var config: Dictionary = WeaponEffects.sprite_config(effect_id)
 		if not EffectSprite.available(effect_id):

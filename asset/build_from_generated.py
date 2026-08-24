@@ -22,10 +22,10 @@ resolves it on the enemy it aimed at and ChainBolt draws the jump), so a
 travel sprite for one would be art nobody sees. validate_data now fails any
 chain weapon that declares one.
 
-Not everything can land this way. asset/effect/hit_phoenix.png (5 frames) and
-asset/weapon/fx/swing_arc.png (2 frames) are horizontal STRIPS; a single still
-cannot replace an animation, so those two stay in new_asset/generated as
-reference for the sheets and are listed in ASSET_REQUIREMENTS.md.
+Not everything can land this way. asset/weapon/fx/swing_arc.png (2 frames) is
+a horizontal STRIP; a single still cannot replace an animation, so it stays in
+new_asset/generated as reference for the sheet and is listed in
+ASSET_REQUIREMENTS.md.
 
 Run: python asset/build_from_generated.py
 """
@@ -62,12 +62,8 @@ INSTALL = [
     ("icon_bongin_jineon", "asset/ui/weapon_icons/bongin_jineon.png", True),
     ("travel_old_talisman", "asset/weapon/travel/old_talisman.png", False),
     ("travel_fire_talisman", "asset/weapon/travel/fire_talisman.png", False),
-    ("travel_beopgeom", "asset/weapon/travel/beopgeom.png", False),
-    ("travel_bongmageom", "asset/weapon/travel/bongmageom.png", False),
     ("travel_hwabu", "asset/weapon/travel/hwabu.png", False),
     ("travel_hwaryeongbu", "asset/weapon/travel/hwaryeongbu.png", False),
-    ("travel_sal", "asset/weapon/travel/sal.png", False),
-    ("travel_gwisal", "asset/weapon/travel/gwisal.png", False),
     ("fx_sinjang", "asset/weapon/fx/sinjang.png", False),
     ("fx_arc_blade", "asset/weapon/fx/arc_blade.png", False),
     # N9-89: the full passive set as one hand — the shipped eleven were a
