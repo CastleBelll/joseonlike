@@ -32,6 +32,15 @@ CURSE_CORE = (238, 208, 255, 255)
 PAPER_SHADOW = (91, 79, 105, 255)
 PAPER = (160, 147, 170, 255)
 PAPER_LIGHT = (201, 190, 211, 255)
+ARROW_INK = (30, 25, 24, 255)
+ARROW_WOOD = (133, 88, 43, 255)
+ARROW_WOOD_LIGHT = (208, 157, 78, 255)
+ARROW_STEEL = (190, 198, 202, 255)
+ARROW_STEEL_LIGHT = (238, 236, 216, 255)
+ARROW_FEATHER = (170, 64, 46, 255)
+DIVINE_GOLD = (230, 170, 50, 255)
+DIVINE_LIGHT = (255, 238, 151, 255)
+DIVINE_CORE = (255, 252, 222, 255)
 
 
 def _new(size: tuple[int, int]) -> Image.Image:
@@ -253,7 +262,70 @@ def build_group_1() -> list[Path]:
     return list(outputs)
 
 
-GROUPS = {1: build_group_1}
+def _draw_arrow(
+    image: Image.Image,
+    origin: tuple[int, int],
+    frame: int,
+    evolved: bool,
+) -> None:
+    """Readable 40x16 arrow: separated fletching, shaft, and broad head."""
+    d = ImageDraw.Draw(image)
+    ox, oy = origin
+    bob = (0, -1, 0, 1)[frame]
+    cy = oy + 8 + bob
+    feather = DIVINE_GOLD if evolved else ARROW_FEATHER
+    shaft = DIVINE_GOLD if evolved else ARROW_WOOD
+    shaft_hi = DIVINE_LIGHT if evolved else ARROW_WOOD_LIGHT
+    steel = DIVINE_LIGHT if evolved else ARROW_STEEL
+    steel_hi = DIVINE_CORE if evolved else ARROW_STEEL_LIGHT
+
+    # Short square spirit wake occupies the same bounds in both stages.
+    wake = DIVINE_GOLD if evolved else ARROW_WOOD_LIGHT
+    d.rectangle([ox, cy, ox + 2, cy], fill=wake)
+    d.point((ox + 3, cy - 3), fill=wake)
+    d.point((ox + 3, cy + 3), fill=wake)
+
+    # Two distinct feathers around a visible nock; the negative gap between
+    # them is what keeps the tail readable at combat zoom.
+    upper = [(ox + 3, cy - 1), (ox + 5, cy - 5), (ox + 11, cy - 2), (ox + 10, cy - 1)]
+    lower = [(ox + 3, cy + 1), (ox + 5, cy + 5), (ox + 11, cy + 2), (ox + 10, cy + 1)]
+    d.polygon(upper, fill=feather, outline=ARROW_INK)
+    d.polygon(lower, fill=feather, outline=ARROW_INK)
+    d.rectangle([ox + 2, cy - 1, ox + 5, cy + 1], fill=shaft, outline=ARROW_INK)
+
+    # Two-pixel dark shaft with one-pixel lit spine.
+    d.rectangle([ox + 7, cy - 1, ox + 34, cy + 1], fill=ARROW_INK)
+    d.line([ox + 8, cy, ox + 34, cy], fill=shaft_hi)
+    # Broad triangular point with a clear shoulder and white cutting facet.
+    head = [(ox + 32, cy - 4), (ox + 39, cy), (ox + 32, cy + 4)]
+    d.polygon(head, fill=steel, outline=ARROW_INK)
+    d.line([ox + 34, cy - 2, ox + 38, cy], fill=steel_hi)
+    d.line([ox + 34, cy + 2, ox + 38, cy], fill=DIVINE_GOLD if evolved else ARROW_STEEL)
+    if evolved:
+        # Internal energy pulse only; no new silhouette in the evolution.
+        pulse_x = ox + (15, 20, 25, 20)[frame]
+        d.point((pulse_x, cy), fill=DIVINE_CORE)
+        d.point((ox + 7, cy - 3), fill=DIVINE_LIGHT)
+
+
+def _build_arrow_travel(evolved: bool) -> Image.Image:
+    strip = _new((160, 16))
+    for frame in range(4):
+        _draw_arrow(strip, (frame * 40, 0), frame, evolved)
+    return strip
+
+
+def build_group_2() -> list[Path]:
+    outputs = {
+        TRAVEL / "bow.png": _build_arrow_travel(False),
+        TRAVEL / "divine_bow.png": _build_arrow_travel(True),
+    }
+    for path, image in outputs.items():
+        image.save(path)
+    return list(outputs)
+
+
+GROUPS = {1: build_group_1, 2: build_group_2}
 
 
 def main() -> None:
