@@ -9,6 +9,16 @@ const SHOT_PATH := "user://guide_check.png"
 var _finished_count: int = 0
 
 
+## Runs the dialog's own _process long enough to clear a page's dwell.
+func _drain_dwell(guide: GuideDialog, dwell_sec: float) -> void:
+	if dwell_sec <= 0.0:
+		return
+	var waited: float = 0.0
+	while waited <= dwell_sec + 0.1:
+		await get_tree().process_frame
+		waited += get_process_delta_time()
+
+
 func _ready() -> void:
 	var guide := GuideDialog.new()
 	add_child(guide)
@@ -44,6 +54,10 @@ func _ready() -> void:
 				get_tree().quit(0)
 				return
 			guide.notify_action(await_action)
+			# N9-44 dwell: a page with "dwell_sec" holds after the action so the
+			# blink or the burst is actually watched. The harness has to let
+			# that time pass or it reads the NEXT page mid-hold.
+			await _drain_dwell(guide, float(Ftue.GUIDE_PAGES[i].get("dwell_sec", 0.0)))
 		if _finished_count != 0 and i < Ftue.GUIDE_PAGES.size() - 1:
 			push_error("FAIL guide_check: finished fired early at page %d" % i)
 			get_tree().quit(0)

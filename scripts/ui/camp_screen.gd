@@ -455,7 +455,7 @@ func _on_select_pressed() -> void:
 func _on_building_pressed(building: Dictionary) -> void:
 	# N9-150 지역 선택: tapping cycles the departure region through the
 	# unlocked nights; with only one open it explains what opens the next.
-	if String(building.get("id", "")) == "region_select":
+	if Camp.building_in_place(building):
 		_cycle_region()
 		return
 	var notice: String = Camp.building_notice(building)

@@ -57,6 +57,14 @@ func _check_buildings() -> void:
 			else:
 				print("NAV %s: 준비 중 (no route)" % label)
 			continue
+		if Camp.building_in_place(building):
+			# N9-150 지역 선택: ready, but it answers in the camp instead of
+			# opening a screen, so "routes nowhere" is the contract here.
+			if not scene.is_empty():
+				_fail("%s is in-place but also routes to %s" % [label, scene])
+			else:
+				print("NAV %s: in place (no route)" % label)
+			continue
 		if scene.is_empty():
 			_fail("%s is ready but routes nowhere" % label)
 			continue

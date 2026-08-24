@@ -11,14 +11,15 @@ const DEST_TITLE := "title"
 
 ## GDD §24 names. `ready` gates the 준비 중 notice — flips per building as
 ## its screen lands (명부수 N7-1 done, 괴이록 N5-4, ...). A ready building
-## carries the scene it routes to.
+## carries the scene it routes to, unless it is `in_place`: 지역 선택 cycles
+## the departure night right there (N9-150) and has no screen of its own.
 const BUILDINGS: Array[Dictionary] = [
 	{"id": "meta", "label": "수련", "ready": true, "scene": "res://scenes/meta_tree.tscn"},
 	{"id": "bestiary", "label": "괴이록", "ready": true, "scene": "res://scenes/bestiary.tscn"},
 	{"id": "achievements", "label": "업적", "ready": true, "scene": "res://scenes/achievements.tscn"},
 	{"id": "weapon_codex", "label": "무기 도감", "ready": false},
 	{"id": "training", "label": "훈련장", "ready": false},
-	{"id": "region_select", "label": "지역 선택", "ready": true},
+	{"id": "region_select", "label": "지역 선택", "ready": true, "in_place": true},
 ]
 
 const STAGES_PATH := "res://data/stages.json"
@@ -119,3 +120,8 @@ static func building_scene(building: Dictionary) -> String:
 	if not bool(building.get("ready", false)):
 		return ""
 	return String(building.get("scene", ""))
+
+
+## A ready building that answers where it stands instead of opening a screen.
+static func building_in_place(building: Dictionary) -> bool:
+	return bool(building.get("ready", false)) and bool(building.get("in_place", false))
