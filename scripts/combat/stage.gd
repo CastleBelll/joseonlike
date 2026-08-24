@@ -1220,6 +1220,7 @@ func _pause_build_summary() -> Dictionary:
 			continue
 		var passive: Dictionary = _passives_data.get(passive_id, {})
 		passives.append({
+			"id": passive_id,
 			"name": UiLocale.data_name(passive, passive_id),
 			"stacks": stacks,
 			"max": int(passive.get("max_stacks", 0)),

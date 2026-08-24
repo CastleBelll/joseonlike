@@ -167,7 +167,7 @@ func _build_header(summary: Dictionary) -> Control:
 	var gear_gap := Control.new()
 	gear_gap.name = "GearGap"
 	gear_gap.custom_minimum_size = Vector2(
-		UTILITY_BUTTON_SIZE + UiPalette.SPACE_MD * 2.0 - MARGIN_SIDE, 0.0
+		UTILITY_BUTTON_SIZE + UiPalette.SPACE_SM, 0.0
 	)
 	header.add_child(gear_gap)
 	return header
@@ -230,8 +230,12 @@ func _build_settings_button() -> Control:
 	settings.name = "SettingsButton"
 	settings.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	settings.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	# N9-160 (owner: 본거지 톱니 위치가 이상하다): the gear hugs the CONTENT
+	# band's right edge at the header's height, not the far screen corner —
+	# on wide screens the corner sat detached from the centered column.
+	var band_inset: float = maxf(MARGIN_SIDE, (size.x - COLUMN_MAX_WIDTH) / 2.0)
 	settings.position = Vector2(
-		-UTILITY_BUTTON_SIZE - UiPalette.SPACE_MD, UiPalette.SPACE_MD
+		-band_inset - UTILITY_BUTTON_SIZE, MARGIN_TOP - 6.0
 	)
 	settings.flat = true
 	settings.tooltip_text = UiLocale.text("title.settings")

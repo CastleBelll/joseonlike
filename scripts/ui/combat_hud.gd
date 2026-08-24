@@ -587,23 +587,19 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 			_slot_header(UiLocale.t("패시브"), passives.size(), LevelUp.PASSIVE_SLOTS)
 		)
 		extra_height += BUILD_PASSIVE_ROW_HEIGHT
+		# N9-160 (owner: 빌드를 글 말고 이미지로): the passive list mirrors the
+		# weapon grid — icon wells with a stack readout under each.
 		var grid := GridContainer.new()
 		grid.name = "PassiveGrid"
-		grid.columns = BUILD_PASSIVE_COLUMNS
-		grid.add_theme_constant_override("h_separation", UiPalette.SPACE_MD)
+		grid.columns = BUILD_WEAPON_COLUMNS
+		grid.add_theme_constant_override("h_separation", UiPalette.SPACE_SM)
+		grid.add_theme_constant_override("v_separation", UiPalette.SPACE_XS)
 		for entry: Dictionary in passives:
-			var line := _label(
-				"%s Lv.%d/%d" % [
-					String(entry.get("name", "")),
-					int(entry.get("stacks", 0)), int(entry.get("max", 0)),
-				],
-				UiPalette.FONT_SIZE_LABEL, UiPalette.INK
-			)
-			line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var line: Control = _build_passive_cell(entry)
 			grid.add_child(line)
 		_build_section.add_child(grid)
-		var passive_rows: int = ceili(float(passives.size()) / float(BUILD_PASSIVE_COLUMNS))
-		extra_height += passive_rows * BUILD_PASSIVE_ROW_HEIGHT + UiPalette.SPACE_SM
+		var passive_rows: int = ceili(float(passives.size()) / float(BUILD_WEAPON_COLUMNS))
+		extra_height += passive_rows * BUILD_CELL_HEIGHT + UiPalette.SPACE_SM
 
 	# N9-25: the character sheet. Two columns of name/value pairs; a line the
 	# run has actually moved off its base reads in ink, an untouched one stays
@@ -687,6 +683,41 @@ func _slot_header(title: String, taken: int, total: int) -> Label:
 
 ## One weapon cell: dark icon well with the weapon icon (letter fallback for
 ## ids without art) and an Lv.N line under it.
+## N9-160: a passive as an icon well with its stack count — same silhouette
+## as the weapon cells so the build reads as one picture.
+func _build_passive_cell(entry: Dictionary) -> Control:
+	var cell := VBoxContainer.new()
+	cell.add_theme_constant_override("separation", 2)
+	var well := PanelContainer.new()
+	well.custom_minimum_size = Vector2(BUILD_CELL_SIZE, BUILD_CELL_SIZE)
+	var well_style := StyleBoxFlat.new()
+	well_style.bg_color = UiPalette.NIGHT_BROWN
+	well_style.set_corner_radius_all(6)
+	well.add_theme_stylebox_override("panel", well_style)
+	var icon: Texture2D = UiIcons.passive_icon(String(entry.get("id", "")))
+	if icon != null:
+		var rect: TextureRect = UiIcons.icon_rect(icon, BUILD_ICON_SIZE)
+		rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		well.add_child(rect)
+	else:
+		var glyph := _label(
+			String(entry.get("name", "?")).left(1),
+			UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_ON_DARK
+		)
+		glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		well.add_child(glyph)
+	cell.add_child(well)
+	var stacks := _label(
+		"%d/%d" % [int(entry.get("stacks", 0)), int(entry.get("max", 0))],
+		UiPalette.FONT_SIZE_LABEL, UiPalette.INK
+	)
+	stacks.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cell.add_child(stacks)
+	return cell
+
+
 func _build_weapon_cell(entry: Dictionary) -> Control:
 	var cell := VBoxContainer.new()
 	cell.add_theme_constant_override("separation", 2)
