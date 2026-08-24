@@ -66,6 +66,43 @@
           "fog_wisp": 2.0,
           "grass_tuft": 2.0
         }
+      },
+      {
+        "id": "ruin",
+        "name_ko": "무너진 집터",
+        "weight": 2.5,
+        "props": {
+          "collapsed_roof": 3.0,
+          "broken_wall": 3.0,
+          "burnt_beam": 2.0,
+          "broken_jar": 4.0,
+          "ash_pile": 2.0
+        }
+      },
+      {
+        "id": "ashfield",
+        "name_ko": "잿더미 마당",
+        "weight": 2.0,
+        "props": {
+          "charred_stump": 2.0,
+          "burnt_beam": 1.0,
+          "ash_pile": 5.0,
+          "ember_glow": 2.0,
+          "broken_jar": 1.0
+        }
+      },
+      {
+        "id": "ruined_wayside",
+        "name_ko": "폐촌 길섶",
+        "weight": 1.5,
+        "props": {
+          "broken_wall": 2.0,
+          "charred_stump": 1.0,
+          "scorched_post": 2.0,
+          "broken_jar": 3.0,
+          "ash_pile": 2.0,
+          "ember_glow": 1.0
+        }
       }
     ]
   },
@@ -323,6 +360,127 @@
       "breakable": {
         "hp": 1.0
       }
+    },
+    "burnt_beam": {
+      "size": [
+        20.0,
+        16.0
+      ],
+      "collision": [
+        -9.0,
+        -7.0,
+        18.0,
+        7.0
+      ],
+      "solid": true,
+      "weight": 2.0,
+      "shape": "rect",
+      "texture": "res://asset/stages/ruined_village/props/burnt_beam.png",
+      "placeholder": "log",
+      "breakable": {
+        "hp": 1.0
+      }
+    },
+    "collapsed_roof": {
+      "size": [
+        24.0,
+        18.0
+      ],
+      "collision": [
+        -10.0,
+        -9.0,
+        20.0,
+        9.0
+      ],
+      "solid": true,
+      "weight": 1.5,
+      "shape": "rect",
+      "texture": "res://asset/stages/ruined_village/props/collapsed_roof.png",
+      "placeholder": "rock"
+    },
+    "broken_wall": {
+      "size": [
+        20.0,
+        16.0
+      ],
+      "collision": [
+        -8.0,
+        -10.0,
+        16.0,
+        10.0
+      ],
+      "solid": true,
+      "weight": 2.0,
+      "shape": "rect",
+      "texture": "res://asset/stages/ruined_village/props/broken_wall.png",
+      "placeholder": "rock",
+      "breakable": {
+        "hp": 2.0
+      }
+    },
+    "charred_stump": {
+      "size": [
+        16.0,
+        16.0
+      ],
+      "collision": [
+        -6.0,
+        -7.0,
+        12.0,
+        7.0
+      ],
+      "solid": true,
+      "weight": 1.5,
+      "shape": "round",
+      "texture": "res://asset/stages/ruined_village/props/charred_stump.png",
+      "placeholder": "log",
+      "breakable": {
+        "hp": 1.0
+      }
+    },
+    "ash_pile": {
+      "size": [
+        16.0,
+        10.0
+      ],
+      "solid": false,
+      "weight": 4.0,
+      "shape": "round",
+      "texture": "res://asset/stages/ruined_village/props/ash_pile.png",
+      "placeholder": "pebble"
+    },
+    "broken_jar": {
+      "size": [
+        12.0,
+        12.0
+      ],
+      "solid": false,
+      "weight": 3.0,
+      "shape": "round",
+      "texture": "res://asset/stages/ruined_village/props/broken_jar.png",
+      "placeholder": "rock"
+    },
+    "scorched_post": {
+      "size": [
+        16.0,
+        40.0
+      ],
+      "solid": false,
+      "weight": 1.0,
+      "shape": "rect",
+      "texture": "res://asset/stages/ruined_village/props/scorched_post.png",
+      "placeholder": "shrine"
+    },
+    "ember_glow": {
+      "size": [
+        16.0,
+        12.0
+      ],
+      "solid": false,
+      "weight": 1.0,
+      "shape": "round",
+      "texture": "res://asset/stages/ruined_village/props/ember_glow.png",
+      "placeholder": "lantern"
     }
   }
 }
