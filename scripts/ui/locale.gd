@@ -23,6 +23,7 @@ const STRINGS := {
 	"settings.joystick_opacity": {"ko": "조이스틱 불투명도", "en": "Joystick Opacity"},
 	"settings.language": {"ko": "언어", "en": "Language"},
 	"settings.resolution": {"ko": "해상도", "en": "Resolution"},
+	"settings.fullscreen": {"ko": "전체화면", "en": "Fullscreen"},
 	"settings.damage_numbers": {"ko": "데미지 표시", "en": "Damage Numbers"},
 	"settings.on": {"ko": "켜짐", "en": "On"},
 	"settings.off": {"ko": "꺼짐", "en": "Off"},

@@ -178,6 +178,12 @@ func _make_body() -> Control:
 	# The browser and a phone own their window; the preset row is desktop-only.
 	if not OS.has_feature("web") and not OS.has_feature("mobile"):
 		game_page.add_child(_make_resolution_row())
+	# N9-159 (owner: itch 풀스크린이 세로 박스만 늘린다): the embed keeps its
+	# portrait ratio, so the page's own fullscreen never hands us a wide
+	# canvas. The browser fullscreen API does — this button asks for it
+	# directly (DisplayServer maps to requestFullscreen on web).
+	if OS.has_feature("web"):
+		game_page.add_child(_make_fullscreen_row())
 	body.add_child(game_page)
 	_tab_pages[TAB_GAME] = game_page
 
@@ -323,6 +329,33 @@ func _on_resolution_pressed() -> void:
 	SaveService.instance.set_setting("resolution", next)
 	DisplayAdapterService.apply_resolution(next)
 	_refresh_texts()
+
+
+func _make_fullscreen_row() -> Control:
+	var row := HBoxContainer.new()
+	row.name = "FullscreenRow"
+	row.custom_minimum_size = Vector2(0.0, ROW_HEIGHT)
+	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_row_labels["fullscreen"] = name_label
+	row.add_child(name_label)
+	var button := Button.new()
+	button.name = "FullscreenButton"
+	button.custom_minimum_size = Vector2(TOGGLE_WIDTH, UiPalette.TOUCH_TARGET_MIN)
+	WoodButton.apply(button)
+	button.text = UiLocale.t("전환")
+	button.pressed.connect(_on_fullscreen_pressed)
+	row.add_child(button)
+	return row
+
+
+func _on_fullscreen_pressed() -> void:
+	var mode: DisplayServer.WindowMode = DisplayServer.window_get_mode()
+	if mode == DisplayServer.WINDOW_MODE_FULLSCREEN:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 
 
 func _make_language_row() -> Control:
