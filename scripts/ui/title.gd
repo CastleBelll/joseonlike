@@ -26,6 +26,8 @@ const LOGO_GLOW_ALPHA_MAX := 0.42
 const LOGO_PULSE_SEC := 1.8
 
 const MENU_WIDTH_RATIO := 0.85
+## N9-153: the menu never grows past the portrait design band on wide screens.
+const MENU_MAX_WIDTH := 460.0
 const MENU_BUTTON_HEIGHT := 72
 const MENU_BUTTON_FONT_SIZE := 26
 const MENU_BOTTOM_MARGIN := 48
@@ -173,7 +175,9 @@ func _pixel_texture_rect(node_name: String, texture_path: String) -> TextureRect
 	rect.name = node_name
 	rect.texture = load(texture_path)
 	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	rect.stretch_mode = TextureRect.STRETCH_SCALE
+	# N9-153 (owner: 전체화면 가로에서 타이틀이 옆으로 늘어난다): cover, not
+	# scale — the portrait art crops to the aspect instead of distorting.
+	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	return rect
 
 
@@ -207,11 +211,12 @@ func _build_utilities() -> void:
 func _build_menu() -> void:
 	var stack := VBoxContainer.new()
 	stack.name = "MenuButtons"
-	var side_margin: float = (1.0 - MENU_WIDTH_RATIO) / 2.0
-	stack.anchor_left = side_margin
-	stack.anchor_right = 1.0 - side_margin
-	stack.anchor_top = 1.0
-	stack.anchor_bottom = 1.0
+	stack.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	stack.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	stack.custom_minimum_size = Vector2(
+		minf(MENU_MAX_WIDTH, size.x * MENU_WIDTH_RATIO if size.x > 0.0 else MENU_MAX_WIDTH),
+		0.0
+	)
 	stack.offset_bottom = -MENU_BOTTOM_MARGIN
 	stack.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	stack.add_theme_constant_override("separation", UiPalette.SPACE_LG)

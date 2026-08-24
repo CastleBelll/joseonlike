@@ -11,6 +11,8 @@ const STAGE_SCENE := "res://scenes/stage.tscn"
 const SELECT_SCENE := "res://scenes/character_select.tscn"
 
 const MARGIN_SIDE := 32
+## N9-153: cap for the whole camp column on wide viewports.
+const COLUMN_MAX_WIDTH := 560.0
 const MARGIN_TOP := 24
 const MARGIN_BOTTOM := 28
 const STAT_ROW_HEIGHT := 40.0
@@ -75,7 +77,8 @@ func build_ui() -> void:
 		art.texture = load(backdrop_path)
 		art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		art.stretch_mode = TextureRect.STRETCH_SCALE
+		# N9-153: cover, never distort — landscape crops the portrait art.
+		art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		art.set_anchors_preset(Control.PRESET_FULL_RECT)
 		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(art)
@@ -83,8 +86,11 @@ func build_ui() -> void:
 	var margin := MarginContainer.new()
 	margin.name = "Layout"
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", MARGIN_SIDE)
-	margin.add_theme_constant_override("margin_right", MARGIN_SIDE)
+	# N9-153: on wide screens the column holds the portrait design band,
+	# centered, instead of stretching across the whole width.
+	var side: float = maxf(MARGIN_SIDE, (size.x - COLUMN_MAX_WIDTH) / 2.0)
+	margin.add_theme_constant_override("margin_left", int(side))
+	margin.add_theme_constant_override("margin_right", int(side))
 	margin.add_theme_constant_override("margin_top", MARGIN_TOP)
 	margin.add_theme_constant_override("margin_bottom", MARGIN_BOTTOM)
 	add_child(margin)

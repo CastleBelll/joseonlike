@@ -27,6 +27,8 @@ const TITLE_FONT_SIZE := 40
 const TITLE_TOP_MARGIN := 40
 const DETAIL_NAME_FONT_SIZE := 32
 const PANEL_WIDTH_RATIO := 0.92
+## N9-153: wide screens hold the portrait design band, centered.
+const PANEL_MAX_WIDTH := 500.0
 const PANEL_CORNER_RADIUS := 12
 const PANEL_BORDER := 2
 const WELL_CORNER_RADIUS := 8
@@ -192,10 +194,12 @@ func _build_detail() -> void:
 	var panel := PanelContainer.new()
 	panel.name = "Detail"
 	panel.add_theme_stylebox_override("panel", _panel_plate(model["selected"]))
-	var side_margin: float = (1.0 - PANEL_WIDTH_RATIO) / 2.0
-	panel.anchor_left = side_margin
-	panel.anchor_right = 1.0 - side_margin
+	panel.anchor_left = 0.5
+	panel.anchor_right = 0.5
 	panel.anchor_bottom = 1.0
+	var half: float = minf(PANEL_MAX_WIDTH, size.x * PANEL_WIDTH_RATIO if size.x > 0.0 else PANEL_MAX_WIDTH) / 2.0
+	panel.offset_left = -half
+	panel.offset_right = half
 	panel.offset_top = DETAIL_TOP_MARGIN
 	panel.offset_bottom = -DETAIL_BOTTOM_MARGIN
 
@@ -440,9 +444,15 @@ func _build_back_button() -> void:
 	back.text = UiLocale.text("select.back")
 	back.custom_minimum_size = Vector2(0, BACK_BUTTON_HEIGHT)
 	WoodButton.apply(back)
-	var side_margin: float = (1.0 - BACK_WIDTH_RATIO) / 2.0
-	back.anchor_left = side_margin
-	back.anchor_right = 1.0 - side_margin
+	# N9-153: centered, capped at the design band's half on wide screens.
+	back.anchor_left = 0.5
+	back.anchor_right = 0.5
+	var back_half: float = minf(
+		PANEL_MAX_WIDTH * BACK_WIDTH_RATIO,
+		(size.x if size.x > 0.0 else PANEL_MAX_WIDTH) * BACK_WIDTH_RATIO
+	) / 2.0
+	back.offset_left = -back_half
+	back.offset_right = back_half
 	back.anchor_top = 1.0
 	back.anchor_bottom = 1.0
 	back.offset_top = -(BACK_BUTTON_HEIGHT + BACK_BOTTOM_MARGIN)

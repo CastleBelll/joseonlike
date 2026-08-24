@@ -45,12 +45,15 @@ func _ready() -> void:
 	var panel := PanelContainer.new()
 	panel.name = "PaperPanel"
 	panel.add_theme_stylebox_override("panel", UiIcons.paper_panel())
-	panel.anchor_left = 0.0
-	panel.anchor_right = 1.0
+	panel.anchor_left = 0.5
+	panel.anchor_right = 0.5
 	panel.anchor_top = 0.5
 	panel.anchor_bottom = 0.5
-	panel.offset_left = PANEL_MARGIN_X
-	panel.offset_right = -PANEL_MARGIN_X
+	# N9-153: the paper holds the portrait band on wide screens.
+	var root_w: float = _root.size.x if _root.size.x > 0.0 else 540.0
+	var half_w: float = minf(root_w - PANEL_MARGIN_X * 2.0, 492.0) / 2.0
+	panel.offset_left = -half_w
+	panel.offset_right = half_w
 	panel.offset_top = -PANEL_HEIGHT / 2.0
 	panel.offset_bottom = PANEL_HEIGHT / 2.0
 	_root.add_child(panel)
