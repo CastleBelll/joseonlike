@@ -49,6 +49,15 @@ SEAL_AURA_INK = (29, 16, 45, 255)
 SEAL_AURA_DIM = (74, 40, 110, 255)
 SEAL_AURA_EDGE = (166, 82, 211, 255)
 SEAL_AURA_CORE = (244, 213, 255, 255)
+FX_INK = (42, 42, 48, 255)
+FX_DIM = (118, 122, 132, 255)
+FX_LIGHT = (205, 211, 220, 255)
+FX_CORE = (255, 255, 248, 255)
+THUNDER_INK = (16, 28, 54, 255)
+THUNDER_BLUE = (36, 91, 160, 255)
+THUNDER_CYAN = (80, 202, 232, 255)
+THUNDER_GOLD = (255, 205, 74, 255)
+THUNDER_CORE = (244, 255, 255, 255)
 
 
 def _new(size: tuple[int, int]) -> Image.Image:
@@ -400,7 +409,264 @@ def build_group_3() -> list[Path]:
     return list(outputs)
 
 
-GROUPS = {1: build_group_1, 2: build_group_2, 3: build_group_3}
+def _alpha(color: tuple[int, int, int, int], value: int) -> tuple[int, int, int, int]:
+    return color[:3] + (value,)
+
+
+def _octagon(cx: int, cy: int, radius: int) -> list[tuple[int, int]]:
+    cut = max(1, round(radius * 0.4))
+    return [
+        (cx - cut, cy - radius), (cx + cut, cy - radius),
+        (cx + radius, cy - cut), (cx + radius, cy + cut),
+        (cx + cut, cy + radius), (cx - cut, cy + radius),
+        (cx - radius, cy + cut), (cx - radius, cy - cut),
+    ]
+
+
+def _closed_line(
+    d: ImageDraw.ImageDraw,
+    points: list[tuple[int, int]],
+    fill: tuple[int, int, int, int],
+    width: int = 1,
+) -> None:
+    d.line(points + [points[0]], fill=fill, width=width)
+
+
+def _draw_jagged_ray(
+    d: ImageDraw.ImageDraw,
+    cx: int,
+    cy: int,
+    angle: float,
+    start: int,
+    end: int,
+    outer: tuple[int, int, int, int],
+    inner: tuple[int, int, int, int],
+    width: int = 3,
+) -> None:
+    tangent_x = -math.sin(angle)
+    tangent_y = math.cos(angle)
+    points: list[tuple[int, int]] = []
+    for step, share in enumerate((0.0, 0.38, 0.68, 1.0)):
+        reach = start + (end - start) * share
+        jog = (0, 2, -1, 0)[step]
+        points.append((
+            round(cx + math.cos(angle) * reach + tangent_x * jog),
+            round(cy + math.sin(angle) * reach + tangent_y * jog),
+        ))
+    d.line(points, fill=outer, width=width)
+    d.line(points, fill=inner, width=1)
+
+
+def _build_hit_lightning() -> Image.Image:
+    """6x64 luminance flare for BlastRing's tinted wave-front sprites."""
+    strip = _new((384, 64))
+    radii = (3, 8, 14, 21, 27, 31)
+    fades = (255, 255, 255, 230, 160, 80)
+    for frame, radius in enumerate(radii):
+        d = ImageDraw.Draw(strip)
+        cx = frame * 64 + 32
+        cy = 32
+        alpha = fades[frame]
+        outer = _alpha(FX_INK, alpha)
+        middle = _alpha(FX_LIGHT, alpha)
+        core = _alpha(FX_CORE, alpha)
+        if frame < 5:
+            _closed_line(d, _octagon(cx, cy, max(2, radius // 2)), outer, 3)
+            _closed_line(d, _octagon(cx, cy, max(2, radius // 2)), core, 1)
+        for index in range(8):
+            angle = math.tau * index / 8 + (frame % 2) * 0.08
+            _draw_jagged_ray(
+                d, cx, cy, angle, max(1, radius // 3),
+                radius - (index % 2) * 2, outer, middle, 3,
+            )
+        if frame < 3:
+            d.rectangle([cx - 2, cy - 2, cx + 2, cy + 2], fill=core)
+        for index in range(4):
+            angle = math.pi / 4 + math.tau * index / 4
+            dist = min(30, radius + 3)
+            x = round(cx + math.cos(angle) * dist)
+            y = round(cy + math.sin(angle) * dist)
+            d.rectangle([x, y, x + 1, y + 1], fill=core)
+    return strip
+
+
+def _build_hit_paper() -> Image.Image:
+    """4x32 luminance ward-rim flash: angular hanji seal pulse."""
+    strip = _new((128, 32))
+    radii = (3, 7, 11, 15)
+    fades = (255, 255, 190, 95)
+    for frame, radius in enumerate(radii):
+        d = ImageDraw.Draw(strip)
+        cx = frame * 32 + 16
+        cy = 16
+        alpha = fades[frame]
+        ink = _alpha(FX_INK, alpha)
+        paper = _alpha(FX_LIGHT, alpha)
+        core = _alpha(FX_CORE, alpha)
+        points = _octagon(cx, cy, radius)
+        # Broken opposing halves read as a flare laid over the circular ward.
+        d.line(points[0:4], fill=ink, width=3)
+        d.line(points[0:4], fill=paper, width=1)
+        d.line(points[4:8], fill=ink, width=3)
+        d.line(points[4:8], fill=paper, width=1)
+        if frame < 3:
+            d.rectangle([cx - 2, cy - 2, cx + 2, cy + 2], fill=core, outline=ink)
+        # Four blocky seal ticks on the rim, all on-grid and un-antialiased.
+        for x, y in ((cx, cy - radius), (cx + radius, cy), (cx, cy + radius), (cx - radius, cy)):
+            d.rectangle([x - 1, y - 1, x + 1, y + 1], fill=core)
+    return strip
+
+
+def _draw_pixel_cloud(
+    d: ImageDraw.ImageDraw,
+    cx: int,
+    cy: int,
+    radius: int,
+    alpha: int,
+) -> None:
+    outline = _alpha(FX_INK, alpha)
+    body = _alpha(FX_DIM, alpha)
+    light = _alpha(FX_LIGHT, alpha)
+    points = _octagon(cx, cy, radius)
+    d.polygon(points, fill=body, outline=outline)
+    if radius >= 3:
+        d.rectangle(
+            [cx - radius // 2, cy - radius // 2, cx + radius // 3, cy],
+            fill=light,
+        )
+
+
+def _build_blink_puff() -> Image.Image:
+    """8x64 hard-edged 축지 afterimage: expanding, breaking smoke puffs."""
+    strip = _new((512, 64))
+    for frame in range(8):
+        d = ImageDraw.Draw(strip)
+        cx = frame * 64 + 32
+        cy = 35
+        alpha = (255, 255, 245, 220, 185, 145, 100, 55)[frame]
+        size_scale = (0.35, 0.55, 0.80, 1.00, 0.85, 0.65, 0.45, 0.30)[frame]
+        spread_scale = (0.0, 0.2, 0.45, 0.7, 1.0, 1.35, 1.8, 2.25)[frame]
+        # Four overlapping lobes form one irregular smoke mass at the peak;
+        # only the late frames pull them apart into drifting remnants.
+        template = [(-9, 1, 13), (0, -7, 16), (10, 0, 13), (-2, 7, 14), (8, -8, 10)]
+        lobes: list[tuple[int, int, int]] = []
+        for index, (base_x, base_y, base_radius) in enumerate(template):
+            if frame >= 6 and index == 3:
+                continue
+            dx = round(base_x * spread_scale)
+            dy = round(base_y * min(spread_scale, 1.45))
+            lobe_radius = max(2, round(base_radius * size_scale))
+            lobes.append((cx + dx, cy + dy, lobe_radius))
+        # Paint the union in layers so overlapping lobes merge into one smoky
+        # silhouette instead of reading as a row of outlined bubbles.
+        for x, y, lobe_radius in lobes:
+            d.polygon(_octagon(x, y, lobe_radius), fill=_alpha(FX_INK, alpha))
+        for x, y, lobe_radius in lobes:
+            inner_radius = max(1, lobe_radius - 1)
+            d.polygon(_octagon(x, y, inner_radius), fill=_alpha(FX_DIM, alpha))
+        for index, (x, y, lobe_radius) in enumerate(lobes):
+            if index not in (1, 4) or lobe_radius < 4:
+                continue
+            d.polygon(
+                _octagon(x - 1, y - 2, max(1, lobe_radius // 3)),
+                fill=_alpha(FX_LIGHT, alpha),
+            )
+        # Angular transparent eddies break the peak cloud into smoke folds.
+        if 2 <= frame <= 5:
+            d.rectangle([cx - 3, cy - 2, cx, cy + 1], fill=TRANSPARENT)
+            d.rectangle([cx + 5, cy + 3, cx + 7, cy + 5], fill=TRANSPARENT)
+        # Ground-hugging speed streaks distinguish blink smoke from an impact.
+        streak = _alpha(FX_LIGHT, alpha)
+        reach = min(28, 5 + frame * 4)
+        d.line([cx - reach, cy + 12, cx - 4, cy + 12], fill=streak)
+        d.line([cx + 4, cy + 14, cx + reach, cy + 14], fill=streak)
+    return strip
+
+
+def _build_hit_noebu() -> Image.Image:
+    """6x52 thunder-talisman impact with flat cyan/gold lightning layers."""
+    strip = _new((312, 52))
+    radii = (3, 8, 15, 22, 25, 25)
+    fades = (255, 255, 255, 235, 150, 70)
+    for frame, radius in enumerate(radii):
+        d = ImageDraw.Draw(strip)
+        cx = frame * 52 + 26
+        cy = 26
+        alpha = fades[frame]
+        ink = _alpha(THUNDER_INK, alpha)
+        blue = _alpha(THUNDER_BLUE, alpha)
+        cyan = _alpha(THUNDER_CYAN, alpha)
+        gold = _alpha(THUNDER_GOLD, alpha)
+        white = _alpha(THUNDER_CORE, alpha)
+        if frame < 5:
+            _closed_line(d, _octagon(cx, cy, max(2, radius // 2)), ink, 3)
+            _closed_line(d, _octagon(cx, cy, max(2, radius // 2)), cyan, 1)
+        for index in range(8):
+            angle = math.tau * index / 8 + (frame % 2) * 0.09
+            color = gold if index % 2 else cyan
+            _draw_jagged_ray(
+                d, cx, cy, angle, max(1, radius // 3),
+                radius - (index % 3), ink, color, 3,
+            )
+        if frame < 4:
+            d.polygon(
+                [(cx, cy - 5), (cx + 5, cy), (cx, cy + 5), (cx - 5, cy)],
+                fill=blue, outline=ink,
+            )
+            d.rectangle([cx - 1, cy - 2, cx + 1, cy + 2], fill=white)
+        for index in range(4):
+            angle = math.pi / 4 + math.tau * index / 4
+            dist = min(24, radius + 3)
+            x = round(cx + math.cos(angle) * dist)
+            y = round(cy + math.sin(angle) * dist)
+            d.rectangle([x - 1, y - 1, x + 1, y + 1], fill=gold if index % 2 else cyan)
+    return strip
+
+
+def _build_cast_noebu() -> Image.Image:
+    """4x34 matching thunder seal charge, from spark to locked diamond."""
+    strip = _new((136, 34))
+    radii = (3, 7, 11, 15)
+    for frame, radius in enumerate(radii):
+        d = ImageDraw.Draw(strip)
+        cx = frame * 34 + 17
+        cy = 17
+        ink = THUNDER_INK
+        d.polygon(
+            [(cx, cy - radius), (cx + radius, cy), (cx, cy + radius), (cx - radius, cy)],
+            outline=ink,
+        )
+        inner_radius = max(1, radius - 3)
+        _closed_line(d, _octagon(cx, cy, inner_radius), THUNDER_CYAN, 2)
+        for index in range(4):
+            angle = math.tau * index / 4
+            _draw_jagged_ray(d, cx, cy, angle, 1, radius, ink, THUNDER_GOLD, 3)
+        d.rectangle([cx - 2, cy - 2, cx + 2, cy + 2], fill=THUNDER_CORE, outline=ink)
+        if frame >= 2:
+            d.point((cx - radius + 2, cy - radius + 2), fill=THUNDER_CORE)
+            d.point((cx + radius - 2, cy + radius - 2), fill=THUNDER_CORE)
+    return strip
+
+
+def build_group_4() -> list[Path]:
+    outputs = {
+        EFFECT / "hit_lightning.png": _build_hit_lightning(),
+        EFFECT / "hit_paper.png": _build_hit_paper(),
+        EFFECT / "blink_puff.png": _build_blink_puff(),
+        EFFECT / "hit_noebu.png": _build_hit_noebu(),
+        EFFECT / "cast_noebu.png": _build_cast_noebu(),
+    }
+    for path, image in outputs.items():
+        image.save(path)
+    return list(outputs)
+
+
+GROUPS = {
+    1: build_group_1,
+    2: build_group_2,
+    3: build_group_3,
+    4: build_group_4,
+}
 
 
 def main() -> None:
