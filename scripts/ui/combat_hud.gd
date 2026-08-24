@@ -39,6 +39,14 @@ const PAUSE_TAB_BUILD := "build"
 const PAUSE_TAB_EVOLUTIONS := "evolutions"
 const OVERLAY_PANEL_MARGIN_X := 64.0
 const OVERLAY_PANEL_HEIGHT := 260.0
+## N9-163 (owner: 탭 전환 시 상단 고정으로 아래로만 자라야 한다): the paper's
+## fixed top line, and the bottom margin the panel may never cross — content
+## beyond it scrolls inside instead of pushing the buttons off the paper.
+const OVERLAY_PANEL_TOP := 72.0
+const OVERLAY_PANEL_BOTTOM_MARGIN := 48.0
+## The pause paper caps at the portrait design band on wide screens, like
+## every other modal (N9-152).
+const OVERLAY_PANEL_MAX_WIDTH := 476.0
 const OVERLAY_BUTTON_HEIGHT := 56.0
 # N9-3e pause build summary: weapon cells (icon + Lv) and passive lines.
 const BUILD_WEAPON_COLUMNS := 6
@@ -455,16 +463,17 @@ func _build_pause_overlay() -> void:
 	var panel := PanelContainer.new()
 	panel.name = "PaperPanel"
 	panel.add_theme_stylebox_override("panel", UiIcons.paper_panel())
-	# Full-width band centered vertically; set anchors directly because the
-	# wide presets re-derive offsets from the current rect on insertion.
-	panel.anchor_left = 0.0
-	panel.anchor_right = 1.0
-	panel.anchor_top = 0.5
-	panel.anchor_bottom = 0.5
-	panel.offset_left = OVERLAY_PANEL_MARGIN_X
-	panel.offset_right = -OVERLAY_PANEL_MARGIN_X
-	panel.offset_top = -OVERLAY_PANEL_HEIGHT / 2.0
-	panel.offset_bottom = OVERLAY_PANEL_HEIGHT / 2.0
+	# N9-163: top-anchored — the title line never moves when a tab swap
+	# changes the height; growth goes downward only. Width caps at the
+	# design band, centered (set anchors directly because the wide presets
+	# re-derive offsets from the current rect on insertion).
+	panel.anchor_left = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_top = 0.0
+	panel.anchor_bottom = 0.0
+	panel.offset_top = OVERLAY_PANEL_TOP
+	panel.offset_bottom = OVERLAY_PANEL_TOP + OVERLAY_PANEL_HEIGHT
+	_layout_pause_panel_width(panel)
 	_pause_overlay.add_child(panel)
 	var pad := MarginContainer.new()
 	pad.name = "Pad"
@@ -481,15 +490,27 @@ func _build_pause_overlay() -> void:
 	# N9-112 (owner: 개조 경로를 탭으로 빼자): the recipe list left the one
 	# long scroll — a tab bar under the title switches 빌드 / 개조 경로.
 	layout.add_child(_make_pause_tab_bar())
+	# N9-163: the tab content lives in a scroll — when the clamped paper is
+	# shorter than the content (landscape, tall builds), the summary scrolls
+	# and the buttons below never leave the sheet.
+	var content_scroll := ScrollContainer.new()
+	content_scroll.name = "TabScroll"
+	content_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	layout.add_child(content_scroll)
+	var content := VBoxContainer.new()
+	content.name = "TabContent"
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content_scroll.add_child(content)
 	_build_section = VBoxContainer.new()
 	_build_section.name = "BuildSummary"
 	_build_section.add_theme_constant_override("separation", UiPalette.SPACE_SM)
-	layout.add_child(_build_section)
+	content.add_child(_build_section)
 	_evolution_section = VBoxContainer.new()
 	_evolution_section.name = "EvolutionSummary"
 	_evolution_section.add_theme_constant_override("separation", UiPalette.SPACE_SM)
 	_evolution_section.visible = false
-	layout.add_child(_evolution_section)
+	content.add_child(_evolution_section)
 	_resume_button = _overlay_button("ResumeButton", UiLocale.t("계속하기"), _on_resume_pressed)
 	layout.add_child(_resume_button)
 	# N9-111 (owner direction): settings left this popup for the top-right
@@ -527,13 +548,24 @@ func _select_pause_tab(tab: String) -> void:
 		var style: StyleBoxFlat = SettingsPopup.tab_box(key == tab)
 		for state: String in ["normal", "hover", "pressed", "focus"]:
 			button.add_theme_stylebox_override(state, style)
-	# Each tab carries its own content height; the centered panel resizes so
-	# neither tab shows the other's empty space.
-	var half: float = (
-		OVERLAY_PANEL_HEIGHT + float(_pause_tab_heights.get(tab, 0.0))
+	# Each tab carries its own content height; the top stays put and the
+	# paper grows downward, clamped above the bottom margin so the buttons
+	# can never leave the sheet (N9-163). Content beyond the clamp scrolls.
+	var wanted: float = OVERLAY_PANEL_HEIGHT + float(_pause_tab_heights.get(tab, 0.0))
+	var available: float = size.y - OVERLAY_PANEL_TOP - OVERLAY_PANEL_BOTTOM_MARGIN
+	_pause_panel.offset_top = OVERLAY_PANEL_TOP
+	_pause_panel.offset_bottom = OVERLAY_PANEL_TOP + minf(wanted, available)
+	_layout_pause_panel_width(_pause_panel)
+
+
+## Centered band width shared by build and resize (N9-163).
+func _layout_pause_panel_width(panel: Control) -> void:
+	var half_width: float = minf(
+		OVERLAY_PANEL_MAX_WIDTH,
+		maxf(size.x - OVERLAY_PANEL_MARGIN_X * 2.0, 200.0)
 	) / 2.0
-	_pause_panel.offset_top = -half
-	_pause_panel.offset_bottom = half
+	panel.offset_left = -half_width
+	panel.offset_right = half_width
 
 
 func _overlay_button(button_name: String, text: String, handler: Callable) -> Button:

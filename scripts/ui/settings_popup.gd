@@ -42,6 +42,7 @@ var _root: Control
 var _header_label: Label
 var _row_labels: Dictionary = {}
 var _language_button: Button
+var _panel: PanelContainer
 var _resolution_button: Button
 var _damage_button: Button
 
@@ -70,15 +71,14 @@ func _ready() -> void:
 	var panel := PanelContainer.new()
 	panel.name = "PaperPanel"
 	panel.add_theme_stylebox_override("panel", UiIcons.paper_panel())
-	panel.anchor_left = 0.0
-	panel.anchor_right = 1.0
+	panel.anchor_left = 0.5
+	panel.anchor_right = 0.5
 	panel.anchor_top = 0.5
 	panel.anchor_bottom = 0.5
-	panel.offset_left = PANEL_MARGIN_X
-	panel.offset_right = -PANEL_MARGIN_X
-	panel.offset_top = -PANEL_HEIGHT / 2.0
-	panel.offset_bottom = PANEL_HEIGHT / 2.0
+	_panel = panel
+	_layout_panel()
 	_root.add_child(panel)
+	_root.resized.connect(_layout_panel)
 	var layout := Control.new()
 	layout.name = "Layout"
 	panel.add_child(layout)
@@ -88,7 +88,22 @@ func _ready() -> void:
 	visible = false
 
 
+## N9-163: the paper clamps inside every viewport (landscape hands us 540
+## design px against the 560 portrait height) and caps at the design band.
+func _layout_panel() -> void:
+	if _panel == null:
+		return
+	var root_size: Vector2 = _root.size if _root.size.y > 0.0 else Vector2(540, 960)
+	var half_h: float = minf(PANEL_HEIGHT, root_size.y - 32.0) / 2.0
+	var half_w: float = minf(492.0, root_size.x - PANEL_MARGIN_X * 2.0) / 2.0
+	_panel.offset_top = -half_h
+	_panel.offset_bottom = half_h
+	_panel.offset_left = -half_w
+	_panel.offset_right = half_w
+
+
 func open() -> void:
+	_layout_panel()
 	visible = true
 	_close_button.grab_focus()
 	if SfxService.instance != null:
