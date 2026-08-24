@@ -277,8 +277,9 @@ func test_real_data_rosters_are_consistent() -> bool:
 		push_error("test_bestiary: real data rosters must not be empty")
 		return false
 	var weapon_ids: Array[String] = Bestiary.weapon_roster(weapons, mods)
-	# The starting weapon is always reachable; the legacy sword line is not.
-	if not weapon_ids.has("old_talisman") or weapon_ids.has("sword"):
+	# Both starting weapons are reachable now — the taoist's talisman and,
+	# since the warrior became playable (N9-148), the sword line too.
+	if not weapon_ids.has("old_talisman") or not weapon_ids.has("sword"):
 		push_error("test_bestiary: real weapon roster reachability broke")
 		return false
 	# Every mod whose base is reachable must land its result in the roster —

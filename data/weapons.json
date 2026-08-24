@@ -1335,7 +1335,12 @@
     "pierce": 1
    }
   },
-  "hit_effect": "hit_sword"
+  "hit_effect": "hit_sword",
+  "mechanic": "melee_arc",
+  "arc": {
+   "angle_deg": 120.0,
+   "knockback_scale": 1.6
+  }
  },
  "twin_sword": {
   "name_ko": "쌍환도",
@@ -1359,6 +1364,11 @@
    "8": {
     "pierce": 1
    }
+  },
+  "mechanic": "melee_arc",
+  "arc": {
+   "angle_deg": 150.0,
+   "knockback_scale": 1.6
   }
  },
  "sharp_sword": {
@@ -1383,7 +1393,12 @@
     "pierce": 1
    }
   },
-  "hit_effect": "hit_sharp_sword"
+  "hit_effect": "hit_sharp_sword",
+  "mechanic": "melee_arc",
+  "arc": {
+   "angle_deg": 120.0,
+   "knockback_scale": 1.6
+  }
  },
  "ghost_sword": {
   "name_ko": "귀철도",
@@ -1408,6 +1423,11 @@
    "8": {
     "pierce": 1
    }
+  },
+  "mechanic": "melee_arc",
+  "arc": {
+   "angle_deg": 130.0,
+   "knockback_scale": 1.8
   }
  },
  "flame_sword": {
@@ -1432,6 +1452,11 @@
    "8": {
     "pierce": 1
    }
+  },
+  "mechanic": "melee_arc",
+  "arc": {
+   "angle_deg": 130.0,
+   "knockback_scale": 1.8
   }
  },
  "bow": {
