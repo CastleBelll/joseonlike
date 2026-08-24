@@ -25,6 +25,9 @@ const GRADE_PILL_COLORS := {
 
 const LAYER_ABOVE_HUD := 10
 const PANEL_MARGIN_X := 24.0
+## N9-152 (owner: 가로에서 파워업 선택지가 너무 길다): the paper band never
+## grows past the portrait design width — wide viewports center it.
+const PANEL_MAX_WIDTH := 492.0
 const PANEL_TOP := 96.0
 ## The project's design viewport height; aspect "expand" can hand a taller one.
 const DESIGN_HEIGHT := 960.0
@@ -94,8 +97,7 @@ func _ready() -> void:
 	_panel.name = "PaperPanel"
 	_panel.add_theme_stylebox_override("panel", UiIcons.paper_panel())
 	_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_panel.offset_left = PANEL_MARGIN_X
-	_panel.offset_right = -PANEL_MARGIN_X
+	_apply_panel_band()
 	_panel.offset_top = PANEL_TOP
 	# The bottom edge is recomputed per open() from the card stack (N3-17).
 	_panel.offset_bottom = PANEL_TOP + CARD_HEIGHT_MIN
@@ -178,14 +180,15 @@ func open(
 		panel_height_for(heights, _panel_style_margins_y()),
 		_root_size().y - top - OWNED_STRIP_RESERVE
 	)
+	_apply_panel_band()
 	_panel.offset_top = top
 	_panel.offset_bottom = top + panel_height
 	_owned_row.position = Vector2(
-		PANEL_MARGIN_X, top + panel_height + UiPalette.SPACE_MD
+		_panel_inset(), top + panel_height + UiPalette.SPACE_MD
 	)
 	# The strip's rect width is what the flow container wraps against.
 	_owned_row.size = Vector2(
-		_root_size().x - PANEL_MARGIN_X * 2.0, OWNED_STRIP_RESERVE - UiPalette.SPACE_MD
+		_root_size().x - _panel_inset() * 2.0, OWNED_STRIP_RESERVE - UiPalette.SPACE_MD
 	)
 	_build_owned_row(owned_levels, weapons)
 	visible = true
@@ -314,10 +317,23 @@ static func owned_strip_height(count: int, strip_width: float) -> float:
 	return float(rows) * OWNED_WELL_SIZE + float(maxi(rows - 1, 0)) * OWNED_WRAP_GAP
 
 
+## N9-152: distance from either screen edge to the paper band — the old
+## PANEL_MARGIN_X on phones, centered once the viewport is wider than the
+## portrait design band.
+func _panel_inset() -> float:
+	return maxf(PANEL_MARGIN_X, (_root_size().x - PANEL_MAX_WIDTH) / 2.0)
+
+
+func _apply_panel_band() -> void:
+	var inset: float = _panel_inset()
+	_panel.offset_left = inset
+	_panel.offset_right = -inset
+
+
 func _card_width() -> float:
 	var style: StyleBox = _panel.get_theme_stylebox("panel")
 	return (
-		_root_size().x - PANEL_MARGIN_X * 2.0
+		_root_size().x - _panel_inset() * 2.0
 		- style.get_margin(SIDE_LEFT) - style.get_margin(SIDE_RIGHT)
 		- BODY_MARGIN * 4.0
 	)

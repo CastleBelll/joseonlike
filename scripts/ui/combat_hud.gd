@@ -17,6 +17,9 @@ const BUTTON_SIZE := 44.0  # UiPalette.TOUCH_TARGET_MIN
 const BAR_TOP := 92.0
 const BAR_HEIGHT := 8.0
 const BAR_MARGIN_X := 8.0
+## N9-152 (owner: 가로에서 바가 너무 길다): the strips cap at a centered
+## band on wide viewports instead of spanning the whole width.
+const BAR_MAX_WIDTH := 720.0
 # N6-2 HUD HP bar: a second thin strip right under the XP bar — same minimal
 # grammar (token colours, no chip background, no numbers).
 const HP_BAR_GAP := 2.0
@@ -91,6 +94,23 @@ var _active_buttons: Dictionary = {}  # active id -> ActiveButton
 
 func _ready() -> void:
 	build_ui()
+	# N9-152: rotation changes the width the bands center inside.
+	resized.connect(_layout_bar_bands)
+
+
+## Anchor-relative offsets that center a TOP_WIDE strip inside BAR_MAX_WIDTH
+## on wide viewports; narrow viewports keep the old edge margins.
+func _apply_bar_band(bar: Control) -> void:
+	var inset: float = maxf(BAR_MARGIN_X, (size.x - BAR_MAX_WIDTH) / 2.0)
+	bar.offset_left = inset
+	bar.offset_right = -inset
+
+
+func _layout_bar_bands() -> void:
+	for bar_name: String in ["XpBar", "HpBar", "BossBar"]:
+		var bar: Control = get_node_or_null(bar_name)
+		if bar != null:
+			_apply_bar_band(bar)
 
 
 func _process(delta: float) -> void:
@@ -307,8 +327,7 @@ func _build_xp_bar() -> void:
 	_xp_bar.add_theme_stylebox_override("background", track)
 	_xp_bar.add_theme_stylebox_override("fill", fill)
 	_xp_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_xp_bar.offset_left = BAR_MARGIN_X
-	_xp_bar.offset_right = -BAR_MARGIN_X
+	_apply_bar_band(_xp_bar)
 	_xp_bar.offset_top = BAR_TOP
 	_xp_bar.offset_bottom = BAR_TOP + BAR_HEIGHT
 	set_xp(0, 1)
@@ -331,8 +350,7 @@ func _build_hp_bar() -> void:
 	_hp_bar.add_theme_stylebox_override("background", track)
 	_hp_bar.add_theme_stylebox_override("fill", _hp_fill)
 	_hp_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_hp_bar.offset_left = BAR_MARGIN_X
-	_hp_bar.offset_right = -BAR_MARGIN_X
+	_apply_bar_band(_hp_bar)
 	_hp_bar.offset_top = BAR_TOP + BAR_HEIGHT + HP_BAR_GAP
 	_hp_bar.offset_bottom = HP_BAR_BOTTOM
 	_hp_bar.max_value = 1.0
@@ -391,8 +409,7 @@ func _build_boss_bar() -> void:
 	_boss_bar.add_theme_stylebox_override("background", track)
 	_boss_bar.add_theme_stylebox_override("fill", fill)
 	_boss_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_boss_bar.offset_left = BAR_MARGIN_X
-	_boss_bar.offset_right = -BAR_MARGIN_X
+	_apply_bar_band(_boss_bar)
 	_boss_bar.offset_top = BOSS_BAR_TOP
 	_boss_bar.offset_bottom = BOSS_BAR_TOP + BOSS_BAR_HEIGHT
 	_boss_bar.visible = false

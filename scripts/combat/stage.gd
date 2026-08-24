@@ -8,6 +8,19 @@ extends Node2D
 ## slightly magnified. Every zoom write in the run (shockwave punch, resets)
 ## multiplies from this base, never from 1.0.
 const CAMERA_BASE_ZOOM := 1.15
+## N9-152: the design viewport; wide/tall aspects zoom so the visible WORLD
+## AREA stays what the portrait design shows — landscape trades height for
+## width instead of shrinking every figure (owner: 캐릭터가 너무 작아 보인다).
+const DESIGN_VIEWPORT := Vector2(540.0, 960.0)
+
+
+## Camera zoom for the current viewport: area-constant against the design.
+static func camera_zoom_for(viewport_size: Vector2) -> float:
+	var design_area: float = DESIGN_VIEWPORT.x * DESIGN_VIEWPORT.y
+	var area: float = maxf(viewport_size.x * viewport_size.y, 1.0)
+	return CAMERA_BASE_ZOOM * sqrt(area / design_area)
+
+
 const WEAPONS_PATH := "res://data/weapons.json"
 const PASSIVES_PATH := "res://data/passives.json"
 const LOOT_PATH := "res://data/loot.json"
@@ -189,7 +202,20 @@ var _run_length: Dictionary = {}
 func _ready() -> void:
 	var start_camera: Camera2D = get_node_or_null("World/Player/Camera2D")
 	if start_camera != null:
-		start_camera.zoom = Vector2.ONE * CAMERA_BASE_ZOOM
+		start_camera.zoom = Vector2.ONE * camera_zoom_for(get_viewport_rect().size)
+	# Rotation mid-run re-derives the zoom for the new aspect (N9-152).
+	get_viewport().size_changed.connect(_on_viewport_resized)
+	_stage_ready_field()
+
+
+## The rest of _ready, split so the resize hook sits beside its subject.
+func _on_viewport_resized() -> void:
+	var camera: Camera2D = get_viewport().get_camera_2d()
+	if camera != null:
+		camera.zoom = Vector2.ONE * camera_zoom_for(get_viewport_rect().size)
+
+
+func _stage_ready_field() -> void:
 	var props_config: Dictionary = StageField.load_config()
 	var field_config: Dictionary = props_config.get("field", {})
 	_ground_size = Vector2(
@@ -745,7 +771,7 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 	# for the whole result screen (physics stops while paused) — reset first.
 	var camera: Camera2D = get_viewport().get_camera_2d()
 	if camera != null:
-		camera.zoom = Vector2.ONE * CAMERA_BASE_ZOOM
+		camera.zoom = Vector2.ONE * camera_zoom_for(get_viewport_rect().size)
 		# N9-67: and its shake offset, or the result screen sits crooked for as
 		# long as it is open — physics is paused, so nothing would decay it.
 		camera.offset = Vector2.ZERO

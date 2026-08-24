@@ -852,7 +852,7 @@ func _exit_tree() -> void:
 		return
 	var camera: Camera2D = get_viewport().get_camera_2d()
 	if camera != null:
-		camera.zoom = Vector2.ONE * Stage.CAMERA_BASE_ZOOM
+		camera.zoom = Vector2.ONE * Stage.camera_zoom_for(get_viewport_rect().size)
 
 
 func _decay_nudge(delta: float) -> void:
@@ -867,7 +867,8 @@ func _decay_nudge(delta: float) -> void:
 		WeaponEffects.value("shockwave_nudge_px") / maxf(get_viewport_rect().size.y, 1.0)
 	)
 	camera.zoom = (
-		Vector2.ONE * Stage.CAMERA_BASE_ZOOM * (1.0 + punch * (_nudge_left / nudge_sec))
+		Vector2.ONE * Stage.camera_zoom_for(get_viewport_rect().size)
+		* (1.0 + punch * (_nudge_left / nudge_sec))
 	)
 
 
