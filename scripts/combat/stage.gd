@@ -929,8 +929,15 @@ func _refresh_hp_hud() -> void:
 
 
 func _on_hit_landed(amount: float, at: Vector2, boss_hit: bool, crit: bool = false) -> void:
-	var number: DamageNumber = _number_pool.acquire()
-	number.show_amount(amount, at, boss_hit, crit)
+	# N9-156 (owner): the numbers are a switch now; sound and impact stay so
+	# hits still read with the numbers off.
+	var show_numbers: bool = (
+		SaveService.instance == null
+		or bool(SaveService.instance.get_setting("show_damage_numbers"))
+	)
+	if show_numbers:
+		var number: DamageNumber = _number_pool.acquire()
+		number.show_amount(amount, at, boss_hit, crit)
 	# N9-52: a crit already reads differently on screen; giving it its own
 	# sound means it also reads differently when the eye is somewhere else.
 	_play_sfx("crit" if crit else "hit")

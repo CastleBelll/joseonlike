@@ -1,3 +1,4 @@
+class_name DisplayAdapterService
 extends Node
 ## N9-154 (owner: 가로모드에서 글씨가 너무 작아 보인다): the stretch base is
 ## portrait 540x960, so a sideways phone fits the TALL base into a SHORT
@@ -13,6 +14,25 @@ const LANDSCAPE_BASE := Vector2i(960, 540)
 func _ready() -> void:
 	_apply_orientation_base()
 	get_tree().root.size_changed.connect(_apply_orientation_base)
+	# N9-156: the saved window preset applies on boot, desktop only — the
+	# browser and a phone own their window.
+	var desktop: bool = not OS.has_feature("web") and not OS.has_feature("mobile")
+	if desktop and SaveService.instance != null:
+		apply_resolution(String(SaveService.instance.get_setting("resolution")))
+
+
+## "WxH" preset from the settings popup; "" or anything unparsable leaves the
+## window alone. Centered after the resize so the window never walks off.
+static func apply_resolution(preset: String) -> void:
+	if OS.has_feature("web") or OS.has_feature("mobile"):
+		return
+	var parts: PackedStringArray = preset.split("x")
+	if parts.size() != 2:
+		return
+	var wanted := Vector2i(maxi(int(parts[0]), 320), maxi(int(parts[1]), 320))
+	DisplayServer.window_set_size(wanted)
+	var screen: Vector2i = DisplayServer.screen_get_size()
+	DisplayServer.window_set_position((screen - wanted) / 2)
 
 
 func _apply_orientation_base() -> void:

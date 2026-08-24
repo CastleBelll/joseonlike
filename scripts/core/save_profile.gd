@@ -40,6 +40,10 @@ static func default_profile() -> Dictionary:
 			"joystick_opacity": JOYSTICK_OPACITY_MAX,
 			"screen_shake": 1.0,
 			"locale": UiLocale.DEFAULT_LOCALE,
+			# N9-156 (owner): desktop window preset ("" = leave the window alone)
+			# and the damage-number toggle.
+			"resolution": "",
+			"show_damage_numbers": true,
 			# N9-22 difficulty ladder + run length; sanitized against the data
 			# on load so a hand-edited save cannot start a locked night.
 			"difficulty": "",
@@ -198,6 +202,12 @@ static func clamp_settings(settings: Dictionary) -> Dictionary:
 	# not here, so this stays a pure dict-shape sanitizer with no data load.
 	for key: String in ["difficulty", "run_length"]:
 		result[key] = String(settings.get(key, defaults[key]))
+	# N9-156: the window preset is a "WxH" string ("" = untouched) validated at
+	# apply time; the damage-number switch is a plain bool.
+	result["resolution"] = String(settings.get("resolution", defaults["resolution"]))
+	result["show_damage_numbers"] = bool(
+		settings.get("show_damage_numbers", defaults["show_damage_numbers"])
+	)
 	return result
 
 

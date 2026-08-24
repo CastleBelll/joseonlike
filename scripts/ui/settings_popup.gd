@@ -42,6 +42,14 @@ var _root: Control
 var _header_label: Label
 var _row_labels: Dictionary = {}
 var _language_button: Button
+var _resolution_button: Button
+var _damage_button: Button
+
+## N9-156 window presets (portrait pairs and their landscape twins). "" leaves
+## the window as the platform made it.
+const RESOLUTIONS: Array[String] = [
+	"", "540x960", "810x1440", "1080x1920", "960x540", "1440x810", "1920x1080"
+]
 var _close_button: Button
 var _tab_buttons: Dictionary = {}
 var _tab_pages: Dictionary = {}
@@ -115,6 +123,14 @@ func _refresh_texts() -> void:
 	for key: String in _row_labels.keys():
 		(_row_labels[key] as Label).text = UiLocale.text("settings." + String(key))
 	_language_button.text = String(LOCALE_NAMES[String(SaveService.instance.get_setting("locale"))])
+	if _damage_button != null:
+		_damage_button.text = UiLocale.text(
+			"settings.on" if bool(SaveService.instance.get_setting("show_damage_numbers"))
+			else "settings.off"
+		)
+	if _resolution_button != null:
+		var preset: String = String(SaveService.instance.get_setting("resolution"))
+		_resolution_button.text = preset if not preset.is_empty() else UiLocale.t("자동")
 	_close_button.text = UiLocale.text("settings.close")
 	(_tab_buttons[TAB_GAME] as Button).text = UiLocale.text("settings.tab_game")
 	(_tab_buttons[TAB_AUDIO] as Button).text = UiLocale.text("settings.tab_audio")
@@ -154,6 +170,10 @@ func _make_body() -> Control:
 		SaveProfile.JOYSTICK_OPACITY_KEY, SaveProfile.JOYSTICK_OPACITY_MIN
 	))
 	game_page.add_child(_make_language_row())
+	game_page.add_child(_make_damage_row())
+	# The browser and a phone own their window; the preset row is desktop-only.
+	if not OS.has_feature("web") and not OS.has_feature("mobile"):
+		game_page.add_child(_make_resolution_row())
 	body.add_child(game_page)
 	_tab_pages[TAB_GAME] = game_page
 
@@ -248,6 +268,57 @@ func _make_slider_row(key: String, min_value: float = 0.0) -> Control:
 	slider.drag_ended.connect(_on_slider_drag_ended)
 	row.add_child(slider)
 	return row
+
+
+func _make_damage_row() -> Control:
+	var row := HBoxContainer.new()
+	row.name = "DamageRow"
+	row.custom_minimum_size = Vector2(0.0, ROW_HEIGHT)
+	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_row_labels["damage_numbers"] = name_label
+	row.add_child(name_label)
+	_damage_button = Button.new()
+	_damage_button.name = "DamageButton"
+	_damage_button.custom_minimum_size = Vector2(TOGGLE_WIDTH, UiPalette.TOUCH_TARGET_MIN)
+	WoodButton.apply(_damage_button)
+	_damage_button.pressed.connect(_on_damage_pressed)
+	row.add_child(_damage_button)
+	return row
+
+
+func _on_damage_pressed() -> void:
+	var current: bool = bool(SaveService.instance.get_setting("show_damage_numbers"))
+	SaveService.instance.set_setting("show_damage_numbers", not current)
+	_refresh_texts()
+
+
+func _make_resolution_row() -> Control:
+	var row := HBoxContainer.new()
+	row.name = "ResolutionRow"
+	row.custom_minimum_size = Vector2(0.0, ROW_HEIGHT)
+	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_row_labels["resolution"] = name_label
+	row.add_child(name_label)
+	_resolution_button = Button.new()
+	_resolution_button.name = "ResolutionButton"
+	_resolution_button.custom_minimum_size = Vector2(TOGGLE_WIDTH, UiPalette.TOUCH_TARGET_MIN)
+	WoodButton.apply(_resolution_button)
+	_resolution_button.pressed.connect(_on_resolution_pressed)
+	row.add_child(_resolution_button)
+	return row
+
+
+func _on_resolution_pressed() -> void:
+	var current: String = String(SaveService.instance.get_setting("resolution"))
+	var index: int = RESOLUTIONS.find(current)
+	var next: String = RESOLUTIONS[(index + 1) % RESOLUTIONS.size()]
+	SaveService.instance.set_setting("resolution", next)
+	DisplayAdapterService.apply_resolution(next)
+	_refresh_texts()
 
 
 func _make_language_row() -> Control:
