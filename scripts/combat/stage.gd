@@ -229,7 +229,7 @@ func _stage_ready_field() -> void:
 	# field layout; tests drive StageField.generate with fixed seeds instead.
 	# Ground and props share one seed so a run's tiles and prop scatter match.
 	var field_seed: int = randi()
-	_ground.build(field_config, field_seed)
+	_ground.build(field_config, field_seed, _spawner.stage_id())
 	_field.build(
 		props_config.get("props", {}) as Dictionary, field_config, _decor_layer, field_seed
 	)

@@ -146,3 +146,22 @@ func test_tiles_cover_the_field_with_no_gap() -> bool:
 		* (float(field["height_px"]) / GroundLayer.TILE_SIZE_PX)
 	)
 	return tiles.size() == expected
+
+## N9-167: the floor follows the night. A stage that ships its own ground art
+## uses it; one that has not yet borrows the bamboo forest's, so declaring a
+## new night never leaves the field bare.
+func test_ground_art_follows_the_stage_with_a_fallback() -> bool:
+	var forest: String = GroundLayer.ground_path("bamboo_forest", GroundLayer.TILE_FILE)
+	var unshipped: String = GroundLayer.ground_path("a_night_with_no_art", GroundLayer.TILE_FILE)
+	var unnamed: String = GroundLayer.ground_path("", GroundLayer.TILE_FILE)
+	var passed: bool = (
+		forest.contains("bamboo_forest")
+		and unshipped == GroundLayer.STAGE_ART_DIR + GroundLayer.FALLBACK_STAGE + "/" + GroundLayer.TILE_FILE
+		and unnamed == unshipped
+	)
+	if not passed:
+		push_error(
+			"test_ground_layer: stage art routing broke (%s / %s / %s)"
+			% [forest, unshipped, unnamed]
+		)
+	return passed

@@ -14,11 +14,14 @@ extends Node2D
 ## noise patches (N3-11) and every tile gets a seeded 90-degree-step rotation
 ## so identical stamps don't line up.
 
-const TILE_PATH := "res://asset/stages/bamboo_forest/ground_tile.png"
-const VARIANT_PATHS: Array[String] = [
-	"res://asset/stages/bamboo_forest/ground_variants/patchy_grass.png",
-	"res://asset/stages/bamboo_forest/ground_variants/dirt.png",
-	"res://asset/stages/bamboo_forest/ground_variants/moss.png",
+## N9-167: the floor belongs to the NIGHT, not to the engine. Each stage names
+## its own art directory; a night whose set has not shipped falls back to the
+## bamboo forest's, so a new stage is playable the day it is declared.
+const STAGE_ART_DIR := "res://asset/stages/"
+const FALLBACK_STAGE := "bamboo_forest"
+const TILE_FILE := "ground_tile.png"
+const VARIANT_FILES: Array[String] = [
+	"patchy_grass.png", "dirt.png", "moss.png",
 ]
 const TILE_SIZE_PX := 32.0
 ## Extra ground beyond the view edge so camera smoothing never exposes a bare
@@ -51,6 +54,17 @@ var _type_noise: FastNoiseLite
 var _seed: int = 0
 var _window := Rect2i()
 var _built := false
+
+
+## Where one stage's ground art lives, with the bamboo forest standing in for
+## a night that has not shipped its own set yet. Static so the test can check
+## the fallback without building a layer.
+static func ground_path(stage_id: String, file_name: String) -> String:
+	if not stage_id.is_empty():
+		var own: String = STAGE_ART_DIR + stage_id + "/" + file_name
+		if ResourceLoader.exists(own, "Texture2D"):
+			return own
+	return STAGE_ART_DIR + FALLBACK_STAGE + "/" + file_name
 
 
 ## Tile window (in tile coordinates) whose tiles fully cover `view` — the
@@ -92,7 +106,7 @@ static func tile_variant(
 	if density_noise.get_noise_2d(float(col), float(row)) <= DENSITY_THRESHOLD:
 		return -1
 	var type_value: float = (type_noise.get_noise_2d(float(col), float(row)) + 1.0) / 2.0
-	return clampi(int(type_value * VARIANT_PATHS.size()), 0, VARIANT_PATHS.size() - 1)
+	return clampi(int(type_value * VARIANT_FILES.size()), 0, VARIANT_FILES.size() - 1)
 
 
 ## Seeded 90-degree-step rotation, a pure hash of the world tile coordinate —
@@ -126,15 +140,17 @@ static func generate_layout(field: Dictionary, field_seed: int) -> Array[Diction
 ## StageField's prop placeholders: a missing texture never blocks the stage.
 ## The field dict is no longer consumed — coverage follows the camera — but
 ## the signature stays so the stage call site reads the same as StageField's.
-func build(_field: Dictionary, field_seed: int) -> void:
+func build(_field: Dictionary, field_seed: int, stage_id: String = "") -> void:
 	_seed = field_seed
 	_density_noise = make_density_noise(field_seed)
 	_type_noise = make_type_noise(field_seed)
 	_built = true
-	if ResourceLoader.exists(TILE_PATH, "Texture2D"):
-		_base_texture = load(TILE_PATH)
+	var tile_path: String = ground_path(stage_id, TILE_FILE)
+	if ResourceLoader.exists(tile_path, "Texture2D"):
+		_base_texture = load(tile_path)
 		_variant_textures = []
-		for path: String in VARIANT_PATHS:
+		for file_name: String in VARIANT_FILES:
+			var path: String = ground_path(stage_id, "ground_variants/" + file_name)
 			_variant_textures.append(load(path) if ResourceLoader.exists(path, "Texture2D") else null)
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	queue_redraw()
