@@ -13,12 +13,24 @@ const SELECT_SCENE := "res://scenes/character_select.tscn"
 const MARGIN_SIDE := 32
 ## N9-153: cap for the whole camp column on wide viewports.
 const COLUMN_MAX_WIDTH := 560.0
+## Owner (가로에서 본거지가 스크롤된다): landscape has 540 design px of height,
+## which the portrait column cannot fit. The band widens and the content
+## splits into two side-by-side halves instead of scrolling.
+const COLUMN_MAX_WIDTH_LANDSCAPE := 912.0
 const MARGIN_TOP := 24
 const MARGIN_BOTTOM := 28
+const MARGIN_TOP_LANDSCAPE := 12
+const MARGIN_BOTTOM_LANDSCAPE := 12
 const STAT_ROW_HEIGHT := 40.0
 const PANEL_PADDING := 16
 const PANEL_CORNER_RADIUS := 12
 const SPOT_HEIGHT := 88.0
+## Owner (가로에서 버튼이 너무 크다): landscape trades the portrait height
+## budget for width, so the plates and CTAs run shorter there — still above
+## the 44px touch minimum.
+const SPOT_HEIGHT_LANDSCAPE := 64.0
+const BUTTON_HEIGHT_LANDSCAPE := 52
+const SELECT_BUTTON_HEIGHT_LANDSCAPE := 48
 const SPOT_CORNER_RADIUS := 8
 const SPOT_BORDER_WIDTH := 2
 ## N9-33: five buildings in two columns is three rows with a lone orphan on
@@ -90,11 +102,17 @@ func build_ui() -> void:
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	# N9-153: on wide screens the column holds the portrait design band,
 	# centered, instead of stretching across the whole width.
-	var side: float = maxf(MARGIN_SIDE, (size.x - COLUMN_MAX_WIDTH) / 2.0)
+	var band: float = (
+		COLUMN_MAX_WIDTH_LANDSCAPE if _is_landscape() else COLUMN_MAX_WIDTH
+	)
+	var side: float = maxf(MARGIN_SIDE, (size.x - band) / 2.0)
 	margin.add_theme_constant_override("margin_left", int(side))
 	margin.add_theme_constant_override("margin_right", int(side))
-	margin.add_theme_constant_override("margin_top", MARGIN_TOP)
-	margin.add_theme_constant_override("margin_bottom", MARGIN_BOTTOM)
+	# Landscape spends its short height on content, not on chrome margins.
+	var top_margin: int = MARGIN_TOP_LANDSCAPE if _is_landscape() else MARGIN_TOP
+	var bottom_margin: int = MARGIN_BOTTOM_LANDSCAPE if _is_landscape() else MARGIN_BOTTOM
+	margin.add_theme_constant_override("margin_top", top_margin)
+	margin.add_theme_constant_override("margin_bottom", bottom_margin)
 	add_child(margin)
 
 	# N9-154: landscape hands the camp a 540px-tall canvas the portrait
@@ -114,27 +132,62 @@ func build_ui() -> void:
 	var summary: Dictionary = Camp.summary(_profile())
 	column.add_child(_build_header(summary))
 	add_child(_build_settings_button())
-	column.add_child(_build_stats(summary))
-	column.add_child(_build_buildings())
 
 	# N5-4: one quiet line after a run that revealed something new — no popup,
 	# no extra tap (DESIGN.md §5.2); opening the 괴이록 clears it.
 	var hint: String = Bestiary.camp_hint(_profile())
+	var hint_label: Label = null
 	if not hint.is_empty():
-		var hint_label := _label(hint, UiPalette.FONT_SIZE_LABEL, UiPalette.GOLD)
+		hint_label = _label(hint, UiPalette.FONT_SIZE_LABEL, UiPalette.GOLD)
 		hint_label.name = "BestiaryHint"
 		hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	_notice_label = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
+	_notice_label.name = "Notice"
+	_notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	if _is_landscape():
+		# Two halves: the record on the left, the places and the departure on
+		# the right — the wide screen spends width so nothing has to scroll.
+		var halves := HBoxContainer.new()
+		halves.name = "Halves"
+		halves.add_theme_constant_override("separation", UiPalette.SPACE_LG)
+		halves.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		var left := VBoxContainer.new()
+		left.name = "LeftHalf"
+		left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		left.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+		left.add_child(_build_stats(summary))
+		if hint_label != null:
+			left.add_child(hint_label)
+		var left_spacer := Control.new()
+		left_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		left.add_child(left_spacer)
+		left.add_child(_notice_label)
+		var right := VBoxContainer.new()
+		right.name = "RightHalf"
+		right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		right.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+		right.add_child(_build_buildings())
+		var right_spacer := Control.new()
+		right_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		right.add_child(right_spacer)
+		right.add_child(_build_menu())
+		halves.add_child(left)
+		halves.add_child(right)
+		column.add_child(halves)
+		return
+
+	column.add_child(_build_stats(summary))
+	column.add_child(_build_buildings())
+	if hint_label != null:
 		column.add_child(hint_label)
 
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(spacer)
 
-	_notice_label = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
-	_notice_label.name = "Notice"
-	_notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(_notice_label)
-
 	column.add_child(_build_menu())
 
 
@@ -195,17 +248,25 @@ func _build_stats(summary: Dictionary) -> Control:
 
 ## GDD building spots: labelled places that answer 준비 중 when touched —
 ## present and tappable, never a greyed-out button (DESIGN.md §6).
+func _is_landscape() -> bool:
+	return size.x > size.y
+
+
 func _build_buildings() -> Control:
 	var grid := GridContainer.new()
 	grid.name = "Buildings"
-	grid.columns = SPOT_COLUMNS
+	# The landscape half is narrower than the portrait band, so the same five
+	# spots read better in two columns there.
+	grid.columns = 2 if _is_landscape() else SPOT_COLUMNS
 	grid.add_theme_constant_override("h_separation", UiPalette.SPACE_MD)
 	grid.add_theme_constant_override("v_separation", UiPalette.SPACE_MD)
 	for building: Dictionary in Camp.buildings():
 		var spot := Button.new()
 		spot.name = "Spot_" + String(building["id"])
 		spot.text = String(building["label"])
-		spot.custom_minimum_size = Vector2(0.0, SPOT_HEIGHT)
+		spot.custom_minimum_size = Vector2(
+			0.0, SPOT_HEIGHT_LANDSCAPE if _is_landscape() else SPOT_HEIGHT
+		)
 		spot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		spot.add_theme_stylebox_override("normal", _spot_plate(UiPalette.CARD_BG))
 		spot.add_theme_stylebox_override("hover", _spot_plate(UiPalette.CARD_BG_SELECTED))
@@ -335,7 +396,9 @@ func _build_menu() -> Control:
 	var select := Button.new()
 	select.name = "SelectButton"
 	select.text = UiLocale.t("수행자 선택")
-	select.custom_minimum_size = Vector2(0.0, SELECT_BUTTON_HEIGHT)
+	select.custom_minimum_size = Vector2(0.0, float(
+		SELECT_BUTTON_HEIGHT_LANDSCAPE if _is_landscape() else SELECT_BUTTON_HEIGHT
+	))
 	WoodButton.apply(select)
 	select.pressed.connect(_on_select_pressed)
 	stack.add_child(select)
@@ -343,7 +406,9 @@ func _build_menu() -> Control:
 	var depart := Button.new()
 	depart.name = "DepartButton"
 	depart.text = UiLocale.t("출정")
-	depart.custom_minimum_size = Vector2(0.0, BUTTON_HEIGHT)
+	depart.custom_minimum_size = Vector2(0.0, float(
+		BUTTON_HEIGHT_LANDSCAPE if _is_landscape() else BUTTON_HEIGHT
+	))
 	WoodButton.apply(depart)
 	depart.pressed.connect(_on_depart_pressed)
 	stack.add_child(depart)
