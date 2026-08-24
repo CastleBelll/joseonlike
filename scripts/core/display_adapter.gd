@@ -16,9 +16,20 @@ const LANDSCAPE_BASE := Vector2i(960, 540)
 const MAX_UI_SCALE := 1.5
 
 
+## Owner (폰을 가로로 돌리니 세로 버전이 늘어난다): itch serves the game in a
+## fixed portrait iframe, so rotating the phone never hands the canvas a wide
+## viewport — the portrait build is simply scaled into a landscape box. Only
+## the browser fullscreen API escapes that box, and it needs a real gesture,
+## so the first touch takes it. Desktop browsers and the standalone page are
+## left alone; a player who leaves fullscreen is not dragged back in.
+var _fullscreen_offered := false
+
+
 func _ready() -> void:
 	_apply_orientation_base()
 	get_tree().root.size_changed.connect(_apply_orientation_base)
+	if not _boxed_mobile_web():
+		_fullscreen_offered = true
 	# N9-156: the saved window preset applies on boot, desktop only — the
 	# browser and a phone own their window.
 	var desktop: bool = not OS.has_feature("web") and not OS.has_feature("mobile")
@@ -38,6 +49,31 @@ static func apply_resolution(preset: String) -> void:
 	DisplayServer.window_set_size(wanted)
 	var screen: Vector2i = DisplayServer.screen_get_size()
 	DisplayServer.window_set_position((screen - wanted) / 2)
+
+
+## A mobile browser running us inside someone else's frame — the itch embed.
+func _boxed_mobile_web() -> bool:
+	if not OS.has_feature("web"):
+		return false
+	if not (OS.has_feature("web_android") or OS.has_feature("web_ios")):
+		return false
+	var framed: Variant = JavaScriptBridge.eval("window.self !== window.top", true)
+	return bool(framed)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _fullscreen_offered:
+		return
+	var pressed: bool = (
+		(event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed)
+		or (event is InputEventMouseButton and (event as InputEventMouseButton).pressed)
+	)
+	if not pressed:
+		return
+	# One shot: the gesture that starts the game also breaks it out of the
+	# embed. Everything after is the player's own call through 설정 → 전체화면.
+	_fullscreen_offered = true
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 
 
 ## The content scale base for one window size: the orientation's design base,
