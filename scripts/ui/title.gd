@@ -14,6 +14,10 @@ const CAMP_SCENE := "res://scenes/camp.tscn"
 
 const SKY_TEXTURE := "res://asset/title/bg_sky.png"
 const VILLAGE_TEXTURE := "res://asset/title/bg_village.png"
+## N9-157 (owner: 배경을 게임 픽셀 밀도의 픽셀아트로, 가로판도): composed
+## per-orientation backdrops; the sky+village pair stays the fallback.
+const BACKDROP_PORTRAIT := "res://asset/title/backdrop_portrait.png"
+const BACKDROP_LANDSCAPE := "res://asset/title/backdrop_landscape.png"
 
 # Owner direction: logo sits lower than the moon, clear of the rooftops.
 const LOGO_TOP_OFFSET := 240.0
@@ -99,6 +103,13 @@ func build_ui() -> void:
 
 
 func _build_background() -> void:
+	if ResourceLoader.exists(BACKDROP_PORTRAIT, "Texture2D"):
+		var backdrop: TextureRect = _pixel_texture_rect("Backdrop", _backdrop_path())
+		backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+		add_child(backdrop)
+		resized.connect(func() -> void:
+			backdrop.texture = load(_backdrop_path()))
+		return
 	var sky: TextureRect = _pixel_texture_rect("SkyBackground", SKY_TEXTURE)
 	sky.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(sky)
@@ -106,6 +117,16 @@ func _build_background() -> void:
 	var village: TextureRect = _pixel_texture_rect("VillageBackdrop", VILLAGE_TEXTURE)
 	village.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(village)
+
+
+## The orientation's own composition when it exists — a landscape crop of a
+## portrait painting loses the gate and the moon; a real landscape piece keeps
+## both (N9-157).
+func _backdrop_path() -> String:
+	var wide: bool = size.x > size.y
+	if wide and ResourceLoader.exists(BACKDROP_LANDSCAPE, "Texture2D"):
+		return BACKDROP_LANDSCAPE
+	return BACKDROP_PORTRAIT
 
 
 ## Builds the glowing title text: a soft wide-outline glow layer behind a

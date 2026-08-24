@@ -70,11 +70,13 @@ func build_ui() -> void:
 	# N9-12: the composited village backdrop (title production layers under
 	# a NIGHT scrim) sits over the flat fill; the ColorRect stays as the
 	# fallback ground if the art is ever missing.
-	var backdrop_path: String = "res://asset/camp/backdrop.png"
+	var backdrop_path: String = _backdrop_path()
 	if ResourceLoader.exists(backdrop_path, "Texture2D"):
 		var art := TextureRect.new()
 		art.name = "BackdropArt"
 		art.texture = load(backdrop_path)
+		resized.connect(func() -> void:
+			art.texture = load(_backdrop_path()))
 		art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		# N9-153: cover, never distort — landscape crops the portrait art.
@@ -134,6 +136,17 @@ func build_ui() -> void:
 	column.add_child(_notice_label)
 
 	column.add_child(_build_menu())
+
+
+## N9-157: per-orientation pixel-art backdrops with the painted single as
+## the fallback chain's end.
+func _backdrop_path() -> String:
+	var wide: bool = size.x > size.y
+	if wide and ResourceLoader.exists("res://asset/camp/backdrop_landscape.png", "Texture2D"):
+		return "res://asset/camp/backdrop_landscape.png"
+	if ResourceLoader.exists("res://asset/camp/backdrop_portrait.png", "Texture2D"):
+		return "res://asset/camp/backdrop_portrait.png"
+	return "res://asset/camp/backdrop.png"
 
 
 ## GOLD title left, coin + permanent gold right (meta grammar, capture _02).
