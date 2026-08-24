@@ -262,6 +262,17 @@ Note:      초승달이 아니라 베기 자국이다 — 양끝이 바늘처럼
 오너가 "근접 공격 이펙트, 결계, 진언 애셋이 빈약하다"고 지적한 대상이 이쪽이므로
 교체 후보이지 결손은 아니다.
 
+### 살 / 귀살 투사체 톤 정정 — 오너 피드백 (2026-08-24)
+
+```
+[REGENERATE] sal / gwisal travel — asset/weapon/travel/{sal,gwisal}.png
+Size:      36px 정사각 4프레임 (144x36) — 현재 파일과 같은 규격으로 교체
+Used by:   저주 계열 무기 투사체 몸체 (data/weapons.json travel_sprite)
+Note:      오너: 지금 그림이 너무 징그럽다. 살점·핏빛 질감을 버리고
+           저주 연기 · 부적 기운 쪽으로 톤을 낮춰 재생성한다.
+           진화 연속성(살 → 귀살)은 유지.
+```
+
 ## Anticipated (not yet needed — do not pre-produce)
 
 These become `[MISSING]` entries only when the feature that needs them is actually
