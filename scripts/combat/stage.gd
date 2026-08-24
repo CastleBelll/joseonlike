@@ -227,13 +227,13 @@ func _ready() -> void:
 	# N9-1a: the stage id IS the track id, so a second region ships its own
 	# music by adding one entry to data/audio.json and nothing else.
 	if MusicService.instance != null:
-		MusicService.instance.play(Spawner.STAGE_ID)
+		MusicService.instance.play(Spawner.stage_id())
 	# N4-4a: burn ticks float through the same damage-number pool as hits.
 	_spawner.burn_damaged.connect(
 		func(amount: float, at: Vector2) -> void: _on_hit_landed(amount, at, false)
 	)
 	_feedback = _load_json(Spawner.EFFECTS_PATH).get("hit_feedback", {})
-	var stage_entry: Dictionary = _load_json(Spawner.STAGES_PATH).get(Spawner.STAGE_ID, {})
+	var stage_entry: Dictionary = _load_json(Spawner.STAGES_PATH).get(Spawner.stage_id(), {})
 	# N9-22: the same tier/length scaling the spawner applies, so the HUD
 	# clock and the wave schedule always agree on when the night ends.
 	var difficulty_config: Dictionary = Difficulty.load_config()
@@ -646,7 +646,7 @@ func _tick_boss_return(delta: float) -> void:
 
 func _endless_config() -> Dictionary:
 	return (_load_json(Spawner.STAGES_PATH) as Dictionary).get(
-		Spawner.STAGE_ID, {}
+		Spawner.stage_id(), {}
 	).get(Endless.FLAG, {})
 
 

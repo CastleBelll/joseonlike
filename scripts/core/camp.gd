@@ -18,10 +18,51 @@ const BUILDINGS: Array[Dictionary] = [
 	{"id": "achievements", "label": "업적", "ready": true, "scene": "res://scenes/achievements.tscn"},
 	{"id": "weapon_codex", "label": "무기 도감", "ready": false},
 	{"id": "training", "label": "훈련장", "ready": false},
-	{"id": "region_select", "label": "지역 선택", "ready": false},
+	{"id": "region_select", "label": "지역 선택", "ready": true},
 ]
 
+const STAGES_PATH := "res://data/stages.json"
+## N9-150: which nights a profile may walk into. The bamboo forest is always
+## open; the ruined village opens with the first boss kill — the same door
+## that lets the warrior in.
+const STAGE_UNLOCKS: Dictionary = {"ruined_village": "first_boss"}
+
 const NOT_READY_NOTICE := "준비 중"
+
+
+## Ordered stage ids the profile can depart to (data order, locked filtered).
+static func unlocked_stages(profile: Dictionary) -> Array[String]:
+	var stages: Variant = JSON.parse_string(FileAccess.get_file_as_string(STAGES_PATH))
+	var open: Array[String] = []
+	if stages is not Dictionary:
+		return open
+	for stage_id: String in stages:
+		var needed: String = String(STAGE_UNLOCKS.get(stage_id, ""))
+		if needed.is_empty() or Achievements.is_earned(profile, needed):
+			open.append(stage_id)
+	return open
+
+
+## Pure cycle: the next unlocked stage after the profile's current one.
+static func next_stage(profile: Dictionary) -> String:
+	var open: Array[String] = unlocked_stages(profile)
+	if open.is_empty():
+		return ""
+	var current: String = String(profile.get("selected_stage", open[0]))
+	var index: int = open.find(current)
+	return open[(index + 1) % open.size()]
+
+
+## Localized display name for a stage id, for the region-select notice.
+static func stage_label(stage_id: String) -> String:
+	var stages: Variant = JSON.parse_string(FileAccess.get_file_as_string(STAGES_PATH))
+	if stages is not Dictionary:
+		return stage_id
+	var entry: Dictionary = (stages as Dictionary).get(stage_id, {})
+	var localized: Variant = entry.get("name_" + UiLocale.current_locale)
+	if localized is String:
+		return localized
+	return String(entry.get("name_ko", stage_id))
 
 
 ## Where the title's single start button goes (GDD §28): only a profile that

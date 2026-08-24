@@ -333,6 +333,11 @@ func _on_select_pressed() -> void:
 
 
 func _on_building_pressed(building: Dictionary) -> void:
+	# N9-150 지역 선택: tapping cycles the departure region through the
+	# unlocked nights; with only one open it explains what opens the next.
+	if String(building.get("id", "")) == "region_select":
+		_cycle_region()
+		return
 	var notice: String = Camp.building_notice(building)
 	if notice.is_empty():
 		var scene: String = Camp.building_scene(building)
@@ -340,6 +345,19 @@ func _on_building_pressed(building: Dictionary) -> void:
 			get_tree().change_scene_to_file(scene)
 		return
 	_show_notice(String(building["label"]) + " — " + notice)
+
+
+func _cycle_region() -> void:
+	var profile: Dictionary = _profile()
+	var open: Array[String] = Camp.unlocked_stages(profile)
+	if open.size() <= 1:
+		_show_notice(UiLocale.t("지역 선택") + " — " + UiLocale.t("첫 괴수를 쓰러뜨리면 다음 밤이 열린다"))
+		return
+	var next: String = Camp.next_stage(profile)
+	if SaveService.instance != null:
+		SaveService.instance.profile["selected_stage"] = next
+		SaveService.instance.save_profile()
+	_show_notice(UiLocale.t("출정지") + " — " + Camp.stage_label(next))
 
 
 func _show_notice(text: String) -> void:

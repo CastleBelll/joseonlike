@@ -1,261 +1,484 @@
 {
-  "bamboo_forest": {
-    "name_ko": "대나무 숲",
-    "name_en": "Bamboo Forest",
-    "duration_sec": 420,
-    "boss_id": "dudueori",
-    "boss_gold": 150,
-    "boss_at_sec": 340,
-    "surge_at_sec": 300,
-    "soft_enrage": {
-      "start_sec": 345,
-      "ramp_sec": 20,
-      "hp_mult_max": 3.4,
-      "damage_mult_max": 2.8,
-      "speed_mult_max": 1.6
-    },
-    "first_run_drops": [
-      {
-        "loot_id": "talisman_paper",
-        "at_sec": 10
-      },
-      {
-        "loot_id": "dokkaebi_flame",
-        "at_sec": 60
-      }
-    ],
-    "opening": {
-      "rush_window_sec": 20.0,
-      "min_spawns": 18,
-      "first_level_xp_by_sec": 40.0,
-      "guarantee_offset_px": 160.0
-    },
-    "spawning": {
-      "live_cap": 210,
-      "spawn_margin_px": 48.0,
-      "despawn_margin_px": 480.0,
-      "contact_cooldown_sec": 1.0
-    },
-    "waves": [
-      {
-        "at_sec": 0,
-        "monster_id": "forest_goblin",
-        "count": 18,
-        "interval_sec": 0.59
-      },
-      {
-        "at_sec": 17,
-        "monster_id": "forest_goblin",
-        "count": 12,
-        "interval_sec": 0.59
-      },
-      {
-        "at_sec": 30,
-        "monster_id": "forest_goblin",
-        "count": 24,
-        "interval_sec": 1.19
-      },
-      {
-        "at_sec": 60,
-        "monster_id": "forest_goblin",
-        "count": 46,
-        "interval_sec": 0.65
-      },
-      {
-        "at_sec": 60,
-        "monster_id": "forest_spirit",
-        "count": 21,
-        "interval_sec": 1.03
-      },
-      {
-        "at_sec": 90,
-        "monster_id": "forest_goblin",
-        "count": 51,
-        "interval_sec": 0.56
-      },
-      {
-        "at_sec": 90,
-        "monster_id": "forest_spirit",
-        "count": 26,
-        "interval_sec": 0.94
-      },
-      {
-        "at_sec": 120,
-        "monster_id": "forest_goblin",
-        "count": 51,
-        "interval_sec": 0.52
-      },
-      {
-        "at_sec": 120,
-        "monster_id": "forest_spirit",
-        "count": 29,
-        "interval_sec": 0.84
-      },
-      {
-        "at_sec": 120.0,
-        "monster_id": "geuseundae",
-        "count": 3,
-        "interval_sec": 0.55
-      },
-      {
-        "at_sec": 140,
-        "monster_id": "bamboo_brute_elite",
-        "count": 3,
-        "interval_sec": 0.55
-      },
-      {
-        "at_sec": 150,
-        "monster_id": "forest_goblin",
-        "count": 56,
-        "interval_sec": 0.47
-      },
-      {
-        "at_sec": 150,
-        "monster_id": "forest_spirit",
-        "count": 30,
-        "interval_sec": 0.75
-      },
-      {
-        "at_sec": 150,
-        "monster_id": "bamboo_brute",
-        "count": 21,
-        "interval_sec": 1.03
-      },
-      {
-        "at_sec": 175,
-        "monster_id": "bamboo_brute_elite",
-        "count": 3,
-        "interval_sec": 0.55
-      },
-      {
-        "at_sec": 190,
-        "monster_id": "forest_goblin",
-        "count": 64,
-        "interval_sec": 0.42
-      },
-      {
-        "at_sec": 190,
-        "monster_id": "forest_spirit",
-        "count": 35,
-        "interval_sec": 0.7
-      },
-      {
-        "at_sec": 200.0,
-        "monster_id": "geuseundae",
-        "count": 3,
-        "interval_sec": 0.55
-      },
-      {
-        "at_sec": 210,
-        "monster_id": "bamboo_brute_elite",
-        "count": 3,
-        "interval_sec": 0.55
-      },
-      {
-        "at_sec": 210,
-        "monster_id": "bamboo_brute",
-        "count": 21,
-        "interval_sec": 0.94
-      },
-      {
-        "at_sec": 230,
-        "monster_id": "forest_goblin",
-        "count": 72,
-        "interval_sec": 0.37
-      },
-      {
-        "at_sec": 230,
-        "monster_id": "forest_spirit",
-        "count": 38,
-        "interval_sec": 0.65
-      },
-      {
-        "at_sec": 250,
-        "monster_id": "bamboo_brute_elite",
-        "count": 3,
-        "interval_sec": 0.55
-      },
-      {
-        "at_sec": 270,
-        "monster_id": "forest_goblin",
-        "count": 82,
-        "interval_sec": 0.32
-      },
-      {
-        "at_sec": 270,
-        "monster_id": "forest_spirit",
-        "count": 46,
-        "interval_sec": 0.56
-      },
-      {
-        "at_sec": 270,
-        "monster_id": "bamboo_brute",
-        "count": 26,
-        "interval_sec": 0.75
-      },
-      {
-        "at_sec": 280.0,
-        "monster_id": "geuseundae",
-        "count": 3,
-        "interval_sec": 0.55
-      },
-      {
-        "at_sec": 290,
-        "monster_id": "bamboo_brute_elite",
-        "count": 3,
-        "interval_sec": 0.55
-      },
-      {
-        "at_sec": 300,
-        "monster_id": "forest_goblin",
-        "count": 141,
-        "interval_sec": 0.14
-      },
-      {
-        "at_sec": 300,
-        "monster_id": "forest_spirit",
-        "count": 82,
-        "interval_sec": 0.26
-      },
-      {
-        "at_sec": 300,
-        "monster_id": "bamboo_brute",
-        "count": 46,
-        "interval_sec": 0.42
-      },
-      {
-        "at_sec": 310,
-        "monster_id": "bamboo_brute_elite",
-        "count": 3,
-        "interval_sec": 0.55
-      },
-      {
-        "at_sec": 325,
-        "monster_id": "bamboo_brute_elite",
-        "count": 3,
-        "interval_sec": 0.55
-      },
-      {
-        "at_sec": 340,
-        "monster_id": "forest_goblin",
-        "count": 90,
-        "interval_sec": 0.42
-      },
-      {
-        "at_sec": 340,
-        "monster_id": "forest_spirit",
-        "count": 38,
-        "interval_sec": 0.56
-      }
-    ],
-    "endless": {
-      "_note": "N9-60 무한 모드. 스테이지 자신의 웨이브를 loop_from_sec부터 다시 재생하되 루프마다 수와 능력치를 올린다. 별도 웨이브 표를 두지 않는 이유: 둘 중 하나만 조정되는 순간 어긋난다.",
-      "loop_from_sec": 120.0,
-      "loop_period_sec": 180.0,
-      "count_growth_per_loop": 0.25,
-      "hp_growth_per_loop": 0.45,
-      "damage_growth_per_loop": 0.3,
-      "boss_repeat_sec": 220.0
-    }
+ "bamboo_forest": {
+  "name_ko": "대나무 숲",
+  "name_en": "Bamboo Forest",
+  "duration_sec": 420,
+  "boss_id": "dudueori",
+  "boss_gold": 150,
+  "boss_at_sec": 340,
+  "surge_at_sec": 300,
+  "soft_enrage": {
+   "start_sec": 345,
+   "ramp_sec": 20,
+   "hp_mult_max": 3.4,
+   "damage_mult_max": 2.8,
+   "speed_mult_max": 1.6
+  },
+  "first_run_drops": [
+   {
+    "loot_id": "talisman_paper",
+    "at_sec": 10
+   },
+   {
+    "loot_id": "dokkaebi_flame",
+    "at_sec": 60
+   }
+  ],
+  "opening": {
+   "rush_window_sec": 20.0,
+   "min_spawns": 18,
+   "first_level_xp_by_sec": 40.0,
+   "guarantee_offset_px": 160.0
+  },
+  "spawning": {
+   "live_cap": 210,
+   "spawn_margin_px": 48.0,
+   "despawn_margin_px": 480.0,
+   "contact_cooldown_sec": 1.0
+  },
+  "waves": [
+   {
+    "at_sec": 0,
+    "monster_id": "forest_goblin",
+    "count": 18,
+    "interval_sec": 0.59
+   },
+   {
+    "at_sec": 17,
+    "monster_id": "forest_goblin",
+    "count": 12,
+    "interval_sec": 0.59
+   },
+   {
+    "at_sec": 30,
+    "monster_id": "forest_goblin",
+    "count": 24,
+    "interval_sec": 1.19
+   },
+   {
+    "at_sec": 60,
+    "monster_id": "forest_goblin",
+    "count": 46,
+    "interval_sec": 0.65
+   },
+   {
+    "at_sec": 60,
+    "monster_id": "forest_spirit",
+    "count": 21,
+    "interval_sec": 1.03
+   },
+   {
+    "at_sec": 90,
+    "monster_id": "forest_goblin",
+    "count": 51,
+    "interval_sec": 0.56
+   },
+   {
+    "at_sec": 90,
+    "monster_id": "forest_spirit",
+    "count": 26,
+    "interval_sec": 0.94
+   },
+   {
+    "at_sec": 120,
+    "monster_id": "forest_goblin",
+    "count": 51,
+    "interval_sec": 0.52
+   },
+   {
+    "at_sec": 120,
+    "monster_id": "forest_spirit",
+    "count": 29,
+    "interval_sec": 0.84
+   },
+   {
+    "at_sec": 120.0,
+    "monster_id": "geuseundae",
+    "count": 3,
+    "interval_sec": 0.55
+   },
+   {
+    "at_sec": 140,
+    "monster_id": "bamboo_brute_elite",
+    "count": 3,
+    "interval_sec": 0.55
+   },
+   {
+    "at_sec": 150,
+    "monster_id": "forest_goblin",
+    "count": 56,
+    "interval_sec": 0.47
+   },
+   {
+    "at_sec": 150,
+    "monster_id": "forest_spirit",
+    "count": 30,
+    "interval_sec": 0.75
+   },
+   {
+    "at_sec": 150,
+    "monster_id": "bamboo_brute",
+    "count": 21,
+    "interval_sec": 1.03
+   },
+   {
+    "at_sec": 175,
+    "monster_id": "bamboo_brute_elite",
+    "count": 3,
+    "interval_sec": 0.55
+   },
+   {
+    "at_sec": 190,
+    "monster_id": "forest_goblin",
+    "count": 64,
+    "interval_sec": 0.42
+   },
+   {
+    "at_sec": 190,
+    "monster_id": "forest_spirit",
+    "count": 35,
+    "interval_sec": 0.7
+   },
+   {
+    "at_sec": 200.0,
+    "monster_id": "geuseundae",
+    "count": 3,
+    "interval_sec": 0.55
+   },
+   {
+    "at_sec": 210,
+    "monster_id": "bamboo_brute_elite",
+    "count": 3,
+    "interval_sec": 0.55
+   },
+   {
+    "at_sec": 210,
+    "monster_id": "bamboo_brute",
+    "count": 21,
+    "interval_sec": 0.94
+   },
+   {
+    "at_sec": 230,
+    "monster_id": "forest_goblin",
+    "count": 72,
+    "interval_sec": 0.37
+   },
+   {
+    "at_sec": 230,
+    "monster_id": "forest_spirit",
+    "count": 38,
+    "interval_sec": 0.65
+   },
+   {
+    "at_sec": 250,
+    "monster_id": "bamboo_brute_elite",
+    "count": 3,
+    "interval_sec": 0.55
+   },
+   {
+    "at_sec": 270,
+    "monster_id": "forest_goblin",
+    "count": 82,
+    "interval_sec": 0.32
+   },
+   {
+    "at_sec": 270,
+    "monster_id": "forest_spirit",
+    "count": 46,
+    "interval_sec": 0.56
+   },
+   {
+    "at_sec": 270,
+    "monster_id": "bamboo_brute",
+    "count": 26,
+    "interval_sec": 0.75
+   },
+   {
+    "at_sec": 280.0,
+    "monster_id": "geuseundae",
+    "count": 3,
+    "interval_sec": 0.55
+   },
+   {
+    "at_sec": 290,
+    "monster_id": "bamboo_brute_elite",
+    "count": 3,
+    "interval_sec": 0.55
+   },
+   {
+    "at_sec": 300,
+    "monster_id": "forest_goblin",
+    "count": 141,
+    "interval_sec": 0.14
+   },
+   {
+    "at_sec": 300,
+    "monster_id": "forest_spirit",
+    "count": 82,
+    "interval_sec": 0.26
+   },
+   {
+    "at_sec": 300,
+    "monster_id": "bamboo_brute",
+    "count": 46,
+    "interval_sec": 0.42
+   },
+   {
+    "at_sec": 310,
+    "monster_id": "bamboo_brute_elite",
+    "count": 3,
+    "interval_sec": 0.55
+   },
+   {
+    "at_sec": 325,
+    "monster_id": "bamboo_brute_elite",
+    "count": 3,
+    "interval_sec": 0.55
+   },
+   {
+    "at_sec": 340,
+    "monster_id": "forest_goblin",
+    "count": 90,
+    "interval_sec": 0.42
+   },
+   {
+    "at_sec": 340,
+    "monster_id": "forest_spirit",
+    "count": 38,
+    "interval_sec": 0.56
+   }
+  ],
+  "endless": {
+   "_note": "N9-60 무한 모드. 스테이지 자신의 웨이브를 loop_from_sec부터 다시 재생하되 루프마다 수와 능력치를 올린다. 별도 웨이브 표를 두지 않는 이유: 둘 중 하나만 조정되는 순간 어긋난다.",
+   "loop_from_sec": 120.0,
+   "loop_period_sec": 180.0,
+   "count_growth_per_loop": 0.25,
+   "hp_growth_per_loop": 0.45,
+   "damage_growth_per_loop": 0.3,
+   "boss_repeat_sec": 220.0
   }
+ },
+ "ruined_village": {
+  "name_ko": "폐허가 된 마을",
+  "name_en": "Ruined Village",
+  "duration_sec": 420,
+  "boss_id": "general_wraith",
+  "boss_gold": 220,
+  "boss_at_sec": 340,
+  "surge_at_sec": 300,
+  "soft_enrage": {
+   "start_sec": 345,
+   "ramp_sec": 20,
+   "hp_mult_max": 3.4,
+   "damage_mult_max": 2.8,
+   "speed_mult_max": 1.6
+  },
+  "first_run_drops": [
+   {
+    "loot_id": "ghost_iron",
+    "at_sec": 10
+   },
+   {
+    "loot_id": "fire_spirit_stone",
+    "at_sec": 60
+   }
+  ],
+  "opening": {
+   "rush_window_sec": 20.0,
+   "min_spawns": 18,
+   "first_level_xp_by_sec": 40.0,
+   "guarantee_offset_px": 160.0
+  },
+  "spawning": {
+   "live_cap": 210,
+   "spawn_margin_px": 48.0,
+   "despawn_margin_px": 480.0,
+   "contact_cooldown_sec": 1.0
+  },
+  "endless": {
+   "_note": "N9-60 무한 모드. 스테이지 자신의 웨이브를 loop_from_sec부터 다시 재생하되 루프마다 수와 능력치를 올린다. 별도 웨이브 표를 두지 않는 이유: 둘 중 하나만 조정되는 순간 어긋난다.",
+   "loop_from_sec": 120.0,
+   "loop_period_sec": 180.0,
+   "count_growth_per_loop": 0.25,
+   "hp_growth_per_loop": 0.45,
+   "damage_growth_per_loop": 0.3,
+   "boss_repeat_sec": 220.0
+  },
+  "waves": [
+   {
+    "at_sec": 0,
+    "monster_id": "ash_wraith",
+    "count": 18,
+    "interval_sec": 0.59
+   },
+   {
+    "at_sec": 17,
+    "monster_id": "ash_wraith",
+    "count": 12,
+    "interval_sec": 0.59
+   },
+   {
+    "at_sec": 30,
+    "monster_id": "ash_wraith",
+    "count": 24,
+    "interval_sec": 1.19
+   },
+   {
+    "at_sec": 45,
+    "monster_id": "cursed_hound",
+    "count": 8,
+    "interval_sec": 0.4
+   },
+   {
+    "at_sec": 60,
+    "monster_id": "ash_wraith",
+    "count": 44,
+    "interval_sec": 0.65
+   },
+   {
+    "at_sec": 60,
+    "monster_id": "cursed_hound",
+    "count": 12,
+    "interval_sec": 0.8
+   },
+   {
+    "at_sec": 90,
+    "monster_id": "ash_wraith",
+    "count": 48,
+    "interval_sec": 0.56
+   },
+   {
+    "at_sec": 90,
+    "monster_id": "cursed_hound",
+    "count": 16,
+    "interval_sec": 0.7
+   },
+   {
+    "at_sec": 120,
+    "monster_id": "ash_wraith",
+    "count": 50,
+    "interval_sec": 0.52
+   },
+   {
+    "at_sec": 120,
+    "monster_id": "rusted_armor",
+    "count": 6,
+    "interval_sec": 1.6
+   },
+   {
+    "at_sec": 130,
+    "monster_id": "powder_dokkaebi",
+    "count": 6,
+    "interval_sec": 1.2
+   },
+   {
+    "at_sec": 150,
+    "monster_id": "ash_wraith",
+    "count": 54,
+    "interval_sec": 0.47
+   },
+   {
+    "at_sec": 150,
+    "monster_id": "cursed_hound",
+    "count": 20,
+    "interval_sec": 0.6
+   },
+   {
+    "at_sec": 150,
+    "monster_id": "rusted_armor",
+    "count": 10,
+    "interval_sec": 1.4
+   },
+   {
+    "at_sec": 180,
+    "monster_id": "ash_wraith",
+    "count": 56,
+    "interval_sec": 0.45
+   },
+   {
+    "at_sec": 180,
+    "monster_id": "powder_dokkaebi",
+    "count": 10,
+    "interval_sec": 1.0
+   },
+   {
+    "at_sec": 190,
+    "monster_id": "rusted_armor",
+    "count": 12,
+    "interval_sec": 1.2
+   },
+   {
+    "at_sec": 210,
+    "monster_id": "ash_wraith",
+    "count": 58,
+    "interval_sec": 0.43
+   },
+   {
+    "at_sec": 210,
+    "monster_id": "cursed_hound",
+    "count": 26,
+    "interval_sec": 0.5
+   },
+   {
+    "at_sec": 240,
+    "monster_id": "ash_wraith",
+    "count": 60,
+    "interval_sec": 0.4
+   },
+   {
+    "at_sec": 240,
+    "monster_id": "rusted_armor",
+    "count": 16,
+    "interval_sec": 1.0
+   },
+   {
+    "at_sec": 250,
+    "monster_id": "powder_dokkaebi",
+    "count": 14,
+    "interval_sec": 0.8
+   },
+   {
+    "at_sec": 270,
+    "monster_id": "ash_wraith",
+    "count": 62,
+    "interval_sec": 0.38
+   },
+   {
+    "at_sec": 270,
+    "monster_id": "cursed_hound",
+    "count": 30,
+    "interval_sec": 0.45
+   },
+   {
+    "at_sec": 300,
+    "monster_id": "ash_wraith",
+    "count": 90,
+    "interval_sec": 0.34
+   },
+   {
+    "at_sec": 300,
+    "monster_id": "rusted_armor",
+    "count": 20,
+    "interval_sec": 0.9
+   },
+   {
+    "at_sec": 300,
+    "monster_id": "powder_dokkaebi",
+    "count": 18,
+    "interval_sec": 0.7
+   },
+   {
+    "at_sec": 310,
+    "monster_id": "ash_wraith",
+    "count": 72,
+    "interval_sec": 0.32
+   },
+   {
+    "at_sec": 310,
+    "monster_id": "cursed_hound",
+    "count": 34,
+    "interval_sec": 0.4
+   }
+  ]
+ }
 }

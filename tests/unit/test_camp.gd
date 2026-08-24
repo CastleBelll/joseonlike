@@ -73,10 +73,18 @@ func test_buildings_roster_and_meta_routing() -> bool:
 		"bestiary": "res://scenes/bestiary.tscn",
 		"achievements": "res://scenes/achievements.tscn",
 	}
+	# N9-150: 지역 선택 acts in place — ready, but it cycles the departure
+	# region inside the camp instead of routing to a scene.
+	var in_place: Array[String] = ["region_select"]
 	for building: Dictionary in buildings:
 		if String(building["label"]).is_empty():
 			push_error("test_camp: building must be labelled")
 			return false
+		if in_place.has(String(building["id"])):
+			if not bool(building["ready"]) or not Camp.building_scene(building).is_empty():
+				push_error("test_camp: in-place building must be ready and route nowhere")
+				return false
+			continue
 		if routed.has(String(building["id"])):
 			if Camp.building_notice(building) != "" \
 					or Camp.building_scene(building) != String(routed[building["id"]]):

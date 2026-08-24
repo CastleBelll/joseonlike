@@ -149,6 +149,8 @@ var _fresh: bool = false
 ## N9-148: --character=<id> plays the run as that roster entry (in-memory
 ## profile only, like --fresh) — how the warrior gets exercised headless.
 var _character: String = ""
+## N9-150: --stage=<id> runs a different region (in-memory profile only).
+var _stage_id: String = ""
 ## N9-54: gold budget to spend on the meta tree before the run, for measuring
 ## what PARTIAL progress buys. "--meta=max" answers what the end of the ladder
 ## feels like; it cannot say whether the middle of it is worth walking.
@@ -197,7 +199,7 @@ func _ready() -> void:
 	var stage_data: Dictionary = JSON.parse_string(
 		FileAccess.get_file_as_string(Spawner.STAGES_PATH)
 	)
-	var stage_entry: Dictionary = stage_data.get(Spawner.STAGE_ID, {})
+	var stage_entry: Dictionary = stage_data.get(Spawner.DEFAULT_STAGE_ID, {})
 	var effects: Dictionary = JSON.parse_string(
 		FileAccess.get_file_as_string(Spawner.EFFECTS_PATH)
 	)
@@ -222,6 +224,11 @@ func _ready() -> void:
 			(_weapons_json.get(result_id, {}) as Dictionary).get("name_ko", result_id)
 		))
 	_parse_args()
+	if not _stage_id.is_empty():
+		stage_entry = stage_data.get(_stage_id, {})
+		_duration = float(stage_entry.get("duration_sec", 0.0))
+		_surge_at = float(stage_entry.get("surge_at_sec", 0.0))
+		_boss_at = RunFlow.boss_spawn_time(stage_entry)
 	Engine.time_scale = _speed
 	if _batch:
 		if _run_seed == 0:
@@ -263,6 +270,8 @@ func _parse_args() -> void:
 			_fresh = true
 		elif arg.begins_with("--character="):
 			_character = arg.get_slice("=", 1)
+		elif arg.begins_with("--stage="):
+			_stage_id = arg.get_slice("=", 1)
 		elif arg == "--endless":
 			_endless = true
 
@@ -322,9 +331,12 @@ func _start_run() -> void:
 		SaveService.instance.profile = returning
 		SaveService.instance._write_locked = true
 		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
-	if not _character.is_empty() and SaveService.instance != null:
+	if (not _character.is_empty() or not _stage_id.is_empty()) and SaveService.instance != null:
 		var forced_profile: Dictionary = SaveService.instance.profile.duplicate(true)
-		forced_profile["selected_character"] = _character
+		if not _character.is_empty():
+			forced_profile["selected_character"] = _character
+		if not _stage_id.is_empty():
+			forced_profile["selected_stage"] = _stage_id
 		SaveService.instance.profile = forced_profile
 		SaveService.instance._write_locked = true
 		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"

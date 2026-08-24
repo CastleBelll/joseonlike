@@ -21,7 +21,20 @@ signal burn_damaged(amount: float, at: Vector2)
 const STAGES_PATH := "res://data/stages.json"
 const MONSTERS_PATH := "res://data/monsters.json"
 const EFFECTS_PATH := "res://data/effects.json"
-const STAGE_ID := "bamboo_forest"
+const DEFAULT_STAGE_ID := "bamboo_forest"
+
+
+## N9-150: the run's stage comes from the profile (지역 선택 in camp); the
+## bamboo forest stays the default so a fresh profile and every headless
+## harness keep their old behaviour.
+static func stage_id() -> String:
+	if SaveService.instance != null:
+		var selected: String = String(
+			SaveService.instance.profile.get("selected_stage", DEFAULT_STAGE_ID)
+		)
+		if not selected.is_empty():
+			return selected
+	return DEFAULT_STAGE_ID
 
 ## N5-5: the field's destructible props, set by the stage after StageField
 ## builds. The spawner is the target registry every weapon already holds, so
@@ -94,7 +107,7 @@ func setup(player: Player) -> void:
 	_sep_weight = float(sep.get("weight", 0.0))
 	_sep_pad = float(sep.get("pad_px", 0.0))
 	_separation.configure(float(sep.get("cell_px", 1.0)))
-	var stage: Dictionary = stage_data.get(STAGE_ID, {})
+	var stage: Dictionary = stage_data.get(stage_id(), {})
 	# N9-22: the selected difficulty tier and run length reshape the schedule
 	# (wave counts, boss/surge timing, enrage ceilings) before anything reads it.
 	var difficulty_config: Dictionary = Difficulty.load_config()
@@ -116,7 +129,7 @@ func setup(player: Player) -> void:
 		_endless = stage.get(Endless.FLAG, {})
 		_stage_waves = stage.get("waves", [])
 	if _spawning.is_empty() or _monsters.is_empty():
-		push_error("spawner: missing spawning config or monsters for " + STAGE_ID)
+		push_error("spawner: missing spawning config or monsters for " + stage_id())
 		return
 	for wave: Dictionary in stage.get("waves", []):
 		_pending_waves.append(wave)

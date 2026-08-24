@@ -1,75 +1,80 @@
 {
-  "_config": {
-    "note": "N9-1a BGM. fade_sec은 곡이 교체될 때 겹치는 페이드 길이(초). 같은 track_id가 이어지는 화면 전환에서는 곡을 다시 시작하지 않는다. volume은 곡별 음량 보정(0~1)이며, 사용자 설정의 음악 볼륨은 Music 버스에서 따로 적용된다.",
-    "fade_sec": 1.2,
-    "default_volume": 0.85
+ "_config": {
+  "note": "N9-1a BGM. fade_sec은 곡이 교체될 때 겹치는 페이드 길이(초). 같은 track_id가 이어지는 화면 전환에서는 곡을 다시 시작하지 않는다. volume은 곡별 음량 보정(0~1)이며, 사용자 설정의 음악 볼륨은 Music 버스에서 따로 적용된다.",
+  "fade_sec": 1.2,
+  "default_volume": 0.85
+ },
+ "tracks": {
+  "title": {
+   "name_ko": "조선라이크",
+   "file": "res://asset/bgm/title.mp3",
+   "volume": 0.85
   },
-  "tracks": {
-    "title": {
-      "name_ko": "조선라이크",
-      "file": "res://asset/bgm/title.mp3",
-      "volume": 0.85
-    },
-    "camp": {
-      "name_ko": "본거지",
-      "file": "res://asset/bgm/camp.mp3",
-      "volume": 0.8
-    },
-    "bamboo_forest": {
-      "name_ko": "대나무숲",
-      "file": "res://asset/bgm/bamboo_forest.mp3",
-      "volume": 0.75
-    }
+  "camp": {
+   "name_ko": "본거지",
+   "file": "res://asset/bgm/camp.mp3",
+   "volume": 0.8
   },
-  "_sfx_note": "N9-52 효과음. volume은 효과음 사이의 상대 음량(0~1)이고 사용자 설정의 효과음 볼륨은 Effects 버스에서 따로 적용된다. min_interval_sec은 같은 소리의 최소 재발 간격 — 없으면 난전에서 같은 파형이 열 겹으로 쌓여 뭉개진다. 파일은 tools/make_sfx.gd가 생성한 합성음이며, 같은 경로에 실제 녹음을 덮으면 코드 변경 없이 교체된다.",
-  "sfx": {
-    "hit": {
-      "name_ko": "타격",
-      "file": "res://asset/sfx/hit.wav",
-      "volume": 0.3,
-      "min_interval_sec": 0.06
-    },
-    "crit": {
-      "name_ko": "치명타",
-      "file": "res://asset/sfx/crit.wav",
-      "volume": 0.5,
-      "min_interval_sec": 0.09
-    },
-    "kill": {
-      "name_ko": "처치",
-      "file": "res://asset/sfx/kill.wav",
-      "volume": 0.28,
-      "min_interval_sec": 0.07
-    },
-    "pickup": {
-      "name_ko": "획득",
-      "file": "res://asset/sfx/pickup.wav",
-      "volume": 0.4,
-      "min_interval_sec": 0.08
-    },
-    "levelup": {
-      "name_ko": "각성",
-      "file": "res://asset/sfx/levelup.wav",
-      "volume": 0.6,
-      "min_interval_sec": 0.3
-    },
-    "skill": {
-      "name_ko": "술법",
-      "file": "res://asset/sfx/skill.wav",
-      "volume": 0.55,
-      "min_interval_sec": 0.15
-    },
-    "hurt": {
-      "name_ko": "피격",
-      "file": "res://asset/sfx/hurt.wav",
-      "volume": 0.65,
-      "min_interval_sec": 0.25
-    },
-    "boss_warn": {
-      "name_ko": "보스 예고",
-      "file": "res://asset/sfx/boss_warn.wav",
-      "volume": 0.6,
-      "min_interval_sec": 0.5
-    }
+  "bamboo_forest": {
+   "name_ko": "대나무숲",
+   "file": "res://asset/bgm/bamboo_forest.mp3",
+   "volume": 0.75
+  },
+  "ruined_village": {
+   "name_ko": "폐허가 된 마을",
+   "file": "res://asset/bgm/bamboo_forest.mp3",
+   "volume": 0.7
   }
+ },
+ "_sfx_note": "N9-52 효과음. volume은 효과음 사이의 상대 음량(0~1)이고 사용자 설정의 효과음 볼륨은 Effects 버스에서 따로 적용된다. min_interval_sec은 같은 소리의 최소 재발 간격 — 없으면 난전에서 같은 파형이 열 겹으로 쌓여 뭉개진다. 파일은 tools/make_sfx.gd가 생성한 합성음이며, 같은 경로에 실제 녹음을 덮으면 코드 변경 없이 교체된다.",
+ "sfx": {
+  "hit": {
+   "name_ko": "타격",
+   "file": "res://asset/sfx/hit.wav",
+   "volume": 0.3,
+   "min_interval_sec": 0.06
+  },
+  "crit": {
+   "name_ko": "치명타",
+   "file": "res://asset/sfx/crit.wav",
+   "volume": 0.5,
+   "min_interval_sec": 0.09
+  },
+  "kill": {
+   "name_ko": "처치",
+   "file": "res://asset/sfx/kill.wav",
+   "volume": 0.28,
+   "min_interval_sec": 0.07
+  },
+  "pickup": {
+   "name_ko": "획득",
+   "file": "res://asset/sfx/pickup.wav",
+   "volume": 0.4,
+   "min_interval_sec": 0.08
+  },
+  "levelup": {
+   "name_ko": "각성",
+   "file": "res://asset/sfx/levelup.wav",
+   "volume": 0.6,
+   "min_interval_sec": 0.3
+  },
+  "skill": {
+   "name_ko": "술법",
+   "file": "res://asset/sfx/skill.wav",
+   "volume": 0.55,
+   "min_interval_sec": 0.15
+  },
+  "hurt": {
+   "name_ko": "피격",
+   "file": "res://asset/sfx/hurt.wav",
+   "volume": 0.65,
+   "min_interval_sec": 0.25
+  },
+  "boss_warn": {
+   "name_ko": "보스 예고",
+   "file": "res://asset/sfx/boss_warn.wav",
+   "volume": 0.6,
+   "min_interval_sec": 0.5
+  }
+ }
 }

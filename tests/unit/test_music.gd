@@ -12,7 +12,7 @@ func test_every_screen_that_plays_music_has_a_track() -> bool:
 	var config: Dictionary = MusicService.load_config()
 	# The stage looks its track up by stage id, so a missing entry here means
 	# a silent region rather than an error anyone would notice.
-	for track_id: String in ["title", "camp", Spawner.STAGE_ID]:
+	for track_id: String in ["title", "camp", Spawner.DEFAULT_STAGE_ID]:
 		if MusicService.track(config, track_id).is_empty():
 			return false
 	return true
