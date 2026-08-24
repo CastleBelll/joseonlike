@@ -22,6 +22,10 @@ const PANEL_HEIGHT := 560.0
 ## 게임 tab's extra rows, so the paper grows up to this before the scroll has
 ## to engage. Short viewports still clamp (N9-163).
 const PANEL_HEIGHT_MAX := 640.0
+const PANEL_WIDTH := 492.0
+## Owner (가로에서 설정이 스크롤된다): the short landscape canvas cannot stack
+## the 게임 rows, so the paper widens and the rows run in two columns.
+const PANEL_WIDTH_LANDSCAPE := 760.0
 const HEADER_HEIGHT := 72.0
 const BODY_MARGIN := 32.0
 const ROW_HEIGHT := 56.0
@@ -59,6 +63,8 @@ var _close_button: Button
 var _tab_buttons: Dictionary = {}
 var _tab_pages: Dictionary = {}
 var _active_tab: String = TAB_GAME
+var _landscape_pages := false
+var _layout: Control
 
 
 func _ready() -> void:
@@ -83,11 +89,14 @@ func _ready() -> void:
 	_layout_panel()
 	_root.add_child(panel)
 	_root.resized.connect(_layout_panel)
-	var layout := Control.new()
-	layout.name = "Layout"
-	panel.add_child(layout)
-	layout.add_child(_make_header())
-	layout.add_child(_make_body())
+	# The page layout (one column or two) is decided at build time, so a
+	# rotation or fullscreen toggle has to rebuild it — like the camp.
+	_root.resized.connect(_relayout_on_flip)
+	_layout = Control.new()
+	_layout.name = "Layout"
+	panel.add_child(_layout)
+	_layout.add_child(_make_header())
+	_layout.add_child(_make_body())
 	_refresh_texts()
 	visible = false
 
@@ -99,7 +108,9 @@ func _layout_panel() -> void:
 		return
 	var root_size: Vector2 = _root.size if _root.size.y > 0.0 else Vector2(540, 960)
 	var half_h: float = minf(PANEL_HEIGHT_MAX, root_size.y - 32.0) / 2.0
-	var half_w: float = minf(492.0, root_size.x - PANEL_MARGIN_X * 2.0) / 2.0
+	var landscape: bool = root_size.x > root_size.y
+	var band: float = PANEL_WIDTH_LANDSCAPE if landscape else PANEL_WIDTH
+	var half_w: float = minf(band, root_size.x - PANEL_MARGIN_X * 2.0) / 2.0
 	_panel.offset_top = -half_h
 	_panel.offset_bottom = half_h
 	_panel.offset_left = -half_w
@@ -172,6 +183,46 @@ func _make_header() -> Control:
 	return header
 
 
+## Rebuild the header and pages when the orientation flips; every other
+## resize keeps its nodes so an open popup never loses its state.
+func _relayout_on_flip() -> void:
+	if _layout == null or _is_landscape() == _landscape_pages:
+		return
+	for child: Node in _layout.get_children():
+		_layout.remove_child(child)
+		child.queue_free()
+	_row_labels.clear()
+	_tab_buttons.clear()
+	_tab_pages.clear()
+	_resolution_button = null
+	_damage_button = null
+	_layout.add_child(_make_header())
+	_layout.add_child(_make_body())
+	_refresh_texts()
+	_layout_panel()
+
+
+func _is_landscape() -> bool:
+	var root_size: Vector2 = _root.size if _root != null and _root.size.y > 0.0 else Vector2(540, 960)
+	return root_size.x > root_size.y
+
+
+## One settings page: a column in portrait, two columns in landscape so the
+## short canvas never has to scroll the rows.
+func _make_page(page_name: String) -> Container:
+	if _landscape_pages:
+		var grid := GridContainer.new()
+		grid.name = page_name
+		grid.columns = 2
+		grid.add_theme_constant_override("h_separation", UiPalette.SPACE_LG)
+		grid.add_theme_constant_override("v_separation", UiPalette.SPACE_MD)
+		return grid
+	var column := VBoxContainer.new()
+	column.name = page_name
+	column.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+	return column
+
+
 func _make_body() -> Control:
 	var body := VBoxContainer.new()
 	body.name = "Body"
@@ -196,11 +247,10 @@ func _make_body() -> Control:
 	pages.add_theme_constant_override("separation", UiPalette.SPACE_MD)
 	pages.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	pages_scroll.add_child(pages)
+	_landscape_pages = _is_landscape()
 	body.add_child(pages_scroll)
 
-	var game_page := VBoxContainer.new()
-	game_page.name = "GamePage"
-	game_page.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+	var game_page: Container = _make_page("GamePage")
 	# N6-5: joystick opacity slider — floored so the stick can never be
 	# dragged fully invisible by accident.
 	game_page.add_child(_make_slider_row(
@@ -220,9 +270,7 @@ func _make_body() -> Control:
 	pages.add_child(game_page)
 	_tab_pages[TAB_GAME] = game_page
 
-	var audio_page := VBoxContainer.new()
-	audio_page.name = "AudioPage"
-	audio_page.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+	var audio_page: Container = _make_page("AudioPage")
 	for key: String in SaveProfile.VOLUME_KEYS:
 		audio_page.add_child(_make_slider_row(key))
 	pages.add_child(audio_page)

@@ -29,12 +29,26 @@ const DETAIL_NAME_FONT_SIZE := 32
 const PANEL_WIDTH_RATIO := 0.92
 ## N9-153: wide screens hold the portrait design band, centered.
 const PANEL_MAX_WIDTH := 500.0
+## Landscape spends width instead of height: a wider card whose portrait sits
+## beside the text, and a smaller portrait well to match the short canvas.
+const PANEL_MAX_WIDTH_LANDSCAPE := 860.0
+const DETAIL_PORTRAIT_SIZE_LANDSCAPE := 132
 const PANEL_CORNER_RADIUS := 12
 const PANEL_BORDER := 2
 const WELL_CORNER_RADIUS := 8
 ## Detail panel spans from below the title to just above the tile strip.
 const DETAIL_TOP_MARGIN := 96
 const DETAIL_BOTTOM_MARGIN := 292
+## Landscape has 540 design px of height: the header sits tighter, the tile
+## strip rides closer to the bottom CTA, and the detail card takes the rest.
+## 540 design px of height, top to bottom: title, detail card, tile strip,
+## then the CTA — each band clears the next, which is what the portrait
+## margins do with 960.
+const DETAIL_TOP_MARGIN_LANDSCAPE := 86
+const DETAIL_BOTTOM_MARGIN_LANDSCAPE := 240
+const TILE_STRIP_BOTTOM_MARGIN_LANDSCAPE := 84
+const BACK_BOTTOM_MARGIN_LANDSCAPE := 12
+const BACK_BUTTON_HEIGHT_LANDSCAPE := 52
 const DETAIL_PORTRAIT_SIZE := 196
 ## Tile strip: portrait square plus the name under it.
 const TILE_SIZE := 96
@@ -197,16 +211,41 @@ func _build_detail() -> void:
 	panel.anchor_left = 0.5
 	panel.anchor_right = 0.5
 	panel.anchor_bottom = 1.0
-	var half: float = minf(PANEL_MAX_WIDTH, size.x * PANEL_WIDTH_RATIO if size.x > 0.0 else PANEL_MAX_WIDTH) / 2.0
+	var band: float = PANEL_MAX_WIDTH_LANDSCAPE if _is_landscape() else PANEL_MAX_WIDTH
+	var half: float = minf(band, size.x * PANEL_WIDTH_RATIO if size.x > 0.0 else band) / 2.0
 	panel.offset_left = -half
 	panel.offset_right = half
-	panel.offset_top = DETAIL_TOP_MARGIN
-	panel.offset_bottom = -DETAIL_BOTTOM_MARGIN
+	panel.offset_top = float(
+		DETAIL_TOP_MARGIN_LANDSCAPE if _is_landscape() else DETAIL_TOP_MARGIN
+	)
+	panel.offset_bottom = -float(
+		DETAIL_BOTTOM_MARGIN_LANDSCAPE if _is_landscape() else DETAIL_BOTTOM_MARGIN
+	)
 
 	var margin := MarginContainer.new()
 	margin.name = "Content"
 	for side: String in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
 		margin.add_theme_constant_override(side, UiPalette.SPACE_MD)
+
+	# Owner (가로에서 UI가 스크롤된다): stacked portrait + heading + body needs
+	# more height than a landscape canvas has, so the wide layout puts the
+	# portrait beside the text instead of above it.
+	if _is_landscape():
+		var row := HBoxContainer.new()
+		row.name = "DetailRow"
+		row.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+		row.add_child(_build_portrait(model, DETAIL_PORTRAIT_SIZE_LANDSCAPE, false))
+		var text := VBoxContainer.new()
+		text.name = "DetailColumn"
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		text.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+		text.add_child(_build_heading(model))
+		text.add_child(_build_body(model))
+		row.add_child(text)
+		margin.add_child(row)
+		panel.add_child(margin)
+		add_child(panel)
+		return
 
 	var column := VBoxContainer.new()
 	column.name = "DetailColumn"
@@ -221,6 +260,10 @@ func _build_detail() -> void:
 
 ## Portrait well at any size. `centered` wraps it in its own centering row,
 ## which the detail panel wants and the tiles (already square) do not.
+func _is_landscape() -> bool:
+	return size.x > size.y
+
+
 func _build_portrait(model: Dictionary, size: int, centered: bool) -> Control:
 	var well := PanelContainer.new()
 	well.name = "PortraitWell"
@@ -351,8 +394,11 @@ func _build_tiles() -> void:
 	strip.anchor_bottom = 1.0
 	strip.offset_left = UiPalette.SPACE_MD
 	strip.offset_right = -UiPalette.SPACE_MD
-	strip.offset_top = -(TILE_STRIP_BOTTOM_MARGIN + TILE_STRIP_HEIGHT)
-	strip.offset_bottom = -TILE_STRIP_BOTTOM_MARGIN
+	var strip_margin: int = (
+		TILE_STRIP_BOTTOM_MARGIN_LANDSCAPE if _is_landscape() else TILE_STRIP_BOTTOM_MARGIN
+	)
+	strip.offset_top = -(strip_margin + TILE_STRIP_HEIGHT)
+	strip.offset_bottom = -strip_margin
 
 	var row := HBoxContainer.new()
 	row.name = "Tiles"
@@ -442,7 +488,10 @@ func _build_back_button() -> void:
 	var back := Button.new()
 	back.name = "BackButton"
 	back.text = UiLocale.text("select.back")
-	back.custom_minimum_size = Vector2(0, BACK_BUTTON_HEIGHT)
+	var back_height: int = (
+		BACK_BUTTON_HEIGHT_LANDSCAPE if _is_landscape() else BACK_BUTTON_HEIGHT
+	)
+	back.custom_minimum_size = Vector2(0, back_height)
 	WoodButton.apply(back)
 	# N9-153: centered, capped at the design band's half on wide screens.
 	back.anchor_left = 0.5
@@ -455,8 +504,11 @@ func _build_back_button() -> void:
 	back.offset_right = back_half
 	back.anchor_top = 1.0
 	back.anchor_bottom = 1.0
-	back.offset_top = -(BACK_BUTTON_HEIGHT + BACK_BOTTOM_MARGIN)
-	back.offset_bottom = -BACK_BOTTOM_MARGIN
+	var back_margin: int = (
+		BACK_BOTTOM_MARGIN_LANDSCAPE if _is_landscape() else BACK_BOTTOM_MARGIN
+	)
+	back.offset_top = -float(back_height + back_margin)
+	back.offset_bottom = -float(back_margin)
 	back.pressed.connect(_on_back_pressed)
 	add_child(back)
 
