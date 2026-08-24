@@ -19,6 +19,11 @@ const PANEL_MARGIN := 16.0
 ## as glued to the frame (owner report).
 const PANEL_BOTTOM_MARGIN := 120.0
 const PANEL_HEIGHT := 190.0
+## Owner (가로에서 가이드가 캐릭터를 가린다): 540 design px of height puts the
+## portrait panel right where the player stands. Landscape keeps it low and
+## short — still clear of the joystick thumb zone, but out of the field.
+const PANEL_BOTTOM_MARGIN_LANDSCAPE := 24.0
+const PANEL_HEIGHT_LANDSCAPE := 132.0
 const PANEL_CORNER := 12
 const PANEL_BORDER_WIDTH := 2
 const PAD := 16.0
@@ -32,6 +37,20 @@ var _index: int = 0
 var _name_label: Label
 var _body_label: Label
 var _next_button: Button
+var _panel: Control
+
+
+## Bottom band for the current orientation: the portrait panel sits above the
+## joystick zone (N9-16); landscape trades height for the field behind it.
+func _apply_panel_band(panel: Control) -> void:
+	if panel == null:
+		return
+	var root: Control = get_node_or_null("Blocker")
+	var wide: bool = root != null and root.size.x > root.size.y
+	var height: float = PANEL_HEIGHT_LANDSCAPE if wide else PANEL_HEIGHT
+	var margin: float = PANEL_BOTTOM_MARGIN_LANDSCAPE if wide else PANEL_BOTTOM_MARGIN
+	panel.offset_top = -(height + margin)
+	panel.offset_bottom = -margin
 
 
 func _ready() -> void:
@@ -59,8 +78,10 @@ func _ready() -> void:
 	panel.anchor_bottom = 1.0
 	panel.offset_left = PANEL_MARGIN
 	panel.offset_right = -PANEL_MARGIN
-	panel.offset_top = -(PANEL_HEIGHT + PANEL_BOTTOM_MARGIN)
-	panel.offset_bottom = -PANEL_BOTTOM_MARGIN
+	_panel = panel
+	_apply_panel_band(panel)
+	# The band depends on the orientation, so a rotation has to re-place it.
+	blocker.resized.connect(func() -> void: _apply_panel_band(_panel))
 	blocker.add_child(panel)
 
 	var row := HBoxContainer.new()
