@@ -48,6 +48,7 @@ const UTILITY_BUTTON_SIZE := 44.0  # UiPalette.TOUCH_TARGET_MIN
 
 var _notice_label: Label
 var _notice_tween: Tween
+var _was_landscape: bool = false
 # N9-22 departure settings: the ladder/length data plus the two cycle buttons
 # that show the current pick — one tap steps to the next option, so departing
 # still costs one tap for anyone who never touches them.
@@ -59,6 +60,11 @@ var _run_length_button: Button
 
 func _ready() -> void:
 	build_ui()
+	# Owner (전체화면 가로로 바꿔도 세로 배치 그대로다): the two-half landscape
+	# layout is decided at build time, so a rotation or a fullscreen toggle has
+	# to rebuild it — only when the orientation actually flips.
+	_was_landscape = _is_landscape()
+	resized.connect(_on_resized)
 	# N9-35 (owner request): audio and the other settings were reachable only
 	# from the title, so a player already in the camp had to back all the way
 	# out to change the volume. Built in _ready rather than build_ui because
@@ -250,6 +256,19 @@ func _build_stats(summary: Dictionary) -> Control:
 ## present and tappable, never a greyed-out button (DESIGN.md §6).
 func _is_landscape() -> bool:
 	return size.x > size.y
+
+
+## Rebuild only on an orientation flip — every other resize keeps its nodes,
+## so focus, tweens and the open settings popup survive a plain window drag.
+func _on_resized() -> void:
+	var now: bool = _is_landscape()
+	if now == _was_landscape:
+		return
+	_was_landscape = now
+	for child: Node in get_children():
+		if child != _settings_popup:
+			child.queue_free()
+	build_ui()
 
 
 func _build_buildings() -> Control:

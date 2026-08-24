@@ -9,6 +9,11 @@ extends Node
 
 const PORTRAIT_BASE := Vector2i(540, 960)
 const LANDSCAPE_BASE := Vector2i(960, 540)
+## Owner (전체화면에서 요소들이 너무 크다): a 1080-tall fullscreen window
+## renders the 540 base at 2x, so a phone-sized UI fills a monitor. Past this
+## factor the base grows with the window instead — buttons and text keep a
+## sane physical size and the wide screen shows more of the field.
+const MAX_UI_SCALE := 1.5
 
 
 func _ready() -> void:
@@ -35,9 +40,27 @@ static func apply_resolution(preset: String) -> void:
 	DisplayServer.window_set_position((screen - wanted) / 2)
 
 
+## The content scale base for one window size: the orientation's design base,
+## grown proportionally once the window would upscale it past MAX_UI_SCALE.
+## Static so the unit test can prove the cap without a window.
+static func base_for(window_size: Vector2i) -> Vector2i:
+	var wide: bool = window_size.x > window_size.y
+	var base: Vector2i = LANDSCAPE_BASE if wide else PORTRAIT_BASE
+	if window_size.y <= 0:
+		return base
+	var scale: float = float(window_size.y) / float(base.y)
+	if scale <= MAX_UI_SCALE:
+		return base
+	# Keep the window's own aspect so nothing is cropped or letterboxed; the
+	# design bands stay centered and the extra width shows more background.
+	return Vector2i(
+		maxi(int(round(float(window_size.x) / MAX_UI_SCALE)), base.x),
+		maxi(int(round(float(window_size.y) / MAX_UI_SCALE)), base.y)
+	)
+
+
 func _apply_orientation_base() -> void:
 	var window: Window = get_tree().root
-	var wide: bool = window.size.x > window.size.y
-	var wanted: Vector2i = LANDSCAPE_BASE if wide else PORTRAIT_BASE
+	var wanted: Vector2i = base_for(window.size)
 	if window.content_scale_size != wanted:
 		window.content_scale_size = wanted
