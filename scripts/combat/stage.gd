@@ -647,6 +647,7 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 		_add_gold(_boss_gold)
 		_boss = null
 		_hud.hide_boss_bar()
+		_play_sfx("boss_down")
 		# N9-60: in an endless night the boss is a recurring event, not the
 		# finish line. Killing it pays out and sets the next one coming; the
 		# only way the run ends is the player falling.
@@ -800,6 +801,7 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 	if outcome == RunFlow.OUTCOME_VICTORY:
 		var config: Dictionary = Difficulty.load_config()
 		SaveService.instance.mark_difficulty_cleared(Difficulty.selected_id(config))
+	_play_sfx("victory" if outcome == RunFlow.OUTCOME_VICTORY else "defeat")
 	_result.open(outcome, summary)
 
 
@@ -1534,6 +1536,7 @@ func _material_cue(loot_id: String, loot_name: String) -> String:
 ## then one roll on the data table — most breaks give nothing or small gold on
 ## purpose; the exciting kinds stay uncommon (validator-enforced shares).
 func _on_breakable_broke(breakable: Breakable) -> void:
+	_play_sfx("break_pot")
 	# N9-101: a broken prop used to park invisibly in the field forever. With
 	# streamed chunks that is an unbounded pile of dead nodes; nothing ever
 	# reuses one, so it is freed. The record list drops it too — deferred,
@@ -1793,10 +1796,13 @@ func _on_pickup_collected(orb: XpOrb) -> void:
 			)
 			_float_label(UiLocale.t("+%d냥") % gained)
 		Pickups.KIND_HEALTH:
+			_play_sfx("heal")
 			_collect_health()
 		Pickups.KIND_NUKE:
+			_play_sfx("nuke")
 			_execute_nuke()
 		Pickups.KIND_MAGNET:
+			_play_sfx("magnet")
 			_execute_magnet()
 
 
@@ -1890,6 +1896,7 @@ func _on_chest_opened(chest: Chest) -> void:
 	_chest_pool.release(chest)
 	if _outcome != RunFlow.OUTCOME_NONE:
 		return
+	_play_sfx("chest_open")
 	var count: int = Pickups.roll_chest_count(
 		_pickups_data.get("chest", {}), _meta_bonus("luck"), _loot_rng
 	)

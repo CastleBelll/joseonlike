@@ -91,9 +91,13 @@ func _ready() -> void:
 func open() -> void:
 	visible = true
 	_close_button.grab_focus()
+	if SfxService.instance != null:
+		SfxService.instance.play("ui_open")
 
 
 func _on_close_pressed() -> void:
+	if SfxService.instance != null:
+		SfxService.instance.play("ui_close")
 	SaveService.instance.save_profile()
 	visible = false
 	closed.emit()

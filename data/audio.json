@@ -75,6 +75,90 @@
    "file": "res://asset/sfx/boss_warn.wav",
    "volume": 0.6,
    "min_interval_sec": 0.5
+  },
+  "ui_click": {
+   "name_ko": "클릭",
+   "file": "res://asset/sfx/ui_click.wav",
+   "volume": 0.5,
+   "min_interval_sec": 0.05
+  },
+  "ui_open": {
+   "name_ko": "창 열림",
+   "file": "res://asset/sfx/ui_open.wav",
+   "volume": 0.5,
+   "min_interval_sec": 0.15
+  },
+  "ui_close": {
+   "name_ko": "창 닫힘",
+   "file": "res://asset/sfx/ui_close.wav",
+   "volume": 0.5,
+   "min_interval_sec": 0.15
+  },
+  "victory": {
+   "name_ko": "승리",
+   "file": "res://asset/sfx/victory.wav",
+   "volume": 0.7,
+   "min_interval_sec": 1.0
+  },
+  "defeat": {
+   "name_ko": "패배",
+   "file": "res://asset/sfx/defeat.wav",
+   "volume": 0.7,
+   "min_interval_sec": 1.0
+  },
+  "boss_down": {
+   "name_ko": "보스 처치",
+   "file": "res://asset/sfx/boss_down.wav",
+   "volume": 0.75,
+   "min_interval_sec": 1.0
+  },
+  "break_pot": {
+   "name_ko": "파괴",
+   "file": "res://asset/sfx/break_pot.wav",
+   "volume": 0.45,
+   "min_interval_sec": 0.12
+  },
+  "chest_open": {
+   "name_ko": "궤짝",
+   "file": "res://asset/sfx/chest_open.wav",
+   "volume": 0.6,
+   "min_interval_sec": 0.3
+  },
+  "heal": {
+   "name_ko": "회복",
+   "file": "res://asset/sfx/heal.wav",
+   "volume": 0.55,
+   "min_interval_sec": 0.2
+  },
+  "magnet": {
+   "name_ko": "끌어당김",
+   "file": "res://asset/sfx/magnet.wav",
+   "volume": 0.55,
+   "min_interval_sec": 0.3
+  },
+  "nuke": {
+   "name_ko": "벽력부",
+   "file": "res://asset/sfx/nuke.wav",
+   "volume": 0.7,
+   "min_interval_sec": 0.5
+  },
+  "swing": {
+   "name_ko": "휘두름",
+   "file": "res://asset/sfx/swing.wav",
+   "volume": 0.28,
+   "min_interval_sec": 0.12
+  },
+  "shoot": {
+   "name_ko": "발사",
+   "file": "res://asset/sfx/shoot.wav",
+   "volume": 0.2,
+   "min_interval_sec": 0.1
+  },
+  "chain_zap": {
+   "name_ko": "연쇄 전격",
+   "file": "res://asset/sfx/chain_zap.wav",
+   "volume": 0.35,
+   "min_interval_sec": 0.15
   }
  }
 }

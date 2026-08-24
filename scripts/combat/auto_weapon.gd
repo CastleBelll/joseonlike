@@ -424,6 +424,9 @@ func _fire() -> void:
 	# N4-8 multishot: projectile mechanics fire projectile_count shots fanned
 	# around the aim; count 1 keeps the exact single-shot behaviour.
 	_spawn_cast()
+	# N9-158: launch reads as sound too — the chain crackles, everything else
+	# whips off like thrown paper. Rate-limited in data (min_interval_sec).
+	_play_sfx("chain_zap" if _mechanic == MECHANIC_CHAIN else "shoot")
 	for shot_direction: Vector2 in WeaponMath.fan_directions(
 		direction, int(_stats.get("projectile_count", 1)), deg_to_rad(_fan_spread_deg)
 	):
@@ -461,6 +464,7 @@ func _fire_arc(enemies: Array[Enemy], positions: Array[Vector2], aim_point: Vect
 		_after_hit(arc_damage)
 		hit_landed.emit(arc_damage, hit_at, boss_hit, _last_crit)
 	_play_swing_art(origin, aim)
+	_play_sfx("swing")
 	_arc_flash.flash(
 		origin, aim, arc_rad, _range, _tint(), WeaponEffects.value("arc_sweep_sec")
 	)
@@ -1167,3 +1171,9 @@ class ArcFlash:
 			Vector2.ZERO, _radius, blade_from, edge, POINTS,
 			Color(UiPalette.LOOT_CORE, 0.8 * fade), EDGE_WIDTH * 0.4
 		)
+
+
+## N9-158: null-guarded like the stage's helper, for node-free harnesses.
+func _play_sfx(sound_id: String) -> void:
+	if SfxService.instance != null:
+		SfxService.instance.play(sound_id)

@@ -11,6 +11,10 @@ const DISABLED_PLATE_TINT := Color(0.55, 0.55, 0.55)
 
 
 static func apply(button: Button) -> void:
+	# N9-158 (owner: 버튼 클릭음): every wood button clicks. Guarded against
+	# re-apply double-connects and against node-free harness runs.
+	if not button.pressed.is_connected(_play_click):
+		button.pressed.connect(_play_click)
 	for state: String in ["normal", "hover", "pressed"]:
 		button.add_theme_stylebox_override(state, UiIcons.wood_button(state))
 	button.add_theme_stylebox_override("disabled", _disabled_plate())
@@ -42,3 +46,8 @@ static func _focus_ring() -> StyleBoxFlat:
 	ring.set_border_width_all(FOCUS_RING_WIDTH)
 	ring.set_corner_radius_all(CORNER_RADIUS)
 	return ring
+
+
+static func _play_click() -> void:
+	if SfxService.instance != null:
+		SfxService.instance.play("ui_click")
