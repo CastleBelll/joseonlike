@@ -131,6 +131,11 @@
    "fps": 36.0,
    "logical_px": 260.0
   },
+  "wave_bongin_jineon": {
+   "file": "res://asset/effect/wave_bongin_jineon.png",
+   "fps": 36.0,
+   "logical_px": 260.0
+  },
   "hit_hwabu": {
    "file": "res://asset/effect/hit_hwabu.png",
    "fps": 24.0,
