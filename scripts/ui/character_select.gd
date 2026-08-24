@@ -60,17 +60,27 @@ static func load_characters() -> Dictionary:
 	return data
 
 
-## A character is locked unless its unlock type is "default". Unlock progress
-## tracking (GDD §15-16) is a later feature; until then only defaults are open.
-static func is_locked(entry: Dictionary) -> bool:
-	return String((entry.get("unlock", {}) as Dictionary).get("type", "")) != "default"
+## A character is locked unless its unlock type is "default", or it is an
+## achievement unlock the profile has already earned (N9-148 — the warrior
+## opens with the first boss kill). Pass an empty profile to treat every
+## non-default entry as locked (the pure-logic tests do).
+static func is_locked(entry: Dictionary, profile: Dictionary = {}) -> bool:
+	var unlock: Dictionary = entry.get("unlock", {})
+	var kind: String = String(unlock.get("type", ""))
+	if kind == "default":
+		return false
+	if kind == "achievement" and not profile.is_empty():
+		return not Achievements.is_earned(profile, String(unlock.get("achievement_id", "")))
+	return true
 
 
 ## Pure view-model shared by the detail panel and its tile — they show the same
 ## character and would drift if each resolved the data itself.
 ## A locked character is never marked selected.
-static func card_model(id: String, entry: Dictionary, selected_id: String) -> Dictionary:
-	var locked: bool = is_locked(entry)
+static func card_model(
+	id: String, entry: Dictionary, selected_id: String, profile: Dictionary = {}
+) -> Dictionary:
+	var locked: bool = is_locked(entry, profile)
 	return {
 		"id": id,
 		"name": _localized(entry, "name"),
@@ -88,10 +98,13 @@ static func card_model(id: String, entry: Dictionary, selected_id: String) -> Di
 
 ## Pure selection transition: locked and unknown characters are unselectable,
 ## the current selection survives.
-static func select(current_id: String, pressed_id: String, characters: Dictionary) -> String:
+static func select(
+	current_id: String, pressed_id: String, characters: Dictionary,
+	profile: Dictionary = {}
+) -> String:
 	if not characters.has(pressed_id):
 		return current_id
-	if is_locked(characters[pressed_id]):
+	if is_locked(characters[pressed_id], profile):
 		return current_id
 	return pressed_id
 
@@ -118,6 +131,14 @@ static func _localized(entry: Dictionary, field: String) -> String:
 	if localized is String:
 		return localized
 	return String(entry.get(field + "_" + UiLocale.DEFAULT_LOCALE, ""))
+
+
+## The saved profile when the game is running; empty in headless layout tests
+## (achievement unlocks then read as locked, which is the safe default).
+func _live_profile() -> Dictionary:
+	if SaveService.instance != null:
+		return SaveService.instance.profile
+	return {}
 
 
 func _ready() -> void:
@@ -166,7 +187,7 @@ func _build_title() -> void:
 
 func _build_detail() -> void:
 	var model: Dictionary = card_model(
-		_viewed_id, _characters.get(_viewed_id, {}), _selected_id
+		_viewed_id, _characters.get(_viewed_id, {}), _selected_id, _live_profile()
 	)
 	var panel := PanelContainer.new()
 	panel.name = "Detail"
@@ -335,7 +356,7 @@ func _build_tiles() -> void:
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_theme_constant_override("separation", UiPalette.SPACE_MD)
 	for id: String in _characters.keys():
-		row.add_child(_build_tile(card_model(id, _characters[id], _selected_id)))
+		row.add_child(_build_tile(card_model(id, _characters[id], _selected_id, _live_profile())))
 	strip.add_child(row)
 	add_child(strip)
 
@@ -434,7 +455,7 @@ func _build_back_button() -> void:
 ## the character is unlocked.
 func _on_tile_pressed(id: String) -> void:
 	var next_view: String = view(_viewed_id, id, _characters)
-	var next_selection: String = select(_selected_id, id, _characters)
+	var next_selection: String = select(_selected_id, id, _characters, _live_profile())
 	if next_view == _viewed_id and next_selection == _selected_id:
 		return
 	_viewed_id = next_view

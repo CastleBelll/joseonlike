@@ -146,6 +146,9 @@ var _runs_total: int = 0
 var _run_index: int = 0
 var _luck_max: bool = false
 var _fresh: bool = false
+## N9-148: --character=<id> plays the run as that roster entry (in-memory
+## profile only, like --fresh) — how the warrior gets exercised headless.
+var _character: String = ""
 ## N9-54: gold budget to spend on the meta tree before the run, for measuring
 ## what PARTIAL progress buys. "--meta=max" answers what the end of the ladder
 ## feels like; it cannot say whether the middle of it is worth walking.
@@ -258,6 +261,8 @@ func _parse_args() -> void:
 			_luck_max = true
 		elif arg == "--fresh":
 			_fresh = true
+		elif arg.begins_with("--character="):
+			_character = arg.get_slice("=", 1)
 		elif arg == "--endless":
 			_endless = true
 
@@ -315,6 +320,12 @@ func _start_run() -> void:
 		(returning["stats"] as Dictionary)["runs_played"] = 1
 		returning[Ftue.FTUE_KEY] = {Ftue.MOVE_HINT_SEEN: true, Ftue.MOD_EXPLAINED: true}
 		SaveService.instance.profile = returning
+		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
+	if not _character.is_empty() and SaveService.instance != null:
+		var forced_profile: Dictionary = SaveService.instance.profile.duplicate(true)
+		forced_profile["selected_character"] = _character
+		SaveService.instance.profile = forced_profile
 		SaveService.instance._write_locked = true
 		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 	if _meta_max and SaveService.instance != null:

@@ -69,13 +69,14 @@ const SOFT_ENRAGE_FIELDS: Array[String] = [
 # N4-4a/N4-4b weapon mechanic contract (weapons.json "mechanic" + its blocks).
 const STATUS_IDS: Array[String] = ["burn", "shock", "curse"]
 # N4-4b character actives contract (characters.json "actives").
-const ACTIVE_TYPES: Array[String] = ["blink", "burst"]
+const ACTIVE_TYPES: Array[String] = ["blink", "burst", "guard"]
 # N3-13 icon binding contract (asset/ui/README.md): filenames are data ids.
 const WEAPON_ICON_DIR := "res://asset/ui/weapon_icons"
 const LOOT_ICON_DIR := "res://asset/ui/loot_icons"
 const ACTIVE_TYPE_FIELDS: Dictionary = {
 	"blink": ["distance_px", "invulnerable_sec"],
 	"burst": ["radius_px", "damage"],
+	"guard": ["duration_sec", "damage_taken_scale"],
 }
 
 var _errors: int = 0
@@ -345,15 +346,13 @@ func _check_character_card(
 		for field: String in UNLOCK_TEXT_FIELDS:
 			if String(character.get(field, "")).is_empty():
 				_fail("%s.%s missing or empty" % [label, field])
-	# N9-73: a character that names a way in must be able to come in. Nothing
-	# unlocks a character today — CharacterSelectScreen.is_locked() locks every
-	# non-default one outright — so "achievement" or "gold" on a card is a
-	# promise the game cannot keep, and 전사 carried one for weeks. Anything not
-	# playable yet says coming_soon until the code that opens it exists.
-	if unlock_type in ["achievement", "gold"]:
+	# N9-73 / N9-148: a character that names a way in must be able to come
+	# in. "achievement" is implemented now (CharacterSelectScreen.is_locked
+	# consults the profile), so only "gold" remains an unkept promise.
+	if unlock_type == "gold":
 		_fail(
-			"%s.unlock.type '%s' promises a way in that nothing implements — use "
-			% [label, unlock_type] + "coming_soon until it does"
+			"%s.unlock.type 'gold' promises a way in that nothing implements — "
+			% label + "use coming_soon until it does"
 		)
 
 

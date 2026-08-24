@@ -12,6 +12,24 @@ const FAKE_CHARACTERS := {
 	"open": {"unlock": {"type": "default"}},
 	"locked": {"unlock": {"type": "gold", "cost": 500}},
 }
+## N9-148: an achievement-gated entry (the warrior's shape) and a profile
+## whose counters have and have not earned it.
+const ACHIEVEMENT_CHARACTER := {
+	"unlock": {"type": "achievement", "achievement_id": "first_boss"}
+}
+
+
+func test_achievement_unlock_follows_profile() -> bool:
+	var fresh: Dictionary = SaveProfile.default_profile()
+	var earned: Dictionary = SaveProfile.default_profile()
+	earned[Achievements.EARNED_KEY] = ["first_boss"]
+	var passed: bool = CharacterSelectScreen.is_locked(ACHIEVEMENT_CHARACTER, fresh)
+	passed = passed and not CharacterSelectScreen.is_locked(ACHIEVEMENT_CHARACTER, earned)
+	# No profile at hand (pure-logic callers) stays locked — the safe default.
+	passed = passed and CharacterSelectScreen.is_locked(ACHIEVEMENT_CHARACTER)
+	if not passed:
+		push_error("test_character_select: achievement unlock does not follow the profile")
+	return passed
 
 
 func test_card_model_from_taoist_data() -> bool:

@@ -5,10 +5,10 @@ extends CharacterBody2D
 
 const CHARACTERS_PATH := "res://data/characters.json"
 
-## AC-1 art only exists for the taoist; locked characters cannot be selected
-## (N2-1), so the sprite set stays taoist until another roster entry ships art.
-const IDLE_TEXTURE_PATH := "res://asset/characters/taoist/idle.png"
-const WALK_TEXTURE_PATH := "res://asset/characters/taoist/walk.png"
+## N9-148: sprite sets are per-character now — characters.json carries a
+## "sprite" directory per roster entry; taoist stays the fallback for data
+## without one so a broken entry still renders a player.
+const DEFAULT_SPRITE_DIR := "res://asset/characters/taoist"
 ## AC-1 export contract (asset/characters/taoist/README.md): PNGs are exact
 ## 16x nearest-neighbor blocks of 40x40 logical frames, figure 38px tall,
 ## which is the intended in-world read on the 540px viewport.
@@ -21,9 +21,8 @@ const WALK_FRAME_COUNT := 16
 ## Doubled with the frame count so the 16-frame run keeps the 8-frame cadence.
 const WALK_FPS := 16.0
 const IDLE_FPS := 1.0  # single idle frame; the speed value is inert
-## Which walk frame stands still. Frame 0 has the narrowest stance in the strip
-## (measured: 63px of source spread against 74 at the widest), which is what
-## makes it read as standing rather than as a run caught mid-step.
+## Which walk frame stands still (narrowest stance). Per-character in the
+## data ("idle_walk_frame"); this is the fallback.
 const IDLE_WALK_FRAME := 0
 const ANIM_IDLE := SpriteSheet.ANIM_IDLE
 const ANIM_WALK := SpriteSheet.ANIM_WALK
@@ -53,6 +52,10 @@ var _invuln_window: float = 0.0
 var _damage_taken_scale: float = 1.0
 var _time_since_hit: float = 0.0
 var _bonus_invuln_left: float = 0.0  # granted by actives, on top of hit i-frames
+## N9-148 철벽 guard: timed incoming-damage multiplier on top of the meta
+## scale. 1.0 = no guard; the timer restores it.
+var _guard_left: float = 0.0
+var _guard_scale: float = 1.0
 var _visual: Node2D
 var _sprite: AnimatedSprite2D
 
@@ -146,6 +149,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_time_since_hit += delta
 	_bonus_invuln_left = CombatMath.grace_tick(_bonus_invuln_left, delta)
+	_guard_left = CombatMath.grace_tick(_guard_left, delta)
 	var move_input: Vector2 = joystick_input
 	if move_input == Vector2.ZERO:
 		move_input = Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -181,6 +185,14 @@ func set_invuln_scale(scale: float) -> void:
 	_invuln_window = load_hit_invuln_sec() * maxf(scale, 1.0)
 
 
+## N9-148 철벽: a timed incoming-damage reduction (guard), stacking
+## multiplicatively with the permanent meta scale. Re-triggering refreshes
+## rather than compounds — scale is absolute, never multiplied onto itself.
+func grant_guard(duration_sec: float, scale: float) -> void:
+	_guard_left = maxf(_guard_left, duration_sec)
+	_guard_scale = clampf(scale, 0.0, 1.0)
+
+
 ## 축지 (N4-4b) and the 회생부 revive (N7-2): a timed shield on top of the
 ## post-hit i-frames; repeats refresh, never shorten or stack. The same alpha
 ## flash telegraphs it.
@@ -198,7 +210,8 @@ func take_hit(damage: float, source_name: String = "") -> bool:
 		return false
 	_time_since_hit = 0.0
 	last_hit_source = source_name
-	hp = CombatMath.apply_damage(hp, damage * _damage_taken_scale)
+	var guard: float = _guard_scale if _guard_left > 0.0 else 1.0
+	hp = CombatMath.apply_damage(hp, damage * _damage_taken_scale * guard)
 	hit_taken.emit()
 	if CombatMath.is_dead(hp):
 		died.emit()
@@ -234,9 +247,13 @@ func _build_sprite_visual() -> void:
 ## Public and static so the headless suite can verify the frame contract
 ## without a SceneTree (same pattern as TitleScreen.build_ui). The actual
 ## strip slicing lives in SpriteSheet, shared with the monster path (N3-12).
-static func build_sprite_frames() -> SpriteFrames:
+static func build_sprite_frames(character_id: String = "") -> SpriteFrames:
+	var id: String = character_id if not character_id.is_empty() else _character_id()
+	var entry: Dictionary = _character_entry(id)
+	var sprite_dir: String = String(entry.get("sprite", DEFAULT_SPRITE_DIR))
 	var frames: SpriteFrames = SpriteSheet.build_frames(
-		IDLE_TEXTURE_PATH, WALK_TEXTURE_PATH, WALK_FPS, IDLE_FPS
+		sprite_dir.path_join("idle.png"), sprite_dir.path_join("walk.png"),
+		WALK_FPS, IDLE_FPS
 	)
 	# N9-64 (owner: "가만히 있을 때 애셋이 이상해서 걷는 폼 중에 서있는 자세를
 	# 기본 자세로"). The standing pose is taken from the walk cycle instead of
@@ -246,8 +263,19 @@ static func build_sprite_frames() -> SpriteFrames:
 	# idle.png is left alone rather than overwritten: build_walk.py uses it as
 	# the reference the walk frames are aligned to, so replacing it with one of
 	# those frames would make the pipeline feed on its own output.
-	SpriteSheet.idle_from_strip(frames, WALK_TEXTURE_PATH, IDLE_WALK_FRAME)
+	SpriteSheet.idle_from_strip(
+		frames, sprite_dir.path_join("walk.png"),
+		int(entry.get("idle_walk_frame", IDLE_WALK_FRAME))
+	)
 	return frames
+
+
+static func _character_entry(character_id: String) -> Dictionary:
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(CHARACTERS_PATH))
+	if data is Dictionary and (data as Dictionary).has(character_id):
+		return data[character_id]
+	push_error("player: cannot read '%s' from %s" % [character_id, CHARACTERS_PATH])
+	return {}
 
 
 func _build_hp_bar() -> void:

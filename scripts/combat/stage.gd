@@ -803,6 +803,14 @@ func _execute_active(active: Dictionary) -> void:
 			_execute_blink(active)
 		"burst":
 			_execute_burst(active)
+		"guard":
+			# N9-148 철벽: the warrior plants his feet — incoming damage drops
+			# to the data scale for the duration. No movement penalty; the
+			# cooldown is the cost.
+			_player.grant_guard(
+				float(active.get("duration_sec", 0.0)),
+				float(active.get("damage_taken_scale", 1.0))
+			)
 		_:
 			push_error("stage: unknown active type in " + str(active))
 

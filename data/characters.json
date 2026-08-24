@@ -1,91 +1,109 @@
 {
-  "taoist": {
-    "name_ko": "우치",
-    "name_en": "Uchi",
-    "name_hanja": "雨池",
-    "title_ko": "요괴를 봉인하는 술사",
-    "title_en": "Sealer of Wicked Spirits",
-    "backstory_ko": "어린 시절 괴이의 저주로 마을이 불탔다. 유일한 생존자인 그는 그 길을 막기 위해 술법을 배웠다. 이제 그는 괴이 현상이 벌어진 곳마다 찾아가 봉인의 부적을 남긴다.",
-    "backstory_en": "A childhood curse from a yokai burned his village to ash. The sole survivor, he studied Taoism to prevent such tragedies. Now he travels to sites of supernatural disturbances, leaving sealing talismans in his wake.",
-    "quote_ko": "부적 한 장이면, 백귀도 길을 비켜 가는 법이지.",
-    "quote_en": "One talisman is enough to part a hundred ghosts.",
-    "accent": "taoist_blue",
-    "role": "magic_aoe",
-    "base_hp": 120,
-    "base_speed": 90.0,
-    "hit_invuln_sec": 0.8,
-    "starting_weapon": "old_talisman",
-    "unlock": {
-      "type": "default"
-    },
-    "actives": [
-      {
-        "id": "chukji",
-        "name_ko": "축지",
-        "name_en": "Chukji",
-        "type": "blink",
-        "cooldown_sec": 8.0,
-        "distance_px": 140.0,
-        "invulnerable_sec": 1.0
-      },
-      {
-        "id": "byeoksajin",
-        "name_ko": "벽사진",
-        "name_en": "Byeoksajin",
-        "type": "burst",
-        "cooldown_sec": 45.0,
-        "radius_px": 220.0,
-        "damage": 250.0
-      }
-    ],
-    "weapon_categories": [
-      "spiritual"
-    ]
+ "taoist": {
+  "name_ko": "우치",
+  "name_en": "Uchi",
+  "name_hanja": "雨池",
+  "title_ko": "요괴를 봉인하는 술사",
+  "title_en": "Sealer of Wicked Spirits",
+  "backstory_ko": "어린 시절 괴이의 저주로 마을이 불탔다. 유일한 생존자인 그는 그 길을 막기 위해 술법을 배웠다. 이제 그는 괴이 현상이 벌어진 곳마다 찾아가 봉인의 부적을 남긴다.",
+  "backstory_en": "A childhood curse from a yokai burned his village to ash. The sole survivor, he studied Taoism to prevent such tragedies. Now he travels to sites of supernatural disturbances, leaving sealing talismans in his wake.",
+  "quote_ko": "부적 한 장이면, 백귀도 길을 비켜 가는 법이지.",
+  "quote_en": "One talisman is enough to part a hundred ghosts.",
+  "accent": "taoist_blue",
+  "role": "magic_aoe",
+  "base_hp": 120,
+  "base_speed": 90.0,
+  "hit_invuln_sec": 0.8,
+  "starting_weapon": "old_talisman",
+  "unlock": {
+   "type": "default"
   },
-  "warrior": {
-    "name_ko": "무사",
-    "name_en": "Warrior",
-    "name_hanja": "武士",
-    "title_ko": "환도를 벼리는 무인",
-    "title_en": "Blade of the Unyielding",
-    "quote_ko": "칼끝에 망설임을 남기지 않는다.",
-    "quote_en": "No hesitation remains on the edge of my blade.",
-    "accent": "warrior_crimson",
-    "role": "melee_bruiser",
-    "base_hp": 140,
-    "base_speed": 80.0,
-    "hit_invuln_sec": 0.8,
-    "starting_weapon": "sword",
-    "unlock": {
-      "type": "coming_soon"
-    },
-    "unlock_text_ko": "무기와 술법이 아직 없다. 도사의 밤이 끝나면 온다.",
-    "unlock_text_en": "His weapons and arts are not built yet — he comes after the taoist's night is finished.",
-    "weapon_categories": [
-      "melee"
-    ]
+  "actives": [
+   {
+    "id": "chukji",
+    "name_ko": "축지",
+    "name_en": "Chukji",
+    "type": "blink",
+    "cooldown_sec": 8.0,
+    "distance_px": 140.0,
+    "invulnerable_sec": 1.0
+   },
+   {
+    "id": "byeoksajin",
+    "name_ko": "벽사진",
+    "name_en": "Byeoksajin",
+    "type": "burst",
+    "cooldown_sec": 45.0,
+    "radius_px": 220.0,
+    "damage": 250.0
+   }
+  ],
+  "weapon_categories": [
+   "spiritual"
+  ],
+  "sprite": "res://asset/characters/taoist",
+  "idle_walk_frame": 0
+ },
+ "warrior": {
+  "name_ko": "무사",
+  "name_en": "Warrior",
+  "name_hanja": "武士",
+  "title_ko": "환도를 벼리는 무인",
+  "title_en": "Blade of the Unyielding",
+  "quote_ko": "칼끝에 망설임을 남기지 않는다.",
+  "quote_en": "No hesitation remains on the edge of my blade.",
+  "accent": "warrior_crimson",
+  "role": "melee_bruiser",
+  "base_hp": 140,
+  "base_speed": 80.0,
+  "hit_invuln_sec": 0.8,
+  "starting_weapon": "sword",
+  "unlock": {
+   "type": "achievement",
+   "achievement_id": "first_boss"
   },
-  "archer": {
-    "name_ko": "궁수",
-    "name_en": "Archer",
-    "name_hanja": "弓手",
-    "title_ko": "바람을 읽는 명궁",
-    "title_en": "Archer Who Reads the Wind",
-    "quote_ko": "시위를 떠난 화살은 돌아오지 않는다.",
-    "quote_en": "An arrow loosed never returns.",
-    "accent": "archer_green",
-    "role": "ranged_dps",
-    "base_hp": 80,
-    "base_speed": 100.0,
-    "hit_invuln_sec": 0.8,
-    "starting_weapon": "bow",
-    "unlock": {
-      "type": "coming_soon"
-    },
-    "unlock_text_ko": "무기와 술법이 아직 없다. 도사의 밤이 끝나면 온다.",
-    "unlock_text_en": "Her weapons and arts are not built yet — she comes after the taoist's night is finished.",
-    "weapon_categories": [
-      "ranged"
-    ]
-  }
+  "unlock_text_ko": "첫 괴수를 쓰러뜨리면 온다 — 밤을 지키던 것을 넘어서야 다음 밤이 열린다.",
+  "unlock_text_en": "Fell your first boss and he arrives — the next night opens only past the thing that guarded this one.",
+  "weapon_categories": [
+   "melee"
+  ],
+  "backstory_ko": "폐허가 된 마을의 관군이었다. 밤이 온 날, 그는 명을 받고 자리를 비웠고 마을은 재가 됐다. 이제 그는 지키지 못한 밤을 다시 걷는다 — 이번에는 칼끝이 먼저다.",
+  "backstory_en": "He was garrison to the village now in ruins. The night it fell he was away under orders, and the village burned to ash. Now he walks the night he failed to guard — this time, blade first.",
+  "sprite": "res://asset/characters/warrior",
+  "idle_walk_frame": 1,
+  "actives": [
+   {
+    "id": "cheolbyeok",
+    "name_ko": "철벽",
+    "name_en": "Iron Wall",
+    "type": "guard",
+    "cooldown_sec": 30.0,
+    "duration_sec": 4.0,
+    "damage_taken_scale": 0.3
+   }
+  ]
+ },
+ "archer": {
+  "name_ko": "궁수",
+  "name_en": "Archer",
+  "name_hanja": "弓手",
+  "title_ko": "바람을 읽는 명궁",
+  "title_en": "Archer Who Reads the Wind",
+  "quote_ko": "시위를 떠난 화살은 돌아오지 않는다.",
+  "quote_en": "An arrow loosed never returns.",
+  "accent": "archer_green",
+  "role": "ranged_dps",
+  "base_hp": 80,
+  "base_speed": 100.0,
+  "hit_invuln_sec": 0.8,
+  "starting_weapon": "bow",
+  "unlock": {
+   "type": "coming_soon"
+  },
+  "unlock_text_ko": "무기와 술법이 아직 없다. 도사의 밤이 끝나면 온다.",
+  "unlock_text_en": "Her weapons and arts are not built yet — she comes after the taoist's night is finished.",
+  "weapon_categories": [
+   "ranged"
+  ]
+ }
 }
