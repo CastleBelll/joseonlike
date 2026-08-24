@@ -55,13 +55,17 @@ static func apply_resolution(preset: String) -> void:
 func _boxed_mobile_web() -> bool:
 	if not OS.has_feature("web"):
 		return false
-	if not (OS.has_feature("web_android") or OS.has_feature("web_ios")):
+	# A touch browser, however the export tags itself — the itch embed is the
+	# same box on every phone, and a desktop browser has no touchscreen.
+	if not DisplayServer.is_touchscreen_available():
 		return false
 	var framed: Variant = JavaScriptBridge.eval("window.self !== window.top", true)
 	return bool(framed)
 
 
-func _unhandled_input(event: InputEvent) -> void:
+## _input, not _unhandled_input: the screens are Controls that stop the event
+## at the GUI layer, so an unhandled hook would never see the first tap.
+func _input(event: InputEvent) -> void:
 	if _fullscreen_offered:
 		return
 	var pressed: bool = (
@@ -74,6 +78,17 @@ func _unhandled_input(event: InputEvent) -> void:
 	# embed. Everything after is the player's own call through 설정 → 전체화면.
 	_fullscreen_offered = true
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	# The engine call maps to requestFullscreen on the canvas; asking the
+	# document directly is the fallback when the canvas request is refused
+	# inside a cross-origin frame. Both must run inside this gesture.
+	JavaScriptBridge.eval(
+		"(function(){var e=document.documentElement;"
+		+ "if(!document.fullscreenElement&&e.requestFullscreen){"
+		+ "e.requestFullscreen().catch(function(){});}"
+		+ "if(screen.orientation&&screen.orientation.unlock){"
+		+ "try{screen.orientation.unlock();}catch(x){}}})();",
+		true
+	)
 
 
 ## The content scale base for one window size: the orientation's design base,
