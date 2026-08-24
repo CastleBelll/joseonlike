@@ -27,6 +27,9 @@ var _gold_value: Label
 var _total_gold_value: Label
 # N6-2: the death line — row shown on defeat only, so death teaches something.
 var _death_row: Control
+## N9-155 (owner: 업적 달성 알림이 표시가 안 된다): the stage has handed the
+## run's completed achievements over since N9-65 — this is where they show.
+var _earned_box: VBoxContainer
 var _death_value: Label
 
 
@@ -86,7 +89,35 @@ func open(outcome: String, summary: Dictionary) -> void:
 	_gold_value.text = str(int(summary.get("gold", 0)))
 	# N5-2: permanent gold after banking this run (SaveManager.bank_run).
 	_total_gold_value.text = str(int(summary.get("total_gold", 0)))
+	_show_earned(summary.get("earned", []))
 	visible = true
+
+
+## N9-155: one gold line per achievement completed by this run — the name in
+## gold with its reward, so the rule that fired is the thing the player reads.
+func _show_earned(earned: Variant) -> void:
+	for child: Node in _earned_box.get_children():
+		child.queue_free()
+	if earned is not Array:
+		return
+	for entry: Variant in earned:
+		if entry is not Dictionary:
+			continue
+		var name_text: String = _earned_name(entry)
+		var reward: int = int((entry as Dictionary).get("reward_gold", 0))
+		var line: String = UiLocale.t("업적 달성") + " — " + name_text
+		if reward > 0:
+			line += "  (+%d)" % reward
+		var label := _label(line, UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_earned_box.add_child(label)
+
+
+func _earned_name(entry: Dictionary) -> String:
+	var localized: Variant = entry.get("name_" + UiLocale.current_locale)
+	if localized is String and not String(localized).is_empty():
+		return localized
+	return String(entry.get("name_ko", ""))
 
 
 func _on_cta_pressed() -> void:
@@ -123,6 +154,10 @@ func _make_body() -> Control:
 	_kills_value = _add_row(body, UiLocale.t("처치"))
 	_gold_value = _add_row(body, UiLocale.t("엽전"))
 	_total_gold_value = _add_row(body, UiLocale.t("보유 엽전"))
+	_earned_box = VBoxContainer.new()
+	_earned_box.name = "EarnedAchievements"
+	_earned_box.add_theme_constant_override("separation", UiPalette.SPACE_XS)
+	body.add_child(_earned_box)
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_child(spacer)
