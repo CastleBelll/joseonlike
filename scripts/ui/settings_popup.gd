@@ -18,6 +18,10 @@ const PANEL_MARGIN_X := 48.0
 ## Tall enough for the 오디오 tab (3 slider rows), the taller of the two:
 ## header 72 + margins 64 + tab bar 48 + 3 rows (72 each) + close 64 + gaps.
 const PANEL_HEIGHT := 560.0
+## Owner (전체화면에서 설정이 괜히 스크롤된다): a tall viewport can afford the
+## 게임 tab's extra rows, so the paper grows up to this before the scroll has
+## to engage. Short viewports still clamp (N9-163).
+const PANEL_HEIGHT_MAX := 640.0
 const HEADER_HEIGHT := 72.0
 const BODY_MARGIN := 32.0
 const ROW_HEIGHT := 56.0
@@ -94,7 +98,7 @@ func _layout_panel() -> void:
 	if _panel == null:
 		return
 	var root_size: Vector2 = _root.size if _root.size.y > 0.0 else Vector2(540, 960)
-	var half_h: float = minf(PANEL_HEIGHT, root_size.y - 32.0) / 2.0
+	var half_h: float = minf(PANEL_HEIGHT_MAX, root_size.y - 32.0) / 2.0
 	var half_w: float = minf(492.0, root_size.x - PANEL_MARGIN_X * 2.0) / 2.0
 	_panel.offset_top = -half_h
 	_panel.offset_bottom = half_h

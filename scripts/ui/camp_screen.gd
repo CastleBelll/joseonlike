@@ -313,9 +313,13 @@ func _build_settings_button() -> Control:
 	# N9-160 (owner: 본거지 톱니 위치가 이상하다): the gear hugs the CONTENT
 	# band's right edge at the header's height, not the far screen corner —
 	# on wide screens the corner sat detached from the centered column.
-	var band_inset: float = maxf(MARGIN_SIDE, (size.x - COLUMN_MAX_WIDTH) / 2.0)
+	var band: float = (
+		COLUMN_MAX_WIDTH_LANDSCAPE if _is_landscape() else COLUMN_MAX_WIDTH
+	)
+	var band_inset: float = maxf(MARGIN_SIDE, (size.x - band) / 2.0)
+	var top_margin: int = MARGIN_TOP_LANDSCAPE if _is_landscape() else MARGIN_TOP
 	settings.position = Vector2(
-		-band_inset - UTILITY_BUTTON_SIZE, MARGIN_TOP - 6.0
+		-band_inset - UTILITY_BUTTON_SIZE, float(top_margin) - 6.0
 	)
 	settings.flat = true
 	settings.tooltip_text = UiLocale.text("title.settings")
