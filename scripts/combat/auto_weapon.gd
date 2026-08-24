@@ -580,7 +580,8 @@ func _pulse_shockwave() -> void:
 		# now a hollow expanding ring (320px cells, no upscale at the 260px
 		# span), so the figure shows through the shape itself and the
 		# N9-140 translucency workaround retires with the old bloom.
-		wave.play_effect(_wave_effect, origin, radius * 2.0, Color.WHITE)
+		# N9-147 (owner: 약간 투명도를 주고): a light see-through on the ring.
+		wave.play_effect(_wave_effect, origin, radius * 2.0, Color(1, 1, 1, 0.8))
 	else:
 		var flash: BlastRing = _flash_pool.acquire()
 		# N3-18: a control pulse is a clean double ring, not a detonation —
