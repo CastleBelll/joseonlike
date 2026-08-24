@@ -41,6 +41,14 @@ ARROW_FEATHER = (170, 64, 46, 255)
 DIVINE_GOLD = (230, 170, 50, 255)
 DIVINE_LIGHT = (255, 238, 151, 255)
 DIVINE_CORE = (255, 252, 222, 255)
+SWORD_AURA_INK = (21, 24, 38, 255)
+SWORD_AURA_DIM = (56, 103, 126, 255)
+SWORD_AURA_EDGE = (126, 203, 218, 255)
+SWORD_AURA_CORE = (239, 250, 244, 255)
+SEAL_AURA_INK = (29, 16, 45, 255)
+SEAL_AURA_DIM = (74, 40, 110, 255)
+SEAL_AURA_EDGE = (166, 82, 211, 255)
+SEAL_AURA_CORE = (244, 213, 255, 255)
 
 
 def _new(size: tuple[int, int]) -> Image.Image:
@@ -325,7 +333,74 @@ def build_group_2() -> list[Path]:
     return list(outputs)
 
 
-GROUPS = {1: build_group_1, 2: build_group_2}
+def _draw_sword_aura(
+    image: Image.Image,
+    origin: tuple[int, int],
+    frame: int,
+    evolved: bool,
+) -> None:
+    """Dense blade-aura projectile with outlined edge, core, and wake."""
+    d = ImageDraw.Draw(image)
+    ox, oy = origin
+    bob = (0, -1, 0, 1)[frame]
+    cy = oy + 8 + bob
+    ink = SEAL_AURA_INK if evolved else SWORD_AURA_INK
+    dim = SEAL_AURA_DIM if evolved else SWORD_AURA_DIM
+    edge = SEAL_AURA_EDGE if evolved else SWORD_AURA_EDGE
+    core = SEAL_AURA_CORE if evolved else SWORD_AURA_CORE
+
+    # Staggered afterimages form one tapering wake, never a flat white stick.
+    d.line([ox + 1, cy, ox + 8, cy], fill=ink, width=3)
+    d.line([ox + 2, cy, ox + 9, cy], fill=dim)
+    d.line([ox + 5, cy - 3, ox + 13, cy - 2], fill=dim)
+    d.line([ox + 5, cy + 3, ox + 13, cy + 2], fill=dim)
+    d.point((ox + (3, 6, 2, 5)[frame], cy - 5), fill=edge)
+    d.point((ox + (7, 3, 6, 2)[frame], cy + 5), fill=edge)
+
+    # Solid outer blade aura: broad shoulder, sharpened right tip.
+    aura = [
+        (ox + 8, cy), (ox + 14, cy - 5), (ox + 34, cy - 4),
+        (ox + 43, cy), (ox + 34, cy + 4), (ox + 14, cy + 5),
+    ]
+    d.polygon(aura, fill=dim, outline=ink)
+    # Bright cutting edge and compact white core provide density hierarchy.
+    upper_edge = [
+        (ox + 12, cy - 1), (ox + 16, cy - 4), (ox + 34, cy - 3),
+        (ox + 41, cy), (ox + 33, cy - 1), (ox + 17, cy),
+    ]
+    d.polygon(upper_edge, fill=edge)
+    core_shape = [
+        (ox + 16, cy), (ox + 20, cy - 1), (ox + 35, cy - 1),
+        (ox + 40, cy), (ox + 34, cy + 1), (ox + 20, cy + 1),
+    ]
+    d.polygon(core_shape, fill=core)
+    d.line([ox + 17, cy + 3, ox + 32, cy + 2], fill=edge)
+    # A moving seal notch makes animation visible without altering silhouette.
+    notch_x = ox + (18, 23, 28, 23)[frame]
+    d.rectangle([notch_x, cy - 3, notch_x + 1, cy - 2], fill=core)
+    if evolved:
+        d.point((ox + 11, cy), fill=SEAL_AURA_CORE)
+        d.point((ox + 29, cy + 3), fill=SEAL_AURA_CORE)
+
+
+def _build_sword_aura_travel(evolved: bool) -> Image.Image:
+    strip = _new((176, 16))
+    for frame in range(4):
+        _draw_sword_aura(strip, (frame * 44, 0), frame, evolved)
+    return strip
+
+
+def build_group_3() -> list[Path]:
+    outputs = {
+        TRAVEL / "beopgeom.png": _build_sword_aura_travel(False),
+        TRAVEL / "bongmageom.png": _build_sword_aura_travel(True),
+    }
+    for path, image in outputs.items():
+        image.save(path)
+    return list(outputs)
+
+
+GROUPS = {1: build_group_1, 2: build_group_2, 3: build_group_3}
 
 
 def main() -> None:
