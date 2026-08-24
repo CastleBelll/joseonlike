@@ -483,3 +483,25 @@ static func _click() -> InputEventMouseButton:
 	event.button_index = MOUSE_BUTTON_LEFT
 	event.pressed = true
 	return event
+
+
+## N9-162: a rank with a material bill refuses without the goods, spends them
+## atomically with the gold, and leaves the input profile untouched.
+func test_material_bill_gates_and_spends() -> bool:
+	var tree: Dictionary = {"config": {}, "nodes": [{
+		"id": "forge", "name_ko": "벼림", "effect": {"stat": "attack_damage", "per_rank": 0.01},
+		"costs": [100, 200], "materials": {"bamboo": [2, 4]}, "requires": [],
+	}]}
+	var broke: Dictionary = {"gold": 500, "materials": {"bamboo": 1}, "meta_tree": {}}
+	var refused: Dictionary = MetaTree.purchase(broke, tree, "forge", [])
+	var passed: bool = not bool(refused["ok"]) 		and String(refused["reason"]) == MetaTree.REASON_MATERIALS
+	var rich: Dictionary = {"gold": 500, "materials": {"bamboo": 5}, "meta_tree": {}}
+	var bought: Dictionary = MetaTree.purchase(rich, tree, "forge", [])
+	passed = passed and bool(bought["ok"])
+	var next: Dictionary = bought["profile"]
+	passed = passed and int(next["gold"]) == 400 		and int((next["materials"] as Dictionary)["bamboo"]) == 3
+	# the input profile is never mutated
+	passed = passed and int(rich["gold"]) == 500 		and int((rich["materials"] as Dictionary)["bamboo"]) == 5
+	if not passed:
+		push_error("test_meta_tree: material bill gating/spending broke")
+	return passed

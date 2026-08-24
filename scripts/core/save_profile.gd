@@ -29,6 +29,9 @@ static func default_profile() -> Dictionary:
 	return {
 		"schema": SCHEMA_VERSION,
 		"gold": 0,
+		# N9-162 수련 재료: leftover run loot banks here and the meta tree
+		# spends it alongside gold.
+		"materials": {},
 		"selected_character": DEFAULT_CHARACTER,
 		"settings": {
 			# N9-109 (owner: 기본 세팅 사운드를 지금보다 30% 낮춰): default
@@ -113,6 +116,13 @@ static func migrate(profile: Dictionary) -> Dictionary:
 	# JSON parses every number as float — normalize types so a loaded profile
 	# is indistinguishable from a freshly built one.
 	merged["gold"] = maxi(int(merged["gold"]), 0)
+	var pouch: Dictionary = {}
+	if merged.get("materials") is Dictionary:
+		for loot_id: Variant in (merged["materials"] as Dictionary):
+			var count: int = int((merged["materials"] as Dictionary)[loot_id])
+			if count > 0:
+				pouch[String(loot_id)] = count
+	merged["materials"] = pouch
 	merged["selected_character"] = String(merged["selected_character"])
 	merged["settings"] = clamp_settings(merged["settings"])
 	merged["stats"] = _normalized_stats(merged["stats"])

@@ -24,6 +24,8 @@ const STRINGS := {
 	"settings.language": {"ko": "언어", "en": "Language"},
 	"settings.resolution": {"ko": "해상도", "en": "Resolution"},
 	"settings.fullscreen": {"ko": "전체화면", "en": "Fullscreen"},
+	"meta.no_materials": {"ko": "재료가 부족하다", "en": "Not enough materials"},
+	"meta.materials_fmt": {"ko": "재료: %s", "en": "Materials: %s"},
 	"settings.damage_numbers": {"ko": "데미지 표시", "en": "Damage Numbers"},
 	"settings.on": {"ko": "켜짐", "en": "On"},
 	"settings.off": {"ko": "꺼짐", "en": "Off"},

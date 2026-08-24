@@ -17,6 +17,8 @@ const REASON_MAXED := "maxed"
 const REASON_GOLD := "gold"
 ## N7-2: the node belongs to a character the profile has not unlocked yet.
 const REASON_CHARACTER := "character_locked"
+## N9-162: the next rank asks for materials the pouch does not hold.
+const REASON_MATERIALS := "materials"
 
 const NO_NEXT_COST := -1
 
@@ -175,9 +177,31 @@ static func next_cost(entry: Dictionary, current_rank: int) -> int:
 
 ## Validates one prospective purchase without touching anything. `unlocked`
 ## lists the purchasable characters (unlocked_characters); trunk nodes skip it.
+## The material bill for one rank: {loot_id: count}, empty when the node's
+## data declares none (N9-162 — 수련 spends the first map's loot, not just
+## gold). Per-rank arrays run parallel to "costs".
+static func next_materials(entry: Dictionary, rank: int) -> Dictionary:
+	var bill: Dictionary = {}
+	var materials: Dictionary = entry.get("materials", {})
+	for loot_id: String in materials:
+		var per_rank: Array = materials[loot_id]
+		if rank < per_rank.size():
+			var count: int = int(per_rank[rank])
+			if count > 0:
+				bill[loot_id] = count
+	return bill
+
+
+static func has_materials(profile_materials: Dictionary, bill: Dictionary) -> bool:
+	for loot_id: String in bill:
+		if int(profile_materials.get(loot_id, 0)) < int(bill[loot_id]):
+			return false
+	return true
+
+
 static func can_purchase(
 	tree: Dictionary, state: Dictionary, gold: int, node_id: String,
-	unlocked: Array[String]
+	unlocked: Array[String], materials: Dictionary = {}
 ) -> String:
 	var entry: Dictionary = node(tree, node_id)
 	if entry.is_empty():
@@ -193,6 +217,8 @@ static func can_purchase(
 	# A non-positive cost is corrupt data; refuse rather than grant or refund.
 	if cost <= 0 or gold < cost:
 		return REASON_GOLD
+	if not has_materials(materials, next_materials(entry, rank_of(state, node_id))):
+		return REASON_MATERIALS
 	return REASON_OK
 
 
@@ -208,12 +234,20 @@ static func purchase(
 		tree, profile.get("meta_tree", {}) as Dictionary
 	)["state"]
 	var gold: int = int(profile.get("gold", 0))
-	var reason: String = can_purchase(tree, state, gold, node_id, unlocked)
+	var pouch: Dictionary = profile.get("materials", {})
+	var reason: String = can_purchase(tree, state, gold, node_id, unlocked, pouch)
 	if reason != REASON_OK:
 		return {"ok": false, "reason": reason, "profile": profile}
 	var next: Dictionary = profile.duplicate(true)
-	next["gold"] = gold - next_cost(node(tree, node_id), rank_of(state, node_id))
-	state[node_id] = rank_of(state, node_id) + 1
+	var rank: int = rank_of(state, node_id)
+	next["gold"] = gold - next_cost(node(tree, node_id), rank)
+	# N9-162: the material bill spends in the same atomic fold as the gold.
+	var bill: Dictionary = next_materials(node(tree, node_id), rank)
+	var spent: Dictionary = (next.get("materials", {}) as Dictionary).duplicate()
+	for loot_id: String in bill:
+		spent[loot_id] = int(spent.get(loot_id, 0)) - int(bill[loot_id])
+	next["materials"] = spent
+	state[node_id] = rank + 1
 	next["meta_tree"] = state
 	return {"ok": true, "reason": REASON_OK, "profile": next}
 
@@ -332,6 +366,24 @@ static func maxed_state(tree: Dictionary) -> Dictionary:
 ## Full data contract for tools/validate_data.gd (and the unit tests): every
 ## rule the screen and the run rely on. Returns human-readable issue strings.
 ## `characters` is the roster (data/characters.json) branch nodes must match.
+## N9-162: a node's material bill must name real loot and carry one count per
+## rank — a short array would make deep ranks silently free.
+static func material_issues(tree: Dictionary, loot: Dictionary) -> Array[String]:
+	var issues: Array[String] = []
+	for entry: Dictionary in nodes(tree):
+		var node_id: String = String(entry.get("id", ""))
+		var materials: Dictionary = entry.get("materials", {})
+		for loot_id: String in materials:
+			if not loot.has(loot_id):
+				issues.append("node '%s' materials name unknown loot '%s'" % [node_id, loot_id])
+			var per_rank: Variant = materials[loot_id]
+			if per_rank is not Array 					or (per_rank as Array).size() != (entry.get("costs", []) as Array).size():
+				issues.append(
+					"node '%s' materials['%s'] must carry one count per rank" % [node_id, loot_id]
+				)
+	return issues
+
+
 static func data_issues(tree: Dictionary, characters: Dictionary) -> Array[String]:
 	var issues: Array[String] = []
 	var entries: Array[Dictionary] = nodes(tree)

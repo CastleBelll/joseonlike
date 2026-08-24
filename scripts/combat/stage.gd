@@ -791,6 +791,8 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 			"victory": outcome == RunFlow.OUTCOME_VICTORY,
 			"level": _run_state.level,
 			"evolutions": _evolutions,
+			# N9-162: unspent materials come home to the 수련 pouch.
+			"loot": _run_state.inventory,
 		}
 	)
 	# N9-65: whatever the run just completed is announced on the result screen.

@@ -163,6 +163,15 @@ func bank_run(
 	folded["kills"] = kills
 	folded["boss_killed"] = boss_killed
 	folded["elapsed_sec"] = elapsed_sec
+	# N9-162: leftover run loot banks into the meta-tree pouch — the run
+	# spent what it spent (mods), and the rest funds 수련.
+	var pouch: Dictionary = (profile.get("materials", {}) as Dictionary).duplicate()
+	for loot_id: Variant in (run.get("loot", {}) as Dictionary):
+		pouch[String(loot_id)] = (
+			int(pouch.get(String(loot_id), 0))
+			+ maxi(int((run.get("loot", {}) as Dictionary)[loot_id]), 0)
+		)
+	profile["materials"] = pouch
 	profile = Achievements.fold_run(profile, folded)
 	var result: Dictionary = Achievements.evaluate(profile, achievement_data())
 	profile = result["profile"]

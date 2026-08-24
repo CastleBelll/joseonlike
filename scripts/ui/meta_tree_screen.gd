@@ -370,6 +370,8 @@ func _on_cta_pressed() -> void:
 			_flash_notice(UiLocale.text("meta.bought"))
 		MetaTree.REASON_GOLD:
 			_flash_notice(UiLocale.text("meta.no_gold"))
+		MetaTree.REASON_MATERIALS:
+			_flash_notice(UiLocale.text("meta.no_materials"))
 		MetaTree.REASON_CHARACTER:
 			_flash_notice(UiLocale.text("meta.char_locked"))
 		_:
@@ -523,13 +525,29 @@ func _refresh_detail(state: Dictionary, gold: int) -> void:
 		desc, rank + 1, MetaTree.max_rank(entry)
 	]
 	_detail_info.text = _detail_info_line()
+	# N9-162: the rank's material bill rides the info line — each item as
+	# 이름 xN with the pouch count beside it, red-flagged when short.
+	var bill: Dictionary = MetaTree.next_materials(entry, rank)
+	var pouch: Dictionary = _profile.get("materials", {})
+	var affordable: bool = gold >= cost and MetaTree.has_materials(pouch, bill)
+	if not bill.is_empty():
+		var parts: Array[String] = []
+		for loot_id: String in bill:
+			parts.append("%s x%d (%d)" % [
+				UiLocale.data_name(_loot_entry(loot_id), loot_id),
+				int(bill[loot_id]), int(pouch.get(loot_id, 0)),
+			])
+		_detail_info.text += "
+" + UiLocale.text("meta.materials_fmt") % ", ".join(parts)
 	_cta.visible = true
 	# QA-2: grey the CTA when unaffordable so it doesn't invite dead taps.
-	_cta.disabled = gold < cost
-	_cta.text = (
-		UiLocale.text("meta.buy_fmt") % cost if gold >= cost
-		else UiLocale.text("meta.short_fmt") % cost
-	)
+	_cta.disabled = not affordable
+	if affordable:
+		_cta.text = UiLocale.text("meta.buy_fmt") % cost
+	elif gold < cost:
+		_cta.text = UiLocale.text("meta.short_fmt") % cost
+	else:
+		_cta.text = UiLocale.text("meta.no_materials")
 
 
 ## Branch tabs remind whose runs the node applies to; the trunk stays quiet.
@@ -655,3 +673,16 @@ func _label(text_value: String, font_size: int, color: Color) -> Label:
 	label.add_theme_color_override("font_color", color)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
+
+
+static var _loot_cache: Dictionary = {}
+
+
+func _loot_entry(loot_id: String) -> Dictionary:
+	if _loot_cache.is_empty():
+		var parsed: Variant = JSON.parse_string(
+			FileAccess.get_file_as_string("res://data/loot.json")
+		)
+		if parsed is Dictionary:
+			_loot_cache = parsed
+	return _loot_cache.get(loot_id, {})

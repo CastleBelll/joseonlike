@@ -311,6 +311,8 @@ func _check_difficulties() -> void:
 
 func _check_meta_tree() -> void:
 	var tree: Dictionary = _load(DATA_DIR + "/meta_tree.json")
+	for issue: String in MetaTree.material_issues(tree, _load(DATA_DIR + "/loot.json")):
+		_fail("meta_tree " + issue)
 	var characters: Dictionary = _load(DATA_DIR + "/characters.json")
 	for issue: String in MetaTree.data_issues(tree, characters):
 		_fail("meta_tree " + issue)

@@ -1,674 +1,937 @@
 {
-  "config": {
-    "stat_caps": {
-      "max_hp": 0.15,
-      "move_speed": 0.12,
-      "attack_damage": 0.2,
-      "attack_speed": 0.16,
-      "magnet_radius": 0.3,
-      "gold_gain": 0.3,
-      "xp_gain": 0.24,
-      "damage_reduction": 0.14,
-      "hit_invuln": 0.2,
-      "luck": 0.5,
-      "burn_duration": 0.5,
-      "ward_radius": 0.24,
-      "crit_chance": 0.06,
-      "crit_damage": 0.4,
-      "projectile_speed": 0.1,
-      "burn_dps": 0.3,
-      "area_radius": 0.16
-    },
-    "revive": {
-      "hp_ratio": 0.3,
-      "invuln_sec": 2.0
-    },
-    "first_find": {
-      "at_sec": 45.0
-    }
+ "config": {
+  "stat_caps": {
+   "max_hp": 0.15,
+   "move_speed": 0.12,
+   "attack_damage": 0.2,
+   "attack_speed": 0.16,
+   "magnet_radius": 0.3,
+   "gold_gain": 0.3,
+   "xp_gain": 0.32,
+   "damage_reduction": 0.14,
+   "hit_invuln": 0.3,
+   "luck": 0.5,
+   "burn_duration": 0.5,
+   "ward_radius": 0.24,
+   "crit_chance": 0.1,
+   "crit_damage": 0.4,
+   "projectile_speed": 0.16,
+   "burn_dps": 0.3,
+   "area_radius": 0.16
   },
-  "nodes": [
-    {
-      "id": "iron_bones",
-      "name_ko": "철골",
-      "name_en": "Iron Bones",
-      "icon": "tough_fiber",
-      "effect": {
-        "stat": "max_hp",
-        "per_rank": 0.05
-      },
-      "desc_ko": "최대 체력 +5%",
-      "desc_en": "Max HP +5%",
-      "costs": [
-        40,
-        90,
-        240
-      ],
-      "requires": [],
-      "pos": [
-        0.28,
-        0
-      ]
-    },
-    {
-      "id": "wind_steps",
-      "name_ko": "질풍보",
-      "name_en": "Wind Steps",
-      "icon": "beast_fang",
-      "effect": {
-        "stat": "move_speed",
-        "per_rank": 0.03
-      },
-      "desc_ko": "이동 속도 +3%",
-      "desc_en": "Move speed +3%",
-      "costs": [
-        45,
-        110
-      ],
-      "requires": [],
-      "pos": [
-        0.72,
-        0
-      ]
-    },
-    {
-      "id": "sharp_talisman",
-      "name_ko": "부적 연마",
-      "name_en": "Talisman Honing",
-      "icon": "talisman_paper",
-      "effect": {
-        "stat": "attack_damage",
-        "per_rank": 0.04
-      },
-      "desc_ko": "공격력 +4%",
-      "desc_en": "Attack damage +4%",
-      "costs": [
-        90,
-        220,
-        450
-      ],
-      "requires": [
-        "iron_bones"
-      ],
-      "pos": [
-        0.28,
-        1
-      ]
-    },
-    {
-      "id": "soul_pull",
-      "name_ko": "혼백 인력",
-      "name_en": "Soul Pull",
-      "icon": "wonhon_shard",
-      "effect": {
-        "stat": "magnet_radius",
-        "per_rank": 0.15
-      },
-      "desc_ko": "획득 반경 +15%",
-      "desc_en": "Pickup radius +15%",
-      "costs": [
-        75,
-        180
-      ],
-      "requires": [
-        "wind_steps"
-      ],
-      "pos": [
-        0.72,
-        1
-      ]
-    },
-    {
-      "id": "quick_hands",
-      "name_ko": "빠른 결인",
-      "name_en": "Quick Mudra",
-      "icon": "whetstone",
-      "effect": {
-        "stat": "attack_speed",
-        "per_rank": 0.04
-      },
-      "desc_ko": "공격 속도 +4%",
-      "desc_en": "Attack speed +4%",
-      "costs": [
-        150,
-        340,
-        650
-      ],
-      "requires": [
-        "sharp_talisman"
-      ],
-      "pos": [
-        0.28,
-        2
-      ]
-    },
-    {
-      "id": "coin_eye",
-      "name_ko": "재물안",
-      "name_en": "Coin Eye",
-      "icon": "cinnabar",
-      "effect": {
-        "stat": "gold_gain",
-        "per_rank": 0.1
-      },
-      "desc_ko": "엽전 획득 +10%",
-      "desc_en": "Coin gain +10%",
-      "costs": [
-        170,
-        380,
-        720
-      ],
-      "requires": [
-        "soul_pull"
-      ],
-      "pos": [
-        0.72,
-        2
-      ]
-    },
-    {
-      "id": "head_start",
-      "name_ko": "조기 수행",
-      "name_en": "Head Start",
-      "icon": "talisman_paper",
-      "effect": {
-        "stat": "start_level",
-        "per_rank": 1
-      },
-      "desc_ko": "2레벨에서 출정 (시작 시 파워 업 1회)",
-      "desc_en": "Start at level 2 (one power-up at run start)",
-      "costs": [
-        700
-      ],
-      "requires": [
-        "quick_hands"
-      ],
-      "pos": [
-        0.28,
-        3
-      ]
-    },
-    {
-      "id": "insight",
-      "name_ko": "문리",
-      "name_en": "Insight",
-      "icon": "bamboo",
-      "effect": {
-        "stat": "xp_gain",
-        "per_rank": 0.08
-      },
-      "desc_ko": "경험치 획득 +8%",
-      "desc_en": "XP gain +8%",
-      "costs": [
-        200,
-        450,
-        880
-      ],
-      "requires": [
-        "coin_eye"
-      ],
-      "pos": [
-        0.72,
-        3
-      ]
-    },
-    {
-      "id": "fourth_card",
-      "name_ko": "혜안",
-      "name_en": "Clear Sight",
-      "icon": "talisman_paper",
-      "effect": {
-        "stat": "choice_count",
-        "per_rank": 1
-      },
-      "desc_ko": "레벨 업 선택지 +1장 (3장 → 4장)",
-      "desc_en": "One extra level-up card (3 → 4)",
-      "costs": [
-        1300
-      ],
-      "requires": [
-        "head_start"
-      ],
-      "pos": [
-        0.28,
-        4
-      ]
-    },
-    {
-      "id": "first_find",
-      "name_ko": "첫 인연",
-      "name_en": "First Bond",
-      "icon": "dokkaebi_flame",
-      "effect": {
-        "stat": "first_find",
-        "per_rank": 1
-      },
-      "desc_ko": "매 출정 45초 내 특수 재료 1개 보장",
-      "desc_en": "One special material guaranteed within 45s each run",
-      "costs": [
-        900
-      ],
-      "requires": [
-        "insight"
-      ],
-      "pos": [
-        0.72,
-        4
-      ]
-    },
-    {
-      "id": "stone_skin",
-      "name_ko": "철피",
-      "name_en": "Stone Skin",
-      "icon": "ghost_iron",
-      "effect": {
-        "stat": "damage_reduction",
-        "per_rank": 0.05
-      },
-      "desc_ko": "받는 피해 -5%",
-      "desc_en": "Damage taken -5%",
-      "costs": [
-        1400,
-        2000
-      ],
-      "requires": [
-        "fourth_card"
-      ],
-      "pos": [
-        0.28,
-        5
-      ]
-    },
-    {
-      "id": "long_breath",
-      "name_ko": "긴 호흡",
-      "name_en": "Long Breath",
-      "icon": "bamboo",
-      "effect": {
-        "stat": "hit_invuln",
-        "per_rank": 0.1
-      },
-      "desc_ko": "피격 후 무적 시간 +10%",
-      "desc_en": "Post-hit invulnerability +10%",
-      "costs": [
-        950,
-        1550
-      ],
-      "requires": [
-        "first_find"
-      ],
-      "pos": [
-        0.72,
-        5
-      ]
-    },
-    {
-      "id": "luck",
-      "name_ko": "천운",
-      "name_en": "Heaven's Luck",
-      "icon": "thunder_stone",
-      "effect": {
-        "stat": "luck",
-        "per_rank": 0.25
-      },
-      "desc_ko": "특수 재료 발견 확률 +25%",
-      "desc_en": "Special material drop chance +25%",
-      "costs": [
-        1050,
-        1750
-      ],
-      "requires": [
-        "long_breath"
-      ],
-      "pos": [
-        0.72,
-        6
-      ]
-    },
-    {
-      "id": "revive",
-      "name_ko": "회생부",
-      "name_en": "Revival Charm",
-      "icon": "fire_spirit_stone",
-      "effect": {
-        "stat": "revive",
-        "per_rank": 1
-      },
-      "desc_ko": "출정당 1회, 죽음 대신 체력 30%로 회생",
-      "desc_en": "Once per run, revive at 30% HP instead of dying",
-      "costs": [
-        2000
-      ],
-      "requires": [
-        "stone_skin",
-        "long_breath"
-      ],
-      "pos": [
-        0.5,
-        6
-      ]
-    },
-    {
-      "id": "burn_mastery",
-      "name_ko": "불씨 정진",
-      "name_en": "Ember Devotion",
-      "icon": "dokkaebi_flame",
-      "character": "taoist",
-      "effect": {
-        "stat": "burn_duration",
-        "per_rank": 0.25
-      },
-      "desc_ko": "화상 지속 시간 +25%",
-      "desc_en": "Burn duration +25%",
-      "costs": [
-        200,
-        420
-      ],
-      "requires": [],
-      "pos": [
-        0.28,
-        0
-      ]
-    },
-    {
-      "id": "ward_wide",
-      "name_ko": "결계 확장",
-      "name_en": "Wider Ward",
-      "icon": "talisman_paper",
-      "character": "taoist",
-      "effect": {
-        "stat": "ward_radius",
-        "per_rank": 0.12
-      },
-      "desc_ko": "결계 반경 +12%",
-      "desc_en": "Ward radius +12%",
-      "costs": [
-        230,
-        480
-      ],
-      "requires": [],
-      "pos": [
-        0.72,
-        0
-      ]
-    },
-    {
-      "id": "chain_reach",
-      "name_ko": "연쇄 심화",
-      "name_en": "Deeper Chain",
-      "icon": "thunder_stone",
-      "character": "taoist",
-      "effect": {
-        "stat": "chain_jumps",
-        "per_rank": 1
-      },
-      "desc_ko": "뇌부 계열 연쇄 도약 +1회",
-      "desc_en": "Thunder charm chain jumps +1",
-      "costs": [
-        260,
-        550
-      ],
-      "requires": [
-        "burn_mastery"
-      ],
-      "pos": [
-        0.28,
-        1
-      ]
-    },
-    {
-      "id": "orbit_extra",
-      "name_ko": "혼불 하나 더",
-      "name_en": "One More Flame",
-      "icon": "wonhon_shard",
-      "character": "taoist",
-      "effect": {
-        "stat": "orbit_count",
-        "per_rank": 1
-      },
-      "desc_ko": "혼불 계열 선회 구슬 +1개",
-      "desc_en": "Soul flame orbs +1",
-      "costs": [
-        620
-      ],
-      "requires": [
-        "ward_wide"
-      ],
-      "pos": [
-        0.72,
-        1
-      ]
-    },
-    {
-      "id": "seal_ease",
-      "name_ko": "봉인 간파",
-      "name_en": "Seal Insight",
-      "icon": "cinnabar",
-      "character": "taoist",
-      "effect": {
-        "stat": "seal_burst",
-        "per_rank": 1
-      },
-      "desc_ko": "봉인 폭발에 필요한 중첩 -1",
-      "desc_en": "Seal stacks needed to burst -1",
-      "costs": [
-        750
-      ],
-      "requires": [
-        "chain_reach",
-        "orbit_extra"
-      ],
-      "pos": [
-        0.5,
-        2
-      ]
-    },
-    {
-      "id": "hwando_hone",
-      "name_ko": "환도 연마",
-      "name_en": "Blade Honing",
-      "icon": "whetstone",
-      "character": "warrior",
-      "effect": {
-        "stat": "attack_damage",
-        "per_rank": 0.04
-      },
-      "desc_ko": "공격력 +4%",
-      "desc_en": "Attack damage +4%",
-      "costs": [
-        210,
-        440
-      ],
-      "requires": [],
-      "pos": [
-        0.35,
-        0
-      ]
-    },
-    {
-      "id": "iron_stance",
-      "name_ko": "태산 압도",
-      "name_en": "Mountain Stance",
-      "icon": "ghost_iron",
-      "character": "warrior",
-      "effect": {
-        "stat": "damage_reduction",
-        "per_rank": 0.04
-      },
-      "desc_ko": "받는 피해 -4%",
-      "desc_en": "Damage taken -4%",
-      "costs": [
-        540
-      ],
-      "requires": [
-        "hwando_hone"
-      ],
-      "pos": [
-        0.5,
-        1
-      ]
-    },
-    {
-      "id": "wind_read",
-      "name_ko": "질풍 보법",
-      "name_en": "Wind Reading",
-      "icon": "beast_fang",
-      "character": "archer",
-      "effect": {
-        "stat": "move_speed",
-        "per_rank": 0.03
-      },
-      "desc_ko": "이동 속도 +3%",
-      "desc_en": "Move speed +3%",
-      "costs": [
-        200,
-        420
-      ],
-      "requires": [],
-      "pos": [
-        0.35,
-        0
-      ]
-    },
-    {
-      "id": "rapid_nock",
-      "name_ko": "연사",
-      "name_en": "Rapid Nock",
-      "icon": "bamboo",
-      "character": "archer",
-      "effect": {
-        "stat": "attack_speed",
-        "per_rank": 0.04
-      },
-      "desc_ko": "공격 속도 +4%",
-      "desc_en": "Attack speed +4%",
-      "costs": [
-        500
-      ],
-      "requires": [
-        "wind_read"
-      ],
-      "pos": [
-        0.5,
-        1
-      ]
-    },
-    {
-      "id": "tiger_eye",
-      "name_ko": "범의 눈",
-      "name_en": "Tiger's Eye",
-      "desc_ko": "치명타 확률 +3%",
-      "desc_en": "Crit chance +3%",
-      "icon": "beast_fang",
-      "effect": {
-        "stat": "crit_chance",
-        "per_rank": 0.03
-      },
-      "costs": [
-        1200,
-        1900
-      ],
-      "requires": [
-        "luck"
-      ],
-      "pos": [
-        0.72,
-        7
-      ]
-    },
-    {
-      "id": "fang_grind",
-      "name_ko": "이빨 갈기",
-      "name_en": "Whetted Fang",
-      "desc_ko": "치명타 피해 +20%",
-      "desc_en": "Crit damage +20%",
-      "icon": "whetstone",
-      "effect": {
-        "stat": "crit_damage",
-        "per_rank": 0.2
-      },
-      "costs": [
-        1450,
-        2200
-      ],
-      "requires": [
-        "tiger_eye"
-      ],
-      "pos": [
-        0.72,
-        8
-      ]
-    },
-    {
-      "id": "swift_charms",
-      "name_ko": "빠른 부적",
-      "name_en": "Swift Charms",
-      "desc_ko": "투사체 속도 +5%",
-      "desc_en": "Projectile speed +5%",
-      "icon": "talisman_paper",
-      "effect": {
-        "stat": "projectile_speed",
-        "per_rank": 0.05
-      },
-      "costs": [
-        1600,
-        2400
-      ],
-      "requires": [
-        "stone_skin"
-      ],
-      "pos": [
-        0.28,
-        7
-      ]
-    },
-    {
-      "id": "ember_core",
-      "name_ko": "불씨 심지",
-      "name_en": "Ember Core",
-      "desc_ko": "화상 초당 피해 +15%",
-      "desc_en": "Burn damage per second +15%",
-      "icon": "fire_spirit_stone",
-      "effect": {
-        "stat": "burn_dps",
-        "per_rank": 0.15
-      },
-      "costs": [
-        850,
-        1400
-      ],
-      "requires": [
-        "seal_ease"
-      ],
-      "character": "taoist",
-      "pos": [
-        0.28,
-        3
-      ]
-    },
-    {
-      "id": "wide_rites",
-      "name_ko": "넓은 법식",
-      "name_en": "Wide Rites",
-      "desc_ko": "폭발·장판·파동 반경 +8%",
-      "desc_en": "Blast, ward and wave radius +8%",
-      "icon": "cinnabar",
-      "effect": {
-        "stat": "area_radius",
-        "per_rank": 0.08
-      },
-      "costs": [
-        900,
-        1500
-      ],
-      "requires": [
-        "seal_ease"
-      ],
-      "character": "taoist",
-      "pos": [
-        0.72,
-        3
-      ]
-    }
-  ]
+  "revive": {
+   "hp_ratio": 0.3,
+   "invuln_sec": 2.0
+  },
+  "first_find": {
+   "at_sec": 45.0
+  }
+ },
+ "nodes": [
+  {
+   "id": "iron_bones",
+   "name_ko": "철골",
+   "name_en": "Iron Bones",
+   "icon": "tough_fiber",
+   "effect": {
+    "stat": "max_hp",
+    "per_rank": 0.05
+   },
+   "desc_ko": "최대 체력 +5%",
+   "desc_en": "Max HP +5%",
+   "costs": [
+    40,
+    90,
+    240
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    0
+   ]
+  },
+  {
+   "id": "wind_steps",
+   "name_ko": "질풍보",
+   "name_en": "Wind Steps",
+   "icon": "beast_fang",
+   "effect": {
+    "stat": "move_speed",
+    "per_rank": 0.03
+   },
+   "desc_ko": "이동 속도 +3%",
+   "desc_en": "Move speed +3%",
+   "costs": [
+    45,
+    110
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    0
+   ]
+  },
+  {
+   "id": "sharp_talisman",
+   "name_ko": "부적 연마",
+   "name_en": "Talisman Honing",
+   "icon": "talisman_paper",
+   "effect": {
+    "stat": "attack_damage",
+    "per_rank": 0.04
+   },
+   "desc_ko": "공격력 +4%",
+   "desc_en": "Attack damage +4%",
+   "costs": [
+    90,
+    220,
+    450
+   ],
+   "requires": [
+    "iron_bones"
+   ],
+   "pos": [
+    0.28,
+    1
+   ]
+  },
+  {
+   "id": "soul_pull",
+   "name_ko": "혼백 인력",
+   "name_en": "Soul Pull",
+   "icon": "wonhon_shard",
+   "effect": {
+    "stat": "magnet_radius",
+    "per_rank": 0.15
+   },
+   "desc_ko": "획득 반경 +15%",
+   "desc_en": "Pickup radius +15%",
+   "costs": [
+    75,
+    180
+   ],
+   "requires": [
+    "wind_steps"
+   ],
+   "pos": [
+    0.72,
+    1
+   ]
+  },
+  {
+   "id": "quick_hands",
+   "name_ko": "빠른 결인",
+   "name_en": "Quick Mudra",
+   "icon": "whetstone",
+   "effect": {
+    "stat": "attack_speed",
+    "per_rank": 0.04
+   },
+   "desc_ko": "공격 속도 +4%",
+   "desc_en": "Attack speed +4%",
+   "costs": [
+    150,
+    340,
+    650
+   ],
+   "requires": [
+    "sharp_talisman"
+   ],
+   "pos": [
+    0.28,
+    2
+   ]
+  },
+  {
+   "id": "coin_eye",
+   "name_ko": "재물안",
+   "name_en": "Coin Eye",
+   "icon": "cinnabar",
+   "effect": {
+    "stat": "gold_gain",
+    "per_rank": 0.1
+   },
+   "desc_ko": "엽전 획득 +10%",
+   "desc_en": "Coin gain +10%",
+   "costs": [
+    170,
+    380,
+    720
+   ],
+   "requires": [
+    "soul_pull"
+   ],
+   "pos": [
+    0.72,
+    2
+   ]
+  },
+  {
+   "id": "head_start",
+   "name_ko": "조기 수행",
+   "name_en": "Head Start",
+   "icon": "talisman_paper",
+   "effect": {
+    "stat": "start_level",
+    "per_rank": 1
+   },
+   "desc_ko": "2레벨에서 출정 (시작 시 파워 업 1회)",
+   "desc_en": "Start at level 2 (one power-up at run start)",
+   "costs": [
+    700
+   ],
+   "requires": [
+    "quick_hands"
+   ],
+   "pos": [
+    0.28,
+    3
+   ]
+  },
+  {
+   "id": "insight",
+   "name_ko": "문리",
+   "name_en": "Insight",
+   "icon": "bamboo",
+   "effect": {
+    "stat": "xp_gain",
+    "per_rank": 0.08
+   },
+   "desc_ko": "경험치 획득 +8%",
+   "desc_en": "XP gain +8%",
+   "costs": [
+    200,
+    450,
+    880
+   ],
+   "requires": [
+    "coin_eye"
+   ],
+   "pos": [
+    0.72,
+    3
+   ]
+  },
+  {
+   "id": "fourth_card",
+   "name_ko": "혜안",
+   "name_en": "Clear Sight",
+   "icon": "talisman_paper",
+   "effect": {
+    "stat": "choice_count",
+    "per_rank": 1
+   },
+   "desc_ko": "레벨 업 선택지 +1장 (3장 → 4장)",
+   "desc_en": "One extra level-up card (3 → 4)",
+   "costs": [
+    1300
+   ],
+   "requires": [
+    "head_start"
+   ],
+   "pos": [
+    0.28,
+    4
+   ],
+   "materials": {
+    "talisman_paper": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "first_find",
+   "name_ko": "첫 인연",
+   "name_en": "First Bond",
+   "icon": "dokkaebi_flame",
+   "effect": {
+    "stat": "first_find",
+    "per_rank": 1
+   },
+   "desc_ko": "매 출정 45초 내 특수 재료 1개 보장",
+   "desc_en": "One special material guaranteed within 45s each run",
+   "costs": [
+    900
+   ],
+   "requires": [
+    "insight"
+   ],
+   "pos": [
+    0.72,
+    4
+   ]
+  },
+  {
+   "id": "stone_skin",
+   "name_ko": "철피",
+   "name_en": "Stone Skin",
+   "icon": "ghost_iron",
+   "effect": {
+    "stat": "damage_reduction",
+    "per_rank": 0.05
+   },
+   "desc_ko": "받는 피해 -5%",
+   "desc_en": "Damage taken -5%",
+   "costs": [
+    1400,
+    2000
+   ],
+   "requires": [
+    "fourth_card"
+   ],
+   "pos": [
+    0.28,
+    5
+   ]
+  },
+  {
+   "id": "long_breath",
+   "name_ko": "긴 호흡",
+   "name_en": "Long Breath",
+   "icon": "bamboo",
+   "effect": {
+    "stat": "hit_invuln",
+    "per_rank": 0.1
+   },
+   "desc_ko": "피격 후 무적 시간 +10%",
+   "desc_en": "Post-hit invulnerability +10%",
+   "costs": [
+    950,
+    1550
+   ],
+   "requires": [
+    "first_find"
+   ],
+   "pos": [
+    0.72,
+    5
+   ]
+  },
+  {
+   "id": "luck",
+   "name_ko": "천운",
+   "name_en": "Heaven's Luck",
+   "icon": "thunder_stone",
+   "effect": {
+    "stat": "luck",
+    "per_rank": 0.25
+   },
+   "desc_ko": "특수 재료 발견 확률 +25%",
+   "desc_en": "Special material drop chance +25%",
+   "costs": [
+    1050,
+    1750
+   ],
+   "requires": [
+    "long_breath"
+   ],
+   "pos": [
+    0.72,
+    6
+   ],
+   "materials": {
+    "beast_fang": [
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "id": "revive",
+   "name_ko": "회생부",
+   "name_en": "Revival Charm",
+   "icon": "fire_spirit_stone",
+   "effect": {
+    "stat": "revive",
+    "per_rank": 1
+   },
+   "desc_ko": "출정당 1회, 죽음 대신 체력 30%로 회생",
+   "desc_en": "Once per run, revive at 30% HP instead of dying",
+   "costs": [
+    2000
+   ],
+   "requires": [
+    "stone_skin",
+    "long_breath"
+   ],
+   "pos": [
+    0.5,
+    6
+   ],
+   "materials": {
+    "wonhon_shard": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "burn_mastery",
+   "name_ko": "불씨 정진",
+   "name_en": "Ember Devotion",
+   "icon": "dokkaebi_flame",
+   "character": "taoist",
+   "effect": {
+    "stat": "burn_duration",
+    "per_rank": 0.25
+   },
+   "desc_ko": "화상 지속 시간 +25%",
+   "desc_en": "Burn duration +25%",
+   "costs": [
+    200,
+    420
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    0
+   ],
+   "materials": {
+    "dokkaebi_flame": [
+     1,
+     2
+    ]
+   }
+  },
+  {
+   "id": "ward_wide",
+   "name_ko": "결계 확장",
+   "name_en": "Wider Ward",
+   "icon": "talisman_paper",
+   "character": "taoist",
+   "effect": {
+    "stat": "ward_radius",
+    "per_rank": 0.12
+   },
+   "desc_ko": "결계 반경 +12%",
+   "desc_en": "Ward radius +12%",
+   "costs": [
+    230,
+    480
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    0
+   ],
+   "materials": {
+    "talisman_paper": [
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "id": "chain_reach",
+   "name_ko": "연쇄 심화",
+   "name_en": "Deeper Chain",
+   "icon": "thunder_stone",
+   "character": "taoist",
+   "effect": {
+    "stat": "chain_jumps",
+    "per_rank": 1
+   },
+   "desc_ko": "뇌부 계열 연쇄 도약 +1회",
+   "desc_en": "Thunder charm chain jumps +1",
+   "costs": [
+    260,
+    550
+   ],
+   "requires": [
+    "burn_mastery"
+   ],
+   "pos": [
+    0.28,
+    1
+   ],
+   "materials": {
+    "bamboo": [
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "orbit_extra",
+   "name_ko": "혼불 하나 더",
+   "name_en": "One More Flame",
+   "icon": "wonhon_shard",
+   "character": "taoist",
+   "effect": {
+    "stat": "orbit_count",
+    "per_rank": 1
+   },
+   "desc_ko": "혼불 계열 선회 구슬 +1개",
+   "desc_en": "Soul flame orbs +1",
+   "costs": [
+    620
+   ],
+   "requires": [
+    "ward_wide"
+   ],
+   "pos": [
+    0.72,
+    1
+   ],
+   "materials": {
+    "wonhon_shard": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "seal_ease",
+   "name_ko": "봉인 간파",
+   "name_en": "Seal Insight",
+   "icon": "cinnabar",
+   "character": "taoist",
+   "effect": {
+    "stat": "seal_burst",
+    "per_rank": 1
+   },
+   "desc_ko": "봉인 폭발에 필요한 중첩 -1",
+   "desc_en": "Seal stacks needed to burst -1",
+   "costs": [
+    750
+   ],
+   "requires": [
+    "chain_reach",
+    "orbit_extra"
+   ],
+   "pos": [
+    0.5,
+    2
+   ],
+   "materials": {
+    "cinnabar": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "hwando_hone",
+   "name_ko": "환도 연마",
+   "name_en": "Blade Honing",
+   "icon": "whetstone",
+   "character": "warrior",
+   "effect": {
+    "stat": "attack_damage",
+    "per_rank": 0.04
+   },
+   "desc_ko": "공격력 +4%",
+   "desc_en": "Attack damage +4%",
+   "costs": [
+    210,
+    440
+   ],
+   "requires": [],
+   "pos": [
+    0.35,
+    0
+   ],
+   "materials": {
+    "whetstone": [
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "id": "iron_stance",
+   "name_ko": "태산 압도",
+   "name_en": "Mountain Stance",
+   "icon": "ghost_iron",
+   "character": "warrior",
+   "effect": {
+    "stat": "damage_reduction",
+    "per_rank": 0.04
+   },
+   "desc_ko": "받는 피해 -4%",
+   "desc_en": "Damage taken -4%",
+   "costs": [
+    540
+   ],
+   "requires": [
+    "hwando_hone"
+   ],
+   "pos": [
+    0.5,
+    1
+   ],
+   "materials": {
+    "ghost_iron": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "wind_read",
+   "name_ko": "질풍 보법",
+   "name_en": "Wind Reading",
+   "icon": "beast_fang",
+   "character": "archer",
+   "effect": {
+    "stat": "move_speed",
+    "per_rank": 0.03
+   },
+   "desc_ko": "이동 속도 +3%",
+   "desc_en": "Move speed +3%",
+   "costs": [
+    200,
+    420
+   ],
+   "requires": [],
+   "pos": [
+    0.35,
+    0
+   ]
+  },
+  {
+   "id": "rapid_nock",
+   "name_ko": "연사",
+   "name_en": "Rapid Nock",
+   "icon": "bamboo",
+   "character": "archer",
+   "effect": {
+    "stat": "attack_speed",
+    "per_rank": 0.04
+   },
+   "desc_ko": "공격 속도 +4%",
+   "desc_en": "Attack speed +4%",
+   "costs": [
+    500
+   ],
+   "requires": [
+    "wind_read"
+   ],
+   "pos": [
+    0.5,
+    1
+   ]
+  },
+  {
+   "id": "tiger_eye",
+   "name_ko": "범의 눈",
+   "name_en": "Tiger's Eye",
+   "desc_ko": "치명타 확률 +3%",
+   "desc_en": "Crit chance +3%",
+   "icon": "beast_fang",
+   "effect": {
+    "stat": "crit_chance",
+    "per_rank": 0.03
+   },
+   "costs": [
+    1200,
+    1900
+   ],
+   "requires": [
+    "luck"
+   ],
+   "pos": [
+    0.72,
+    7
+   ]
+  },
+  {
+   "id": "fang_grind",
+   "name_ko": "이빨 갈기",
+   "name_en": "Whetted Fang",
+   "desc_ko": "치명타 피해 +20%",
+   "desc_en": "Crit damage +20%",
+   "icon": "whetstone",
+   "effect": {
+    "stat": "crit_damage",
+    "per_rank": 0.2
+   },
+   "costs": [
+    1450,
+    2200
+   ],
+   "requires": [
+    "tiger_eye"
+   ],
+   "pos": [
+    0.72,
+    8
+   ]
+  },
+  {
+   "id": "swift_charms",
+   "name_ko": "빠른 부적",
+   "name_en": "Swift Charms",
+   "desc_ko": "투사체 속도 +5%",
+   "desc_en": "Projectile speed +5%",
+   "icon": "talisman_paper",
+   "effect": {
+    "stat": "projectile_speed",
+    "per_rank": 0.05
+   },
+   "costs": [
+    1600,
+    2400
+   ],
+   "requires": [
+    "stone_skin"
+   ],
+   "pos": [
+    0.28,
+    7
+   ]
+  },
+  {
+   "id": "ember_core",
+   "name_ko": "불씨 심지",
+   "name_en": "Ember Core",
+   "desc_ko": "화상 초당 피해 +15%",
+   "desc_en": "Burn damage per second +15%",
+   "icon": "fire_spirit_stone",
+   "effect": {
+    "stat": "burn_dps",
+    "per_rank": 0.15
+   },
+   "costs": [
+    850,
+    1400
+   ],
+   "requires": [
+    "seal_ease"
+   ],
+   "character": "taoist",
+   "pos": [
+    0.28,
+    3
+   ],
+   "materials": {
+    "dokkaebi_flame": [
+     3,
+     5
+    ],
+    "fire_spirit_stone": [
+     0,
+     1
+    ]
+   }
+  },
+  {
+   "id": "wide_rites",
+   "name_ko": "넓은 법식",
+   "name_en": "Wide Rites",
+   "desc_ko": "폭발·장판·파동 반경 +8%",
+   "desc_en": "Blast, ward and wave radius +8%",
+   "icon": "cinnabar",
+   "effect": {
+    "stat": "area_radius",
+    "per_rank": 0.08
+   },
+   "costs": [
+    900,
+    1500
+   ],
+   "requires": [
+    "seal_ease"
+   ],
+   "character": "taoist",
+   "pos": [
+    0.72,
+    3
+   ],
+   "materials": {
+    "talisman_paper": [
+     5,
+     8
+    ],
+    "wonhon_shard": [
+     2,
+     3
+    ]
+   }
+  },
+  {
+   "id": "talisman_zeal",
+   "name_ko": "부적 정진",
+   "name_en": "Talisman Zeal",
+   "icon": "talisman_paper",
+   "character": "taoist",
+   "effect": {
+    "stat": "attack_speed",
+    "per_rank": 0.02
+   },
+   "desc_ko": "공격 속도 +2%",
+   "desc_en": "Attack speed +2%",
+   "costs": [
+    300,
+    650
+   ],
+   "materials": {
+    "talisman_paper": [
+     3,
+     6
+    ]
+   },
+   "requires": [
+    "burn_mastery"
+   ],
+   "pos": [
+    0.15,
+    2
+   ]
+  },
+  {
+   "id": "spirit_arrows",
+   "name_ko": "신속 부적",
+   "name_en": "Swift Charms II",
+   "icon": "bamboo",
+   "character": "taoist",
+   "effect": {
+    "stat": "projectile_speed",
+    "per_rank": 0.03
+   },
+   "desc_ko": "투사체 속도 +6%",
+   "desc_en": "Projectile speed +6%",
+   "costs": [
+    350,
+    700
+   ],
+   "materials": {
+    "bamboo": [
+     4,
+     7
+    ]
+   },
+   "requires": [
+    "ward_wide"
+   ],
+   "pos": [
+    0.85,
+    2
+   ]
+  },
+  {
+   "id": "still_mind",
+   "name_ko": "부동심",
+   "name_en": "Still Mind",
+   "icon": "tough_fiber",
+   "character": "taoist",
+   "effect": {
+    "stat": "hit_invuln",
+    "per_rank": 0.05
+   },
+   "desc_ko": "피격 무적 시간 +5%",
+   "desc_en": "Hit invulnerability +5%",
+   "costs": [
+    500,
+    900
+   ],
+   "materials": {
+    "tough_fiber": [
+     4,
+     6
+    ]
+   },
+   "requires": [
+    "talisman_zeal"
+   ],
+   "pos": [
+    0.15,
+    4
+   ]
+  },
+  {
+   "id": "spirit_harvest",
+   "name_ko": "영기 수확",
+   "name_en": "Spirit Harvest",
+   "icon": "wonhon_shard",
+   "character": "taoist",
+   "effect": {
+    "stat": "xp_gain",
+    "per_rank": 0.04
+   },
+   "desc_ko": "경험치 획득 +4%",
+   "desc_en": "XP gain +4%",
+   "costs": [
+    550,
+    1000
+   ],
+   "materials": {
+    "wonhon_shard": [
+     2,
+     4
+    ]
+   },
+   "requires": [
+    "spirit_arrows"
+   ],
+   "pos": [
+    0.85,
+    4
+   ]
+  },
+  {
+   "id": "iron_talisman",
+   "name_ko": "철갑 부적",
+   "name_en": "Iron Talisman",
+   "icon": "beast_fang",
+   "character": "taoist",
+   "effect": {
+    "stat": "damage_reduction",
+    "per_rank": 0.02
+   },
+   "desc_ko": "받는 피해 -2%",
+   "desc_en": "Damage taken -2%",
+   "costs": [
+    1500,
+    2100
+   ],
+   "materials": {
+    "beast_fang": [
+     3,
+     6
+    ],
+    "tough_fiber": [
+     2,
+     4
+    ]
+   },
+   "requires": [
+    "ember_core"
+   ],
+   "pos": [
+    0.28,
+    5
+   ]
+  },
+  {
+   "id": "deep_sight",
+   "name_ko": "심안",
+   "name_en": "Deep Sight",
+   "icon": "cinnabar",
+   "character": "taoist",
+   "effect": {
+    "stat": "crit_chance",
+    "per_rank": 0.02
+   },
+   "desc_ko": "치명타 확률 +2%",
+   "desc_en": "Crit chance +2%",
+   "costs": [
+    1600,
+    2200
+   ],
+   "materials": {
+    "cinnabar": [
+     1,
+     2
+    ],
+    "dokkaebi_flame": [
+     2,
+     3
+    ]
+   },
+   "requires": [
+    "wide_rites"
+   ],
+   "pos": [
+    0.72,
+    5
+   ]
+  }
+ ]
 }
