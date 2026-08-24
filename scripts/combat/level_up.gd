@@ -207,7 +207,6 @@ static func candidates(
 const MECHANIC_PASSIVE_BLOCKS: Dictionary = {
 	"chain_amount": ["chain"],
 	"seal_haste": ["on_hit_seal"],
-	"area_scale": ["explosion", "ward", "shockwave"],
 }
 
 

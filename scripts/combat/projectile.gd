@@ -68,6 +68,8 @@ var _trail: TrailVisual
 ## this shot has been in the air. 1 frame means a still, which is every shipped
 ## travel sprite today.
 var _travel_frames: int = 1
+## N9-161 광역 확장: scales the visual body and the hit reach together.
+var _size_scale: float = 1.0
 var _travel_age: float = 0.0
 # Enemies this shot already struck (instance id -> true) so pierce and chain
 # never hit twice. A pooled instance re-armed mid-flight would be wrongly
@@ -150,7 +152,9 @@ func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 			"blade_trail_sec" if config.has("size") else "paper_trail_sec"
 		) * float(config.get("trail_scale", 1.0))
 	)
-	_apply_shape(config.get("size", paper_size()))
+	_size_scale = float(config.get("size_scale", 1.0))
+	_sprite.scale = Vector2.ONE * _size_scale
+	_apply_shape(config.get("size", paper_size()) * _size_scale)
 
 
 func _physics_process(delta: float) -> void:
@@ -178,7 +182,7 @@ func _physics_process(delta: float) -> void:
 	for breakable: Breakable in _spawner.breakables:
 		if not breakable.alive() or _struck.has(breakable.get_instance_id()):
 			continue
-		var break_reach: float = breakable.hit_radius + HIT_RADIUS
+		var break_reach: float = breakable.hit_radius + HIT_RADIUS * _size_scale
 		if global_position.distance_squared_to(breakable.global_position) \
 				<= break_reach * break_reach:
 			_struck[breakable.get_instance_id()] = true
@@ -189,7 +193,7 @@ func _physics_process(delta: float) -> void:
 	for enemy: Enemy in _spawner.active_enemies():
 		if _struck.has(enemy.get_instance_id()):
 			continue
-		var reach: float = enemy.contact_radius + HIT_RADIUS
+		var reach: float = enemy.contact_radius + HIT_RADIUS * _size_scale
 		if global_position.distance_squared_to(enemy.global_position) <= reach * reach:
 			_touched.append(enemy)
 	for enemy: Enemy in _touched:

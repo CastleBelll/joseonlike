@@ -346,6 +346,9 @@ func _build_shot_config() -> Dictionary:
 		# two frames and its shape cannot say which. validate_data checks the
 		# count divides the width.
 		config["travel_frames"] = int(_stats.get("travel_frames", 1))
+	var size_scale: float = float(_stats.get("projectile_size_scale", 1.0))
+	if size_scale != 1.0:
+		config["size_scale"] = size_scale
 	if _stats.has("on_hit_status"):
 		config["status"] = _stats.get("on_hit_status", {})
 	if _stats.has("on_hit_seal"):

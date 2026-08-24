@@ -95,8 +95,8 @@
   "stat": "area_scale",
   "per_stack": 0.08,
   "max_stacks": 5,
-  "desc_ko": "폭발·장판·파동의 반경이 넓어진다",
-  "desc_en": "Explosions, wards and shockwaves reach wider"
+  "desc_ko": "모든 기술의 범위가 넓어진다 — 폭발·결계·파동 반경, 혼불 크기, 휘두르는 리치, 투사체 크기까지",
+  "desc_en": "Every art grows — blast, ward and wave radii, orb size, swing reach, even projectile size"
  },
  "defense": {
   "name_ko": "방비",

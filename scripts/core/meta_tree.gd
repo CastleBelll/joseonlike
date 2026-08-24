@@ -301,12 +301,23 @@ static func modified_weapon_stats(stats: Dictionary, effects: Dictionary) -> Dic
 		status["dps"] = float(status.get("dps", 0.0)) * (1.0 + burn_dps_scale)
 	var area_scale: float = float(effects.get("area_radius", 0.0))
 	if area_scale > 0.0:
-		# The AREA mechanics only: a chain's reach and an orbit's ring have
-		# their own knobs, and scaling them here would double-dip.
+		# N9-161 (owner: 광역 확장은 모든 기술의 범위): every mechanic grows.
+		# Blast/ward/shockwave radii, the orbit orb's size, a melee arc's
+		# reach — and projectiles carry a size scale the shot applies to its
+		# body and hit reach. Chain keeps its own knob (연쇄 확장's job).
 		for block_name: String in ["explosion", "ward", "shockwave"]:
 			if result.has(block_name):
 				var block: Dictionary = result[block_name]
 				block["radius_px"] = float(block.get("radius_px", 0.0)) * (1.0 + area_scale)
+		if result.has("orbit"):
+			var orbit: Dictionary = result["orbit"]
+			orbit["orb_radius_px"] = float(orbit.get("orb_radius_px", 0.0)) * (1.0 + area_scale)
+		if String(result.get("mechanic", "")) == "melee_arc":
+			result["range_px"] = float(result.get("range_px", 0.0)) * (1.0 + area_scale)
+		else:
+			result["projectile_size_scale"] = (
+				float(result.get("projectile_size_scale", 1.0)) * (1.0 + area_scale)
+			)
 	return result
 
 
