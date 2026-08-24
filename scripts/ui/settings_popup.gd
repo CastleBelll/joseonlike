@@ -180,6 +180,20 @@ func _make_body() -> Control:
 
 	body.add_child(_make_tab_bar())
 
+	# Owner (itch 전체화면 가로에서 닫기 버튼이 종이 밖으로): the paper clamps to
+	# the viewport but a fixed row stack cannot shrink with it. The pages ride
+	# in a scroll that absorbs the clamp, so the CTA never leaves the sheet.
+	var pages_scroll := ScrollContainer.new()
+	pages_scroll.name = "PagesScroll"
+	pages_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	pages_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var pages := VBoxContainer.new()
+	pages.name = "Pages"
+	pages.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+	pages.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pages_scroll.add_child(pages)
+	body.add_child(pages_scroll)
+
 	var game_page := VBoxContainer.new()
 	game_page.name = "GamePage"
 	game_page.add_theme_constant_override("separation", UiPalette.SPACE_MD)
@@ -199,7 +213,7 @@ func _make_body() -> Control:
 	# directly (DisplayServer maps to requestFullscreen on web).
 	if OS.has_feature("web"):
 		game_page.add_child(_make_fullscreen_row())
-	body.add_child(game_page)
+	pages.add_child(game_page)
 	_tab_pages[TAB_GAME] = game_page
 
 	var audio_page := VBoxContainer.new()
@@ -207,12 +221,9 @@ func _make_body() -> Control:
 	audio_page.add_theme_constant_override("separation", UiPalette.SPACE_MD)
 	for key: String in SaveProfile.VOLUME_KEYS:
 		audio_page.add_child(_make_slider_row(key))
-	body.add_child(audio_page)
+	pages.add_child(audio_page)
 	_tab_pages[TAB_AUDIO] = audio_page
 
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_child(spacer)
 	_close_button = Button.new()
 	_close_button.name = "CloseButton"
 	_close_button.custom_minimum_size = Vector2(0.0, CTA_HEIGHT)
