@@ -30,8 +30,9 @@ const PANEL_MARGIN_X := 24.0
 const PANEL_MAX_WIDTH := 492.0
 ## Owner (2026-08-24): in landscape the stacked cards forced a vertical
 ## scroll — the choices lay out as side-by-side columns on a wide band
-## instead. 912 = the 960 landscape design width minus the phone margins.
-const PANEL_MAX_WIDTH_LANDSCAPE := 912.0
+## instead. Trimmed below the full 960 so the field shows at the sides
+## (owner: the popup covered the whole screen).
+const PANEL_MAX_WIDTH_LANDSCAPE := 872.0
 const PANEL_TOP := 96.0
 ## Landscape has 540 design px of height; the portrait 96px top would eat it.
 const PANEL_TOP_LANDSCAPE := 16.0
@@ -40,8 +41,10 @@ const DESIGN_HEIGHT := 960.0
 const DESIGN_HEIGHT_LANDSCAPE := 540.0
 ## A column card narrower than this clips its name line; below it the row
 ## scrolls horizontally instead of shrinking further (pathological counts).
-const CARD_COLUMN_MIN_WIDTH := 240.0
-const CARD_COLUMN_HEIGHT_MIN := 220.0
+const CARD_COLUMN_MIN_WIDTH := 232.0
+## Owner (2026-08-24): the landscape popup covered the whole screen — the
+## floor only guarantees a two-line card, so short screens stay short.
+const CARD_COLUMN_HEIGHT_MIN := 196.0
 const HEADER_HEIGHT := 64.0
 const BODY_MARGIN := 20.0
 ## Cards grow with their wrapped description (N3-17); this is the floor that
@@ -232,6 +235,13 @@ func open(
 		panel_height_for(stack_heights, _panel_style_margins_y()),
 		_root_size().y - top - reserve
 	)
+	# Owner (2026-08-24): a short landscape panel floats centred instead of
+	# hugging the top, so the field stays visible above and below the paper.
+	if landscape:
+		top = maxf(
+			PANEL_TOP_LANDSCAPE,
+			(_root_size().y - reserve - panel_height) / 2.0
+		)
 	_apply_panel_band()
 	_panel.offset_top = top
 	_panel.offset_bottom = top + panel_height
@@ -404,8 +414,11 @@ static func column_card_height_for(
 ## scrolls horizontally instead of crushing the columns. Static for the test.
 static func column_width_for(avail_width: float, count: int) -> float:
 	var n: int = maxi(count, 1)
+	# Floored: a fractional split makes the row 1-2px wider than the scroll
+	# area and summons a pointless horizontal scrollbar.
 	return maxf(
-		(avail_width - CARD_GAP * float(n - 1)) / float(n), CARD_COLUMN_MIN_WIDTH
+		floorf((avail_width - CARD_GAP * float(n - 1)) / float(n)),
+		CARD_COLUMN_MIN_WIDTH
 	)
 
 

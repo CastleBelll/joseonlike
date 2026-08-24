@@ -256,7 +256,7 @@ func test_column_width_floors_at_min() -> bool:
 	var split: float = LevelUpPopup.column_width_for(800.0, 3)
 	var passed: bool = (
 		floored == LevelUpPopup.CARD_COLUMN_MIN_WIDTH
-		and absf(split - (800.0 - LevelUpPopup.CARD_GAP * 2.0) / 3.0) < 0.01
+		and split == floorf((800.0 - LevelUpPopup.CARD_GAP * 2.0) / 3.0)
 	)
 	if not passed:
 		push_error("test_level_up_popup: column_width_for split or floor is wrong")
