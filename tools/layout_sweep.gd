@@ -31,15 +31,22 @@ const SCREENS := {
 }
 
 var _failures: Array[String] = []
+var _locale: String = "ko"
 
 
 func _ready() -> void:
 	_seed_profile()
-	for window: Vector2i in WINDOWS:
-		await _sweep_window(window)
+	# Both locales: English strings run longer than Korean, so a row that fits
+	# one can clip in the other.
+	for locale: String in ["ko", "en"]:
+		if SaveService.instance != null:
+			SaveService.instance.set_setting("locale", locale, false)
+		_locale = locale
+		for window: Vector2i in WINDOWS:
+			await _sweep_window(window)
 	if _failures.is_empty():
-		print("PASS layout_sweep: %d screens x %d devices, nothing overflows or scrolls"
-			% [SCREENS.size() + 2, WINDOWS.size()])
+		print("PASS layout_sweep: %d screens x %d devices x 2 locales, nothing overflows, clips or scrolls"
+			% [SCREENS.size() + 6, WINDOWS.size()])
 		get_tree().quit(0)
 		return
 	for line: String in _failures:
@@ -77,9 +84,11 @@ func _sweep_window(window: Vector2i) -> void:
 	var canvas: Vector2 = canvas_for(window)
 	for key: String in SCREENS:
 		await _check_screen(key, String(SCREENS[key]), window, canvas, false)
-	# The two popups ride over the camp, which owns the settings entry.
+	# The popups ride over the camp, which owns the settings entry.
 	await _check_screen("settings", String(SCREENS["camp"]), window, canvas, true)
 	await _check_screen("levelup", String(SCREENS["camp"]), window, canvas, true, true)
+	for overlay_key: String in ["result", "guide", "hud", "pause"]:
+		await _check_overlay(overlay_key, window, canvas)
 
 
 func _check_screen(
@@ -100,12 +109,21 @@ func _check_screen(
 		overlay = _open_popup(level_up, canvas)
 	await get_tree().process_frame
 	await get_tree().process_frame
-	var label: String = "%s @ %dx%d (canvas %.0fx%.0f)" % [key, window.x, window.y, canvas.x, canvas.y]
+	var label: String = "%s[%s] @ %dx%d (canvas %.0fx%.0f)" % [key, _locale, window.x, window.y, canvas.x, canvas.y]
 	var rect := Rect2(Vector2.ZERO, canvas)
 	var list_screen: bool = LIST_SCREENS.has(key)
+	_boxes.clear()
+	_box_names.clear()
 	_walk(screen, rect, label, list_screen, false)
+	if overlay == null:
+		# A popup is meant to cover the screen under it, so overlaps are only
+		# checked inside one layer at a time.
+		_check_overlaps(label)
 	if overlay != null:
+		_boxes.clear()
+		_box_names.clear()
 		_walk(overlay, rect, label, false, false)
+		_check_overlaps(label)
 	if overlay != null:
 		overlay.queue_free()
 	host.queue_free()
@@ -114,6 +132,57 @@ func _check_screen(
 
 ## Popups are CanvasLayers anchored to the real viewport, so the sweep sizes
 ## their blocker to the device canvas and re-runs their layout.
+## The run-time overlays: the result paper, the opening guide, the combat HUD
+## and its pause paper. They build straight into a canvas-sized host, no
+## stage needed — every one of them is a CanvasLayer or a plain Control.
+func _check_overlay(key: String, window: Vector2i, canvas: Vector2) -> void:
+	var host := Control.new()
+	host.size = canvas
+	add_child(host)
+	var node: Node = null
+	match key:
+		"result":
+			var result := ResultScreen.new()
+			host.add_child(result)
+			result._root.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			result._root.size = canvas
+			result.open(RunFlow.OUTCOME_DEFEAT, {
+				"time_text": "4:47", "kills": 132, "gold": 875, "earned": 220,
+				"total_gold": 1095, "death_cause": "forest_goblin",
+			})
+			node = result
+		"guide":
+			var guide := GuideDialog.new()
+			host.add_child(guide)
+			var blocker: Control = guide.get_node("Blocker")
+			blocker.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			blocker.size = canvas
+			guide.open(Ftue.GUIDE_PAGES)
+			node = guide
+		_:
+			var hud := CombatHud.new()
+			host.add_child(hud)
+			hud.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			hud.size = canvas
+			if key == "pause":
+				# The pause paper rides its own CanvasLayer, which anchors to the
+				# real viewport — size its root to the device canvas like the
+				# other popups before opening it.
+				hud._pause_overlay.set_anchors_preset(Control.PRESET_TOP_LEFT)
+				hud._pause_overlay.size = canvas
+				hud._on_pause_pressed()
+			node = hud
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var label: String = "%s[%s] @ %dx%d (canvas %.0fx%.0f)" % [key, _locale, window.x, window.y, canvas.x, canvas.y]
+	_boxes.clear()
+	_box_names.clear()
+	_walk(node, Rect2(Vector2.ZERO, canvas), label, false, false)
+	_check_overlaps(label)
+	host.queue_free()
+	await get_tree().process_frame
+
+
 func _open_popup(level_up: bool, canvas: Vector2) -> Node:
 	if not level_up:
 		var settings := SettingsPopup.new()
@@ -150,6 +219,34 @@ func _json(path: String) -> Dictionary:
 
 ## Every button must land inside the viewport, and no scroll may actually be
 ## scrolling — both are what "삐져나온다" and "스크롤 생긴다" look like in data.
+## Touch floor: below this a button is hard to hit on a phone. The project
+## standard is UiPalette.TOUCH_TARGET_MIN (44); the sweep fails under 40 so a
+## deliberate 40px pill row stays legal but nothing shrinks past it.
+const TOUCH_FLOOR := 40.0
+
+var _boxes: Array[Rect2] = []
+var _box_names: PackedStringArray = []
+
+
+## Two tappable things must not sit on top of each other — that is the
+## "가이드가 가린다" class of bug, invisible to an overflow check.
+func _check_overlaps(label: String) -> void:
+	for i: int in _boxes.size():
+		for j: int in range(i + 1, _boxes.size()):
+			var a: Rect2 = _boxes[i]
+			var b: Rect2 = _boxes[j]
+			if not a.intersects(b):
+				continue
+			var shared: Rect2 = a.intersection(b)
+			# Touching borders are fine; a real overlap covers area.
+			if shared.size.x < 4.0 or shared.size.y < 4.0:
+				continue
+			_failures.append(
+				"%s: %s and %s overlap (%.0fx%.0f)"
+				% [label, _box_names[i], _box_names[j], shared.size.x, shared.size.y]
+			)
+
+
 func _walk(node: Node, viewport: Rect2, label: String, list_screen: bool, inside_scroll: bool) -> void:
 	for child: Node in node.get_children():
 		# A list screen's rows live below the fold on purpose; only its chrome
@@ -158,11 +255,32 @@ func _walk(node: Node, viewport: Rect2, label: String, list_screen: bool, inside
 		if child is Button and (child as Control).is_visible_in_tree() and not skip:
 			var button := child as Button
 			var box: Rect2 = button.get_global_rect()
-			if box.size.x > 0.0 and box.size.y > 0.0 and not viewport.encloses(box):
-				_failures.append(
-					"%s: %s leaves the screen (%.0f,%.0f %.0fx%.0f)"
-					% [label, button.name, box.position.x, box.position.y, box.size.x, box.size.y]
-				)
+			if box.size.x > 0.0 and box.size.y > 0.0:
+				if not viewport.encloses(box):
+					_failures.append(
+						"%s: %s leaves the screen (%.0f,%.0f %.0fx%.0f)"
+						% [label, button.name, box.position.x, box.position.y, box.size.x, box.size.y]
+					)
+				if minf(box.size.x, box.size.y) < TOUCH_FLOOR:
+					_failures.append(
+						"%s: %s is %.0fx%.0f, under the %.0fpx touch floor"
+						% [label, button.name, box.size.x, box.size.y, TOUCH_FLOOR]
+					)
+				_boxes.append(box)
+				_box_names.append(String(button.name))
+		# A label whose one line needs more width than it has is truncated on
+		# screen — the phone-sized version of "글씨가 잘린다".
+		if child is Label and (child as Control).is_visible_in_tree() and not skip:
+			var text_label := child as Label
+			var wrapped: bool = text_label.autowrap_mode != TextServer.AUTOWRAP_OFF
+			var rect: Rect2 = text_label.get_global_rect()
+			if not wrapped and not text_label.text.is_empty() and rect.size.x > 0.0:
+				var needed: float = text_label.get_minimum_size().x
+				if needed > rect.size.x + 1.0:
+					_failures.append(
+						"%s: %s is clipped (needs %.0f, has %.0f) — \"%s\""
+						% [label, text_label.name, needed, rect.size.x, text_label.text.left(24)]
+					)
 		if child is ScrollContainer and (child as Control).is_visible_in_tree() and not list_screen:
 			var scroll := child as ScrollContainer
 			var bar: VScrollBar = scroll.get_v_scroll_bar()
