@@ -1486,6 +1486,8 @@
     "projectile_count": 1
    }
   },
+  "travel_sprite": "res://asset/weapon/travel/bow.png",
+  "travel_frames": 4,
   "hit_effect": "hit_bow"
  },
  "divine_bow": {
@@ -1505,6 +1507,8 @@
    "cooldown_sec": -0.03
   },
   "evolution_only": true,
+  "travel_sprite": "res://asset/weapon/travel/divine_bow.png",
+  "travel_frames": 4,
   "hit_effect": "hit_divine_bow",
   "milestones": {
    "8": {
