@@ -192,6 +192,77 @@ func test_panel_fits_portrait_screen() -> bool:
 	return passed
 
 
+## Owner (2026-08-24): landscape lays the choices out as columns. The regular
+## (non-개조) worst screen must fit the 540 landscape height without the clamp
+## engaging, and the roster strip must stay one row on the wide band.
+func test_landscape_columns_fit_the_540_height() -> bool:
+	var font: Font = LevelUpPopup.card_font()
+	var spacing: int = _line_spacing()
+	var style: StyleBox = UiIcons.paper_panel()
+	var body_width: float = (
+		LevelUpPopup.PANEL_MAX_WIDTH_LANDSCAPE
+		- style.get_margin(SIDE_LEFT) - style.get_margin(SIDE_RIGHT)
+		- LevelUpPopup.BODY_MARGIN * 4.0
+	)
+	var column_width: float = LevelUpPopup.column_width_for(body_width, 3)
+	var passed: bool = column_width >= LevelUpPopup.CARD_COLUMN_MIN_WIDTH
+	var wrap_width: float = column_width - LevelUpPopup.WELL_MARGIN * 2.0
+	var by_kind: Dictionary = _descs_by_kind()
+	# Regular cards plus every plain 개조 desc must fit; only the one-time
+	# FTUE explainer line may push a card into the scroll fallback.
+	var descs: Array[String] = []
+	descs.append_array(by_kind["other"] as Array[String])
+	for desc: String in by_kind["mod"] as Array[String]:
+		if not desc.begins_with(Ftue.MOD_EXPLAIN_LINE):
+			descs.append(desc)
+	var tallest: float = 0.0
+	for desc: String in descs:
+		tallest = maxf(
+			tallest, LevelUpPopup.column_card_height_for(desc, font, wrap_width, spacing)
+		)
+	var unclamped: float = LevelUpPopup.panel_height_for(
+		[tallest], style.get_margin(SIDE_TOP) + style.get_margin(SIDE_BOTTOM)
+	)
+	var limit: float = (
+		LevelUpPopup.DESIGN_HEIGHT_LANDSCAPE - LevelUpPopup.PANEL_TOP_LANDSCAPE
+		- LevelUpPopup.OWNED_STRIP_RESERVE_LANDSCAPE
+	)
+	if unclamped > limit:
+		push_error(
+			"test_level_up_popup: landscape columns (%.0fpx) outgrow the %.0fpx limit"
+			% [unclamped, limit]
+		)
+		passed = false
+	# The wide band must hold every offerable weapon in ONE strip row —
+	# that is what lets the landscape reserve shrink to a single row.
+	var weapons: Dictionary = _load(WEAPONS_PATH)
+	var max_owned: int = 0
+	for weapon_id: String in weapons:
+		if weapon_id.begins_with("_"):
+			continue
+		var stats: Dictionary = weapons[weapon_id]
+		if not bool(stats.get("evolution_only", false)) and LevelUp.runtime_can_fire(stats):
+			max_owned += 1
+	var strip_width: float = 960.0 - LevelUpPopup.PANEL_MARGIN_X * 2.0
+	if LevelUpPopup.owned_strip_rows(max_owned, strip_width) != 1:
+		push_error("test_level_up_popup: landscape roster strip wraps past one row")
+		passed = false
+	return passed
+
+
+func test_column_width_floors_at_min() -> bool:
+	# 10 cards can never fit the band; the split floors and the row scrolls.
+	var floored: float = LevelUpPopup.column_width_for(800.0, 10)
+	var split: float = LevelUpPopup.column_width_for(800.0, 3)
+	var passed: bool = (
+		floored == LevelUpPopup.CARD_COLUMN_MIN_WIDTH
+		and absf(split - (800.0 - LevelUpPopup.CARD_GAP * 2.0) / 3.0) < 0.01
+	)
+	if not passed:
+		push_error("test_level_up_popup: column_width_for split or floor is wrong")
+	return passed
+
+
 func test_panel_top_centers_the_expand_extra_height() -> bool:
 	# N9-113 (owner: 파워 업 모달이 너무 위로): at the 960 design height the
 	# top is exactly PANEL_TOP; a taller expand viewport splits its extra

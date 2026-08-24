@@ -28,9 +28,20 @@ const PANEL_MARGIN_X := 24.0
 ## N9-152 (owner: 가로에서 파워업 선택지가 너무 길다): the paper band never
 ## grows past the portrait design width — wide viewports center it.
 const PANEL_MAX_WIDTH := 492.0
+## Owner (2026-08-24): in landscape the stacked cards forced a vertical
+## scroll — the choices lay out as side-by-side columns on a wide band
+## instead. 912 = the 960 landscape design width minus the phone margins.
+const PANEL_MAX_WIDTH_LANDSCAPE := 912.0
 const PANEL_TOP := 96.0
+## Landscape has 540 design px of height; the portrait 96px top would eat it.
+const PANEL_TOP_LANDSCAPE := 16.0
 ## The project's design viewport height; aspect "expand" can hand a taller one.
 const DESIGN_HEIGHT := 960.0
+const DESIGN_HEIGHT_LANDSCAPE := 540.0
+## A column card narrower than this clips its name line; below it the row
+## scrolls horizontally instead of shrinking further (pathological counts).
+const CARD_COLUMN_MIN_WIDTH := 240.0
+const CARD_COLUMN_HEIGHT_MIN := 220.0
 const HEADER_HEIGHT := 64.0
 const BODY_MARGIN := 20.0
 ## Cards grow with their wrapped description (N3-17); this is the floor that
@@ -43,6 +54,11 @@ const FOCUS_RING_WIDTH := 4
 const WELL_SIZE := 72.0
 const WELL_CORNER := 8
 const WELL_MARGIN := 16.0
+## Column cards (landscape) stack name and description under the icon well
+## row; these are the y offsets of that stacked layout (the name line starts
+## right where the well's own label row ends).
+const COLUMN_NAME_TOP := WELL_MARGIN + WELL_SIZE + 24.0
+const COLUMN_DESC_TOP := COLUMN_NAME_TOP + 28.0
 # Weapon icons show at integer multiples of their 32px logical size and the
 # loot badge at its native 24px, so NEAREST sampling stays lossless
 # (asset/ui/README.md).
@@ -62,6 +78,9 @@ const DESC_BREAK_FLAGS := (
 ## this the card list scrolls instead of growing (N3-17). Covers the strip
 ## wrapped to two rows — every offerable weapon owned at once (N4-7).
 const OWNED_STRIP_RESERVE := 120.0
+## The landscape band is wide enough for the whole roster in ONE strip row,
+## so its reserve only needs that row plus a tight gap above it.
+const OWNED_STRIP_RESERVE_LANDSCAPE := 56.0
 const PILL_SIZE := Vector2(64.0, 30.0)
 const PILL_MARGIN := 12.0
 const OWNED_WELL_SIZE := 48.0
@@ -151,44 +170,79 @@ func open(
 	for child: Node in _owned_row.get_children():
 		child.queue_free()
 	_title.text = header_text
-	var cards := VBoxContainer.new()
+	var landscape: bool = _is_landscape()
+	# Owner (2026-08-24): landscape rows scroll horizontally if they ever
+	# outgrow the band; the portrait stack keeps its vertical-only scroll.
+	_scroll.horizontal_scroll_mode = (
+		ScrollContainer.SCROLL_MODE_AUTO if landscape
+		else ScrollContainer.SCROLL_MODE_DISABLED
+	)
+	var cards: BoxContainer = HBoxContainer.new() if landscape else VBoxContainer.new()
 	cards.name = "Cards"
 	cards.add_theme_constant_override("separation", int(CARD_GAP))
 	_scroll.add_child(cards)
 	# Cards are sized to their wrapped description up front (N3-17): the width
-	# is derived from the fixed portrait layout, so the wrap measurement in
-	# card_height_for equals what the Label renders.
-	var card_width: float = _card_width()
+	# is derived from the fixed layout, so the wrap measurement in
+	# card_height_for equals what the Label renders. Landscape splits the body
+	# width into equal columns instead of full-width rows.
+	var card_width: float = (
+		column_width_for(_card_width(), display_cards.size()) if landscape
+		else _card_width()
+	)
 	var font: Font = card_font()
 	var line_spacing: int = _title.get_theme_constant("line_spacing")
 	var heights: Array[float] = []
 	for card: Dictionary in display_cards:
-		var height: float = card_height_for(
-			String(card.get("desc", "")), font, card_width - TEXT_LEFT - WELL_MARGIN,
-			line_spacing
+		var height: float = (
+			column_card_height_for(
+				String(card.get("desc", "")), font, card_width - WELL_MARGIN * 2.0,
+				line_spacing
+			) if landscape
+			else card_height_for(
+				String(card.get("desc", "")), font, card_width - TEXT_LEFT - WELL_MARGIN,
+				line_spacing
+			)
 		)
 		heights.append(height)
-		cards.add_child(_make_card(card, card_width, height))
+	if landscape and not heights.is_empty():
+		# One aligned row: every column takes the tallest measured height.
+		var tallest: float = heights.max()
+		for i: int in heights.size():
+			heights[i] = tallest
+	for i: int in display_cards.size():
+		cards.add_child(_make_card(display_cards[i], card_width, heights[i], landscape))
 	if display_cards.is_empty():
 		heights.append(CARD_HEIGHT_MIN)
 		cards.add_child(_make_close_button())
 	# N9-113 (owner: 파워 업 모달이 너무 위로): aspect "expand" grows a tall
 	# phone's viewport past the 960 design height, and a fixed 96px top left
 	# the popup hugging the top edge — the extra height splits evenly instead.
-	var top: float = panel_top_for(_root_size().y)
+	var top: float = (
+		PANEL_TOP_LANDSCAPE + maxf(_root_size().y - DESIGN_HEIGHT_LANDSCAPE, 0.0) / 2.0
+		if landscape else panel_top_for(_root_size().y)
+	)
+	# Landscape is one row, so the panel wraps the tallest card, not the sum.
+	var stack_heights: Array[float] = heights
+	if landscape and not heights.is_empty():
+		stack_heights = [heights[0]]
+	var reserve: float = (
+		OWNED_STRIP_RESERVE_LANDSCAPE if landscape else OWNED_STRIP_RESERVE
+	)
 	var panel_height: float = minf(
-		panel_height_for(heights, _panel_style_margins_y()),
-		_root_size().y - top - OWNED_STRIP_RESERVE
+		panel_height_for(stack_heights, _panel_style_margins_y()),
+		_root_size().y - top - reserve
 	)
 	_apply_panel_band()
 	_panel.offset_top = top
 	_panel.offset_bottom = top + panel_height
+	# The tight landscape reserve pairs with the tighter SM gap.
+	var strip_gap: float = float(UiPalette.SPACE_SM if landscape else UiPalette.SPACE_MD)
 	_owned_row.position = Vector2(
-		_panel_inset(), top + panel_height + UiPalette.SPACE_MD
+		_panel_inset(), top + panel_height + strip_gap
 	)
 	# The strip's rect width is what the flow container wraps against.
 	_owned_row.size = Vector2(
-		_root_size().x - _panel_inset() * 2.0, OWNED_STRIP_RESERVE - UiPalette.SPACE_MD
+		_root_size().x - _panel_inset() * 2.0, reserve - strip_gap
 	)
 	_build_owned_row(owned_levels, weapons)
 	visible = true
@@ -205,7 +259,9 @@ func close() -> void:
 ## the measured wrap width identical to the rendered one even when the
 ## overflow scrollbar appears (it may overlap the card edge in that
 ## pathological case — accepted, real data never engages the scroll).
-func _make_card(display: Dictionary, card_width: float, card_height: float) -> Button:
+func _make_card(
+	display: Dictionary, card_width: float, card_height: float, column: bool = false
+) -> Button:
 	var card := Button.new()
 	card.custom_minimum_size = Vector2(card_width, card_height)
 	card.focus_mode = Control.FOCUS_ALL
@@ -234,10 +290,16 @@ func _make_card(display: Dictionary, card_width: float, card_height: float) -> B
 	well_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card.add_child(well_label)
 	var name_label := _label(name_text, UiPalette.FONT_SIZE_TITLE, UiPalette.INK)
-	name_label.position = Vector2(TEXT_LEFT, WELL_MARGIN)
-	name_label.size = Vector2(
-		card_width - TEXT_LEFT - PILL_SIZE.x - PILL_MARGIN * 2.0, 32.0
-	)
+	# Column cards (landscape) stack the name and description under the icon
+	# well; row cards keep the portrait icon-left layout.
+	if column:
+		name_label.position = Vector2(WELL_MARGIN, COLUMN_NAME_TOP)
+		name_label.size = Vector2(card_width - WELL_MARGIN * 2.0, 32.0)
+	else:
+		name_label.position = Vector2(TEXT_LEFT, WELL_MARGIN)
+		name_label.size = Vector2(
+			card_width - TEXT_LEFT - PILL_SIZE.x - PILL_MARGIN * 2.0, 32.0
+		)
 	name_label.clip_text = true
 	card.add_child(name_label)
 	var desc_label := _label(
@@ -247,10 +309,16 @@ func _make_card(display: Dictionary, card_width: float, card_height: float) -> B
 	# Autowrap first: set_size clamps to the minimum size, and without wrap the
 	# minimum width is the full unwrapped line (N3-17 regression).
 	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc_label.position = Vector2(TEXT_LEFT, DESC_TOP)
-	desc_label.size = Vector2(
-		card_width - TEXT_LEFT - WELL_MARGIN, card_height - DESC_TOP - DESC_BOTTOM_PAD
-	)
+	if column:
+		desc_label.position = Vector2(WELL_MARGIN, COLUMN_DESC_TOP)
+		desc_label.size = Vector2(
+			card_width - WELL_MARGIN * 2.0, card_height - COLUMN_DESC_TOP - DESC_BOTTOM_PAD
+		)
+	else:
+		desc_label.position = Vector2(TEXT_LEFT, DESC_TOP)
+		desc_label.size = Vector2(
+			card_width - TEXT_LEFT - WELL_MARGIN, card_height - DESC_TOP - DESC_BOTTOM_PAD
+		)
 	card.add_child(desc_label)
 	card.add_child(_make_grade_pill(
 		String(display.get("grade", "")), String(display.get("grade_id", ""))
@@ -317,11 +385,40 @@ static func owned_strip_height(count: int, strip_width: float) -> float:
 	return float(rows) * OWNED_WELL_SIZE + float(maxi(rows - 1, 0)) * OWNED_WRAP_GAP
 
 
+## Column card height (landscape): the stacked name/desc layout under the
+## well, floored so a short card keeps its shape. Static for the layout test.
+static func column_card_height_for(
+	desc: String, font: Font, wrap_width: float, line_spacing: int
+) -> float:
+	var measured: Vector2 = font.get_multiline_string_size(
+		desc, HORIZONTAL_ALIGNMENT_LEFT, wrap_width, UiPalette.FONT_SIZE_LABEL,
+		-1, DESC_BREAK_FLAGS
+	)
+	var line_height: float = maxf(font.get_height(UiPalette.FONT_SIZE_LABEL), 1.0)
+	var lines: int = maxi(int(ceilf(measured.y / (line_height + float(line_spacing)))), 1)
+	var text_height: float = measured.y + float(line_spacing * (lines - 1))
+	return maxf(CARD_COLUMN_HEIGHT_MIN, COLUMN_DESC_TOP + text_height + DESC_BOTTOM_PAD)
+
+
+## Equal column split of the body width; floored so a pathological card count
+## scrolls horizontally instead of crushing the columns. Static for the test.
+static func column_width_for(avail_width: float, count: int) -> float:
+	var n: int = maxi(count, 1)
+	return maxf(
+		(avail_width - CARD_GAP * float(n - 1)) / float(n), CARD_COLUMN_MIN_WIDTH
+	)
+
+
+func _is_landscape() -> bool:
+	return _root_size().x > _root_size().y
+
+
 ## N9-152: distance from either screen edge to the paper band — the old
 ## PANEL_MARGIN_X on phones, centered once the viewport is wider than the
-## portrait design band.
+## portrait design band. Landscape widens the band to its own design width.
 func _panel_inset() -> float:
-	return maxf(PANEL_MARGIN_X, (_root_size().x - PANEL_MAX_WIDTH) / 2.0)
+	var band: float = PANEL_MAX_WIDTH_LANDSCAPE if _is_landscape() else PANEL_MAX_WIDTH
+	return maxf(PANEL_MARGIN_X, (_root_size().x - band) / 2.0)
 
 
 func _apply_panel_band() -> void:
