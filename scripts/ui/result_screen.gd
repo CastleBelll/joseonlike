@@ -54,8 +54,11 @@ func _ready() -> void:
 	var half_w: float = minf(root_w - PANEL_MARGIN_X * 2.0, 492.0) / 2.0
 	panel.offset_left = -half_w
 	panel.offset_right = half_w
-	panel.offset_top = -PANEL_HEIGHT / 2.0
-	panel.offset_bottom = PANEL_HEIGHT / 2.0
+	# N9-154: never taller than the viewport (landscape is 540 design px).
+	var root_h: float = _root.size.y if _root.size.y > 0.0 else 960.0
+	var half_h: float = minf(PANEL_HEIGHT, root_h - PANEL_MARGIN_X * 2.0) / 2.0
+	panel.offset_top = -half_h
+	panel.offset_bottom = half_h
 	_root.add_child(panel)
 	var layout := Control.new()
 	layout.name = "Layout"

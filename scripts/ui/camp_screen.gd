@@ -95,10 +95,19 @@ func build_ui() -> void:
 	margin.add_theme_constant_override("margin_bottom", MARGIN_BOTTOM)
 	add_child(margin)
 
+	# N9-154: landscape hands the camp a 540px-tall canvas the portrait
+	# column overflows — a scroll container absorbs it; portrait fits and
+	# never actually scrolls.
+	var scroll := ScrollContainer.new()
+	scroll.name = "ColumnScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	margin.add_child(scroll)
 	var column := VBoxContainer.new()
 	column.name = "Column"
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_theme_constant_override("separation", UiPalette.SPACE_LG)
-	margin.add_child(column)
+	scroll.add_child(column)
 
 	var summary: Dictionary = Camp.summary(_profile())
 	column.add_child(_build_header(summary))

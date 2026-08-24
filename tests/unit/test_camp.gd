@@ -110,14 +110,14 @@ func test_camp_screen_builds() -> bool:
 	var scene: PackedScene = load(CAMP_SCENE)
 	var camp: CampScreen = scene.instantiate()
 	camp.build_ui()
-	var passed: bool = camp.get_node_or_null("Layout/Column/Header/GoldValue") != null
-	passed = passed and camp.get_node_or_null("Layout/Column/Stats") != null
-	var grid: GridContainer = camp.get_node_or_null("Layout/Column/Buildings")
+	var passed: bool = camp.get_node_or_null("Layout/ColumnScroll/Column/Header/GoldValue") != null
+	passed = passed and camp.get_node_or_null("Layout/ColumnScroll/Column/Stats") != null
+	var grid: GridContainer = camp.get_node_or_null("Layout/ColumnScroll/Column/Buildings")
 	passed = passed and grid != null and grid.get_child_count() == Camp.buildings().size()
-	var depart: Button = camp.get_node_or_null("Layout/Column/MenuButtons/DepartButton")
+	var depart: Button = camp.get_node_or_null("Layout/ColumnScroll/Column/MenuButtons/DepartButton")
 	passed = passed and depart != null \
 		and depart.custom_minimum_size.y >= UiPalette.TOUCH_TARGET_MIN
-	var select: Button = camp.get_node_or_null("Layout/Column/MenuButtons/SelectButton")
+	var select: Button = camp.get_node_or_null("Layout/ColumnScroll/Column/MenuButtons/SelectButton")
 	passed = passed and select != null
 	if not passed:
 		push_error("test_camp: camp screen structure incomplete")
