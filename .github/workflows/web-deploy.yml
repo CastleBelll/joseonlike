@@ -158,6 +158,15 @@ jobs:
             echo "::error::the canvas fill CSS lost its !important — mobile will render tiny"
             exit 1
           fi
+          # Owner (폰을 가로로 돌리니 세로 버전이 늘어난다): with the "Project"
+          # resize policy the canvas framebuffer stays at the project
+          # resolution and CSS stretches it, so a rotation scales the portrait
+          # build instead of relaying out. "Adaptive" (2) makes the canvas
+          # follow the browser box, which is what the orientation swap reads.
+          if ! grep -q '"canvasResizePolicy":2' "$EXPORT_DIR/index.html"; then
+            echo "::error::canvas resize policy is not Adaptive — rotation will stretch the portrait build"
+            exit 1
+          fi
           # itch.io serves uploads from its own CDN and butler versions every
           # push, so the N9-108 sha-fingerprint rename that Vercel needed is
           # retired with Vercel itself — the export ships pristine.
