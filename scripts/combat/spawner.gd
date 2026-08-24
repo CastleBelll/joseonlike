@@ -8,6 +8,9 @@ extends Node2D
 ## dying enemy is still valid during this synchronous emit; it returns to the
 ## pool right after, so handlers must read its fields immediately.
 signal enemy_killed(enemy: Enemy)
+## 화약 도깨비 (N9-165) — the lit fuse and the blast it becomes.
+signal enemy_fuse_lit(enemy: Enemy, fuse_sec: float, radius_px: float)
+signal enemy_detonated(at: Vector2, radius_px: float, damage: float, name_ko: String)
 ## N5-1: the single stage boss just entered the field.
 signal boss_spawned(boss: Enemy)
 
@@ -316,6 +319,12 @@ func _spawn_one(monster_id: String) -> Enemy:
 		enemy.died.connect(_on_enemy_died)
 	if not enemy.burn_ticked.is_connected(_on_enemy_burn_ticked):
 		enemy.burn_ticked.connect(_on_enemy_burn_ticked)
+	# 화약 도깨비 (N9-165): the fuse and the blast are the stage's to draw and
+	# resolve, so the spawner only forwards them.
+	if not enemy.fuse_lit.is_connected(_on_enemy_fuse_lit):
+		enemy.fuse_lit.connect(_on_enemy_fuse_lit)
+	if not enemy.detonated.is_connected(_on_enemy_detonated):
+		enemy.detonated.connect(_on_enemy_detonated)
 	# N4-2 soft enrage: monsters spawned after the ramp start arrive scaled,
 	# so a stalled post-boss field turns lethal instead of dragging (GDD §34).
 	# The boss spawns at boss_at_sec, before the ramp, and is never scaled.
@@ -404,6 +413,16 @@ func _on_enemy_died(enemy: Enemy) -> void:
 		_spread_curse(enemy)
 	enemy_killed.emit(enemy)
 	_release(enemy)
+
+
+func _on_enemy_fuse_lit(enemy: Enemy, fuse_sec: float, radius_px: float) -> void:
+	enemy_fuse_lit.emit(enemy, fuse_sec, radius_px)
+
+
+func _on_enemy_detonated(
+	enemy: Enemy, at: Vector2, radius_px: float, damage: float
+) -> void:
+	enemy_detonated.emit(at, radius_px, damage, enemy.name_ko)
 
 
 func _on_enemy_burn_ticked(amount: float, at: Vector2) -> void:

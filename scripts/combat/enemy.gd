@@ -7,6 +7,11 @@ extends CharacterBody2D
 ## ranged/charger AI is a later feature.
 
 signal died(enemy: Enemy)
+## 화약 도깨비 (N9-165): the fuse is lit — the stage draws the warning that
+## says where the powder will go off, and how long the player has.
+signal fuse_lit(enemy: Enemy, fuse_sec: float, radius_px: float)
+## The fuse ran out. The stage owns the damage, like every other area attack.
+signal detonated(enemy: Enemy, at: Vector2, radius_px: float, damage: float)
 ## N4-4a: one DoT tick landed (burn, or curse since N4-4b) — relayed by the
 ## spawner so the stage can float a damage number without every enemy holding
 ## a stage reference.
@@ -118,6 +123,13 @@ var curse_spread_count: int = 0
 var _curse_left: float = 0.0
 var _curse_tick: float = 0.0
 var _stun_left: float = 0.0
+## 화약 도깨비 fuse state. `is_suicide` also silences contact damage: the bomb
+## hurts through its blast or not at all.
+var is_suicide: bool = false
+var _suicide: Dictionary = {}
+var _fuse_left: float = 0.0
+var _fuse_lit: bool = false
+var _spent: bool = false
 
 # N10-1a 그슨대: the shadow contract. `shadow_config` empty = an ordinary
 # monster, so every existing enemy is untouched. `light_sources` is the live
@@ -181,6 +193,11 @@ func setup(
 	contact_radius = float(stats.get("collision_radius", 10.0))
 	xp_drop = int(stats.get("xp_drop", 0))
 	is_boss = String(stats.get("behaviour", "")) == "boss"
+	is_suicide = String(stats.get("behaviour", "")) == "suicide"
+	_suicide = stats.get("suicide", {})
+	_fuse_left = 0.0
+	_fuse_lit = false
+	_spent = false
 	is_elite = bool(stats.get("is_elite", false))
 	_size_scale = float(stats.get("size_scale", 1.0))
 	_flash_left = 0.0
@@ -276,13 +293,15 @@ func _physics_process(delta: float) -> void:
 	_shock_left = maxf(_shock_left - delta, 0.0)
 	_stun_left = maxf(_stun_left - delta, 0.0)
 	_knockback = _knockback.move_toward(Vector2.ZERO, _knockback_decay * delta)
+	if is_suicide and _update_fuse(delta):
+		return  # the powder went off; this body has left the space
 	var desired: Vector2 = CombatMath.chase_direction(
 		global_position, _target.global_position
 	)
 	var steer: Vector2 = CombatMath.avoid_direction(desired, _block_normal, _avoid_sign)
 	var speed: float = _speed * (_shock_scale if _shock_left > 0.0 else 1.0)
 	# Stunned (진언, N4-4b): the chase stops dead; only knockback still moves it.
-	if _stun_left > 0.0 or _shadow_leashed:
+	if _stun_left > 0.0 or _shadow_leashed or _fuse_lit:
 		speed = 0.0
 	velocity = Separation.blended_direction(steer, separation_push) * speed + _knockback
 	move_and_slide()
@@ -291,8 +310,33 @@ func _physics_process(delta: float) -> void:
 		else Vector2.ZERO
 	)
 	_update_visual_motion()
-	if _stun_left <= 0.0:
+	# A bomb never also body-slams: its whole damage is the blast.
+	if _stun_left <= 0.0 and not is_suicide:
 		_try_contact_damage()
+
+
+## Runs the fuse: lights it at arm's length, counts it down while the bomb
+## stands still, and detonates. True means this body is gone.
+func _update_fuse(delta: float) -> bool:
+	var distance: float = global_position.distance_to(_target.global_position)
+	if CombatMath.fuse_lights(distance, float(_suicide.get("trigger_px", 0.0)), _fuse_lit):
+		_fuse_lit = true
+		_fuse_left = float(_suicide.get("fuse_sec", 0.0))
+		fuse_lit.emit(self, _fuse_left, float(_suicide.get("radius_px", 0.0)))
+	if not _fuse_lit or _spent:
+		return _spent
+	_fuse_left -= delta
+	if not CombatMath.fuse_fires(_fuse_left, _spent):
+		return false
+	_spent = true
+	detonated.emit(
+		self, global_position,
+		float(_suicide.get("radius_px", 0.0)), float(_suicide.get("damage", 0.0))
+	)
+	# The bomb dies by its own hand — the drop and the counter still credit the
+	# player, the same as any other death.
+	died.emit(self)
+	return true
 
 
 ## `knockback_scale` lets heavy hits (석장 arc swing, N4-4a) shove harder than

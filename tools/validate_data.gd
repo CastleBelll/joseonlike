@@ -58,6 +58,16 @@ const PROP_ALLOWED_KEYS: Array[String] = [
 const PROP_SHAPES: Array[String] = ["rect", "round"]
 # N4-1 loot contract (data/loot.json, drop_tables.json, weapon_mods.json).
 const LOOT_TIERS: Array[String] = ["common", "uncommon", "rare", "epic", "mythic"]
+## Declared behaviours. "chase" is the plain hunter; "boss" and "suicide" are
+## the two the stage actually branches on today. The rest (ranged / charger /
+## swarm) are GDD intents that still run as chasers — listed so the vocabulary
+## stays closed and a typo cannot invent a fourth silent fallback.
+const BEHAVIOURS: Array[String] = [
+	"chase", "boss", "suicide", "ranged", "charger", "swarm"
+]
+## What a suicide's blast is made of — all four are load-bearing.
+const SUICIDE_FIELDS: Array[String] = ["trigger_px", "fuse_sec", "radius_px", "damage"]
+
 # N4-2 elite variant contract (monsters.json entries with "elite_of").
 const ELITE_MULT_FIELDS: Array[String] = [
 	"hp_mult", "damage_mult", "speed_mult", "size_mult", "reward_mult"
@@ -156,6 +166,7 @@ func _check_combat_cross_references() -> void:
 			monsters[monster_id], "monsters." + monster_id
 		):
 			_fail(issue)
+		_check_behaviour(monsters[monster_id], "monsters." + monster_id)
 	var curve: Dictionary = RunState.load_curve()
 	for stage_id: String in stages:
 		var stage: Dictionary = stages[stage_id]
@@ -391,6 +402,26 @@ func _check_character_actives(character: Dictionary, character_id: String) -> vo
 
 
 ## N4-2 elite variants: multipliers over a real, non-elite base monster.
+## N9-165: behaviour is what the stage branches on, so an unknown value is a
+## monster that silently falls back to chasing. A suicide also has to carry
+## the numbers its blast is made of — a bomb without a radius does nothing.
+func _check_behaviour(monster: Dictionary, path: String) -> void:
+	var behaviour: String = String(monster.get("behaviour", ""))
+	if not BEHAVIOURS.has(behaviour):
+		_fail("%s.behaviour '%s' is not one of %s" % [path, behaviour, str(BEHAVIOURS)])
+		return
+	if behaviour != "suicide":
+		if monster.has("suicide"):
+			_fail("%s carries a suicide block but does not behave like one" % path)
+		return
+	if not monster.has("suicide"):
+		_fail("%s behaves as suicide but carries no suicide block" % path)
+		return
+	_require_positive_numbers(
+		monster["suicide"], SUICIDE_FIELDS, path + ".suicide"
+	)
+
+
 func _check_elite(monsters: Dictionary, monster_id: String) -> void:
 	var elite: Dictionary = monsters[monster_id]
 	var label: String = "monsters." + monster_id

@@ -329,7 +329,9 @@
   "damage": 26.0,
   "speed": 72.0,
   "xp_drop": 6,
-  "behaviour": "chase",
+  "behaviour": "suicide",
+  "_suicide_note": "N9-165: the origin text promises a bomb — it stops at arm's length, burns a fuse the player can outrun or kill, then takes the powder with it. Contact damage never applies to a suicide.",
+  "suicide": {"trigger_px": 44.0, "fuse_sec": 0.85, "radius_px": 98.0, "damage": 34.0},
   "collision_radius": 13.0,
   "sprite": "res://asset/monsters/powder_dokkaebi"
  },

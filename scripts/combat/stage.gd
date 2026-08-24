@@ -248,6 +248,10 @@ func _stage_ready_field() -> void:
 	_player.hit_taken.connect(_on_player_hit)
 	_spawner.setup(_player)
 	_spawner.enemy_killed.connect(_on_enemy_killed)
+	# 화약 도깨비 (N9-165): the same telegraph the boss uses draws the fuse, so
+	# a warning circle means one thing in this game no matter who lit it.
+	_spawner.enemy_fuse_lit.connect(_on_enemy_fuse_lit)
+	_spawner.enemy_detonated.connect(_on_enemy_detonated)
 	_spawner.boss_spawned.connect(_on_boss_spawned)
 	_spawner.shadow_spawned.connect(_on_shadow_spawned)
 	# N9-1a: the stage id IS the track id, so a second region ships its own
@@ -727,6 +731,30 @@ func _warn_telegraph(
 ## The eruption resolves against the player only. Boss patterns are the boss's
 ## own damage; they never chip the monsters standing in them, which would let a
 ## player farm the boss's attacks.
+## The bomb lights up: a warning disc exactly the size of the blast, timed to
+## the fuse. It carries no damage — the enemy's own detonation does that, so a
+## bomb killed mid-fuse leaves the warning to fade with nothing behind it.
+func _on_enemy_fuse_lit(enemy: Enemy, fuse_sec: float, radius_px: float) -> void:
+	_play_sfx("boss_warn")
+	var telegraph: BossTelegraph = _telegraph_pool.acquire()
+	telegraph.set_meta("attack", {})
+	telegraph.warn(
+		enemy.global_position, radius_px, 0.0, fuse_sec, UiPalette.WEAPON_FIRE
+	)
+
+
+func _on_enemy_detonated(
+	at: Vector2, radius_px: float, damage: float, name_ko: String
+) -> void:
+	_punch(Impact.ERUPT)
+	_play_sfx("break_pot")
+	if EffectSprite.available("hit_fire_talisman"):
+		var sprite: EffectSprite = _fx_pool.acquire()
+		sprite.play_effect("hit_fire_talisman", at, radius_px, UiPalette.WEAPON_FIRE)
+	if CombatMath.blast_covers(_player.global_position.distance_to(at), radius_px):
+		_player.take_hit(damage, name_ko)
+
+
 func _on_telegraph_erupted(at: Vector2, radius: float, inner: float) -> void:
 	# The ground opening is the heaviest beat in the fight, and it lands
 	# whether or not the player was standing in it — the near miss is part of

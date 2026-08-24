@@ -40,6 +40,26 @@ static func grace_tick(left: float, delta: float) -> float:
 
 
 ## Zero when already on target so a stacked enemy does not jitter.
+## 화약 도깨비 (N9-165): the fuse lights once the bomb is within arm's length
+## and never re-lights — a lit fuse is a commitment the player can outrun or
+## kill, not a state that flickers with the chase.
+static func fuse_lights(distance: float, trigger_px: float, already_lit: bool) -> bool:
+	return not already_lit and trigger_px > 0.0 and distance <= trigger_px
+
+
+## One blast per bomb: the countdown fires exactly on the pass that empties it,
+## and never again — the body outlives its own death by a frame, and a second
+## firing would hand the player a free extra hit.
+static func fuse_fires(fuse_left_after: float, already_spent: bool) -> bool:
+	return not already_spent and fuse_left_after <= 0.0
+
+
+## What a detonation actually covers. Outside the radius is a clean miss, which
+## is what makes running the right answer.
+static func blast_covers(distance: float, radius_px: float) -> bool:
+	return radius_px > 0.0 and distance <= radius_px
+
+
 static func chase_direction(from: Vector2, to: Vector2) -> Vector2:
 	return (to - from).normalized() if from != to else Vector2.ZERO
 
