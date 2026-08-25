@@ -12,8 +12,10 @@ MONSTERS = ROOT / "asset" / "monsters"
 INK = (8, 11, 13, 255)
 ASH_DARK = (34, 37, 40, 255)
 ASH_MID = (51, 53, 53, 255)
+ASH_SOOT = (60, 62, 63, 255)
 ASH = (69, 72, 73, 255)
 ASH_COOL = (82, 87, 89, 255)
+ASH_DUST = (96, 98, 96, 255)
 ASH_HI = (119, 119, 113, 255)
 ASH_PALE = (151, 149, 139, 255)
 EMBER_DARK = (120, 38, 23, 255)
@@ -58,13 +60,13 @@ def blank(size: int) -> tuple[Image.Image, ImageDraw.ImageDraw]:
     return image, ImageDraw.Draw(image)
 
 
-def cel_shade(image: Image.Image, seed: int) -> Image.Image:
+def cel_shade(image: Image.Image, seed: int, rich_grayscale: bool = False) -> Image.Image:
     """Split every painted material into deliberate hard-edged light bands."""
     source = image.copy()
     output = image.copy()
     source_pixels = source.load()
     output_pixels = output.load()
-    offsets = (-18, -6, 6, 18)
+    offsets = (-24, -12, 0, 12, 24) if rich_grayscale else (-18, -6, 6, 18)
 
     def same_material(x: int, y: int, color: tuple[int, int, int, int]) -> bool:
         return 0 <= x < image.width and 0 <= y < image.height and source_pixels[x, y] == color
@@ -83,7 +85,8 @@ def cel_shade(image: Image.Image, seed: int) -> Image.Image:
             else:
                 # Three- to five-cell patches read as cel-shaded facets rather
                 # than one-pixel noise at the logical display size.
-                tone = 1 + ((x // 4 + 2 * (y // 5) + seed) & 1)
+                patch = x // 4 + 2 * (y // 5) + seed
+                tone = 1 + (patch % 3 if rich_grayscale else patch & 1)
             delta = offsets[tone]
             output_pixels[x, y] = (
                 max(0, min(255, color[0] + delta)),
@@ -96,87 +99,86 @@ def cel_shade(image: Image.Image, seed: int) -> Image.Image:
 
 def ash_wraith() -> Image.Image:
     image, draw = blank(32)
-    # A pale ash mantle surrounds a dark, heat-hollowed face.
-    draw.polygon(((10, 3), (20, 2), (25, 7), (24, 14), (22, 17), (26, 19),
-                  (24, 23), (21, 23), (23, 27), (19, 27), (20, 30), (16, 29),
-                  (13, 31), (11, 27), (7, 28), (9, 24), (6, 22), (9, 18),
-                  (7, 14), (8, 7)), fill=INK)
-    draw.polygon(((11, 5), (20, 4), (23, 8), (22, 14), (19, 17), (22, 20),
-                  (20, 22), (21, 25), (17, 25), (18, 28), (15, 27), (13, 29),
-                  (12, 25), (9, 26), (11, 22), (8, 21), (11, 17), (9, 13),
-                  (10, 7)), fill=ASH_MID)
-    # Broad stepped strata make the torso and dissolving base read as ash.
-    draw.polygon(((9, 15), (22, 15), (21, 18), (24, 20), (20, 21), (22, 23),
-                  (17, 23), (19, 26), (14, 25), (16, 28), (12, 26), (11, 23),
-                  (8, 21), (11, 19)), fill=ASH)
-    draw.polygon(((11, 17), (20, 17), (18, 19), (21, 20), (16, 21), (19, 23),
-                  (13, 23), (15, 25), (11, 24), (10, 21)), fill=ASH_HI)
-    draw.polygon(((13, 18), (18, 18), (16, 20), (19, 21), (14, 22), (12, 20)), fill=ASH_PALE)
-    # Torn sleeves end in square soot clumps rather than hands.
-    draw.polygon(((10, 13), (6, 14), (3, 19), (5, 23), (9, 21), (12, 17)), fill=INK)
-    draw.polygon(((9, 15), (7, 15), (5, 19), (6, 21), (9, 19), (11, 17)), fill=ASH)
-    draw.polygon(((22, 13), (26, 15), (30, 19), (28, 23), (24, 20), (20, 17)), fill=INK)
-    draw.polygon(((23, 15), (25, 16), (28, 19), (27, 21), (24, 18), (21, 17)), fill=ASH_HI)
-    # Two 2x2 ember eyes sit inside a clearly darker cinder hollow.
-    draw.polygon(((11, 6), (20, 5), (22, 9), (20, 14), (12, 14), (9, 10)), fill=ASH_DARK)
-    draw.polygon(((12, 7), (20, 7), (20, 12), (12, 12), (10, 9)), fill=INK)
+    # One soot-dark mass ends at a broken, stair-stepped waist with no feet.
+    draw.polygon(((12, 3), (20, 2), (24, 6), (25, 11), (23, 14), (28, 16),
+                  (29, 20), (26, 22), (22, 21), (23, 24), (19, 23), (18, 26),
+                  (14, 24), (11, 26), (10, 22), (6, 23), (3, 20), (5, 16),
+                  (9, 14), (8, 8)), fill=INK)
+    draw.polygon(((12, 5), (19, 4), (22, 7), (23, 12), (20, 15), (25, 17),
+                  (27, 20), (23, 20), (21, 19), (21, 22), (18, 21), (17, 24),
+                  (14, 22), (12, 24), (12, 20), (8, 21), (5, 19), (7, 16),
+                  (11, 14), (10, 8)), fill=ASH_DARK)
+    draw.polygon(((9, 13), (22, 13), (20, 16), (24, 17), (21, 19), (22, 21),
+                  (18, 20), (17, 23), (14, 21), (12, 23), (11, 19), (7, 20),
+                  (9, 16)), fill=ASH_MID)
+    draw.polygon(((11, 15), (20, 15), (18, 17), (21, 18), (17, 19), (19, 21),
+                  (15, 20), (13, 22), (13, 18), (9, 19)), fill=ASH)
+    draw.polygon(((11, 17), (15, 16), (17, 18), (15, 20), (12, 19)), fill=ASH_SOOT)
+    # Pale ash catches only the crown and shoulder edges, never the belly.
+    draw.line(((12, 5), (19, 4), (22, 7)), fill=ASH_PALE, width=1)
+    draw.line(((7, 16), (10, 14), (12, 15)), fill=ASH_DUST, width=1)
+    draw.line(((20, 15), (24, 17), (26, 19)), fill=ASH_HI, width=1)
+    draw.point((11, 6), fill=ASH_COOL)
+    draw.point((21, 8), fill=ASH_COOL)
+    # Two 2x2 ember eyes are the only warm marks; there is no mouth.
+    draw.polygon(((11, 7), (20, 6), (22, 9), (20, 13), (12, 13), (9, 10)), fill=INK)
     draw.rectangle((12, 9, 13, 10), fill=EMBER)
     draw.rectangle((18, 9, 19, 10), fill=EMBER)
     draw.point((13, 9), fill=EMBER_HI)
     draw.point((19, 9), fill=EMBER_HI)
-    draw.rectangle((14, 12, 18, 13), fill=EMBER_DARK)
-    # Detached ash chunks extend the stair-step breakup beyond the body.
-    draw.rectangle((3, 24, 5, 25), fill=ASH_PALE)
-    draw.rectangle((5, 28, 7, 29), fill=ASH_HI)
-    draw.rectangle((8, 30, 10, 31), fill=ASH_DARK)
-    draw.rectangle((24, 25, 26, 26), fill=ASH)
-    draw.rectangle((27, 28, 29, 30), fill=ASH_COOL)
-    return cel_shade(image, 1)
+    # Detached ash islands continue the outline as gaps and descending steps.
+    draw.rectangle((4, 25, 7, 26), fill=INK)
+    draw.rectangle((5, 25, 7, 25), fill=ASH_HI)
+    draw.rectangle((9, 28, 12, 29), fill=INK)
+    draw.rectangle((10, 28, 12, 28), fill=ASH)
+    draw.rectangle((14, 30, 17, 31), fill=INK)
+    draw.rectangle((15, 30, 17, 30), fill=ASH_MID)
+    draw.rectangle((21, 26, 24, 27), fill=INK)
+    draw.rectangle((21, 26, 23, 26), fill=ASH_COOL)
+    draw.rectangle((26, 29, 29, 30), fill=INK)
+    draw.rectangle((26, 29, 28, 29), fill=ASH_DARK)
+    return cel_shade(image, 1, rich_grayscale=True)
 
 
 def cursed_hound() -> Image.Image:
     image, draw = blank(32)
-    # Raised tail, high rump and dipped shoulders form one curved animal back.
-    draw.polygon(((8, 14), (5, 12), (4, 8), (2, 5), (1, 7), (2, 12), (5, 16), (8, 18)), fill=INK)
-    draw.polygon(((7, 14), (5, 11), (4, 8), (3, 7), (3, 11), (6, 16)), fill=HOUND_TAIL)
-    draw.polygon(((6, 13), (10, 9), (17, 10), (21, 13), (24, 16), (22, 21),
-                  (14, 20), (9, 22), (5, 18)), fill=INK)
-    draw.polygon(((7, 14), (10, 11), (16, 11), (20, 14), (22, 16), (20, 19),
-                  (14, 18), (9, 20), (7, 17)), fill=HOUND)
-    draw.polygon(((9, 13), (12, 11), (17, 12), (20, 15), (17, 16), (11, 15)), fill=HOUND_HI)
-    draw.polygon(((8, 17), (14, 17), (12, 20), (8, 20)), fill=HOUND_DARK)
-    # Low forward head, separate muzzle and pointed ears.
-    draw.polygon(((19, 14), (21, 8), (24, 11), (27, 10), (31, 14), (31, 19),
-                  (28, 22), (22, 20), (19, 18)), fill=INK)
-    draw.polygon(((21, 14), (22, 10), (24, 13), (27, 12), (29, 14), (30, 17),
-                  (28, 19), (23, 18)), fill=HOUND_MUZZLE)
-    draw.polygon(((23, 14), (27, 13), (29, 15), (27, 16), (23, 16)), fill=HOUND_HI)
-    draw.rectangle((25, 14, 26, 15), fill=EMBER_HI)
-    draw.rectangle((28, 17, 31, 19), fill=HOUND_DARK)
-    draw.point((30, 17), fill=CURSE)
-    draw.rectangle((27, 19, 28, 21), fill=FANG)
-    # Curse scars break up the fur without changing the canine silhouette.
+    # Long oval torso with one calm shoulder-to-rump curve.
+    draw.ellipse((5, 9, 24, 21), fill=INK)
+    draw.ellipse((6, 10, 23, 19), fill=HOUND)
+    draw.polygon(((8, 11), (14, 9), (21, 11), (23, 14), (18, 14), (11, 13)), fill=HOUND_HI)
+    draw.polygon(((7, 16), (14, 17), (21, 15), (22, 18), (17, 20), (9, 19)), fill=HOUND_DARK)
+    # Tail projects behind the rump instead of rising like another leg.
+    draw.polygon(((7, 12), (4, 10), (1, 11), (4, 14), (7, 15)), fill=INK)
+    draw.polygon(((6, 12), (4, 11), (2, 11), (4, 13), (6, 14)), fill=HOUND_TAIL)
+    # Head joins the front of the torso; two ears rise and muzzle pushes right.
+    draw.polygon(((20, 12), (21, 6), (24, 9), (26, 6), (28, 12), (31, 14),
+                  (31, 18), (27, 20), (22, 18), (20, 16)), fill=INK)
+    draw.polygon(((22, 12), (22, 8), (24, 11), (26, 8), (27, 13), (30, 15),
+                  (30, 17), (27, 18), (23, 17)), fill=HOUND_MUZZLE)
+    draw.polygon(((23, 12), (27, 12), (29, 14), (26, 15), (22, 14)), fill=HOUND_HI)
+    draw.rectangle((25, 13, 26, 14), fill=EMBER_HI)
+    draw.rectangle((28, 16, 31, 18), fill=HOUND_DARK)
+    draw.point((30, 16), fill=CURSE)
+    draw.point((29, 18), fill=FANG)
+    # Rear pair: thick thighs, backward hocks and horizontal paws.
+    draw.polygon(((7, 17), (12, 17), (12, 22), (9, 24), (8, 28), (3, 28),
+                  (3, 25), (7, 22)), fill=INK)
+    draw.polygon(((8, 18), (10, 18), (10, 21), (7, 23), (6, 26), (4, 26),
+                  (8, 21)), fill=HOUND_LEG)
+    draw.polygon(((12, 18), (16, 18), (16, 22), (14, 24), (14, 27), (10, 27),
+                  (10, 25), (12, 22)), fill=INK)
+    draw.polygon(((13, 19), (14, 19), (14, 22), (12, 24), (12, 25), (13, 25)), fill=HOUND)
+    # Front pair: two vertical, two-pixel-weight legs under the shoulder.
+    draw.polygon(((19, 17), (23, 17), (23, 27), (25, 27), (25, 29), (20, 29),
+                  (20, 20), (19, 20)), fill=INK)
+    draw.rectangle((21, 19, 22, 27), fill=HOUND_LEG)
+    draw.polygon(((23, 17), (27, 17), (27, 26), (30, 27), (29, 29), (25, 28),
+                  (24, 20), (23, 20)), fill=INK)
+    draw.rectangle((25, 19, 26, 26), fill=HOUND)
+    # Sparse curse scars stay inside the body and never alter the silhouette.
     draw.line((10, 12, 12, 15), fill=CURSE_DARK, width=1)
-    draw.line((15, 12, 17, 16), fill=CURSE, width=1)
-    draw.line((20, 15, 21, 18), fill=CURSE_DARK, width=1)
-    # Rear legs push backward while the front pair brace at different angles.
-    draw.polygon(((7, 18), (11, 18), (10, 22), (7, 26), (3, 27), (2, 25),
-                  (6, 22)), fill=INK)
-    draw.polygon(((8, 19), (10, 19), (8, 23), (5, 25), (3, 25), (7, 21)), fill=HOUND_LEG)
-    draw.polygon(((12, 18), (15, 18), (16, 22), (19, 24), (18, 27), (15, 26),
-                  (13, 23)), fill=INK)
-    draw.polygon(((13, 19), (14, 19), (15, 22), (18, 24), (17, 25), (14, 23)), fill=HOUND)
-    draw.polygon(((20, 18), (23, 18), (23, 22), (21, 25), (18, 25), (18, 23),
-                  (20, 21)), fill=INK)
-    draw.polygon(((21, 19), (22, 19), (22, 21), (20, 24), (19, 24), (21, 21)), fill=HOUND_LEG)
-    draw.polygon(((24, 18), (27, 18), (28, 26), (31, 27), (30, 29), (26, 28),
-                  (25, 23)), fill=INK)
-    draw.polygon(((25, 19), (26, 19), (27, 26), (29, 27), (28, 27), (26, 26)), fill=HOUND)
-    draw.point((3, 26), fill=FANG)
-    draw.point((18, 26), fill=FANG)
-    draw.point((19, 24), fill=FANG)
-    draw.point((29, 27), fill=FANG)
-    return cel_shade(image, 2)
+    draw.line((15, 11, 17, 14), fill=CURSE, width=1)
+    return cel_shade(image, 2, rich_grayscale=True)
 
 
 def powder_dokkaebi() -> Image.Image:
