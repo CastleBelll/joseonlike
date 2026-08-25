@@ -219,6 +219,17 @@ func _json(path: String) -> Dictionary:
 
 ## Every button must land inside the viewport, and no scroll may actually be
 ## scrolling — both are what "삐져나온다" and "스크롤 생긴다" look like in data.
+## The paper a control sits on: the nearest PanelContainer ancestor. A button
+## outside its own panel reads as broken even when it is on screen.
+static func _paper_of(node: Node) -> Control:
+	var parent: Node = node.get_parent()
+	while parent != null:
+		if parent is PanelContainer:
+			return parent as Control
+		parent = parent.get_parent()
+	return null
+
+
 ## Touch floor: below this a button is hard to hit on a phone. The project
 ## standard is UiPalette.TOUCH_TARGET_MIN (44); the sweep fails under 40 so a
 ## deliberate 40px pill row stays legal but nothing shrinks past it.
@@ -260,6 +271,15 @@ func _walk(node: Node, viewport: Rect2, label: String, list_screen: bool, inside
 					_failures.append(
 						"%s: %s leaves the screen (%.0f,%.0f %.0fx%.0f)"
 						% [label, button.name, box.position.x, box.position.y, box.size.x, box.size.y]
+					)
+				# Owner (가로에서 결과 창 버튼이 아래로 빠져나간다): a button can sit
+				# inside the SCREEN and still hang off the paper it belongs to.
+				# That is what this sweep missed, so it checks the paper too.
+				var paper: Control = _paper_of(button)
+				if paper != null and not paper.get_global_rect().grow(2.0).encloses(box):
+					_failures.append(
+						"%s: %s hangs off its paper (%s vs %s)"
+						% [label, button.name, str(box), str(paper.get_global_rect())]
 					)
 				if minf(box.size.x, box.size.y) < TOUCH_FLOOR:
 					_failures.append(

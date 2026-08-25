@@ -14,12 +14,16 @@ const CAMP_SCENE := "res://scenes/camp.tscn"
 const LAYER_ABOVE_POPUP := 12
 const PANEL_MARGIN_X := 48.0
 const PANEL_HEIGHT := 480.0
+## Owner (모든 UI/UX는 반응형으로): the paper takes the height the screen can
+## spare up to this, so the summary never scrolls where it does not have to.
+const PANEL_HEIGHT_MAX := 560.0
 const HEADER_HEIGHT := 72.0
 const ROW_HEIGHT := 44.0
 const BODY_MARGIN := 24.0
 const CTA_HEIGHT := 64.0
 
 var _root: Control
+var _panel: PanelContainer
 var _title_label: Label
 var _time_value: Label
 var _kills_value: Label
@@ -39,6 +43,21 @@ func _init() -> void:
 	layer = LAYER_ABOVE_POPUP
 
 
+## The paper band for the current viewport: the portrait design width on wide
+## screens, never taller than the screen it sits on.
+func _layout_panel() -> void:
+	if _panel == null:
+		return
+	var root_w: float = _root.size.x if _root.size.x > 0.0 else 540.0
+	var root_h: float = _root.size.y if _root.size.y > 0.0 else 960.0
+	var half_w: float = minf(root_w - PANEL_MARGIN_X * 2.0, 492.0) / 2.0
+	var half_h: float = minf(PANEL_HEIGHT_MAX, root_h - PANEL_MARGIN_X * 2.0) / 2.0
+	_panel.offset_left = -half_w
+	_panel.offset_right = half_w
+	_panel.offset_top = -half_h
+	_panel.offset_bottom = half_h
+
+
 func _ready() -> void:
 	_root = Control.new()
 	_root.name = "Blocker"
@@ -52,17 +71,14 @@ func _ready() -> void:
 	panel.anchor_right = 0.5
 	panel.anchor_top = 0.5
 	panel.anchor_bottom = 0.5
-	# N9-153: the paper holds the portrait band on wide screens.
-	var root_w: float = _root.size.x if _root.size.x > 0.0 else 540.0
-	var half_w: float = minf(root_w - PANEL_MARGIN_X * 2.0, 492.0) / 2.0
-	panel.offset_left = -half_w
-	panel.offset_right = half_w
-	# N9-154: never taller than the viewport (landscape is 540 design px).
-	var root_h: float = _root.size.y if _root.size.y > 0.0 else 960.0
-	var half_h: float = minf(PANEL_HEIGHT, root_h - PANEL_MARGIN_X * 2.0) / 2.0
-	panel.offset_top = -half_h
-	panel.offset_bottom = half_h
+	_panel = panel
 	_root.add_child(panel)
+	_layout_panel()
+	# Owner (가로에서 결과 창 버튼이 아래로 빠져나간다): the paper was measured
+	# ONCE, at _ready, against whatever the viewport was then — a run that
+	# started portrait handed the landscape result a 960-tall assumption. It
+	# re-measures on every resize now, like every other responsive paper.
+	_root.resized.connect(_layout_panel)
 	var layout := Control.new()
 	layout.name = "Layout"
 	panel.add_child(layout)
@@ -147,20 +163,37 @@ func _make_body() -> Control:
 	body.offset_right = -BODY_MARGIN
 	body.offset_top = HEADER_HEIGHT
 	body.offset_bottom = -BODY_MARGIN
-	_death_value = _add_row(body, UiLocale.t("죽음"))
+	# The rows absorb the clamp; the CTA stays in the flow under them, the
+	# same shape the settings paper uses (N9-163).
+	var scroll := ScrollContainer.new()
+	scroll.name = "RowScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# Responsive: a short landscape canvas cannot stack five rows, so it spends
+	# the width it has instead — two columns, same rows, no scroll.
+	var landscape: bool = _root.size.x > _root.size.y
+	var rows: Container = GridContainer.new() if landscape else VBoxContainer.new()
+	rows.name = "Rows"
+	if landscape:
+		(rows as GridContainer).columns = 2
+		rows.add_theme_constant_override("h_separation", UiPalette.SPACE_LG)
+		rows.add_theme_constant_override("v_separation", UiPalette.SPACE_MD)
+	else:
+		rows.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(rows)
+	body.add_child(scroll)
+	_death_value = _add_row(rows, UiLocale.t("죽음"))
 	_death_row = _death_value.get_parent() as Control
 	_death_row.visible = false
-	_time_value = _add_row(body, UiLocale.t("생존 시간"))
-	_kills_value = _add_row(body, UiLocale.t("처치"))
-	_gold_value = _add_row(body, UiLocale.t("엽전"))
-	_total_gold_value = _add_row(body, UiLocale.t("보유 엽전"))
+	_time_value = _add_row(rows, UiLocale.t("생존 시간"))
+	_kills_value = _add_row(rows, UiLocale.t("처치"))
+	_gold_value = _add_row(rows, UiLocale.t("엽전"))
+	_total_gold_value = _add_row(rows, UiLocale.t("보유 엽전"))
 	_earned_box = VBoxContainer.new()
 	_earned_box.name = "EarnedAchievements"
 	_earned_box.add_theme_constant_override("separation", UiPalette.SPACE_XS)
-	body.add_child(_earned_box)
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_child(spacer)
+	rows.add_child(_earned_box)
 	var cta := Button.new()
 	cta.name = "TitleButton"
 	cta.text = UiLocale.t("본거지로")
@@ -172,10 +205,13 @@ func _make_body() -> Control:
 
 
 ## One summary row: muted name on the left, ink value on the right.
-func _add_row(body: VBoxContainer, row_name: String) -> Label:
+func _add_row(body: Container, row_name: String) -> Label:
 	var row := HBoxContainer.new()
 	row.name = row_name
 	row.custom_minimum_size = Vector2(0.0, ROW_HEIGHT)
+	# In the landscape two-column grid each cell has to claim its half, or the
+	# rows collapse to their text and the pairs run into each other.
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var name_label := _label(row_name, UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(name_label)
