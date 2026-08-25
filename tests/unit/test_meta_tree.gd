@@ -387,18 +387,14 @@ func test_weapon_stats_input_never_mutated() -> bool:
 func test_screen_builds_with_tabs_and_cta_follows_selection() -> bool:
 	var screen: MetaTreeScreen = (load(META_SCENE) as PackedScene).instantiate()
 	screen.build_ui()
-	var passed: bool = screen.get_node_or_null(
-		"Layout/Column/Header/GoldPill/PillRow/GoldValue"
-	) != null
-	passed = passed and screen.get_node_or_null(
-		"Layout/Column/Scroll/Canvas/Node_iron_bones"
-	) != null
+	var passed: bool = screen.find_child("GoldValue", true, false) != null
+	passed = passed and screen.find_child("Node_iron_bones", true, false) != null
 	# One tab per roster character plus the shared trunk.
-	passed = passed and screen.get_node_or_null("Layout/Column/Tabs/Tab_shared") != null \
-		and screen.get_node_or_null("Layout/Column/Tabs/Tab_taoist") != null \
-		and screen.get_node_or_null("Layout/Column/Tabs/Tab_warrior") != null \
-		and screen.get_node_or_null("Layout/Column/Tabs/Tab_archer") != null
-	var cta: Button = screen.get_node_or_null("Layout/Column/CtaButton")
+	passed = passed and screen.find_child("Tab_shared", true, false) != null \
+		and screen.find_child("Tab_taoist", true, false) != null \
+		and screen.find_child("Tab_warrior", true, false) != null \
+		and screen.find_child("Tab_archer", true, false) != null
+	var cta: Button = screen.find_child("CtaButton", true, false)
 	# No selection: the CTA is hidden, never a dead greyed button.
 	passed = passed and cta != null and not cta.visible
 	# Selecting an affordable-shape node shows the CTA (broke profile → 부족).
@@ -406,9 +402,7 @@ func test_screen_builds_with_tabs_and_cta_follows_selection() -> bool:
 	passed = passed and cta.visible
 	# A locked node hides the CTA and names its requirement in the card.
 	screen.select_node("sharp_talisman")
-	var effect_label: Label = screen.get_node_or_null(
-		"Layout/Column/DetailCard/DetailRow/DetailLines/DetailEffect"
-	)
+	var effect_label: Label = screen.find_child("DetailEffect", true, false)
 	passed = passed and not cta.visible \
 		and effect_label != null and effect_label.text.contains("철골")
 	if not passed:
@@ -426,16 +420,14 @@ func test_screen_branch_tabs_switch_and_lock() -> bool:
 	var passed: bool = screen._current_tab == "taoist" \
 		and screen._node_buttons.has("burn_mastery") \
 		and not screen._node_buttons.has("iron_bones")
-	var cta: Button = screen.get_node_or_null("Layout/Column/CtaButton")
+	var cta: Button = screen.find_child("CtaButton", true, false)
 	passed = passed and cta.visible
 	# A locked character's branch: node visible, CTA hidden, and the reason
 	# NAMED — whatever it says. N9-73 changed that text from a promise nothing
 	# could keep ("earn 도깨비 사냥꾼") to the truth ("not built yet"), so the
 	# rule under test is that a locked branch explains itself, not the wording.
 	screen.select_node("hwando_hone")
-	var info_label: Label = screen.get_node_or_null(
-		"Layout/Column/DetailCard/DetailRow/DetailLines/DetailInfo"
-	)
+	var info_label: Label = screen.find_child("DetailInfo", true, false)
 	passed = passed and screen._current_tab == "warrior" \
 		and screen._node_buttons.has("hwando_hone") \
 		and not cta.visible \

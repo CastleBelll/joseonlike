@@ -20,6 +20,16 @@ const NODE_LABEL_WIDTH := 150.0
 const ROW_HEIGHT := 165.0
 const CANVAS_TOP_PAD := 28.0
 const CANVAS_BOTTOM_PAD := 72.0
+## Owner (가로모드도 어색하고 자꾸 스크롤이 생길정도라서 크기를 조금씩 줄여도
+## 될 것 같아): a landscape phone has barely 200px of tree band, so a row pitch
+## built for a 960-tall screen showed one row and a scrollbar. The nodes keep
+## their size — they are touch targets and the circle art is built once — and
+## the SPACING between rows carries the reduction instead.
+const ROW_HEIGHT_LANDSCAPE := 118.0
+## Wide enough for the detail card's icon well plus two lines of effect text.
+const SIDE_WIDTH_LANDSCAPE := 380.0
+const CANVAS_TOP_PAD_LANDSCAPE := 14.0
+const CANVAS_BOTTOM_PAD_LANDSCAPE := 40.0
 const NODE_BORDER_WIDTH := 3
 const EDGE_WIDTH := 3.0
 const TRUNK_WIDTH := 10.0
@@ -57,6 +67,10 @@ var _detail_info: Label
 var _detail_effect: Label
 var _detail_icon: TextureRect
 var _cta: Button
+## The tree row and the panel beside (landscape) or below (portrait) it.
+var _body: HBoxContainer
+var _side: VBoxContainer
+var _side_in_row: bool = false
 var _notice_label: Label
 var _notice_tween: Tween
 var _tab_buttons: Dictionary = {}
@@ -109,20 +123,40 @@ func build_ui() -> void:
 
 	column.add_child(_build_header())
 	column.add_child(_build_tabs())
-	column.add_child(_build_graph())
-	column.add_child(_build_detail_card())
+
+	# Owner (가로모드도 어색하고 자꾸 스크롤이 생길정도라서): stacked, the detail
+	# card and the buy button eat most of a 540-tall landscape screen and leave
+	# the tree a band barely one row deep — every visit opened on a scrollbar.
+	# Landscape spends its width instead: the tree on the left, what you do with
+	# it on the right. The children are the same nodes either way, so a flip
+	# re-parents them rather than rebuilding the tab.
+	_body = HBoxContainer.new()
+	_body.name = "Body"
+	_body.add_theme_constant_override("separation", UiPalette.SPACE_LG)
+	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(_body)
+
+	_side = VBoxContainer.new()
+	_side.name = "Side"
+	_side.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+	_side.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	_body.add_child(_build_graph())
+	_side.add_child(_build_detail_card())
 
 	_notice_label = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.GOLD)
 	_notice_label.name = "Notice"
 	_notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	column.add_child(_notice_label)
+	_side.add_child(_notice_label)
 
 	_cta = Button.new()
 	_cta.name = "CtaButton"
 	_cta.custom_minimum_size = Vector2(0.0, CTA_HEIGHT)
 	WoodButton.apply(_cta)
 	_cta.pressed.connect(_on_cta_pressed)
-	column.add_child(_cta)
+	_side.add_child(_cta)
+	_place_side()
+	resized.connect(_place_side)
 
 	_populate_tab()
 	_refresh()
@@ -240,7 +274,7 @@ func _populate_tab() -> void:
 	for entry: Dictionary in _tab_nodes():
 		max_row = maxf(max_row, float((entry.get("pos", []) as Array)[1]))
 	_canvas.custom_minimum_size = Vector2(
-		0.0, CANVAS_TOP_PAD + (max_row + 1.0) * ROW_HEIGHT + CANVAS_BOTTOM_PAD
+		0.0, _canvas_top_pad() + (max_row + 1.0) * _row_height() + _canvas_bottom_pad()
 	)
 	for entry: Dictionary in _tab_nodes():
 		var node_id: String = String(entry["id"])
@@ -575,6 +609,15 @@ func _layout_nodes() -> void:
 	var width: float = _canvas.size.x
 	if width <= 0.0:
 		return
+	# The canvas is as tall as the pitch makes it, and the pitch changes with
+	# the orientation — so it is re-measured here rather than only at build,
+	# where a flip would leave the old height (and its scrollbar) behind.
+	var max_row: float = 0.0
+	for entry: Dictionary in _tab_nodes():
+		max_row = maxf(max_row, float((entry.get("pos", []) as Array)[1]))
+	_canvas.custom_minimum_size = Vector2(
+		0.0, _canvas_top_pad() + (max_row + 1.0) * _row_height() + _canvas_bottom_pad()
+	)
 	for entry: Dictionary in _tab_nodes():
 		var node_id: String = String(entry["id"])
 		if not _node_buttons.has(node_id):
@@ -588,6 +631,52 @@ func _layout_nodes() -> void:
 		)
 
 
+## Row pitch and canvas padding for the orientation on screen right now. Read
+## per layout pass, not cached, because _layout_nodes already re-runs on every
+## resize — a cached value would be the stale-on-flip bug this pass is fixing.
+func _is_landscape() -> bool:
+	return size.x > size.y
+
+
+func _row_height() -> float:
+	return ROW_HEIGHT_LANDSCAPE if _is_landscape() else ROW_HEIGHT
+
+
+func _canvas_top_pad() -> float:
+	return CANVAS_TOP_PAD_LANDSCAPE if _is_landscape() else CANVAS_TOP_PAD
+
+
+func _canvas_bottom_pad() -> float:
+	return CANVAS_BOTTOM_PAD_LANDSCAPE if _is_landscape() else CANVAS_BOTTOM_PAD
+
+
+## Puts the detail panel where the current orientation wants it. Only moves on
+## an actual flip: re-parenting on every resize would throw away the scroll
+## position and the selection every time a desktop window is dragged.
+func _place_side() -> void:
+	if _side == null or _body == null:
+		return
+	var wants_row: bool = _is_landscape()
+	if wants_row == _side_in_row and _side.get_parent() != null:
+		return
+	_side_in_row = wants_row
+	if _side.get_parent() != null:
+		_side.get_parent().remove_child(_side)
+	# The tree takes whatever the panel does not: without this the panel's own
+	# minimum width wins the row and the tree collapses to a sliver.
+	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll.size_flags_stretch_ratio = 1.0
+	if wants_row:
+		_side.custom_minimum_size = Vector2(SIDE_WIDTH_LANDSCAPE, 0.0)
+		_side.size_flags_horizontal = Control.SIZE_SHRINK_END
+		_body.add_child(_side)
+	else:
+		_side.custom_minimum_size = Vector2.ZERO
+		_side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_body.get_parent().add_child(_side)
+	_layout_nodes()
+
+
 func _tab_nodes() -> Array[Dictionary]:
 	return MetaTree.branch_nodes(_tree, _current_tab)
 
@@ -597,7 +686,7 @@ func _node_center(entry: Dictionary, width: float) -> Vector2:
 	var usable: float = width - NODE_LABEL_WIDTH
 	return Vector2(
 		NODE_LABEL_WIDTH / 2.0 + float(pos[0]) * maxf(usable, 0.0),
-		CANVAS_TOP_PAD + float(pos[1]) * ROW_HEIGHT + NODE_SIZE / 2.0
+		_canvas_top_pad() + float(pos[1]) * _row_height() + NODE_SIZE / 2.0
 	)
 
 

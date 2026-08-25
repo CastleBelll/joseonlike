@@ -222,11 +222,16 @@ func _build_header(summary: Dictionary) -> Control:
 	gold.name = "GoldValue"
 	header.add_child(gold)
 	# N9-146: the screen-anchored gear owns the corner now; this spacer keeps
-	# the gold counter from sliding underneath it.
+	# the gold counter out from under it.
+	#
+	# Owner (특히 이상한건 설정 아이콘 배치야): eight pixels was not a gap. The
+	# coin, the number and the gear sat in one clump at the same height, so the
+	# gear read as part of the currency readout rather than as a control. A
+	# counter and a button need to look like different kinds of thing.
 	var gear_gap := Control.new()
 	gear_gap.name = "GearGap"
 	gear_gap.custom_minimum_size = Vector2(
-		UTILITY_BUTTON_SIZE + UiPalette.SPACE_SM, 0.0
+		UTILITY_BUTTON_SIZE + UiPalette.SPACE_XL, 0.0
 	)
 	header.add_child(gear_gap)
 	return header
@@ -318,8 +323,12 @@ func _build_settings_button() -> Control:
 	)
 	var band_inset: float = maxf(MARGIN_SIDE, (size.x - band) / 2.0)
 	var top_margin: int = MARGIN_TOP_LANDSCAPE if _is_landscape() else MARGIN_TOP
+	# Centred on the title row rather than nudged up off it: the old -6 left the
+	# gear riding above the gold's baseline, which is what made a 44px button
+	# read as a decoration hanging off the number.
 	settings.position = Vector2(
-		-band_inset - UTILITY_BUTTON_SIZE, float(top_margin) - 6.0
+		-band_inset - UTILITY_BUTTON_SIZE,
+		float(top_margin) + (UiPalette.FONT_SIZE_TITLE - UTILITY_BUTTON_SIZE) / 2.0
 	)
 	settings.flat = true
 	settings.tooltip_text = UiLocale.text("title.settings")
