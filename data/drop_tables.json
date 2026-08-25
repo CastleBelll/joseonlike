@@ -96,6 +96,10 @@
    {
     "loot_id": "tough_fiber",
     "chance": 0.04
+   },
+   {
+    "loot_id": "willow_branch",
+    "chance": 0.05
    }
   ]
  },
@@ -104,6 +108,10 @@
    {
     "loot_id": "beast_fang",
     "chance": 0.08
+   },
+   {
+    "loot_id": "raw_egg",
+    "chance": 0.06
    }
   ]
  },
@@ -116,6 +124,10 @@
    {
     "loot_id": "ghost_iron",
     "chance": 0.01
+   },
+   {
+    "loot_id": "cast_iron",
+    "chance": 0.05
    }
   ]
  },

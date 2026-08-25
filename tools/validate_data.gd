@@ -471,6 +471,8 @@ func _check_behaviour(monster: Dictionary, path: String) -> void:
 ## Every part must be breakable and must cost the monster something, or the
 ## armoured phase is a wall with nothing behind it.
 func _check_parts(monster: Dictionary, path: String) -> void:
+	var loot: Dictionary = _load(DATA_DIR + "/loot.json")
+	var tables: Dictionary = _load(DATA_DIR + "/drop_tables.json")
 	var parts: Array = monster.get("parts", [])
 	if parts.size() < PART_MIN:
 		_fail("%s behaves as multipart but declares %d parts" % [path, parts.size()])
@@ -488,6 +490,15 @@ func _check_parts(monster: Dictionary, path: String) -> void:
 		seen.append(part_id)
 		if float(part.get("hp", 0.0)) <= 0.0:
 			_fail("%s.hp missing or not positive" % label)
+		# 삼두구미 (N10-3b): a part may name the material that opens it, and a
+		# gate nobody can open is a wall. The material has to exist AND have to
+		# come off something the player kills, or the fight simply stops.
+		var material: String = String(part.get("material", ""))
+		if not material.is_empty():
+			if not loot.has(material):
+				_fail("%s.material '%s' is not in loot.json" % [label, material])
+			elif not _material_drops(tables, material):
+				_fail("%s.material '%s' drops from nothing" % [label, material])
 		var on_break: Dictionary = part.get("on_break", {})
 		if on_break.is_empty():
 			_fail("%s.on_break is empty — breaking it would change nothing" % label)
@@ -495,6 +506,17 @@ func _check_parts(monster: Dictionary, path: String) -> void:
 			var value: float = float(on_break[key])
 			if value <= 0.0 or value > 1.0:
 				_fail("%s.on_break.%s must be a reduction in (0, 1]" % [label, key])
+
+
+## Does anything in the game actually drop this material?
+func _material_drops(tables: Dictionary, loot_id: String) -> bool:
+	for key: String in tables:
+		if key.begins_with("_"):
+			continue
+		for drop: Variant in (tables[key] as Dictionary).get("drops", []):
+			if String((drop as Dictionary).get("loot_id", "")) == loot_id:
+				return true
+	return false
 
 
 func _check_elite(monsters: Dictionary, monster_id: String) -> void:

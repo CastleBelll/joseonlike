@@ -87,6 +87,7 @@ const INLINE_EN := {
 	"야광귀가 훔쳐 간다!": "The Yagwanggwi is making off with it!",
 	"%s 도둑맞았다!": "%s stolen!",
 	"%s 파괴! (%d/%d)": "%s destroyed! (%d/%d)",
+	"%s: %s이(가) 있어야 한다": "%s: you need %s",
 	"두두리를 물리쳤다": "Dudueori has fallen",
 	"%s %s 등급!": "%s is now %s",
 	"%s 획득": "%s acquired",

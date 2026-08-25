@@ -378,7 +378,7 @@
   "speed": 44.0,
   "xp_drop": 40,
   "behaviour": "multipart",
-  "_parts_note": "N10-3a: 제주 전승의 약점 셋을 규칙으로 옮겼다. 부위가 하나라도 남아 있으면 본체는 피해를 받지 않는다 — '베어도 소용없다'가 곧 판정이다. 부위가 떨어질 때마다 그 부위가 하던 일이 사라진다: 다리를 떼면 느려지고, 머리를 떼면 무는 힘이 준다. 무쇠·생달걀·버드나무 재료 게이팅은 후속 피처.",
+  "_parts_note": "N10-3a/b: 제주 전승의 약점 셋을 규칙으로 옮겼다. 부위가 하나라도 남아 있으면 본체는 피해를 받지 않는다 — '베어도 소용없다'가 곧 판정이다. 부위마다 그 부위를 여는 재료가 정해져 있어(버드나무=꼬리, 생달걀=다리, 무쇠=머리), 들고 있지 않으면 그 부위는 상하지 않는다: 파밍이 곧 공략이다. 부위가 떨어질 때마다 그 부위가 하던 일이 사라진다.",
   "parts": [
    {
     "id": "legs",
@@ -386,7 +386,8 @@
     "hp": 70.0,
     "on_break": {
      "speed_mult": 0.62
-    }
+    },
+    "material": "willow_branch"
    },
    {
     "id": "arms",
@@ -394,7 +395,8 @@
     "hp": 70.0,
     "on_break": {
      "damage_mult": 0.7
-    }
+    },
+    "material": "raw_egg"
    },
    {
     "id": "head",
@@ -402,7 +404,8 @@
     "hp": 90.0,
     "on_break": {
      "damage_mult": 0.6
-    }
+    },
+    "material": "cast_iron"
    }
   ],
   "_art_note": "No sprite set yet, so PlaceholderArt draws it (CLAUDE.md §5). Wanted art is logged in ASSET_REQUIREMENTS.md.",

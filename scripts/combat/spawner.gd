@@ -21,6 +21,7 @@ signal shadow_spawned(enemy: Enemy)
 ## N4-4a: a burn tick landed on some enemy — the stage floats the number.
 signal burn_damaged(amount: float, at: Vector2)
 signal enemy_part_broken(enemy: Enemy, part_name: String, broken: int, total: int)
+signal enemy_part_blocked(enemy: Enemy, part_name: String, material_id: String)
 
 const STAGES_PATH := "res://data/stages.json"
 const MONSTERS_PATH := "res://data/monsters.json"
@@ -50,6 +51,8 @@ var breakables: Array[Breakable] = []
 var lights: Array[Dictionary] = []
 ## The field's light index, handed to every enemy it spawns.
 var light_grid: PropGrid = null
+## The run's material pouch, by reference (RunState.inventory).
+var held_materials: Dictionary = {}
 
 # N10-1a targeting filter: reused buffer, rebuilt only while an untouchable
 # shadow is on the field (see active_enemies).
@@ -330,6 +333,12 @@ func _spawn_one(monster_id: String) -> Enemy:
 		enemy.detonated.connect(_on_enemy_detonated)
 	if not enemy.part_broken.is_connected(_on_enemy_part_broken):
 		enemy.part_broken.connect(_on_enemy_part_broken)
+	if not enemy.part_blocked.is_connected(_on_enemy_part_blocked):
+		enemy.part_blocked.connect(_on_enemy_part_blocked)
+	# 삼두구미 (N10-3b): the pouch is the key ring, so it is handed over the same
+	# way the light index is — by reference, so a material picked up mid-fight
+	# opens the part it belongs to without anything being re-wired.
+	enemy.held_materials = held_materials
 	# N4-2 soft enrage: monsters spawned after the ramp start arrive scaled,
 	# so a stalled post-boss field turns lethal instead of dragging (GDD §34).
 	# The boss spawns at boss_at_sec, before the ramp, and is never scaled.
@@ -439,6 +448,12 @@ func _on_enemy_died(enemy: Enemy) -> void:
 
 ## 삼두구미 (N10-3a): relayed like the fuse, so the stage can say what came off
 ## without every enemy holding a stage reference.
+func _on_enemy_part_blocked(
+	enemy: Enemy, part_name: String, material_id: String
+) -> void:
+	enemy_part_blocked.emit(enemy, part_name, material_id)
+
+
 func _on_enemy_part_broken(
 	enemy: Enemy, part_name: String, broken: int, total: int
 ) -> void:

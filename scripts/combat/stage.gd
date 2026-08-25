@@ -257,6 +257,7 @@ func _stage_ready_field() -> void:
 	_spawner.enemy_fuse_lit.connect(_on_enemy_fuse_lit)
 	_spawner.enemy_detonated.connect(_on_enemy_detonated)
 	_spawner.enemy_part_broken.connect(_on_enemy_part_broken)
+	_spawner.enemy_part_blocked.connect(_on_enemy_part_blocked)
 	_spawner.boss_spawned.connect(_on_boss_spawned)
 	_spawner.shadow_spawned.connect(_on_shadow_spawned)
 	# N9-1a: the stage id IS the track id, so a second region ships its own
@@ -287,6 +288,9 @@ func _stage_ready_field() -> void:
 	_result = ResultScreen.new()
 	add_child(_result)
 	_run_state = RunState.new()
+	# 삼두구미 (N10-3b): the pouch is handed over by reference AFTER it exists —
+	# wiring it beside the other spawner signals read fine and ran on a null.
+	_spawner.held_materials = _run_state.inventory
 	_run_state.level_reached.connect(_on_level_reached)
 	_orb_config_base = RunState.load_orb_config()
 	_orb_config = _orb_config_base.duplicate()
@@ -1751,6 +1755,18 @@ func _on_enemy_part_broken(
 	_float_label(UiLocale.t("%s 파괴! (%d/%d)") % [part_name, broken, total])
 	_punch(Impact.ELITE_KILL)
 	_play_sfx("crit")
+
+
+## 삼두구미 (N10-3b): the hit found a part this player cannot open yet. The
+## float names the material rather than the failure — "무쇠가 있어야 한다" is a
+## thing to go and do, where "no damage" is a bug report.
+func _on_enemy_part_blocked(
+	_enemy: Enemy, part_name: String, material_id: String
+) -> void:
+	var material: Dictionary = _loot_data.get(material_id, {})
+	_float_label(UiLocale.t("%s: %s이(가) 있어야 한다") % [
+		part_name, UiLocale.data_name(material, material_id)
+	])
 
 
 ## 야광귀 (N10-1a): the thief walks to what is lying on the ground, takes it,

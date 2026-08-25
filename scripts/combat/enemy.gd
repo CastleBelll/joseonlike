@@ -19,6 +19,10 @@ signal burn_ticked(amount: float, at: Vector2)
 ## 삼두구미 (N10-3a): one of its three parts came apart. The stage floats the
 ## part's name — a hit that changes the fight has to say so.
 signal part_broken(enemy: Enemy, part_name: String, broken: int, total: int)
+## A hit landed on a part the player has no key for. The stage says which
+## material opens it — a part that silently ignores damage is a bug to the
+## player, and the folklore's whole point is that you need the right thing.
+signal part_blocked(enemy: Enemy, part_name: String, material_id: String)
 
 const VISUAL_HEIGHT_RATIO := 2.4  # slightly taller than wide, like the player
 const EYE_RATIO := 0.18
@@ -143,6 +147,9 @@ var _spent: bool = false
 ## 삼두구미 (N10-3a) part state. While any part stands the body takes nothing —
 ## the fight is about taking it apart, and breaking a part changes how the rest
 ## of the fight goes (a broken leg slows it, a broken head softens its bite).
+## What the player is carrying, set by the stage each time it changes. A part
+## that names a material takes nothing while that material is not in the pouch.
+var held_materials: Dictionary = {}
 var part_hp := PackedFloat32Array()
 var part_names: PackedStringArray = []
 var _parts: Array = []
@@ -403,6 +410,10 @@ func take_damage(
 	# weapon is the same reason the shadow guard lives at this one entry point.
 	var part: int = CombatMath.part_target(part_hp)
 	if part >= 0:
+		var material: String = String((_parts[part] as Dictionary).get("material", ""))
+		if not material.is_empty() and int(held_materials.get(material, 0)) <= 0:
+			part_blocked.emit(self, part_names[part], material)
+			return
 		part_hp[part] = CombatMath.apply_damage(part_hp[part], amount)
 		_flash_left = _flash_sec
 		if _has_art:
@@ -481,10 +492,14 @@ func _update_shadow(delta: float) -> bool:
 		# only be taken on the first frame it is actually standing somewhere.
 		_shadow_anchor = global_position
 		_shadow_anchored = true
-	_lit = CombatMath.is_lit(
-		global_position,
-		light_grid.near(global_position) if light_grid != null else [] as Array[Dictionary]
-	)
+	# Assigned to a typed local first: as a ternary the expression comes out
+	# Variant, and is_lit takes a typed array — which errored every frame in a
+	# rendered run while the headless tests, which build the array in typed
+	# code, all passed.
+	var lights_here: Array[Dictionary] = []
+	if light_grid != null:
+		lights_here = light_grid.near(global_position)
+	_lit = CombatMath.is_lit(global_position, lights_here)
 	# A shadow haunts its patch of dark; it does not hunt across the province.
 	# Without this a monster nothing can kill becomes a timer on the player's
 	# life instead of a fight they choose to take — measured: the playtest bot

@@ -50,10 +50,15 @@ func add(entry: Dictionary) -> void:
 ## Every entry that could possibly cover `at`. Never null: an empty cell answers
 ## with an empty array, so callers keep their ordinary loop.
 func near(at: Vector2) -> Array[Dictionary]:
+	# The typed empty must be built here rather than returned from the Variant:
+	# a bucket read back out of a Dictionary loses its element type, and
+	# CombatMath.is_lit takes a typed array — which failed at runtime while
+	# every test passed, because the tests build the array in typed code.
+	var out: Array[Dictionary] = []
 	var bucket: Variant = _cells.get(_cell_of(at))
 	if bucket is Array:
-		return bucket
-	return [] as Array[Dictionary]
+		out.assign(bucket)
+	return out
 
 
 ## Cells currently holding anything. A probe watches this to see the index is

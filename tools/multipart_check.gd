@@ -57,6 +57,28 @@ func _run() -> void:
 		_finish()
 		return
 
+	# 삼두구미 (N10-3b): with an empty pouch the gated part takes nothing, and
+	# the player is told which material opens it. This is the half of the rule
+	# that turns the fight into farming, so it is driven before anything else.
+	var blocked: PackedStringArray = []
+	_enemy.part_blocked.connect(
+		func(_e: Enemy, part_name: String, material_id: String) -> void:
+			blocked.append("%s<-%s" % [part_name, material_id])
+	)
+	var pouch: Dictionary = _stage.get("_run_state").inventory
+	pouch.clear()
+	var locked_before: float = _enemy.part_hp[0]
+	_enemy.take_damage(25.0)
+	if _enemy.part_hp[0] < locked_before:
+		_fail("a gated part took damage with an empty pouch")
+	if blocked.is_empty():
+		_fail("nothing told the player which material was missing")
+	else:
+		print("MULTIPART locked: " + ", ".join(blocked))
+	# Now carry all three keys; the rest of the probe runs as before.
+	for material: String in _gate_materials():
+		pouch[material] = 1
+
 	# One hit while armoured: the body must not feel it, the part must.
 	var first_before: float = _enemy.part_hp[0]
 	_enemy.take_damage(25.0)
@@ -95,6 +117,23 @@ func _run() -> void:
 		_fail("the body still ignores damage with every part down")
 	print("MULTIPART exposed: body %.0f -> %.0f" % [body_hp, _enemy.hp])
 	_finish()
+
+
+## The materials this monster's parts are locked behind, read from the data
+## rather than listed here — a gate added later must fail the probe, not slip
+## past it because the probe knew a shorter list.
+func _gate_materials() -> PackedStringArray:
+	var parsed: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string("res://data/monsters.json")
+	)
+	var materials := PackedStringArray()
+	if parsed is not Dictionary:
+		return materials
+	for part: Variant in (parsed as Dictionary).get(MONSTER_ID, {}).get("parts", []):
+		var material: String = String((part as Dictionary).get("material", ""))
+		if not material.is_empty():
+			materials.append(material)
+	return materials
 
 
 func _finish() -> void:

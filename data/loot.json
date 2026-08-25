@@ -1,142 +1,178 @@
 {
-  "bamboo": {
-    "name_ko": "대나무",
-    "name_en": "Bamboo",
-    "desc_ko": "대나무숲 어디서나 자라는 재료. 쓰임새는 다양하지만 강력하지는 않다.",
-    "desc_en": "Grows freely throughout the bamboo forest — common, unremarkable.",
-    "tier": "common",
-    "tags": [
-      "ranged",
-      "craft"
-    ],
-    "special": false,
-    "salvage_gold": 5
-  },
-  "tough_fiber": {
-    "name_ko": "질긴 섬유",
-    "name_en": "Tough Fiber",
-    "desc_ko": "질기고 오래가는 섬유. 활이나 부적 끈을 엮는 데 쓰인다.",
-    "desc_en": "Tough, long fiber. Used to string bows and bind talismans.",
-    "tier": "common",
-    "tags": [
-      "ranged",
-      "craft"
-    ],
-    "special": false,
-    "salvage_gold": 5
-  },
-  "beast_fang": {
-    "name_ko": "짐승의 이빨",
-    "name_en": "Beast Fang",
-    "desc_ko": "짐승에게서 뽑아낸 날카로운 이빨. 장신구나 부적에 매단다.",
-    "desc_en": "A sharp fang pulled from a beast. Hung as a charm or ornament.",
-    "tier": "common",
-    "tags": [
-      "melee",
-      "bleed"
-    ],
-    "special": false,
-    "salvage_gold": 5
-  },
-  "talisman_paper": {
-    "name_ko": "부적지",
-    "name_en": "Talisman Paper",
-    "desc_ko": "글자가 새겨지지 않은 백지 부적. 아직 아무 힘도 깃들지 않았다.",
-    "desc_en": "Blank talisman paper — no power sealed into it yet.",
-    "tier": "common",
-    "tags": [
-      "spiritual"
-    ],
-    "special": false,
-    "salvage_gold": 5
-  },
-  "wonhon_shard": {
-    "name_ko": "원혼 조각",
-    "name_en": "Wonhon Shard",
-    "desc_ko": "떠도는 원혼이 남긴 파편. 슬픔과 한이 서려 있다.",
-    "desc_en": "A fragment left by a wandering spirit, heavy with sorrow.",
-    "tier": "uncommon",
-    "tags": [
-      "soul",
-      "curse"
-    ],
-    "special": false,
-    "salvage_gold": 10
-  },
-  "dokkaebi_flame": {
-    "name_ko": "도깨비불",
-    "name_en": "Dokkaebi Flame",
-    "desc_ko": "밤에만 나타나는 푸른 불꽃. 화염과 저주의 무기를 각성시킨다.",
-    "desc_en": "A blue flame seen only at night. Awakens fire and curse weapons.",
-    "tier": "uncommon",
-    "tags": [
-      "fire",
-      "soul"
-    ],
-    "special": true,
-    "salvage_gold": 10
-  },
-  "whetstone": {
-    "name_ko": "숫돌",
-    "name_en": "Whetstone",
-    "desc_ko": "날카롭게 날을 벼리는 숫돌. 예리한 참격 무기로 개조한다.",
-    "desc_en": "A stone for honing an edge. Refines a blade into a sharper cut.",
-    "tier": "rare",
-    "tags": [
-      "melee"
-    ],
-    "special": true,
-    "salvage_gold": 18
-  },
-  "ghost_iron": {
-    "name_ko": "귀철",
-    "name_en": "Ghost Iron",
-    "desc_ko": "귀기가 서린 쇠붙이. 저주가 깃든 무기의 재료가 된다.",
-    "desc_en": "Iron touched by vengeful spirits. Material for cursed weapons.",
-    "tier": "epic",
-    "tags": [
-      "melee",
-      "curse"
-    ],
-    "special": true,
-    "salvage_gold": 32
-  },
-  "cinnabar": {
-    "name_ko": "주사",
-    "name_en": "Cinnabar",
-    "desc_ko": "봉인에 쓰이는 붉은 안료. 봉인의 힘이 깃든 무기를 만든다.",
-    "desc_en": "Vermilion pigment used for sealing. Feeds sealing-branch weapons.",
-    "tier": "rare",
-    "tags": [
-      "spiritual",
-      "seal"
-    ],
-    "special": true,
-    "salvage_gold": 18
-  },
-  "thunder_stone": {
-    "name_ko": "뇌정석",
-    "name_en": "Thunder Stone",
-    "desc_ko": "번개의 기운이 응축된 돌. 뇌전 계열 무기를 각성시킨다.",
-    "desc_en": "A stone charged with lightning. Awakens thunder-branch weapons.",
-    "tier": "epic",
-    "tags": [
-      "lightning",
-      "spiritual"
-    ],
-    "special": true,
-    "salvage_gold": 32
-  },
-  "fire_spirit_stone": {
-    "name_ko": "화령석",
-    "name_en": "Fire Spirit Stone",
-    "desc_ko": "불의 정령이 깃든 돌. 다양한 무기를 화염 계열로 각성시킨다.",
-    "desc_en": "A stone housing a fire spirit. Awakens many weapons into their fire branch.",
-    "tier": "epic",
-    "tags": [
-      "fire"
-    ],
-    "special": true,
-    "salvage_gold": 32
-  }
+ "bamboo": {
+  "name_ko": "대나무",
+  "name_en": "Bamboo",
+  "desc_ko": "대나무숲 어디서나 자라는 재료. 쓰임새는 다양하지만 강력하지는 않다.",
+  "desc_en": "Grows freely throughout the bamboo forest — common, unremarkable.",
+  "tier": "common",
+  "tags": [
+   "ranged",
+   "craft"
+  ],
+  "special": false,
+  "salvage_gold": 5
+ },
+ "tough_fiber": {
+  "name_ko": "질긴 섬유",
+  "name_en": "Tough Fiber",
+  "desc_ko": "질기고 오래가는 섬유. 활이나 부적 끈을 엮는 데 쓰인다.",
+  "desc_en": "Tough, long fiber. Used to string bows and bind talismans.",
+  "tier": "common",
+  "tags": [
+   "ranged",
+   "craft"
+  ],
+  "special": false,
+  "salvage_gold": 5
+ },
+ "beast_fang": {
+  "name_ko": "짐승의 이빨",
+  "name_en": "Beast Fang",
+  "desc_ko": "짐승에게서 뽑아낸 날카로운 이빨. 장신구나 부적에 매단다.",
+  "desc_en": "A sharp fang pulled from a beast. Hung as a charm or ornament.",
+  "tier": "common",
+  "tags": [
+   "melee",
+   "bleed"
+  ],
+  "special": false,
+  "salvage_gold": 5
+ },
+ "talisman_paper": {
+  "name_ko": "부적지",
+  "name_en": "Talisman Paper",
+  "desc_ko": "글자가 새겨지지 않은 백지 부적. 아직 아무 힘도 깃들지 않았다.",
+  "desc_en": "Blank talisman paper — no power sealed into it yet.",
+  "tier": "common",
+  "tags": [
+   "spiritual"
+  ],
+  "special": false,
+  "salvage_gold": 5
+ },
+ "wonhon_shard": {
+  "name_ko": "원혼 조각",
+  "name_en": "Wonhon Shard",
+  "desc_ko": "떠도는 원혼이 남긴 파편. 슬픔과 한이 서려 있다.",
+  "desc_en": "A fragment left by a wandering spirit, heavy with sorrow.",
+  "tier": "uncommon",
+  "tags": [
+   "soul",
+   "curse"
+  ],
+  "special": false,
+  "salvage_gold": 10
+ },
+ "dokkaebi_flame": {
+  "name_ko": "도깨비불",
+  "name_en": "Dokkaebi Flame",
+  "desc_ko": "밤에만 나타나는 푸른 불꽃. 화염과 저주의 무기를 각성시킨다.",
+  "desc_en": "A blue flame seen only at night. Awakens fire and curse weapons.",
+  "tier": "uncommon",
+  "tags": [
+   "fire",
+   "soul"
+  ],
+  "special": true,
+  "salvage_gold": 10
+ },
+ "whetstone": {
+  "name_ko": "숫돌",
+  "name_en": "Whetstone",
+  "desc_ko": "날카롭게 날을 벼리는 숫돌. 예리한 참격 무기로 개조한다.",
+  "desc_en": "A stone for honing an edge. Refines a blade into a sharper cut.",
+  "tier": "rare",
+  "tags": [
+   "melee"
+  ],
+  "special": true,
+  "salvage_gold": 18
+ },
+ "ghost_iron": {
+  "name_ko": "귀철",
+  "name_en": "Ghost Iron",
+  "desc_ko": "귀기가 서린 쇠붙이. 저주가 깃든 무기의 재료가 된다.",
+  "desc_en": "Iron touched by vengeful spirits. Material for cursed weapons.",
+  "tier": "epic",
+  "tags": [
+   "melee",
+   "curse"
+  ],
+  "special": true,
+  "salvage_gold": 32
+ },
+ "cinnabar": {
+  "name_ko": "주사",
+  "name_en": "Cinnabar",
+  "desc_ko": "봉인에 쓰이는 붉은 안료. 봉인의 힘이 깃든 무기를 만든다.",
+  "desc_en": "Vermilion pigment used for sealing. Feeds sealing-branch weapons.",
+  "tier": "rare",
+  "tags": [
+   "spiritual",
+   "seal"
+  ],
+  "special": true,
+  "salvage_gold": 18
+ },
+ "thunder_stone": {
+  "name_ko": "뇌정석",
+  "name_en": "Thunder Stone",
+  "desc_ko": "번개의 기운이 응축된 돌. 뇌전 계열 무기를 각성시킨다.",
+  "desc_en": "A stone charged with lightning. Awakens thunder-branch weapons.",
+  "tier": "epic",
+  "tags": [
+   "lightning",
+   "spiritual"
+  ],
+  "special": true,
+  "salvage_gold": 32
+ },
+ "fire_spirit_stone": {
+  "name_ko": "화령석",
+  "name_en": "Fire Spirit Stone",
+  "desc_ko": "불의 정령이 깃든 돌. 다양한 무기를 화염 계열로 각성시킨다.",
+  "desc_en": "A stone housing a fire spirit. Awakens many weapons into their fire branch.",
+  "tier": "epic",
+  "tags": [
+   "fire"
+  ],
+  "special": true,
+  "salvage_gold": 32
+ },
+ "cast_iron": {
+  "name_ko": "무쇠",
+  "name_en": "Cast Iron",
+  "desc_ko": "삼두구미에게는 조화가 통하지 않는 쇠다. 제주 이장 의례에서 관 밑에 까는 그 무쇠 — 들고 있어야 세 머리를 부술 수 있다.",
+  "desc_en": "The iron a Samdugumi's tricks cannot touch. Carry it to break the three heads.",
+  "tier": "rare",
+  "tags": [
+   "craft"
+  ],
+  "special": false,
+  "salvage_gold": 8
+ },
+ "raw_egg": {
+  "name_ko": "생달걀",
+  "name_en": "Raw Egg",
+  "desc_ko": "얼굴에 맞으면 눈이 멀어 아무것도 못 본다. 무덤을 파먹는 것의 다리를 떼어놓는 데 쓴다.",
+  "desc_en": "Blinds what it hits. What loosens the grave-eater's legs.",
+  "tier": "uncommon",
+  "tags": [
+   "craft"
+  ],
+  "special": false,
+  "salvage_gold": 8
+ },
+ "willow_branch": {
+  "name_ko": "버드나무 가지",
+  "name_en": "Willow Branch",
+  "desc_ko": "동쪽으로 뻗은 가지. 맞으면 사지가 저려 아홉 꼬리가 힘을 잃는다.",
+  "desc_en": "A branch grown east. Numbs the nine tails until they cannot carry it.",
+  "tier": "uncommon",
+  "tags": [
+   "craft"
+  ],
+  "special": false,
+  "salvage_gold": 8
+ }
 }
