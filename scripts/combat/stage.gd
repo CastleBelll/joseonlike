@@ -861,6 +861,8 @@ func _execute_active(active: Dictionary) -> void:
 			_execute_blink(active)
 		"burst":
 			_execute_burst(active)
+		"cleave":
+			_execute_cleave(active)
 		"guard":
 			# N9-148 철벽: the warrior plants his feet — incoming damage drops
 			# to the data scale for the duration. No movement penalty; the
@@ -931,6 +933,51 @@ func _execute_burst(active: Dictionary) -> void:
 		var hit_at: Vector2 = enemy.global_position
 		var boss_hit: bool = enemy.is_boss
 		enemy.take_damage(damage, CombatMath.chase_direction(origin, hit_at))
+		_on_hit_landed(damage, hit_at, boss_hit)
+
+
+## N9-168 참격: the warrior's second art. Where 벽사진 clears a full circle
+## around the taoist, this one is a swing — everything inside the arc the
+## blade actually covers, in the direction he faces. Same damage pipeline and
+## the same 도력 scaling; the cone is what makes it a warrior's skill rather
+## than a smaller burst.
+func _execute_cleave(active: Dictionary) -> void:
+	var origin: Vector2 = _player.global_position
+	var radius: float = float(active.get("radius_px", 0.0))
+	var arc_rad: float = deg_to_rad(float(active.get("arc_deg", 0.0)))
+	var aim: float = _player.last_move_direction.angle()
+	var damage: float = (
+		float(active.get("damage", 0.0)) * (1.0 + _passive_bonus("skill_power"))
+	)
+	# The swing art the 환도 line already uses, drawn at the skill's own reach
+	# so what is seen is what is hit.
+	if EffectSprite.available("swing_sword"):
+		var art: EffectSprite = _fx_pool.acquire()
+		art.play_effect(
+			"swing_sword", origin + Vector2.from_angle(aim) * radius * 0.5,
+			radius, UiPalette.ACCENT_WARRIOR
+		)
+		art.rotation = aim
+	_hud.flash_screen(UiPalette.ACCENT_WARRIOR, WeaponEffects.value("screen_flash_sec"))
+	var enemies: Array[Enemy] = _spawner.active_enemies()
+	var positions: Array[Vector2] = []
+	var radii: Array[float] = []
+	for enemy: Enemy in enemies:
+		positions.append(enemy.global_position)
+		radii.append(enemy.contact_radius)
+	# Collect refs first: striking mutates the spawner's active list.
+	var caught: Array[Enemy] = []
+	for i: int in WeaponMath.arc_hits(origin, aim, arc_rad, radius, positions, radii):
+		caught.append(enemies[i])
+	for enemy: Enemy in caught:
+		if CombatMath.is_dead(enemy.hp):
+			continue
+		var hit_at: Vector2 = enemy.global_position
+		var boss_hit: bool = enemy.is_boss
+		enemy.take_damage(
+			damage, CombatMath.chase_direction(origin, hit_at),
+			float(active.get("knockback_scale", 1.0))
+		)
 		_on_hit_landed(damage, hit_at, boss_hit)
 
 

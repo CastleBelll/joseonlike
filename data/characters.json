@@ -80,6 +80,17 @@
     "cooldown_sec": 30.0,
     "duration_sec": 4.0,
     "damage_taken_scale": 0.3
+   },
+   {
+    "id": "chamgyeok",
+    "name_ko": "참격",
+    "name_en": "Cleave",
+    "type": "cleave",
+    "cooldown_sec": 12.0,
+    "radius_px": 150.0,
+    "arc_deg": 130.0,
+    "damage": 140.0,
+    "knockback_scale": 2.0
    }
   ]
  },

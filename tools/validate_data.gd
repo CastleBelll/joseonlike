@@ -79,7 +79,7 @@ const SOFT_ENRAGE_FIELDS: Array[String] = [
 # N4-4a/N4-4b weapon mechanic contract (weapons.json "mechanic" + its blocks).
 const STATUS_IDS: Array[String] = ["burn", "shock", "curse"]
 # N4-4b character actives contract (characters.json "actives").
-const ACTIVE_TYPES: Array[String] = ["blink", "burst", "guard"]
+const ACTIVE_TYPES: Array[String] = ["blink", "burst", "guard", "cleave"]
 # N3-13 icon binding contract (asset/ui/README.md): filenames are data ids.
 const WEAPON_ICON_DIR := "res://asset/ui/weapon_icons"
 const LOOT_ICON_DIR := "res://asset/ui/loot_icons"
@@ -87,6 +87,9 @@ const ACTIVE_TYPE_FIELDS: Dictionary = {
 	"blink": ["distance_px", "invulnerable_sec"],
 	"burst": ["radius_px", "damage"],
 	"guard": ["duration_sec", "damage_taken_scale"],
+	# N9-168 참격: a swing, so it needs a reach AND the arc it covers — a
+	# cleave without an arc is just a smaller 벽사진.
+	"cleave": ["radius_px", "arc_deg", "damage"],
 }
 
 var _errors: int = 0
