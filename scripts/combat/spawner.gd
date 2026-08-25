@@ -396,6 +396,15 @@ func _despawn_far_enemies() -> void:
 	for enemy: Enemy in _active.duplicate():
 		if enemy.is_boss:
 			continue  # a kited boss must keep walking, never silently vanish
+		# 야광귀 (N10-1a): a thief holding loot outruns this cull by design. The
+		# generic despawn limit is the view's half-diagonal plus the margin —
+		# about 1030px at 540x960 — which is INSIDE the thief's own escape
+		# distance, so leaving it in would delete the thief (and the passive it
+		# took) a step before the rule that is supposed to end the chase, with
+		# no message and no chance to catch it. Its own escape check is what
+		# retires it.
+		if enemy.is_thief and not enemy.carried_passive.is_empty():
+			continue
 		var gone: bool = CombatMath.should_despawn(
 			enemy.global_position,
 			_player.global_position,

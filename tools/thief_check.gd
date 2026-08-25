@@ -165,9 +165,16 @@ func _watch_escape() -> void:
 		for pickup: Pickup in _live_passives():
 			if pickup.passive_id == _carried_id:
 				still_there = true
-		print("THIEF CHECK escape: gone with '%s' after %.1fs" % [_carried_id, _elapsed])
+		var lost: int = _stage.get("thefts_lost")
+		print("THIEF CHECK escape: gone with '%s' after %.1fs (thefts_lost=%d)" % [
+			_carried_id, _elapsed, lost
+		])
 		if still_there:
 			_fail("the escaped passive came back to the field")
+		# Without this the off-screen cull looks exactly like a clean escape,
+		# and it used to fire first — the rule never ran in a real match.
+		if lost < 1:
+			_fail("the thief left by the generic despawn, not by its escape rule")
 		_finish()
 		return
 	_carried_id = _thief.carried_passive

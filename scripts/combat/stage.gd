@@ -93,6 +93,10 @@ var _loot_rng := RandomNumberGenerator.new()
 ## there, not how many have ever been spawned).
 var _field_passive_wait: float = 0.0
 var _live_field_passives: Array[Pickup] = []
+## N10-1a: passives that left the field in a thief's hands. Read by
+## tools/thief_check.tscn, which otherwise cannot tell the designed escape from
+## the generic off-screen cull — the two used to look identical from outside.
+var thefts_lost: int = 0
 ## Lifetime count, for the harness: a run that places none has the feature
 ## switched off in all but name, and nothing else would say so.
 var _field_passives_placed: int = 0
@@ -1770,6 +1774,7 @@ func _tick_thieves() -> void:
 					_passives_data.get(thief.carried_passive, {}), thief.carried_passive
 				))
 				thief.carried_passive = ""
+				thefts_lost += 1
 				# Dismissed, not killed: it won, and paying a kill's xp and
 				# count for it would read as a reward.
 				_spawner.dismiss(thief)
