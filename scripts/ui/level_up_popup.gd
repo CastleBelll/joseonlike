@@ -46,7 +46,13 @@ const CARD_COLUMN_MIN_WIDTH := 232.0
 ## floor only guarantees a two-line card, so short screens stay short.
 const CARD_COLUMN_HEIGHT_MIN := 196.0
 const HEADER_HEIGHT := 64.0
+## Owner (자꾸 스크롤이 생길정도라서): a landscape screen is 540 tall and the
+## chrome around the cards was written for 960 — title band plus five body
+## margins came to a third of the sheet, so the card the player is reading
+## scrolled. Landscape spends less on the frame and gives it to the card.
+const HEADER_HEIGHT_LANDSCAPE := 44.0
 const BODY_MARGIN := 20.0
+const BODY_MARGIN_LANDSCAPE := 12.0
 ## Cards grow with their wrapped description (N3-17); this is the floor that
 ## keeps a short card's icon well and pill layout intact.
 const CARD_HEIGHT_MIN := 136.0
@@ -91,6 +97,12 @@ const OWNED_ROW_GAP := 12.0
 ## Vertical gap between wrapped strip rows (N4-7) — tight, so two rows still
 ## fit the panel's bottom reserve.
 const OWNED_WRAP_GAP := 4.0
+## Rows the strip may reserve before the cards start paying for it. A landscape
+## band is wide enough that a real run's four weapons never need a second row,
+## and the twenty pixels a second one would take are the difference between the
+## card's last line being on the paper or not.
+const OWNED_MAX_ROWS := 2
+const OWNED_MAX_ROWS_LANDSCAPE := 1
 const OWNED_BADGE_HEIGHT := 18.0
 const OWNED_BADGE_OUTLINE := 4
 const CLOSE_BUTTON_SIZE := Vector2(200.0, 64.0)
@@ -137,10 +149,11 @@ func _ready() -> void:
 	_body.name = "Body"
 	(_body as Panel).add_theme_stylebox_override("panel", _inset_style())
 	_body.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_body.offset_left = BODY_MARGIN
-	_body.offset_right = -BODY_MARGIN
-	_body.offset_top = HEADER_HEIGHT + BODY_MARGIN
-	_body.offset_bottom = -BODY_MARGIN * 2.0
+	var body_margin: float = _body_margin()
+	_body.offset_left = body_margin
+	_body.offset_right = -body_margin
+	_body.offset_top = _header_height() + body_margin
+	_body.offset_bottom = -body_margin * 2.0
 	layout.add_child(_body)
 	# The scroll only ever engages when a pathological card stack outgrows the
 	# clamped panel (N3-17); with real data everything fits and it is inert.
@@ -148,10 +161,10 @@ func _ready() -> void:
 	_scroll.name = "CardScroll"
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_scroll.offset_left = BODY_MARGIN
-	_scroll.offset_right = -BODY_MARGIN
-	_scroll.offset_top = BODY_MARGIN
-	_scroll.offset_bottom = -BODY_MARGIN
+	_scroll.offset_left = body_margin
+	_scroll.offset_right = -body_margin
+	_scroll.offset_top = body_margin
+	_scroll.offset_bottom = -body_margin
 	_body.add_child(_scroll)
 	# A flow container wraps the strip once a run owns more weapons than one
 	# row fits (N4-7) — the strip must never run off the 540px screen edge.
@@ -237,17 +250,48 @@ func open(
 		PANEL_TOP_LANDSCAPE + maxf(_root_size().y - DESIGN_HEIGHT_LANDSCAPE, 0.0) / 2.0
 		if landscape else panel_top_for(_root_size().y)
 	)
-	# Landscape is one row, so the panel wraps the tallest card, not the sum.
+	# Landscape is one row, so the panel wraps the TALLEST card, not the sum and
+	# not the first one: cards differ in height (an evolution card carries a
+	# stat line the others do not), and sizing to the first clipped whichever
+	# card happened to run longer.
 	var stack_heights: Array[float] = heights
 	if landscape and not heights.is_empty():
-		stack_heights = [heights[0]]
-	var reserve: float = (
-		OWNED_STRIP_RESERVE_LANDSCAPE if landscape else OWNED_STRIP_RESERVE
+		var tallest: float = 0.0
+		for height: float in heights:
+			tallest = maxf(tallest, height)
+		stack_heights = [tallest]
+	# The tight landscape reserve pairs with the tighter SM gap.
+	var strip_gap: float = float(UiPalette.SPACE_SM if landscape else UiPalette.SPACE_MD)
+	# The strip is built and MEASURED before the panel is sized, because how
+	# tall it is depends on how many weapons are owned and how many rows they
+	# wrap into. The reserve used to be a constant guess — 120px for a strip
+	# that reaches three rows late in a run — so the last row simply fell off
+	# the bottom of the screen.
+	var strip_width: float = _root_size().x - _panel_inset() * 2.0
+	_owned_row.position = Vector2(_panel_inset(), 0.0)
+	_owned_row.size = Vector2(strip_width, 0.0)
+	_build_owned_row(owned_levels, weapons)
+	var strip_height: float = owned_strip_height(
+		owned_levels.size(), strip_width, landscape
 	)
-	var panel_height: float = minf(
-		panel_height_for(stack_heights, _panel_style_margins_y()),
-		_root_size().y - top - reserve
+	# The strip is pinned to the bottom of the SCREEN and the panel is cut to
+	# what is left above it. Deriving the strip's y from the panel's height
+	# instead let every rounding difference push it further down until the last
+	# row hung off the edge — measured 13px over at level 20, three rows deep.
+	# Gap below as well as above: pinned flush to the edge, the wells' level
+	# badges sat on the screen's last pixels and read as cut off.
+	var strip_top: float = _root_size().y - strip_height - strip_gap * 2.0
+	var reserve: float = _root_size().y - strip_top + strip_gap
+	var available: float = _root_size().y - top - reserve
+	var estimated: float = panel_height_for(
+		stack_heights, _panel_style_margins_y(), _header_height(), _body_margin()
 	)
+	# Landscape takes the whole band rather than the estimate. The estimate is a
+	# text measurement, and it runs short on the longer English descriptions —
+	# layout_sweep caught the cards scrolling by about three lines at several
+	# canvases. Growing to what is there costs nothing (the sheet is centred in
+	# a band that is already reserved) and cannot be wrong the way a guess can.
+	var panel_height: float = available if landscape else minf(estimated, available)
 	# Owner (2026-08-24): a short landscape panel floats centred instead of
 	# hugging the top, so the field stays visible above and below the paper.
 	if landscape:
@@ -258,16 +302,12 @@ func open(
 	_apply_panel_band()
 	_panel.offset_top = top
 	_panel.offset_bottom = top + panel_height
-	# The tight landscape reserve pairs with the tighter SM gap.
-	var strip_gap: float = float(UiPalette.SPACE_SM if landscape else UiPalette.SPACE_MD)
-	_owned_row.position = Vector2(
-		_panel_inset(), top + panel_height + strip_gap
-	)
-	# The strip's rect width is what the flow container wraps against.
-	_owned_row.size = Vector2(
-		_root_size().x - _panel_inset() * 2.0, reserve - strip_gap
-	)
-	_build_owned_row(owned_levels, weapons)
+	# Rows beyond the reserve are cut cleanly rather than half-drawn off the
+	# screen edge. Only the harness (every weapon owned at once) ever reaches
+	# past the cap; a run's four weapons are one row.
+	_owned_row.clip_contents = true
+	_owned_row.position = Vector2(_panel_inset(), strip_top)
+	_owned_row.size = Vector2(strip_width, strip_height)
 	visible = true
 	var first: Control = cards.get_child(0)
 	first.call_deferred("grab_focus")
@@ -395,26 +435,48 @@ static func panel_top_for(root_height: float) -> float:
 	return PANEL_TOP + maxf(root_height - DESIGN_HEIGHT, 0.0) / 2.0
 
 
-static func panel_height_for(card_heights: Array[float], style_margins_y: float) -> float:
+static func panel_height_for(
+	card_heights: Array[float], style_margins_y: float,
+	header_height: float = HEADER_HEIGHT, body_margin: float = BODY_MARGIN
+) -> float:
 	var cards_total: float = 0.0
 	for height: float in card_heights:
 		cards_total += height
 	cards_total += CARD_GAP * float(maxi(card_heights.size() - 1, 0))
-	return style_margins_y + HEADER_HEIGHT + BODY_MARGIN * 5.0 + cards_total
+	return style_margins_y + header_height + body_margin * 5.0 + cards_total
 
 
 ## Owned-strip wrap math (N4-7), static so the layout test can prove the
 ## strip fits the reserve at the data's maximum owned-weapon count. Entries
 ## are OWNED_WELL_SIZE wide — the level label under the well is narrower.
-static func owned_strip_rows(count: int, strip_width: float) -> int:
+## Chrome sizes for the orientation on screen: a short screen spends less of
+## itself on the frame around the cards.
+func _header_height() -> float:
+	return HEADER_HEIGHT_LANDSCAPE if _is_landscape() else HEADER_HEIGHT
+
+
+func _body_margin() -> float:
+	return BODY_MARGIN_LANDSCAPE if _is_landscape() else BODY_MARGIN
+
+
+static func owned_strip_rows(
+	count: int, strip_width: float, landscape: bool = false
+) -> int:
 	var per_row: int = maxi(
 		int((strip_width + OWNED_ROW_GAP) / (OWNED_WELL_SIZE + OWNED_ROW_GAP)), 1
 	)
-	return int(ceilf(float(count) / float(per_row)))
+	var cap: int = OWNED_MAX_ROWS_LANDSCAPE if landscape else OWNED_MAX_ROWS
+	# Two rows is the ceiling. A run holds four weapons, so real play never
+	# reaches it; the popup harness owns all twenty-seven at once, and letting
+	# that reserve four rows would push the card being chosen off the paper.
+	# Reference beats choice only until it starts costing the choice.
+	return mini(int(ceilf(float(count) / float(per_row))), cap)
 
 
-static func owned_strip_height(count: int, strip_width: float) -> float:
-	var rows: int = owned_strip_rows(count, strip_width)
+static func owned_strip_height(
+	count: int, strip_width: float, landscape: bool = false
+) -> float:
+	var rows: int = owned_strip_rows(count, strip_width, landscape)
 	return float(rows) * OWNED_WELL_SIZE + float(maxi(rows - 1, 0)) * OWNED_WRAP_GAP
 
 
@@ -555,8 +617,6 @@ func _make_close_button() -> Button:
 	WoodButton.apply(button)
 	button.pressed.connect(func() -> void: dismissed.emit())
 	return button
-
-
 func _build_owned_row(owned_levels: Dictionary, weapons: Dictionary) -> void:
 	for weapon_id: String in owned_levels:
 		var well := Panel.new()
@@ -605,7 +665,7 @@ func _make_header() -> Control:
 	var header := Control.new()
 	header.name = "Header"
 	header.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	header.offset_bottom = HEADER_HEIGHT
+	header.offset_bottom = _header_height()
 	_title = _label("", UiPalette.FONT_SIZE_TITLE, UiPalette.VERMILION)
 	_title.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
