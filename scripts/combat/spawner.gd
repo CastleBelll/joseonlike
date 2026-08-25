@@ -47,6 +47,8 @@ var breakables: Array[Breakable] = []
 ## N10-1a: the field's light list, handed to every spawned enemy. Only shadow
 ## monsters read it; for everything else it is an unused reference.
 var lights: Array[Dictionary] = []
+## The field's light index, handed to every enemy it spawns.
+var light_grid: PropGrid = null
 
 # N10-1a targeting filter: reused buffer, rebuilt only while an untouchable
 # shadow is on the field (see active_enemies).
@@ -340,7 +342,7 @@ func _spawn_one(monster_id: String) -> Enemy:
 	# loop multiplier is applied on top of it — including to the boss, which is
 	# the only thing that would otherwise get easier every time it returns.
 	stats = _endless_scaled(stats)
-	enemy.light_sources = lights
+	enemy.light_grid = light_grid
 	enemy.setup(
 		monster_id,
 		stats,

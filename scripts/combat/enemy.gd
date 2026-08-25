@@ -149,10 +149,11 @@ var stalled: bool = false
 var _theft: Dictionary = {}
 
 # N10-1a 그슨대: the shadow contract. `shadow_config` empty = an ordinary
-# monster, so every existing enemy is untouched. `light_sources` is the live
-# array the field owns (chunks append to it as the world grows).
+# monster, so every existing enemy is untouched.
 var shadow_config: Dictionary = {}
-var light_sources: Array[Dictionary] = []
+## The field's light index. A flat array used to be handed over and scanned in
+## full every frame, which grew with the world rather than with what is nearby.
+var light_grid: PropGrid = null
 var _shadow_scale: float = 1.0
 var _lit: bool = false
 var _shadow_anchor := Vector2.ZERO
@@ -438,7 +439,10 @@ func _update_shadow(delta: float) -> bool:
 		# only be taken on the first frame it is actually standing somewhere.
 		_shadow_anchor = global_position
 		_shadow_anchored = true
-	_lit = CombatMath.is_lit(global_position, light_sources)
+	_lit = CombatMath.is_lit(
+		global_position,
+		light_grid.near(global_position) if light_grid != null else [] as Array[Dictionary]
+	)
 	# A shadow haunts its patch of dark; it does not hunt across the province.
 	# Without this a monster nothing can kill becomes a timer on the player's
 	# life instead of a fight they choose to take — measured: the playtest bot

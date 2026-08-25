@@ -898,6 +898,11 @@ func _finish() -> void:
 	var fps_avg: float = _fps_sum / float(maxi(_fps_samples, 1))
 	var elapsed: float = _stage._run_elapsed
 	print("PLAYTEST outcome: %s at %.1fs" % [_stage._outcome, elapsed])
+	var field: StageField = _stage.get("_field")
+	print("PLAYTEST prop index: %d lights in %d cells, %d sieves in %d cells" % [
+		field.lights.size(), field.light_grid.cell_count(),
+		field.sieves.size(), field.sieve_grid.cell_count()
+	])
 	print("PLAYTEST boss patterns seen: disc=%s band=%s" % [
 		_boss_disc_shot_done, _boss_band_shot_done
 	])

@@ -257,6 +257,11 @@ var lights: Array[Dictionary] = []
 ## own answer to the thief and the only counterplay that is not "kill it".
 var sieves: Array[Dictionary] = []
 
+## The same entries, bucketed by cell. The arrays above stay because harnesses
+## and the shadow probe read them whole; what runs every frame reads these.
+var light_grid := PropGrid.new()
+var sieve_grid := PropGrid.new()
+
 
 ## N9-6 infinite field: the world grows chunk by chunk as the player travels.
 ## Chunk placements are seeded per (field_seed, chunk coordinate), so a run's
@@ -341,10 +346,14 @@ func _instantiate(
 		var pos: Vector2 = placement["position"]
 		var sieve_radius: float = float(prop.get("sieve_radius_px", 0.0))
 		if sieve_radius > 0.0:
-			sieves.append({"position": pos, "radius": sieve_radius})
+			var sieve: Dictionary = {"position": pos, "radius": sieve_radius}
+			sieves.append(sieve)
+			sieve_grid.add(sieve)
 		var light_radius: float = float(prop.get("light_radius_px", 0.0))
 		if light_radius > 0.0:
-			lights.append({"position": pos, "radius": light_radius})
+			var light: Dictionary = {"position": pos, "radius": light_radius}
+			lights.append(light)
+			light_grid.add(light)
 			var halo := LightHalo.new()
 			halo.radius = light_radius
 			halo.position = pos

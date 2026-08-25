@@ -323,6 +323,7 @@ func _stage_ready_field() -> void:
 	_spawner.breakables = _field.breakables
 	# Same array reference: chunks appending lights are seen without rewiring.
 	_spawner.lights = _field.lights
+	_spawner.light_grid = _field.light_grid
 	for breakable: Breakable in _field.breakables:
 		breakable.broke.connect(_on_breakable_broke)
 	var starting_weapon: String = Player.load_starting_weapon()
@@ -1764,7 +1765,9 @@ func _tick_thieves() -> void:
 		# count holes — long enough to be caught, or to give the loot back if it
 		# is already carrying. This runs BEFORE the escape check, so a thief
 		# held at the edge of its escape distance never slips out of the radius.
-		thief.stalled = CombatMath.thief_stalled(thief.global_position, _field.sieves)
+		thief.stalled = CombatMath.thief_stalled(
+			thief.global_position, _field.sieve_grid.near(thief.global_position)
+		)
 		if thief.stalled:
 			continue
 		var from_player: float = thief.global_position.distance_to(_player.global_position)
