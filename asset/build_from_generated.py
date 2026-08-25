@@ -60,6 +60,15 @@ INSTALL = [
     ("icon_noejeongbu", "asset/ui/weapon_icons/noejeongbu.png", True),
     ("icon_jineon", "asset/ui/weapon_icons/jineon.png", True),
     ("icon_bongin_jineon", "asset/ui/weapon_icons/bongin_jineon.png", True),
+    # N9-171 (owner: 살, 귀살 무기 이미지, 투사체 이미지도 수정해 너무 과해):
+    # the pair was a cracked stone tablet under a purple aura and a scribble of
+    # violet flecks. One iron ritual spike, one slim sliver, and the evolution
+    # keeps the base silhouette. The travel sprites stop being 4-frame strips —
+    # the flicker was most of what made them noisy — so they declare a size.
+    ("icon_sal", "asset/ui/weapon_icons/sal.png", True),
+    ("icon_gwisal", "asset/ui/weapon_icons/gwisal.png", True),
+    ("travel_sal", "asset/weapon/travel/sal.png", "40x14"),
+    ("travel_gwisal", "asset/weapon/travel/gwisal.png", "40x14"),
     ("travel_old_talisman", "asset/weapon/travel/old_talisman.png", False),
     ("travel_fire_talisman", "asset/weapon/travel/fire_talisman.png", False),
     ("travel_hwabu", "asset/weapon/travel/hwabu.png", False),
@@ -107,15 +116,30 @@ def cut_background(image: Image.Image) -> Image.Image:
     """
     rgb = image.convert("RGB")
     width, height = rgb.size
+    # PIL's floodfill returns immediately when the seed already carries the fill
+    # colour, so a render whose backdrop IS magenta kept its whole background.
+    # Paint with a colour the picture does not contain instead.
+    used = {pixel for _count, pixel in rgb.getcolors(maxcolors=1 << 24) or []}
+    marker = MARKER if MARKER not in used else next(
+        candidate for candidate in (
+            (255, 0, 254), (254, 0, 255), (255, 1, 255), (0, 255, 1), (1, 255, 0)
+        ) if candidate not in used
+    )
     for corner in ((0, 0), (width - 1, 0), (0, height - 1), (width - 1, height - 1)):
-        ImageDraw.floodfill(rgb, corner, MARKER, thresh=BACKGROUND_TOLERANCE)
+        ImageDraw.floodfill(rgb, corner, marker, thresh=BACKGROUND_TOLERANCE)
     out = Image.new("RGBA", rgb.size, (0, 0, 0, 0))
     source = rgb.load()
     target = out.load()
     for y in range(height):
         for x in range(width):
             pixel = source[x, y]
-            if pixel != MARKER:
+            # The flood stops wherever the render shaded its own backdrop past
+            # the tolerance, which leaves magenta islands the trim then reads as
+            # the subject. Saturated magenta is the one colour this art set does
+            # not use, so whatever is left of it is backdrop.
+            if pixel != marker and not (
+                pixel[0] > 130 and pixel[2] > 130 and pixel[1] < 110
+            ):
                 target[x, y] = (*pixel, 255)
     return out
 

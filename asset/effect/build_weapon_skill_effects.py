@@ -9,7 +9,11 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "asset" / "effect"
+GENERATED = ROOT / "new_asset" / "generated"
 FRAME = 128
+# validate() caps a sheet at 64 RGBA entries and the transparent one counts,
+# so the visible palette has to stop below that.
+SHEET_PALETTE = 56
 SKILL_SPECS = {
     "skill_chamgyeok": {"grid": 75, "scale": 2, "frames": 8, "logical_px": 150},
     "skill_cheolbyeok": {"grid": 48, "scale": 2, "frames": 6, "logical_px": 96},
@@ -93,6 +97,16 @@ def save_sheet(name: str, frames: list[Image.Image]) -> Image.Image:
     sheet = Image.new("RGBA", (cell * len(processed), cell))
     for index, frame in enumerate(processed):
         sheet.alpha_composite(frame, (index * cell, 0))
+    if name in SKILL_SPECS:
+        # One palette for the whole strip, not one per frame: the frames are the
+        # same artwork at different sizes and brightnesses, and quantizing them
+        # separately makes the colour crawl between cells.
+        alpha = sheet.getchannel("A")
+        flat = sheet.convert("RGB").quantize(
+            colors=SHEET_PALETTE, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE
+        ).convert("RGBA")
+        flat.putalpha(alpha)
+        sheet = flat
     sheet.save(OUT / f"{name}.png", optimize=True)
     return sheet
 
@@ -247,89 +261,85 @@ def elliptical_sector(
     return points
 
 
+def skill_render(stem: str) -> Image.Image:
+    """One generated still, keyed and trimmed, ready to be posed per frame.
+
+    Drawing these by hand is what the owner rejected twice: seven melee arcs
+    that were the same crescent in different colours, and then a sweep with a
+    5x6 plaid tiled inside it. The artwork is one render now; the animation is
+    still code, because eight independently generated frames would not hold
+    their shape from one to the next.
+    """
+    source = Image.open(GENERATED / f"{stem}.png").convert("RGBA")
+    pixels = source.load()
+    for y in range(source.height):
+        for x in range(source.width):
+            r, g, b, _ = pixels[x, y]
+            if r > 130 and b > 130 and g < 110:
+                pixels[x, y] = (0, 0, 0, 0)
+    bounds = source.getbbox()
+    if bounds is None:
+        raise ValueError(f"{stem}: nothing left after keying")
+    return source.crop(bounds)
+
+
+def posed(art: Image.Image, span: int, angle: float, light: float) -> Image.Image:
+    """The still placed on a frame canvas at one moment of the animation.
+
+    A frame fades by going dark, not by going translucent: these sheets carry
+    binary alpha (validate() fails anything else), so the resize and the
+    rotation both get their soft edges cut back to a hard silhouette.
+    """
+    scale = span / max(art.size)
+    small = art.resize(
+        (max(1, round(art.width * scale)), max(1, round(art.height * scale))),
+        Image.Resampling.LANCZOS,
+    )
+    if angle:
+        small = small.rotate(angle, resample=Image.Resampling.BICUBIC, expand=True)
+    small.putalpha(small.getchannel("A").point(lambda value: 255 if value >= 128 else 0))
+    if light != 1.0:
+        pixels = small.load()
+        for y in range(small.height):
+            for x in range(small.width):
+                r, g, b, a = pixels[x, y]
+                if a:
+                    pixels[x, y] = (round(r * light), round(g * light), round(b * light), a)
+    image, _draw = canvas()
+    image.alpha_composite(small, ((FRAME - small.width) // 2, (FRAME - small.height) // 2))
+    return image
+
+
 def chamgyeok_frames() -> list[Image.Image]:
-    frames: list[Image.Image] = []
-    for frame in range(8):
-        image, draw = canvas()
-        if frame == 0:
-            outlined_line(draw, [(28, 90), (62, 22)], CREAM, 3)
-            star(draw, (64, 18), 10, CRIMSON_HI)
-        elif frame == 1:
-            outlined_line(draw, [(25, 91), (88, 24)], CRIMSON_HI, 7)
-            star(draw, (91, 21), 8, CREAM)
-        elif 2 <= frame <= 4:
-            end_angles = (-5, 32, 65)
-            end_angle = end_angles[frame - 2]
-            outer = elliptical_sector((20, 64), (103, 57), (18, 10), -65, end_angle)
-            draw.polygon(outer, fill=INK)
-            inner_fill = elliptical_sector((20, 64), (100, 54), (22, 12), -63, end_angle - 2)
-            draw.polygon(inner_fill, fill=CRIMSON_DARK)
-            bright_band = elliptical_sector((20, 64), (97, 51), (70, 37), -61, end_angle - 4)
-            draw.polygon(bright_band, fill=CRIMSON)
-            draw.line(elliptical_sector((20, 64), (95, 49), (95, 49), -59, end_angle - 5)[: max(2, (end_angle + 59) // 3)], fill=CRIMSON_HI, width=2)
-            star(draw, (23, 64), 5 + frame, CREAM if frame == 3 else CRIMSON_HI)
-        else:
-            fragments = (
-                ((72, 18), (103, 30), (98, 35), (68, 24)),
-                ((91, 54), (124, 62), (121, 68), (88, 61)),
-                ((76, 94), (108, 105), (104, 111), (72, 101)),
-                ((42, 112), (64, 119), (59, 123), (38, 117)),
-            )
-            keep = max(1, 8 - frame)
-            for index, fragment in enumerate(fragments[:keep]):
-                shifted = tuple((x + (frame - 5) * (index + 1) * 2, y) for x, y in fragment)
-                draw.polygon(shifted, fill=INK)
-                inset = tuple((x - 1 if x > 64 else x + 1, y) for x, y in shifted)
-                draw.polygon(inset, fill=CRIMSON if frame == 5 else CRIMSON_DARK)
-            for index in range(8 - frame):
-                x = 56 + index * 10 + (frame - 5) * 6
-                y = 30 + (index * 17) % 72
-                draw.rectangle((x, y, x + 3, y + 2), fill=CRIMSON_HI if index % 3 == 0 else CRIMSON)
-        frames.append(image)
-    return frames
+    """A crimson crescent swept through the arc it cuts.
 
-
-def octagon(center: tuple[int, int], radius_x: int, radius_y: int) -> list[tuple[int, int]]:
-    cx, cy = center
+    The sweep IS the rotation: one blade shape turning from the wind-up to the
+    follow-through, growing as it bites and thinning as it leaves. Frame 0 is
+    the flash before contact, so it is small and mostly transparent.
+    """
+    art = skill_render("fx_chamgyeok")
+    spans = (58, 84, 110, 122, 126, 120, 108, 92)
+    angles = (52.0, 34.0, 14.0, -4.0, -22.0, -40.0, -56.0, -70.0)
+    lights = (0.55, 0.8, 1.0, 1.0, 1.0, 0.85, 0.65, 0.45)
     return [
-        (cx - radius_x // 2, cy - radius_y), (cx + radius_x // 2, cy - radius_y),
-        (cx + radius_x, cy - radius_y // 2), (cx + radius_x, cy + radius_y // 2),
-        (cx + radius_x // 2, cy + radius_y), (cx - radius_x // 2, cy + radius_y),
-        (cx - radius_x, cy + radius_y // 2), (cx - radius_x, cy - radius_y // 2),
+        posed(art, spans[index], angles[index], lights[index])
+        for index in range(int(SKILL_SPECS["skill_chamgyeok"]["frames"]))
     ]
 
 
 def cheolbyeok_frames() -> list[Image.Image]:
-    widths = (8, 17, 27, 36, 42, 42)
-    heights = (5, 11, 18, 25, 29, 29)
-    centers_y = (96, 91, 86, 81, 77, 77)
-    frames: list[Image.Image] = []
-    for frame in range(6):
-        image, draw = canvas()
-        center = (64, centers_y[frame])
-        rx, ry = widths[frame], heights[frame]
-        draw.polygon(octagon(center, rx + 3, ry + 3), fill=INK)
-        draw.polygon(octagon(center, rx + 1, ry + 1), fill=STEEL_DARK)
-        draw.polygon(octagon(center, max(1, rx - 5), max(1, ry - 4)), fill=STEEL if frame < 5 else STEEL_HI)
-        if frame >= 2:
-            inner = octagon(center, max(1, rx - 11), max(1, ry - 9))
-            draw.polygon(inner, fill=INK)
-            inner_cut = octagon(center, max(1, rx - 14), max(1, ry - 12))
-            draw.polygon(inner_cut, fill=(0, 0, 0, 0))
-            plate_color = CRIMSON if frame < 5 else CRIMSON_HI
-            draw.rectangle((61, center[1] - ry - 1, 67, center[1] - ry + 3), fill=plate_color)
-            draw.rectangle((61, center[1] + ry - 3, 67, center[1] + ry + 1), fill=plate_color)
-            draw.rectangle((center[0] - rx - 1, center[1] - 2, center[0] - rx + 3, center[1] + 2), fill=plate_color)
-            draw.rectangle((center[0] + rx - 3, center[1] - 2, center[0] + rx + 1, center[1] + 2), fill=plate_color)
-        spark_count = min(5, frame + 1)
-        for index in range(spark_count):
-            x = 39 + index * 13 + (frame % 2) * 3
-            y = 66 - ((index * 11 + frame * 7) % 34)
-            star(draw, (x, y), 2 + (1 if frame >= 4 and index % 2 == 0 else 0), CRIMSON_HI)
-        if frame == 5:
-            draw.line(octagon(center, rx - 1, ry - 1) + [octagon(center, rx - 1, ry - 1)[0]], fill=STEEL_HI, width=2)
-        frames.append(image)
-    return frames
+    """An iron ring rising to the guard and holding there.
+
+    It never rotates: a spinning ring reads as a projectile, and this is a
+    stance. The last two frames are the held pose the buff sits in.
+    """
+    art = skill_render("fx_cheolbyeok")
+    spans = (44, 72, 96, 112, 118, 118)
+    lights = (0.5, 0.7, 0.9, 1.0, 1.0, 1.0)
+    return [
+        posed(art, spans[index], 0.0, lights[index])
+        for index in range(int(SKILL_SPECS["skill_cheolbyeok"]["frames"]))
+    ]
 
 
 def split_frames(sheet: Image.Image) -> list[Image.Image]:
