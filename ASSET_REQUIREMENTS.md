@@ -101,6 +101,20 @@ Fallback:  PlaceholderArt rect (a missing texture never blocks a feature)
 ```
 
 ```
+[MISSING] 삼두구미 sprite set (N10-3a)
+Size:      64px logical frame, figure ~58px drawn — an elite, between the
+           rusted armour (50) and the boss (86). Canvas = logical x 16, drawn
+           on a grid ~3x finer than the logical one, like the night-2 set.
+Members:   res://asset/monsters/samdugumi/idle.png (+ walk.png, 4 frames min)
+Used by:   data/monsters.json "samdugumi", ruined_village wave at 5:00
+Reference: 제주 전승의 무덤을 파먹는 괴물. 머리 셋, 꼬리 아홉, 그리고 제 다리를
+           떼어내 부린다. 세 부위(머리·꼬리·다리)가 각각 부서지는 것이 이 싸움의
+           규칙이므로 셋이 실루엣에서 따로 읽혀야 한다 — 부위별 파괴 상태 그림이
+           있으면 더 좋지만, 없으면 본체 한 장으로 시작한다.
+Fallback:  PlaceholderArt rect (a missing texture never blocks a feature)
+```
+
+```
 [MISSING] 체 (hung sieve) prop (N10-1b)
 Size:      18x22 px, drawn 1x like every other prop texture
 Members:   res://asset/stages/bamboo_forest/props/hung_sieve.png
