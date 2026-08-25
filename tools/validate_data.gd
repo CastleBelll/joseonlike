@@ -53,7 +53,7 @@ const PROP_FIELD_FIELDS: Array[String] = [
 ]
 const PROP_ALLOWED_KEYS: Array[String] = [
 	"size", "collision", "solid", "weight", "shape", "texture", "placeholder",
-	"breakable", "light_radius_px", "flame"
+	"breakable", "light_radius_px", "flame", "sieve_radius_px"
 ]
 const PROP_SHAPES: Array[String] = ["rect", "round"]
 # N4-1 loot contract (data/loot.json, drop_tables.json, weapon_mods.json).
@@ -992,8 +992,14 @@ func _check_props() -> void:
 			if prop.get("breakable") is not Dictionary \
 					or float((prop.get("breakable") as Dictionary).get("hp", 0.0)) <= 0.0:
 				_fail(label + ".breakable.hp missing or not positive")
-		if not String(prop.get("texture", "")).begins_with("res://"):
-			_fail(label + ".texture must be a res:// path")
+		# CLAUDE.md §5: a missing texture never blocks a gameplay feature, and
+		# StageField already falls back to the palette shape. So a prop may ship
+		# without art AS LONG AS it names the placeholder that stands in for it —
+		# what stays banned is a texture key that is not a resource path, and a
+		# prop with neither, which would draw as untinted ink.
+		if prop.has("texture") or not prop.has("placeholder"):
+			if not String(prop.get("texture", "")).begins_with("res://"):
+				_fail(label + ".texture must be a res:// path")
 		if not StageField.PLACEHOLDER_COLORS.has(String(prop.get("placeholder", ""))):
 			_fail(label + ".placeholder not a known palette token")
 		var size: Array = prop.get("size", [])

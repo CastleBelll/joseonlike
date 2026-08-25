@@ -76,6 +76,17 @@ static func thief_takes(distance: float, grab_px: float) -> bool:
 	return grab_px > 0.0 and distance <= grab_px
 
 
+## 체 (N10-1b): standing inside a hung sieve, counting its holes until dawn.
+## Radius is per-sieve because a prop declares its own reach, and a sieve with
+## no radius holds nothing — the same rule the lights use.
+static func thief_stalled(at: Vector2, sieves: Array[Dictionary]) -> bool:
+	for sieve: Dictionary in sieves:
+		var radius: float = float(sieve.get("radius", 0.0))
+		if radius > 0.0 and at.distance_to(sieve.get("position", Vector2.ZERO)) <= radius:
+			return true
+	return false
+
+
 ## Far enough away that the chase is over and the loot is gone for good. The
 ## player's own distance is what counts, not the field's: a thief that runs
 ## past the screen edge while the player is still on its heels has not escaped.

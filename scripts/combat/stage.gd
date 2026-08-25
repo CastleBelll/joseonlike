@@ -1756,6 +1756,13 @@ func _tick_thieves() -> void:
 		loot.append(pickup.global_position)
 	for thief: Enemy in thieves:
 		var theft: Dictionary = thief.theft_config()
+		# 체 (N10-1b): the folklore's own answer. Inside one, the thief stops to
+		# count holes — long enough to be caught, or to give the loot back if it
+		# is already carrying. This runs BEFORE the escape check, so a thief
+		# held at the edge of its escape distance never slips out of the radius.
+		thief.stalled = CombatMath.thief_stalled(thief.global_position, _field.sieves)
+		if thief.stalled:
+			continue
 		var from_player: float = thief.global_position.distance_to(_player.global_position)
 		if not thief.carried_passive.is_empty():
 			if CombatMath.thief_escaped(from_player, float(theft.get("escape_px", 0.0))):

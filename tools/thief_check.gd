@@ -31,11 +31,17 @@ var _failures: PackedStringArray = []
 var _escape_mode: bool = false
 var _carried_id: String = ""
 var _probe_log: int = 1
+var _sieve_mode: bool = false
+var _sieve_at := Vector2.ZERO
+## _process keeps firing while a step's await is suspended — this gate stops a
+## waiting step from being re-entered every frame.
+var _busy: bool = false
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_escape_mode = OS.get_cmdline_user_args().has("--escape")
+	_sieve_mode = OS.get_cmdline_user_args().has("--sieve")
 	_stage = (load(STAGE_SCENE) as PackedScene).instantiate()
 	add_child(_stage)
 
@@ -75,7 +81,9 @@ func _process(delta: float) -> void:
 		2:
 			_watch_flight()
 		3:
-			if _escape_mode:
+			if _sieve_mode:
+				_watch_sieve()
+			elif _escape_mode:
 				_watch_escape()
 			else:
 				_kill_and_check_drop()
@@ -102,6 +110,12 @@ func _place_scene() -> void:
 		_finish()
 		return
 	_thief.global_position = loot.global_position + Vector2(110.0, 0.0)
+	if _sieve_mode:
+		# A sieve hung right where the thief will run, so the probe does not
+		# depend on the field happening to scatter one along the escape path.
+		_sieve_at = _thief.global_position + Vector2(180.0, 0.0)
+		var field: StageField = _stage.get("_field")
+		field.sieves.append({"position": _sieve_at, "radius": 150.0})
 	_phase = 1
 
 
@@ -171,6 +185,36 @@ func _watch_escape() -> void:
 		])
 	if _elapsed > ESCAPE_TIMEOUT_SEC:
 		_fail("the thief never got away even with the player fleeing")
+		_finish()
+
+
+## 체: the thief runs into the sieve radius and stops there, still holding what
+## it took — which is what gives the player time to catch up.
+func _watch_sieve() -> void:
+	if _busy:
+		return
+	if not is_instance_valid(_thief) or _thief.carried_passive.is_empty():
+		_fail("the thief left with the loot instead of stopping at the sieve")
+		_finish()
+		return
+	if _thief.stalled:
+		_busy = true
+		var held: float = _thief.global_position.distance_to(_sieve_at)
+		print("THIEF CHECK sieve: stopped %.0fpx from the sieve, still holding '%s'" % [
+			held, _thief.carried_passive
+		])
+		if held > 150.0:
+			_fail("the thief stalled outside the sieve radius")
+		# Held means held: a second look after a beat must find it in the same
+		# place, or "stalled" is just a flicker.
+		var was: Vector2 = _thief.global_position
+		await get_tree().create_timer(0.6).timeout
+		if _thief.global_position.distance_to(was) > 2.0:
+			_fail("the thief kept moving while stalled")
+		_finish()
+		return
+	if _elapsed > ESCAPE_TIMEOUT_SEC:
+		_fail("the thief never reached the sieve")
 		_finish()
 
 

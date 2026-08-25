@@ -139,6 +139,12 @@ var _spent: bool = false
 var is_thief: bool = false
 var carried_passive: String = ""
 var theft_goal := Vector2(NAN, NAN)
+## N10-1b: standing inside a 체 (sieve), counting its holes. The stage sets it
+## because the stage is what knows where the sieves are; the enemy only has to
+## stop. Kept separate from `_stun_left` — a stun is something a weapon did and
+## it ticks away, while this holds for exactly as long as the thief is in the
+## radius, and refreshing a stun every frame would fight the weapon that owns it.
+var stalled: bool = false
 var _theft: Dictionary = {}
 
 # N10-1a 그슨대: the shadow contract. `shadow_config` empty = an ordinary
@@ -212,6 +218,7 @@ func setup(
 	_theft = stats.get("theft", {})
 	carried_passive = ""
 	theft_goal = Vector2(NAN, NAN)
+	stalled = false
 	is_elite = bool(stats.get("is_elite", false))
 	_size_scale = float(stats.get("size_scale", 1.0))
 	_flash_left = 0.0
@@ -324,7 +331,7 @@ func _physics_process(delta: float) -> void:
 			desired = CombatMath.chase_direction(global_position, theft_goal)
 	var steer: Vector2 = CombatMath.avoid_direction(desired, _block_normal, _avoid_sign)
 	# Stunned (진언, N4-4b): the chase stops dead; only knockback still moves it.
-	if _stun_left > 0.0 or _shadow_leashed or _fuse_lit:
+	if _stun_left > 0.0 or _shadow_leashed or _fuse_lit or stalled:
 		speed = 0.0
 	velocity = Separation.blended_direction(steer, separation_push) * speed + _knockback
 	move_and_slide()

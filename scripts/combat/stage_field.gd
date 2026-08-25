@@ -252,6 +252,11 @@ var breakables: Array[Breakable] = []
 ## array, so a shadow monster sees lights in newly generated ground too.
 var lights: Array[Dictionary] = []
 
+## N10-1b: every placed prop carrying `sieve_radius_px`, in the same shape as
+## `lights`. 야광귀 stops inside one to count its holes, which is the folklore's
+## own answer to the thief and the only counterplay that is not "kill it".
+var sieves: Array[Dictionary] = []
+
 
 ## N9-6 infinite field: the world grows chunk by chunk as the player travels.
 ## Chunk placements are seeded per (field_seed, chunk coordinate), so a run's
@@ -334,6 +339,9 @@ func _instantiate(
 	for placement: Dictionary in placements:
 		var prop: Dictionary = catalog[placement["id"]]
 		var pos: Vector2 = placement["position"]
+		var sieve_radius: float = float(prop.get("sieve_radius_px", 0.0))
+		if sieve_radius > 0.0:
+			sieves.append({"position": pos, "radius": sieve_radius})
 		var light_radius: float = float(prop.get("light_radius_px", 0.0))
 		if light_radius > 0.0:
 			lights.append({"position": pos, "radius": light_radius})

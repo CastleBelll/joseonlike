@@ -36,7 +36,8 @@
      "stone_marker": 2.0,
      "rock_small": 1.0,
      "pebbles": 4.0,
-     "grass_tuft": 3.0
+     "grass_tuft": 3.0,
+     "hung_sieve": 1.0
     }
    },
    {
@@ -50,7 +51,8 @@
      "rock_small": 2.0,
      "rock_large": 1.5,
      "pebbles": 3.0,
-     "grass_tuft": 2.0
+     "grass_tuft": 2.0,
+     "hung_sieve": 1.0
     }
    },
    {
@@ -323,6 +325,23 @@
    "breakable": {
     "hp": 1.0
    }
+  },
+  "hung_sieve": {
+   "size": [
+    18.0,
+    22.0
+   ],
+   "collision": [
+    -6.0,
+    -8.0,
+    12.0,
+    8.0
+   ],
+   "solid": true,
+   "weight": 1.0,
+   "shape": "round",
+   "placeholder": "shrine",
+   "sieve_radius_px": 150.0
   }
  }
 }

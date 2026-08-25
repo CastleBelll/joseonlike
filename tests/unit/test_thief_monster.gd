@@ -118,3 +118,43 @@ func test_the_thief_arrives_rarely_in_the_ruined_village() -> bool:
 		push_error("test_thief_monster: no stage ever spawns the thief")
 		passed = false
 	return passed
+
+
+## 체 (N10-1b): a sieve is a full stop, and the boundary is the radius itself.
+func test_a_sieve_holds_the_thief_at_its_edge() -> bool:
+	var sieves: Array[Dictionary] = [
+		{"position": Vector2(200.0, 0.0), "radius": 150.0},
+		{"position": Vector2(-800.0, 0.0), "radius": 0.0},
+	]
+	var passed: bool = (
+		CombatMath.thief_stalled(Vector2(200.0, 0.0), sieves)
+		and CombatMath.thief_stalled(Vector2(350.0, 0.0), sieves)
+		and not CombatMath.thief_stalled(Vector2(351.0, 0.0), sieves)
+		# A sieve with no radius holds nothing, the same rule the lights use.
+		and not CombatMath.thief_stalled(Vector2(-800.0, 0.0), sieves)
+		and not CombatMath.thief_stalled(Vector2.ZERO, [])
+	)
+	if not passed:
+		push_error("test_thief_monster: the sieve boundary is wrong")
+	return passed
+
+
+## The counterplay has to be reachable: a sieve that no theme ever places is a
+## rule the player can never use.
+func test_some_theme_actually_places_a_sieve() -> bool:
+	var props: Dictionary = _load("res://data/props.json")
+	var catalog: Dictionary = props.get("props", {})
+	var sieve_ids: Array[String] = []
+	for prop_id: String in catalog:
+		if float((catalog[prop_id] as Dictionary).get("sieve_radius_px", 0.0)) > 0.0:
+			sieve_ids.append(prop_id)
+	if sieve_ids.is_empty():
+		push_error("test_thief_monster: no prop declares sieve_radius_px")
+		return false
+	var themes: Array = props.get("field", {}).get("themes", [])
+	for theme: Variant in themes:
+		for prop_id: String in sieve_ids:
+			if (theme as Dictionary).get("props", {}).has(prop_id):
+				return true
+	push_error("test_thief_monster: a sieve exists but no theme ever places one")
+	return false
