@@ -304,7 +304,7 @@
   "speed": 50.0,
   "xp_drop": 3,
   "behaviour": "chase",
-  "collision_radius": 13.0,
+  "collision_radius": 10.0,
   "sprite": "res://asset/monsters/ash_wraith"
  },
  "cursed_hound": {

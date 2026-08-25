@@ -10,7 +10,10 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "asset" / "effect"
 FRAME = 128
-LOGICAL_EFFECT_FRAME = 64
+SKILL_SPECS = {
+    "skill_chamgyeok": {"grid": 75, "scale": 2, "frames": 8, "logical_px": 150},
+    "skill_cheolbyeok": {"grid": 48, "scale": 2, "frames": 6, "logical_px": 96},
+}
 
 INK = (14, 12, 15, 255)
 BRASS_DARK = (91, 67, 36, 255)
@@ -36,17 +39,60 @@ def canvas() -> tuple[Image.Image, ImageDraw.ImageDraw]:
     return image, ImageDraw.Draw(image)
 
 
-def save_sheet(name: str, frames: list[Image.Image]) -> Image.Image:
-    sheet = Image.new("RGBA", (FRAME * len(frames), FRAME))
-    for index, frame in enumerate(frames):
-        if name.startswith("skill_"):
-            # Warrior actives are authored on the 64px gameplay grid, then
-            # enlarged exactly x2. This intentionally discards sub-grid detail.
-            logical = frame.resize(
-                (LOGICAL_EFFECT_FRAME, LOGICAL_EFFECT_FRAME), Image.Resampling.NEAREST
+def effect_cel_shade(image: Image.Image, seed: int) -> Image.Image:
+    """Add hard core/mid/rim bands without creating sub-grid pixels."""
+    source = image.copy()
+    output = image.copy()
+    source_pixels = source.load()
+    output_pixels = output.load()
+    offsets = (-24, -12, 0, 12, 24)
+
+    def same_material(x: int, y: int, color: tuple[int, int, int, int]) -> bool:
+        return 0 <= x < image.width and 0 <= y < image.height and source_pixels[x, y] == color
+
+    for y in range(image.height):
+        for x in range(image.width):
+            color = source_pixels[x, y]
+            if color[3] == 0 or color == INK:
+                continue
+            lit_edge = not same_material(x - 1, y, color) or not same_material(x, y - 1, color)
+            dark_edge = not same_material(x + 1, y, color) or not same_material(x, y + 1, color)
+            if lit_edge and not dark_edge:
+                tone = 4
+            elif dark_edge and not lit_edge:
+                tone = 0
+            else:
+                # A positional ramp inside the fill tiles a 5x6 plaid across the
+                # arc, which at display size reads as fabric rather than light.
+                # The interior is one tone; the edge bands are what shape it.
+                tone = 2
+            delta = offsets[tone]
+            output_pixels[x, y] = (
+                max(0, min(255, color[0] + delta)),
+                max(0, min(255, color[1] + delta)),
+                max(0, min(255, color[2] + delta)),
+                color[3],
             )
-            frame = logical.resize((FRAME, FRAME), Image.Resampling.NEAREST)
-        sheet.alpha_composite(frame, (index * FRAME, 0))
+    return output
+
+
+def save_sheet(name: str, frames: list[Image.Image]) -> Image.Image:
+    processed: list[Image.Image] = []
+    for index, frame in enumerate(frames):
+        if name in SKILL_SPECS:
+            spec = SKILL_SPECS[name]
+            grid = int(spec["grid"])
+            scale = int(spec["scale"])
+            logical = frame.resize((grid, grid), Image.Resampling.NEAREST)
+            logical = effect_cel_shade(logical, index + (7 if name == "skill_chamgyeok" else 19))
+            frame = logical.resize((grid * scale, grid * scale), Image.Resampling.NEAREST)
+        processed.append(frame)
+    cell = processed[0].height
+    if any(frame.size != (cell, cell) for frame in processed):
+        raise ValueError(f"{name}: frames are not uniformly square")
+    sheet = Image.new("RGBA", (cell * len(processed), cell))
+    for index, frame in enumerate(processed):
+        sheet.alpha_composite(frame, (index * cell, 0))
     sheet.save(OUT / f"{name}.png", optimize=True)
     return sheet
 
@@ -287,7 +333,8 @@ def cheolbyeok_frames() -> list[Image.Image]:
 
 
 def split_frames(sheet: Image.Image) -> list[Image.Image]:
-    return [sheet.crop((index * FRAME, 0, (index + 1) * FRAME, FRAME)) for index in range(sheet.width // FRAME)]
+    cell = sheet.height
+    return [sheet.crop((index * cell, 0, (index + 1) * cell, cell)) for index in range(sheet.width // cell)]
 
 
 def peak_frame(sheet: Image.Image) -> Image.Image:
@@ -296,6 +343,8 @@ def peak_frame(sheet: Image.Image) -> Image.Image:
 
 
 def silhouette_iou(left: Image.Image, right: Image.Image) -> float:
+    if right.size != left.size:
+        right = right.resize(left.size, Image.Resampling.NEAREST)
     left_alpha = left.getchannel("A")
     right_alpha = right.getchannel("A")
     intersection = 0
@@ -329,18 +378,19 @@ def make_comparison(sheets: dict[str, Image.Image], cheolbyeok: Image.Image) -> 
         x = index * cell_width + (cell_width - display_px) // 2
         y = 6 + (150 - display_px) // 2
         image.paste(frame, (x, y), frame)
-        draw.text((index * cell_width + 8, 160), label, fill=(196, 202, 202), font=font)
+        visible_colors = len({pixel for pixel in frame.get_flattened_data() if pixel[3] > 0})
+        draw.text((index * cell_width + 8, 160), f"{label} {display_px}px/{visible_colors}c", fill=(196, 202, 202), font=font)
         if index:
             draw.line((index * cell_width, 4, index * cell_width, top_height - 5), fill=(37, 42, 45))
 
-    draw.text((12, 190), "CHEOLBYEOK: 6 FRAMES AT 96PX, FIXED OCTAGON", fill=(196, 202, 202), font=font)
+    cheol_colors = len({pixel for pixel in cheolbyeok.get_flattened_data() if pixel[3] > 0})
+    draw.text((12, 190), f"CHEOLBYEOK: 6 FRAMES AT 96PX, FIXED OCTAGON, {cheol_colors}c", fill=(196, 202, 202), font=font)
     for index, frame in enumerate(split_frames(cheolbyeok)):
         display = frame.resize((96, 96), Image.Resampling.NEAREST)
         x = 34 + index * 132
         image.paste(display, (x, 216), display)
-    comparison = image.quantize(colors=32, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert("RGB")
     path = OUT / "weapon-effect-comparison.png"
-    comparison.save(path, optimize=True)
+    image.save(path, optimize=True)
     return path
 
 
@@ -348,8 +398,8 @@ def validate(sheets: dict[str, Image.Image]) -> None:
     expected = {
         "swing_seokjang": (1024, 128),
         "swing_ghost_staff": (1024, 128),
-        "skill_chamgyeok": (1024, 128),
-        "skill_cheolbyeok": (768, 128),
+        "skill_chamgyeok": (1200, 150),
+        "skill_cheolbyeok": (576, 96),
     }
     for name, sheet in sheets.items():
         if sheet.size != expected[name]:
@@ -359,20 +409,27 @@ def validate(sheets: dict[str, Image.Image]) -> None:
         colors = Counter(sheet.get_flattened_data())
         if len(colors) > 64:
             raise ValueError(f"{name} uses {len(colors)} RGBA colors")
+        visible_colors = {color for color in colors if color[3] > 0}
+        if name in SKILL_SPECS and len(visible_colors) < 12:
+            raise ValueError(f"{name} uses only {len(visible_colors)} visible colors")
         if any(frame.getchannel("A").getbbox() is None for frame in split_frames(sheet)):
             raise ValueError(f"{name} has an empty animation frame")
-        if name.startswith("skill_"):
-            logical = sheet.resize(
-                (sheet.width // 2, sheet.height // 2), Image.Resampling.NEAREST
-            )
+        if name in SKILL_SPECS:
+            spec = SKILL_SPECS[name]
+            grid = int(spec["grid"])
+            frame_count = int(spec["frames"])
+            logical_px = int(spec["logical_px"])
+            if sheet.height != logical_px:
+                raise ValueError(f"{name} cell {sheet.height}px does not match logical_px {logical_px}")
+            logical = sheet.resize((grid * frame_count, grid), Image.Resampling.NEAREST)
             restored = logical.resize(sheet.size, Image.Resampling.NEAREST)
             different = sum(
                 left != right
                 for left, right in zip(sheet.get_flattened_data(), restored.get_flattened_data())
             )
             percent = different / float(sheet.width * sheet.height) * 100.0
-            if percent >= 2.0:
-                raise ValueError(f"{name} logical-grid roundtrip differs by {percent:.4f}%")
+            if different:
+                raise ValueError(f"{name} logical-grid roundtrip differs by {different} px ({percent:.4f}%)")
 
     sword_names = ("swing_sword.png", "swing_twin_sword.png", "swing_sharp_sword.png", "swing_ghost_sword.png", "swing_flame_sword.png")
     sword_peaks = [peak_frame(Image.open(OUT / name).convert("RGBA")) for name in sword_names]
@@ -406,12 +463,16 @@ def main() -> None:
     staff_peaks = [peak_frame(sheets["swing_seokjang"]), peak_frame(sheets["swing_ghost_staff"])]
     for name, sheet in sheets.items():
         detail = ""
-        if name.startswith("skill_"):
-            logical = sheet.resize((sheet.width // 2, sheet.height // 2), Image.Resampling.NEAREST)
+        visible_colors = len({color for color in sheet.get_flattened_data() if color[3] > 0})
+        if name in SKILL_SPECS:
+            spec = SKILL_SPECS[name]
+            grid = int(spec["grid"])
+            frame_count = int(spec["frames"])
+            logical = sheet.resize((grid * frame_count, grid), Image.Resampling.NEAREST)
             restored = logical.resize(sheet.size, Image.Resampling.NEAREST)
             different = sum(left != right for left, right in zip(sheet.get_flattened_data(), restored.get_flattened_data()))
-            detail = f", 64x64 x2 roundtrip {different} px ({different / float(sheet.width * sheet.height) * 100.0:.6f}%)"
-        print(f"{name}: {sheet.width}x{sheet.height}, {len(set(sheet.get_flattened_data()))} RGBA colors, binary alpha{detail}")
+            detail = f", {grid}x{grid} x2 roundtrip {different} px ({different / float(sheet.width * sheet.height) * 100.0:.6f}%)"
+        print(f"{name}: {sheet.width}x{sheet.height}, {visible_colors} visible colors, binary alpha{detail}")
     print("staff/sword peak silhouette max IoU: %.4f" % max(silhouette_iou(staff, sword) for staff in staff_peaks for sword in sword_peaks))
     print("chamgyeok/weapon peak silhouette max IoU: %.4f" % max(silhouette_iou(peak_frame(sheets["skill_chamgyeok"]), weapon) for weapon in sword_peaks + staff_peaks))
     print(f"comparison: {comparison_path.as_posix()}")

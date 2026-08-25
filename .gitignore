@@ -49,3 +49,4 @@ new_asset/owner/
 # itch.io hand-upload artifacts, built locally on demand
 joseonlike_web.zip
 itch_assets/
+__pycache__/
