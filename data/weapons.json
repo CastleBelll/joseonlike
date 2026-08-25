@@ -1243,7 +1243,8 @@
      "dps": 2.0
     }
    }
-  }
+  },
+  "travel_frames": 4
  },
  "gwisal": {
   "name_ko": "귀살",
@@ -1309,7 +1310,8 @@
      "dps": 2.5
     }
    }
-  }
+  },
+  "travel_frames": 4
  },
  "sword": {
   "name_ko": "환도",
