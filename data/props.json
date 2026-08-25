@@ -1,486 +1,328 @@
 {
-  "field": {
-    "width_px": 2048.0,
-    "height_px": 2048.0,
-    "edge_margin_px": 64.0,
-    "solid_count": 40,
-    "decor_count": 48,
-    "cluster_count": 9,
-    "cluster_radius_px": 170.0,
-    "cluster_min_gap_px": 420.0,
-    "min_gap_px": 60.0,
-    "spawn_clear_radius_px": 170.0,
-    "max_attempts_per_prop": 24,
-    "themes": [
-      {
-        "id": "grove",
-        "name_ko": "대숲",
-        "weight": 5.0,
-        "props": {
-          "bamboo_clump_small": 5.0,
-          "bamboo_clump_large": 2.0,
-          "fallen_log": 1.5,
-          "rock_small": 1.0,
-          "fern": 3.0,
-          "grass_tuft": 6.0,
-          "pebbles": 1.0
-        }
-      },
-      {
-        "id": "wayside",
-        "name_ko": "길가 서낭",
-        "weight": 2.0,
-        "props": {
-          "stone_lantern": 2.0,
-          "shrine_post": 1.5,
-          "stone_marker": 2.0,
-          "rock_small": 1.0,
-          "pebbles": 4.0,
-          "grass_tuft": 3.0
-        }
-      },
-      {
-        "id": "camp",
-        "name_ko": "야영터",
-        "weight": 1.5,
-        "props": {
-          "campfire": 2.0,
-          "anvil": 1.0,
-          "fallen_log": 2.0,
-          "rock_small": 2.0,
-          "rock_large": 1.5,
-          "pebbles": 3.0,
-          "grass_tuft": 2.0
-        }
-      },
-      {
-        "id": "waterside",
-        "name_ko": "물가",
-        "weight": 2.0,
-        "props": {
-          "rock_large": 2.0,
-          "rock_small": 2.0,
-          "bamboo_clump_small": 1.5,
-          "water_puddle": 4.0,
-          "fern": 3.0,
-          "fog_wisp": 2.0,
-          "grass_tuft": 2.0
-        }
-      },
-      {
-        "id": "ruin",
-        "name_ko": "무너진 집터",
-        "weight": 2.5,
-        "props": {
-          "collapsed_roof": 3.0,
-          "broken_wall": 3.0,
-          "burnt_beam": 2.0,
-          "broken_jar": 4.0,
-          "ash_pile": 2.0
-        }
-      },
-      {
-        "id": "ashfield",
-        "name_ko": "잿더미 마당",
-        "weight": 2.0,
-        "props": {
-          "charred_stump": 2.0,
-          "burnt_beam": 1.0,
-          "ash_pile": 5.0,
-          "ember_glow": 2.0,
-          "broken_jar": 1.0
-        }
-      },
-      {
-        "id": "ruined_wayside",
-        "name_ko": "폐촌 길섶",
-        "weight": 1.5,
-        "props": {
-          "broken_wall": 2.0,
-          "charred_stump": 1.0,
-          "scorched_post": 2.0,
-          "broken_jar": 3.0,
-          "ash_pile": 2.0,
-          "ember_glow": 1.0
-        }
-      }
-    ]
-  },
-  "props": {
-    "bamboo_clump_small": {
-      "size": [
-        24.0,
-        40.0
-      ],
-      "collision": [
-        -8.0,
-        -14.0,
-        16.0,
-        14.0
-      ],
-      "solid": true,
-      "weight": 5.0,
-      "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/props/bamboo_clump_small.png",
-      "placeholder": "bamboo",
-      "breakable": {
-        "hp": 1.0
-      }
-    },
-    "bamboo_clump_large": {
-      "size": [
-        40.0,
-        56.0
-      ],
-      "collision": [
-        -13.0,
-        -18.0,
-        26.0,
-        18.0
-      ],
-      "solid": true,
-      "weight": 2.0,
-      "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/props/bamboo_clump_large.png",
-      "placeholder": "bamboo"
-    },
-    "rock_small": {
-      "size": [
-        20.0,
-        16.0
-      ],
-      "collision": [
-        -8.0,
-        -12.0,
-        16.0,
-        12.0
-      ],
-      "solid": true,
-      "weight": 3.0,
-      "shape": "round",
-      "texture": "res://asset/stages/bamboo_forest/props/rock_small.png",
-      "placeholder": "rock",
-      "breakable": {
-        "hp": 1.0
-      }
-    },
-    "rock_large": {
-      "size": [
-        32.0,
-        26.0
-      ],
-      "collision": [
-        -12.0,
-        -18.0,
-        24.0,
-        18.0
-      ],
-      "solid": true,
-      "weight": 1.5,
-      "shape": "round",
-      "texture": "res://asset/stages/bamboo_forest/props/rock_large.png",
-      "placeholder": "rock"
-    },
-    "water_puddle": {
-      "size": [
-        40.0,
-        28.0
-      ],
-      "solid": false,
-      "weight": 1.5,
-      "shape": "round",
-      "texture": "res://asset/stages/bamboo_forest/props/water_puddle.png",
-      "placeholder": "water"
-    },
-    "fallen_log": {
-      "size": [
-        48.0,
-        20.0
-      ],
-      "collision": [
-        -20.0,
-        -12.0,
-        40.0,
-        12.0
-      ],
-      "solid": true,
-      "weight": 1.5,
-      "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/props/fallen_log.png",
-      "placeholder": "log",
-      "breakable": {
-        "hp": 1.0
-      }
-    },
-    "stone_lantern": {
-      "size": [
-        20.0,
-        36.0
-      ],
-      "collision": [
-        -6.0,
-        -14.0,
-        12.0,
-        14.0
-      ],
-      "solid": true,
-      "weight": 1.5,
-      "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/props/stone_lantern.png",
-      "placeholder": "lantern",
-      "light_radius_px": 170.0,
-      "flame": {
-        "sprite": "res://asset/stages/bamboo_forest/props/prop_flame.png",
-        "height_px": 8.0,
-        "offset": [
-          0.0,
-          -22.0
-        ],
-        "fps": 10.0
-      }
-    },
-    "shrine_post": {
-      "size": [
-        16.0,
-        40.0
-      ],
-      "collision": [
-        -5.0,
-        -12.0,
-        10.0,
-        12.0
-      ],
-      "solid": true,
-      "weight": 0.5,
-      "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/props/shrine_post.png",
-      "placeholder": "shrine"
-    },
-    "grass_tuft": {
-      "size": [
-        12.0,
-        10.0
-      ],
-      "solid": false,
-      "weight": 6.0,
-      "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/decor/grass_tuft.png",
-      "placeholder": "grass"
-    },
-    "fern": {
-      "size": [
-        16.0,
-        14.0
-      ],
-      "solid": false,
-      "weight": 3.0,
-      "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/decor/fern.png",
-      "placeholder": "fern"
-    },
-    "pebbles": {
-      "size": [
-        14.0,
-        8.0
-      ],
-      "solid": false,
-      "weight": 3.0,
-      "shape": "round",
-      "texture": "res://asset/stages/bamboo_forest/decor/pebbles.png",
-      "placeholder": "pebble"
-    },
-    "fog_wisp": {
-      "size": [
-        48.0,
-        24.0
-      ],
-      "solid": false,
-      "weight": 1.0,
-      "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/decor/fog_wisp.png",
-      "placeholder": "fog"
-    },
-    "campfire": {
-      "size": [
-        40.0,
-        40.0
-      ],
-      "collision": [
-        -10.0,
-        -12.0,
-        20.0,
-        12.0
-      ],
-      "solid": true,
-      "weight": 1.5,
-      "shape": "round",
-      "texture": "res://asset/stages/bamboo_forest/props/campfire.png",
-      "placeholder": "rock",
-      "breakable": {
-        "hp": 1.0
-      },
-      "light_radius_px": 200.0
-    },
-    "anvil": {
-      "size": [
-        36.0,
-        36.0
-      ],
-      "collision": [
-        -12.0,
-        -12.0,
-        24.0,
-        12.0
-      ],
-      "solid": true,
-      "weight": 1.5,
-      "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/props/anvil.png",
-      "placeholder": "rock",
-      "breakable": {
-        "hp": 1.0
-      }
-    },
-    "stone_marker": {
-      "size": [
-        44.0,
-        44.0
-      ],
-      "collision": [
-        -10.0,
-        -14.0,
-        20.0,
-        14.0
-      ],
-      "solid": true,
-      "weight": 2.0,
-      "shape": "rect",
-      "texture": "res://asset/stages/bamboo_forest/props/stone_marker.png",
-      "placeholder": "rock",
-      "breakable": {
-        "hp": 1.0
-      }
-    },
-    "burnt_beam": {
-      "size": [
-        20.0,
-        16.0
-      ],
-      "collision": [
-        -9.0,
-        -7.0,
-        18.0,
-        7.0
-      ],
-      "solid": true,
-      "weight": 2.0,
-      "shape": "rect",
-      "texture": "res://asset/stages/ruined_village/props/burnt_beam.png",
-      "placeholder": "log",
-      "breakable": {
-        "hp": 1.0
-      }
-    },
-    "collapsed_roof": {
-      "size": [
-        24.0,
-        18.0
-      ],
-      "collision": [
-        -10.0,
-        -9.0,
-        20.0,
-        9.0
-      ],
-      "solid": true,
-      "weight": 1.5,
-      "shape": "rect",
-      "texture": "res://asset/stages/ruined_village/props/collapsed_roof.png",
-      "placeholder": "rock"
-    },
-    "broken_wall": {
-      "size": [
-        20.0,
-        16.0
-      ],
-      "collision": [
-        -8.0,
-        -10.0,
-        16.0,
-        10.0
-      ],
-      "solid": true,
-      "weight": 2.0,
-      "shape": "rect",
-      "texture": "res://asset/stages/ruined_village/props/broken_wall.png",
-      "placeholder": "rock",
-      "breakable": {
-        "hp": 2.0
-      }
-    },
-    "charred_stump": {
-      "size": [
-        16.0,
-        16.0
-      ],
-      "collision": [
-        -6.0,
-        -7.0,
-        12.0,
-        7.0
-      ],
-      "solid": true,
-      "weight": 1.5,
-      "shape": "round",
-      "texture": "res://asset/stages/ruined_village/props/charred_stump.png",
-      "placeholder": "log",
-      "breakable": {
-        "hp": 1.0
-      }
-    },
-    "ash_pile": {
-      "size": [
-        16.0,
-        10.0
-      ],
-      "solid": false,
-      "weight": 4.0,
-      "shape": "round",
-      "texture": "res://asset/stages/ruined_village/props/ash_pile.png",
-      "placeholder": "pebble"
-    },
-    "broken_jar": {
-      "size": [
-        12.0,
-        12.0
-      ],
-      "solid": false,
-      "weight": 3.0,
-      "shape": "round",
-      "texture": "res://asset/stages/ruined_village/props/broken_jar.png",
-      "placeholder": "rock"
-    },
-    "scorched_post": {
-      "size": [
-        16.0,
-        40.0
-      ],
-      "solid": false,
-      "weight": 1.0,
-      "shape": "rect",
-      "texture": "res://asset/stages/ruined_village/props/scorched_post.png",
-      "placeholder": "shrine"
-    },
-    "ember_glow": {
-      "size": [
-        16.0,
-        12.0
-      ],
-      "solid": false,
-      "weight": 1.0,
-      "shape": "round",
-      "texture": "res://asset/stages/ruined_village/props/ember_glow.png",
-      "placeholder": "lantern"
+ "field": {
+  "width_px": 2048.0,
+  "height_px": 2048.0,
+  "edge_margin_px": 64.0,
+  "solid_count": 40,
+  "decor_count": 48,
+  "cluster_count": 9,
+  "cluster_radius_px": 170.0,
+  "cluster_min_gap_px": 420.0,
+  "min_gap_px": 60.0,
+  "spawn_clear_radius_px": 170.0,
+  "max_attempts_per_prop": 24,
+  "themes": [
+   {
+    "id": "grove",
+    "name_ko": "대숲",
+    "weight": 5.0,
+    "props": {
+     "bamboo_clump_small": 5.0,
+     "bamboo_clump_large": 2.0,
+     "fallen_log": 1.5,
+     "rock_small": 1.0,
+     "fern": 3.0,
+     "grass_tuft": 6.0,
+     "pebbles": 1.0
     }
+   },
+   {
+    "id": "wayside",
+    "name_ko": "길가 서낭",
+    "weight": 2.0,
+    "props": {
+     "stone_lantern": 2.0,
+     "shrine_post": 1.5,
+     "stone_marker": 2.0,
+     "rock_small": 1.0,
+     "pebbles": 4.0,
+     "grass_tuft": 3.0
+    }
+   },
+   {
+    "id": "camp",
+    "name_ko": "야영터",
+    "weight": 1.5,
+    "props": {
+     "campfire": 2.0,
+     "anvil": 1.0,
+     "fallen_log": 2.0,
+     "rock_small": 2.0,
+     "rock_large": 1.5,
+     "pebbles": 3.0,
+     "grass_tuft": 2.0
+    }
+   },
+   {
+    "id": "waterside",
+    "name_ko": "물가",
+    "weight": 2.0,
+    "props": {
+     "rock_large": 2.0,
+     "rock_small": 2.0,
+     "bamboo_clump_small": 1.5,
+     "water_puddle": 4.0,
+     "fern": 3.0,
+     "fog_wisp": 2.0,
+     "grass_tuft": 2.0
+    }
+   }
+  ]
+ },
+ "props": {
+  "bamboo_clump_small": {
+   "size": [
+    24.0,
+    40.0
+   ],
+   "collision": [
+    -8.0,
+    -14.0,
+    16.0,
+    14.0
+   ],
+   "solid": true,
+   "weight": 5.0,
+   "shape": "rect",
+   "texture": "res://asset/stages/bamboo_forest/props/bamboo_clump_small.png",
+   "placeholder": "bamboo",
+   "breakable": {
+    "hp": 1.0
+   }
+  },
+  "bamboo_clump_large": {
+   "size": [
+    40.0,
+    56.0
+   ],
+   "collision": [
+    -13.0,
+    -18.0,
+    26.0,
+    18.0
+   ],
+   "solid": true,
+   "weight": 2.0,
+   "shape": "rect",
+   "texture": "res://asset/stages/bamboo_forest/props/bamboo_clump_large.png",
+   "placeholder": "bamboo"
+  },
+  "rock_small": {
+   "size": [
+    20.0,
+    16.0
+   ],
+   "collision": [
+    -8.0,
+    -12.0,
+    16.0,
+    12.0
+   ],
+   "solid": true,
+   "weight": 3.0,
+   "shape": "round",
+   "texture": "res://asset/stages/bamboo_forest/props/rock_small.png",
+   "placeholder": "rock",
+   "breakable": {
+    "hp": 1.0
+   }
+  },
+  "rock_large": {
+   "size": [
+    32.0,
+    26.0
+   ],
+   "collision": [
+    -12.0,
+    -18.0,
+    24.0,
+    18.0
+   ],
+   "solid": true,
+   "weight": 1.5,
+   "shape": "round",
+   "texture": "res://asset/stages/bamboo_forest/props/rock_large.png",
+   "placeholder": "rock"
+  },
+  "water_puddle": {
+   "size": [
+    40.0,
+    28.0
+   ],
+   "solid": false,
+   "weight": 1.5,
+   "shape": "round",
+   "texture": "res://asset/stages/bamboo_forest/props/water_puddle.png",
+   "placeholder": "water"
+  },
+  "fallen_log": {
+   "size": [
+    48.0,
+    20.0
+   ],
+   "collision": [
+    -20.0,
+    -12.0,
+    40.0,
+    12.0
+   ],
+   "solid": true,
+   "weight": 1.5,
+   "shape": "rect",
+   "texture": "res://asset/stages/bamboo_forest/props/fallen_log.png",
+   "placeholder": "log",
+   "breakable": {
+    "hp": 1.0
+   }
+  },
+  "stone_lantern": {
+   "size": [
+    20.0,
+    36.0
+   ],
+   "collision": [
+    -6.0,
+    -14.0,
+    12.0,
+    14.0
+   ],
+   "solid": true,
+   "weight": 1.5,
+   "shape": "rect",
+   "texture": "res://asset/stages/bamboo_forest/props/stone_lantern.png",
+   "placeholder": "lantern",
+   "light_radius_px": 170.0,
+   "flame": {
+    "sprite": "res://asset/stages/bamboo_forest/props/prop_flame.png",
+    "height_px": 8.0,
+    "offset": [
+     0.0,
+     -22.0
+    ],
+    "fps": 10.0
+   }
+  },
+  "shrine_post": {
+   "size": [
+    16.0,
+    40.0
+   ],
+   "collision": [
+    -5.0,
+    -12.0,
+    10.0,
+    12.0
+   ],
+   "solid": true,
+   "weight": 0.5,
+   "shape": "rect",
+   "texture": "res://asset/stages/bamboo_forest/props/shrine_post.png",
+   "placeholder": "shrine"
+  },
+  "grass_tuft": {
+   "size": [
+    12.0,
+    10.0
+   ],
+   "solid": false,
+   "weight": 6.0,
+   "shape": "rect",
+   "texture": "res://asset/stages/bamboo_forest/decor/grass_tuft.png",
+   "placeholder": "grass"
+  },
+  "fern": {
+   "size": [
+    16.0,
+    14.0
+   ],
+   "solid": false,
+   "weight": 3.0,
+   "shape": "rect",
+   "texture": "res://asset/stages/bamboo_forest/decor/fern.png",
+   "placeholder": "fern"
+  },
+  "pebbles": {
+   "size": [
+    14.0,
+    8.0
+   ],
+   "solid": false,
+   "weight": 3.0,
+   "shape": "round",
+   "texture": "res://asset/stages/bamboo_forest/decor/pebbles.png",
+   "placeholder": "pebble"
+  },
+  "fog_wisp": {
+   "size": [
+    48.0,
+    24.0
+   ],
+   "solid": false,
+   "weight": 1.0,
+   "shape": "rect",
+   "texture": "res://asset/stages/bamboo_forest/decor/fog_wisp.png",
+   "placeholder": "fog"
+  },
+  "campfire": {
+   "size": [
+    40.0,
+    40.0
+   ],
+   "collision": [
+    -10.0,
+    -12.0,
+    20.0,
+    12.0
+   ],
+   "solid": true,
+   "weight": 1.5,
+   "shape": "round",
+   "texture": "res://asset/stages/bamboo_forest/props/campfire.png",
+   "placeholder": "rock",
+   "breakable": {
+    "hp": 1.0
+   },
+   "light_radius_px": 200.0
+  },
+  "anvil": {
+   "size": [
+    36.0,
+    36.0
+   ],
+   "collision": [
+    -12.0,
+    -12.0,
+    24.0,
+    12.0
+   ],
+   "solid": true,
+   "weight": 1.5,
+   "shape": "rect",
+   "texture": "res://asset/stages/bamboo_forest/props/anvil.png",
+   "placeholder": "rock",
+   "breakable": {
+    "hp": 1.0
+   }
+  },
+  "stone_marker": {
+   "size": [
+    44.0,
+    44.0
+   ],
+   "collision": [
+    -10.0,
+    -14.0,
+    20.0,
+    14.0
+   ],
+   "solid": true,
+   "weight": 2.0,
+   "shape": "rect",
+   "texture": "res://asset/stages/bamboo_forest/props/stone_marker.png",
+   "placeholder": "rock",
+   "breakable": {
+    "hp": 1.0
+   }
   }
+ }
 }

@@ -253,6 +253,22 @@ Note:      초승달이 아니라 베기 자국이다 — 양끝이 바늘처럼
 일관성 패스에서 제한 팔레트 픽셀 아트로 교체했다. 미참조 무료팩 이펙트
 `hit_neutral` / `hit_fire` / `hit_curse`는 레지스트리와 함께 삭제했다.
 
+### 폐촌 프롭 세트 — 재작업 대기 (2026-08-25)
+
+```
+[MISSING] ruined_village props — asset/stages/ruined_village/props/
+Size:      밤1 프롭(asset/stages/bamboo_forest/props/) 규격에 대응
+Members:   불탄 서까래 · 무너진 기와 · 무너진 흙담 · 그을린 그루터기 ·
+           재 무더기 · 깨진 옹기 · 그을린 장승 · 잉걸불
+Used by:   data/props.json props + field.themes (ruin/ashfield/ruined_wayside)
+Fallback:  IN USE — 폐촌은 대나무숲 프롭을 그대로 쓴다. 바닥 타일과 변형
+           3종은 폐촌 전용이 이미 들어가 있다.
+Note:      생성본 3차까지 오너 반려 — 픽셀 품질이 다른 애셋과 안 맞는다.
+           프롭·데이터·테마를 되돌렸다(2026-08-25). 다시 만들 때는 표시
+           크기 그리드에 그린 뒤 정수배 확대하는 이 프로젝트 방식을 따를 것
+           (오너 도사: 40x40 그리드 x16 = 640 캔버스).
+```
+
 ## Anticipated (not yet needed — do not pre-produce)
 
 These become `[MISSING]` entries only when the feature that needs them is actually
