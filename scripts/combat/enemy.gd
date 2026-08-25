@@ -16,6 +16,9 @@ signal detonated(enemy: Enemy, at: Vector2, radius_px: float, damage: float)
 ## spawner so the stage can float a damage number without every enemy holding
 ## a stage reference.
 signal burn_ticked(amount: float, at: Vector2)
+## 삼두구미 (N10-3a): one of its three parts came apart. The stage floats the
+## part's name — a hit that changes the fight has to say so.
+signal part_broken(enemy: Enemy, part_name: String, broken: int, total: int)
 
 const VISUAL_HEIGHT_RATIO := 2.4  # slightly taller than wide, like the player
 const EYE_RATIO := 0.18
@@ -137,6 +140,12 @@ var _spent: bool = false
 ## something. `theft_goal` is written by the stage, which is the only place
 ## that knows where the field's pickups are; a goal of NAN means "nothing to
 ## steal" and the thief chases like anything else so it is never left standing.
+## 삼두구미 (N10-3a) part state. While any part stands the body takes nothing —
+## the fight is about taking it apart, and breaking a part changes how the rest
+## of the fight goes (a broken leg slows it, a broken head softens its bite).
+var part_hp := PackedFloat32Array()
+var part_names: PackedStringArray = []
+var _parts: Array = []
 var is_thief: bool = false
 var carried_passive: String = ""
 var theft_goal := Vector2(NAN, NAN)
@@ -216,6 +225,12 @@ func setup(
 	_fuse_left = 0.0
 	_fuse_lit = false
 	_spent = false
+	_parts = stats.get("parts", [])
+	part_hp = PackedFloat32Array()
+	part_names = PackedStringArray()
+	for part: Variant in _parts:
+		part_hp.append(float((part as Dictionary).get("hp", 0.0)))
+		part_names.append(String((part as Dictionary).get("name_ko", "")))
 	is_thief = String(stats.get("behaviour", "")) == "thief"
 	_theft = stats.get("theft", {})
 	carried_passive = ""
@@ -383,6 +398,20 @@ func take_damage(
 	# point is what keeps every weapon free of a shadow special case.
 	if absorbs_damage():
 		return
+	# 삼두구미: every hit lands on the first part still standing, and the body
+	# is untouchable until they are all down. Routing here rather than in each
+	# weapon is the same reason the shadow guard lives at this one entry point.
+	var part: int = CombatMath.part_target(part_hp)
+	if part >= 0:
+		part_hp[part] = CombatMath.apply_damage(part_hp[part], amount)
+		_flash_left = _flash_sec
+		if _has_art:
+			_sprite.modulate = UiPalette.SPRITE_HIT_FLASH
+		else:
+			_body.color = UiPalette.HIT_FLASH
+		if part_hp[part] <= 0.0:
+			_break_part(part)
+		return
 	hp = CombatMath.apply_damage(hp, amount)
 	if CombatMath.is_dead(hp):
 		died.emit(self)
@@ -411,6 +440,19 @@ func apply_burn(dps: float, duration: float, spread_px: float = 0.0) -> void:
 ## it to skip damage numbers — an absorbed hit must not print a number.
 func absorbs_damage() -> bool:
 	return not shadow_config.is_empty() and not _lit
+
+
+## A part comes apart: its declared consequence lands immediately, and the
+## stage is told so the player reads what changed.
+func _break_part(index: int) -> void:
+	var on_break: Dictionary = (_parts[index] as Dictionary).get("on_break", {})
+	_speed *= float(on_break.get("speed_mult", 1.0))
+	_damage *= float(on_break.get("damage_mult", 1.0))
+	var broken: int = 0
+	for value: float in part_hp:
+		if value <= 0.0:
+			broken += 1
+	part_broken.emit(self, part_names[index], broken, part_hp.size())
 
 
 func is_shadow() -> bool:

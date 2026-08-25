@@ -341,7 +341,12 @@
   "xp_drop": 6,
   "behaviour": "suicide",
   "_suicide_note": "N9-165: the origin text promises a bomb — it stops at arm's length, burns a fuse the player can outrun or kill, then takes the powder with it. Contact damage never applies to a suicide.",
-  "suicide": {"trigger_px": 44.0, "fuse_sec": 0.85, "radius_px": 98.0, "damage": 34.0},
+  "suicide": {
+   "trigger_px": 44.0,
+   "fuse_sec": 0.85,
+   "radius_px": 98.0,
+   "damage": 34.0
+  },
   "collision_radius": 12.0,
   "sprite": "res://asset/monsters/powder_dokkaebi"
  },
@@ -355,9 +360,54 @@
   "xp_drop": 4,
   "behaviour": "thief",
   "_theft_note": "N10-1a: 세시풍속의 신발 도둑을 그대로 규칙으로 옮겼다. 필드에 놓인 패시브로 곧장 걸어가 집어 들고 플레이어 반대편으로 달아난다. 접촉 피해가 0인 것은 설정이 아니라 설계다 — 쫓을지 말지가 플레이어의 선택이어야 하고, 놓치면 그 패시브는 이 런에서 영영 사라진다.",
-  "theft": {"seek_px": 900.0, "grab_px": 26.0, "escape_px": 1150.0, "flee_speed_mult": 1.35},
+  "theft": {
+   "seek_px": 900.0,
+   "grab_px": 26.0,
+   "escape_px": 1150.0,
+   "flee_speed_mult": 1.35
+  },
   "_art_note": "No sprite set yet, so PlaceholderArt draws it (CLAUDE.md §5: a missing texture never blocks a gameplay feature). Wanted art is logged in ASSET_REQUIREMENTS.md.",
   "collision_radius": 11.0
+ },
+ "samdugumi": {
+  "name_ko": "삼두구미",
+  "name_en": "Samdugumi",
+  "origin_ko": "제주. 무덤을 파먹는 머리 셋 꼬리 아홉의 괴물. 제 다리를 떼어내 부리고, 떼어낸 다리가 말을 한다. 통째로 베려 들면 아무것도 되지 않는다 — 하나씩 떼어놓아야 한다.",
+  "hp": 240.0,
+  "damage": 22.0,
+  "speed": 44.0,
+  "xp_drop": 40,
+  "behaviour": "multipart",
+  "_parts_note": "N10-3a: 제주 전승의 약점 셋을 규칙으로 옮겼다. 부위가 하나라도 남아 있으면 본체는 피해를 받지 않는다 — '베어도 소용없다'가 곧 판정이다. 부위가 떨어질 때마다 그 부위가 하던 일이 사라진다: 다리를 떼면 느려지고, 머리를 떼면 무는 힘이 준다. 무쇠·생달걀·버드나무 재료 게이팅은 후속 피처.",
+  "parts": [
+   {
+    "id": "legs",
+    "name_ko": "아홉 꼬리",
+    "hp": 70.0,
+    "on_break": {
+     "speed_mult": 0.62
+    }
+   },
+   {
+    "id": "arms",
+    "name_ko": "떼어낸 다리",
+    "hp": 70.0,
+    "on_break": {
+     "damage_mult": 0.7
+    }
+   },
+   {
+    "id": "head",
+    "name_ko": "세 머리",
+    "hp": 90.0,
+    "on_break": {
+     "damage_mult": 0.6
+    }
+   }
+  ],
+  "_art_note": "No sprite set yet, so PlaceholderArt draws it (CLAUDE.md §5). Wanted art is logged in ASSET_REQUIREMENTS.md.",
+  "collision_radius": 20.0,
+  "is_elite": true
  },
  "general_wraith": {
   "name_ko": "장군 원혼",

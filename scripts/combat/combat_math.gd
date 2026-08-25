@@ -54,6 +54,23 @@ static func fuse_fires(fuse_left_after: float, already_spent: bool) -> bool:
 	return not already_spent and fuse_left_after <= 0.0
 
 
+## 삼두구미 (N10-3a): which part a hit lands on — the first one still standing.
+## Damage never reaches the body while a part is left, so this doubles as the
+## test for "is the body still armoured": -1 means every part is down.
+static func part_target(part_hp: PackedFloat32Array) -> int:
+	for index: int in range(part_hp.size()):
+		if part_hp[index] > 0.0:
+			return index
+	return -1
+
+
+## Every part broken, so the body is finally the thing being hit. An empty list
+## counts as cleared: a monster that declares no parts is an ordinary monster,
+## not an invulnerable one.
+static func parts_cleared(part_hp: PackedFloat32Array) -> bool:
+	return part_target(part_hp) < 0
+
+
 ## 야광귀 (N10-1a): the thief goes for the loot on the ground, not the player,
 ## so its target is the nearest thing lying in the field. -1 means the field is
 ## empty and it has nothing to steal — the caller falls back to plain chasing

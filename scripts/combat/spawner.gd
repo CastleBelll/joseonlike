@@ -20,6 +20,7 @@ signal boss_spawned(boss: Enemy)
 signal shadow_spawned(enemy: Enemy)
 ## N4-4a: a burn tick landed on some enemy — the stage floats the number.
 signal burn_damaged(amount: float, at: Vector2)
+signal enemy_part_broken(enemy: Enemy, part_name: String, broken: int, total: int)
 
 const STAGES_PATH := "res://data/stages.json"
 const MONSTERS_PATH := "res://data/monsters.json"
@@ -327,6 +328,8 @@ func _spawn_one(monster_id: String) -> Enemy:
 		enemy.fuse_lit.connect(_on_enemy_fuse_lit)
 	if not enemy.detonated.is_connected(_on_enemy_detonated):
 		enemy.detonated.connect(_on_enemy_detonated)
+	if not enemy.part_broken.is_connected(_on_enemy_part_broken):
+		enemy.part_broken.connect(_on_enemy_part_broken)
 	# N4-2 soft enrage: monsters spawned after the ramp start arrive scaled,
 	# so a stalled post-boss field turns lethal instead of dragging (GDD §34).
 	# The boss spawns at boss_at_sec, before the ramp, and is never scaled.
@@ -432,6 +435,14 @@ func _on_enemy_died(enemy: Enemy) -> void:
 		_spread_curse(enemy)
 	enemy_killed.emit(enemy)
 	_release(enemy)
+
+
+## 삼두구미 (N10-3a): relayed like the fuse, so the stage can say what came off
+## without every enemy holding a stage reference.
+func _on_enemy_part_broken(
+	enemy: Enemy, part_name: String, broken: int, total: int
+) -> void:
+	enemy_part_broken.emit(enemy, part_name, broken, total)
 
 
 func _on_enemy_fuse_lit(enemy: Enemy, fuse_sec: float, radius_px: float) -> void:

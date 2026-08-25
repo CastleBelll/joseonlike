@@ -499,6 +499,13 @@
     "interval_sec": 34.0
    },
    {
+    "_note": "N10-3a 삼두구미. One, late: taking it apart is a fight of its own, and two at once would be two armoured bodies the player cannot hurt yet.",
+    "at_sec": 300,
+    "monster_id": "samdugumi",
+    "count": 1,
+    "interval_sec": 60.0
+   },
+   {
     "at_sec": 310,
     "monster_id": "ash_wraith",
     "count": 81,

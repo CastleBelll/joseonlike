@@ -63,8 +63,13 @@ const LOOT_TIERS: Array[String] = ["common", "uncommon", "rare", "epic", "mythic
 ## swarm) are GDD intents that still run as chasers — listed so the vocabulary
 ## stays closed and a typo cannot invent a fourth silent fallback.
 const BEHAVIOURS: Array[String] = [
-	"chase", "boss", "suicide", "ranged", "charger", "swarm", "thief"
+	"chase", "boss", "suicide", "ranged", "charger", "swarm", "thief", "multipart"
 ]
+## 삼두구미 (N10-3a): the parts a multipart monster comes apart into. Three is
+## the folklore's number and the shape the fight is tuned for; a part with no
+## hp could never be broken, which would leave the body permanently armoured.
+const PART_MIN := 2
+const PART_FIELDS: Array[String] = ["id", "name_ko"]
 ## What a suicide's blast is made of — all four are load-bearing.
 const SUICIDE_FIELDS: Array[String] = ["trigger_px", "fuse_sec", "radius_px", "damage"]
 ## What a thief's raid is made of. All four are load-bearing: without a reach it
@@ -443,6 +448,10 @@ func _check_behaviour(monster: Dictionary, path: String) -> void:
 		_fail("%s carries a suicide block but does not behave like one" % path)
 	if behaviour != "thief" and monster.has("theft"):
 		_fail("%s carries a theft block but does not behave like one" % path)
+	if behaviour != "multipart" and monster.has("parts"):
+		_fail("%s carries a parts list but does not behave like one" % path)
+	if behaviour == "multipart":
+		_check_parts(monster, path)
 	if behaviour == "suicide":
 		if not monster.has("suicide"):
 			_fail("%s behaves as suicide but carries no suicide block" % path)
@@ -457,6 +466,35 @@ func _check_behaviour(monster: Dictionary, path: String) -> void:
 		# that engaging it is optional, so its damage has to be exactly zero.
 		if not is_zero_approx(float(monster.get("damage", 0.0))):
 			_fail("%s behaves as thief but deals contact damage" % path)
+
+
+## Every part must be breakable and must cost the monster something, or the
+## armoured phase is a wall with nothing behind it.
+func _check_parts(monster: Dictionary, path: String) -> void:
+	var parts: Array = monster.get("parts", [])
+	if parts.size() < PART_MIN:
+		_fail("%s behaves as multipart but declares %d parts" % [path, parts.size()])
+		return
+	var seen: Array[String] = []
+	for index: int in range(parts.size()):
+		var part: Dictionary = parts[index]
+		var label: String = "%s.parts[%d]" % [path, index]
+		for field: String in PART_FIELDS:
+			if String(part.get(field, "")).is_empty():
+				_fail("%s.%s is missing" % [label, field])
+		var part_id: String = String(part.get("id", ""))
+		if seen.has(part_id):
+			_fail("%s.id '%s' is declared twice" % [label, part_id])
+		seen.append(part_id)
+		if float(part.get("hp", 0.0)) <= 0.0:
+			_fail("%s.hp missing or not positive" % label)
+		var on_break: Dictionary = part.get("on_break", {})
+		if on_break.is_empty():
+			_fail("%s.on_break is empty — breaking it would change nothing" % label)
+		for key: String in on_break:
+			var value: float = float(on_break[key])
+			if value <= 0.0 or value > 1.0:
+				_fail("%s.on_break.%s must be a reduction in (0, 1]" % [label, key])
 
 
 func _check_elite(monsters: Dictionary, monster_id: String) -> void:

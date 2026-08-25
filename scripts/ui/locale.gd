@@ -86,6 +86,7 @@ const INLINE_EN := {
 	"회생부 발동!": "Revival Charm!",
 	"야광귀가 훔쳐 간다!": "The Yagwanggwi is making off with it!",
 	"%s 도둑맞았다!": "%s stolen!",
+	"%s 파괴! (%d/%d)": "%s destroyed! (%d/%d)",
 	"두두리를 물리쳤다": "Dudueori has fallen",
 	"%s %s 등급!": "%s is now %s",
 	"%s 획득": "%s acquired",

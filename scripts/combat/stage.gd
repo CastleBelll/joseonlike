@@ -256,6 +256,7 @@ func _stage_ready_field() -> void:
 	# a warning circle means one thing in this game no matter who lit it.
 	_spawner.enemy_fuse_lit.connect(_on_enemy_fuse_lit)
 	_spawner.enemy_detonated.connect(_on_enemy_detonated)
+	_spawner.enemy_part_broken.connect(_on_enemy_part_broken)
 	_spawner.boss_spawned.connect(_on_boss_spawned)
 	_spawner.shadow_spawned.connect(_on_shadow_spawned)
 	# N9-1a: the stage id IS the track id, so a second region ships its own
@@ -1739,6 +1740,17 @@ func _tick_field_passives(delta: float) -> void:
 	)
 	_live_field_passives.append(pickup)
 	_field_passives_placed += 1
+
+
+## 삼두구미 (N10-3a): a part came off. The float says which one and how far
+## along the fight is — the body only becomes hittable at three of three, and a
+## player who cannot see that reads the armoured phase as a broken hitbox.
+func _on_enemy_part_broken(
+	_enemy: Enemy, part_name: String, broken: int, total: int
+) -> void:
+	_float_label(UiLocale.t("%s 파괴! (%d/%d)") % [part_name, broken, total])
+	_punch(Impact.ELITE_KILL)
+	_play_sfx("crit")
 
 
 ## 야광귀 (N10-1a): the thief walks to what is lying on the ground, takes it,
