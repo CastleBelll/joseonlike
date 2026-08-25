@@ -102,8 +102,16 @@ var _errors: int = 0
 ## Directories are accepted as well as files: monsters.*.sprite names a folder.
 func _check_resource_paths(node: Variant, where: String) -> void:
 	if node is Dictionary:
-		for key: Variant in (node as Dictionary):
-			_check_resource_paths((node as Dictionary)[key], "%s.%s" % [where, key])
+		var entry: Dictionary = node as Dictionary
+		# N9-167: a track (or any entry) that names a stand-in is declaring its
+		# own file as NOT HERE YET. The stand-in still has to exist — that pair
+		# is checked in MusicPlayer.data_issues — so walking the missing path
+		# here would only re-fail a state the data deliberately describes.
+		var awaiting: bool = entry.has("borrowed_file")
+		for key: Variant in entry:
+			if awaiting and String(key) == "file":
+				continue
+			_check_resource_paths(entry[key], "%s.%s" % [where, key])
 		return
 	if node is Array:
 		for i: int in range((node as Array).size()):

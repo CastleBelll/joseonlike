@@ -22,8 +22,10 @@
   },
   "ruined_village": {
    "name_ko": "폐허가 된 마을",
-   "file": "res://asset/bgm/bamboo_forest.mp3",
-   "volume": 0.7
+   "file": "res://asset/bgm/ruined_village.mp3",
+   "volume": 0.7,
+   "borrowed_file": "res://asset/bgm/bamboo_forest.mp3",
+   "_note": "N9-167: 전용 트랙 대기 중 — file이 없으면 borrowed_file(대나무숲)을 쓴다. 오너가 asset/bgm/ruined_village.mp3를 넣는 순간 코드 변경 없이 바뀐다."
   }
  },
  "_sfx_note": "N9-52 효과음. volume은 효과음 사이의 상대 음량(0~1)이고 사용자 설정의 효과음 볼륨은 Effects 버스에서 따로 적용된다. min_interval_sec은 같은 소리의 최소 재발 간격 — 없으면 난전에서 같은 파형이 열 겹으로 쌓여 뭉개진다. 파일은 tools/make_sfx.gd가 생성한 합성음이며, 같은 경로에 실제 녹음을 덮으면 코드 변경 없이 교체된다.",

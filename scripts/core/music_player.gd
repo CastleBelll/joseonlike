@@ -73,7 +73,7 @@ func play(track_id: String) -> void:
 	if entry.is_empty():
 		push_warning("music_player: unknown track '%s'" % track_id)
 		return
-	var stream: AudioStream = _stream_for(track_id, String(entry.get("file", "")))
+	var stream: AudioStream = _stream_for(track_id, resolved_file(entry))
 	if stream == null:
 		# Nothing to play: stop what is there so the previous screen's music
 		# does not linger under the new one.
@@ -137,6 +137,17 @@ func _exit_tree() -> void:
 ## project does not track generated sidecars (QA-2 policy) — a fresh clone would
 ## otherwise reimport without the loop flag and every track would play once and
 ## fall silent.
+## N9-167: a track may name its own file and a stand-in to borrow until that
+## file lands. The ruined village plays the bamboo forest's night music today;
+## the moment its own mp3 is dropped in, the same data plays it — no code
+## change between the two states, which is how the ground art works too.
+static func resolved_file(entry: Dictionary) -> String:
+	var own: String = String(entry.get("file", ""))
+	if not own.is_empty() and ResourceLoader.exists(own):
+		return own
+	return String(entry.get("borrowed_file", ""))
+
+
 func _stream_for(track_id: String, file_path: String) -> AudioStream:
 	if _missing.has(track_id):
 		return null
@@ -197,8 +208,16 @@ static func data_issues(config: Dictionary) -> Array[String]:
 		if String(entry.get("name_ko", "")).is_empty():
 			issues.append(label + ".name_ko missing")
 		var file_path: String = String(entry.get("file", ""))
+		var borrowed: String = String(entry.get("borrowed_file", ""))
 		if not file_path.begins_with("res://"):
 			issues.append(label + ".file must be a res:// path")
 		elif not FileAccess.file_exists(file_path):
-			issues.append(label + ".file does not exist: " + file_path)
+			# A track waiting for its own recording may name a stand-in; only a
+			# track with NEITHER file present is silent, and that is the failure.
+			if borrowed.is_empty():
+				issues.append(label + ".file does not exist: " + file_path)
+			elif not FileAccess.file_exists(borrowed):
+				issues.append(
+					label + ".borrowed_file does not exist either: " + borrowed
+				)
 	return issues

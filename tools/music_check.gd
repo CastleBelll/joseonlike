@@ -5,7 +5,11 @@ extends Node
 ## which is the whole reason callers name a track instead of a file.
 ## Run: godot --headless --path . res://tools/music_check.tscn
 
-const TRACK_IDS: Array[String] = ["title", "camp", "bamboo_forest"]
+## N9-167: 폐허가 된 마을 is in here because it is the track that BORROWS —
+## it names an mp3 that has not been recorded yet and falls back to the
+## forest's. A harness that skipped it would not notice the day the fallback
+## breaks and the second night runs silent.
+const TRACK_IDS: Array[String] = ["title", "camp", "bamboo_forest", "ruined_village"]
 ## Longer than any min_interval_sec in data/audio.json, so the throttle probe
 ## starts from a clean window whatever the loop before it played.
 const THROTTLE_SETTLE_SEC := 0.8
