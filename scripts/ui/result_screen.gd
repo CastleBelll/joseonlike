@@ -13,6 +13,9 @@ const CAMP_SCENE := "res://scenes/camp.tscn"
 
 const LAYER_ABOVE_POPUP := 12
 const PANEL_MARGIN_X := 48.0
+const PANEL_WIDTH := 492.0
+## Wide enough for the landscape two-column rows to keep their values.
+const PANEL_WIDTH_LANDSCAPE := 760.0
 const PANEL_HEIGHT := 480.0
 ## Owner (모든 UI/UX는 반응형으로): the paper takes the height the screen can
 ## spare up to this, so the summary never scrolls where it does not have to.
@@ -51,7 +54,11 @@ func _layout_panel() -> void:
 		return
 	var root_w: float = _root.size.x if _root.size.x > 0.0 else 540.0
 	var root_h: float = _root.size.y if _root.size.y > 0.0 else 960.0
-	var half_w: float = minf(root_w - PANEL_MARGIN_X * 2.0, 492.0) / 2.0
+	# Two columns need two columns' worth of paper. The portrait band was kept
+	# in landscape, so the right column's values ran off the sheet — measured on
+	# a real run: 처치 and 보유 엽전 both cut mid-number.
+	var band: float = PANEL_WIDTH_LANDSCAPE if root_w > root_h else PANEL_WIDTH
+	var half_w: float = minf(root_w - PANEL_MARGIN_X * 2.0, band) / 2.0
 	var half_h: float = minf(PANEL_HEIGHT_MAX, root_h - PANEL_MARGIN_X * 2.0) / 2.0
 	_panel.offset_left = -half_w
 	_panel.offset_right = half_w
