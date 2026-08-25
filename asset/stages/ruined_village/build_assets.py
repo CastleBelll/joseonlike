@@ -36,26 +36,27 @@ SPRITES = (
 
 GROUND_PALETTES: dict[str, tuple[tuple[int, int, int], ...]] = {
     "ground_tile": (
-        (21, 24, 25), (24, 27, 28), (27, 29, 29), (30, 31, 30),
+        (19, 22, 23), (23, 25, 25), (27, 28, 27), (31, 31, 29), (35, 34, 31),
     ),
     "ash_drift": (
-        (28, 31, 32), (31, 34, 35), (34, 36, 36), (37, 38, 37),
+        (29, 31, 31), (34, 35, 34), (39, 39, 37), (44, 43, 40), (49, 47, 43),
     ),
     "scorched_earth": (
-        (16, 19, 20), (19, 21, 21), (22, 23, 22), (25, 24, 21),
+        (33, 28, 25), (39, 32, 28), (45, 36, 30), (51, 40, 33), (57, 44, 36),
     ),
     "broken_paving": (
-        (25, 28, 29), (28, 31, 32), (31, 33, 33), (34, 35, 34),
+        (31, 35, 37), (36, 40, 42), (41, 45, 47), (47, 50, 51), (53, 55, 55),
     ),
 }
 
-# Every 4x4 block contains the same value counts, but in a different hashed
-# order. This keeps all 64 block means equal while avoiding any repeated shape.
-GROUND_BLOCK_VALUES: dict[str, tuple[int, ...]] = {
-    "ground_tile": (0,) * 7 + (1,) * 5 + (2,) * 3 + (3,),
-    "ash_drift": (0,) * 6 + (1,) * 5 + (2,) * 4 + (3,),
-    "scorched_earth": (0,) * 8 + (1,) * 4 + (2,) * 3 + (3,),
-    "broken_paving": (0,) * 7 + (1,) * 4 + (2,) * 4 + (3,),
+# Each surface uses a different wrapped low-frequency field. The fields cross
+# the tile boundary before quantization, so their ash/soot clusters are
+# seamless without becoming a named landmark that repeats on a visible grid.
+GROUND_FIELD_SALTS = {
+    "ground_tile": 1741,
+    "ash_drift": 2909,
+    "scorched_earth": 4219,
+    "broken_paving": 5839,
 }
 
 INK = (7, 9, 10, 255)
@@ -87,22 +88,31 @@ def value_hash(x: int, y: int, salt: int) -> int:
 
 def paint_ground(name: str) -> Image.Image:
     palette = GROUND_PALETTES[name]
-    salt = sum(ord(char) for char in name)
+    salt = GROUND_FIELD_SALTS[name]
     image = Image.new("RGB", (LOGICAL_TILE, LOGICAL_TILE))
     pixels = image.load()
-    for block_y in range(0, LOGICAL_TILE, BLOCK_SIZE):
-        for block_x in range(0, LOGICAL_TILE, BLOCK_SIZE):
-            values = list(GROUND_BLOCK_VALUES[name])
-            block_id = block_x // BLOCK_SIZE + (block_y // BLOCK_SIZE) * 8
-            # Deterministic Fisher-Yates shuffle: identical value counts per
-            # block, unique grain placement per block, no authored motif.
-            for index in range(len(values) - 1, 0, -1):
-                swap = value_hash(block_id, index, salt) % (index + 1)
-                values[index], values[swap] = values[swap], values[index]
-            for index, value in enumerate(values):
-                x = block_x + index % BLOCK_SIZE
-                y = block_y + index // BLOCK_SIZE
-                pixels[x, y] = palette[value]
+    field: list[list[float]] = []
+    for y in range(LOGICAL_TILE):
+        row: list[float] = []
+        for x in range(LOGICAL_TILE):
+            total = 0.0
+            for offset_y in range(-4, 5):
+                for offset_x in range(-4, 5):
+                    wrapped_x = (x + offset_x) % LOGICAL_TILE
+                    wrapped_y = (y + offset_y) % LOGICAL_TILE
+                    total += (value_hash(wrapped_x, wrapped_y, salt) & 0xFFFF) / 65535.0
+            row.append(total / 81.0)
+        field.append(row)
+
+    field_min = min(min(row) for row in field)
+    field_max = max(max(row) for row in field)
+    for y in range(LOGICAL_TILE):
+        for x in range(LOGICAL_TILE):
+            macro = (field[y][x] - field_min) / (field_max - field_min)
+            grain = (value_hash(x, y, salt + 7919) & 0xFFFF) / 65535.0
+            score = 0.5 + (macro - 0.5) * 0.82 + (grain - 0.5) * 0.28
+            index = max(0, min(len(palette) - 1, int(score * len(palette))))
+            pixels[x, y] = palette[index]
     return image
 
 
@@ -257,6 +267,12 @@ def average_rgb(image: Image.Image) -> tuple[float, float, float]:
     return tuple(sum(pixel[channel] for pixel in pixels) / len(pixels) for channel in range(3))
 
 
+def average_luminance(image: Image.Image) -> float:
+    rgb = image.convert("RGB").resize((LOGICAL_TILE, LOGICAL_TILE), Image.Resampling.NEAREST)
+    pixels = list(rgb.get_flattened_data())
+    return sum(luminance(pixel) for pixel in pixels) / len(pixels)
+
+
 def connected_components(image: Image.Image) -> int:
     alpha = image.getchannel("A")
     remaining = {
@@ -375,19 +391,20 @@ def make_contact_sheet(ground: dict[str, Image.Image], props: dict[str, Image.Im
     combined.paste(stage, (96, 0))
     upscale(quantize_rgb(combined), 6).save(OUT / "contact-sheet.png", optimize=True)
 
+    # Unrotated 5x5 tiling makes any repeated landmark or seam conspicuous.
+    # Three small patches exercise the runtime's 0.68 variant blend.
     variant_placements = {
-        (1, 1): "ash_drift", (2, 1): "ash_drift", (2, 2): "ash_drift",
-        (5, 3): "scorched_earth", (5, 4): "scorched_earth", (6, 4): "scorched_earth",
-        (2, 6): "broken_paving", (3, 6): "broken_paving", (3, 7): "broken_paving",
+        (0, 1): "ash_drift", (1, 1): "ash_drift", (1, 2): "ash_drift",
+        (3, 0): "scorched_earth", (4, 0): "scorched_earth", (4, 1): "scorched_earth",
+        (2, 3): "broken_paving", (2, 4): "broken_paving", (3, 4): "broken_paving",
     }
-    verification = Image.new("RGB", (256, 256))
-    for row in range(8):
-        for column in range(8):
+    verification = Image.new("RGB", (160, 160))
+    for row in range(5):
+        for column in range(5):
             name = variant_placements.get((column, row), "ground_tile")
-            tile = rotated(ground["ground_tile"], (column + row * 2) % 4)
+            tile = ground["ground_tile"].copy()
             if name != "ground_tile":
-                variant = rotated(ground[name], (column + row * 2) % 4)
-                tile = Image.blend(tile, variant, 0.68)
+                tile = Image.blend(tile, ground[name], 0.68)
             verification.paste(tile, (column * 32, row * 32))
     upscale(quantize_rgb(verification), 4).save(OUT / "ground-verification.png", optimize=True)
 
@@ -417,20 +434,20 @@ def validate(ground: dict[str, Image.Image], props: dict[str, Image.Image]) -> N
         if len(counts) < 3 or count / (LOGICAL_TILE * LOGICAL_TILE) > 0.70:
             raise ValueError(f"{name} is too flat: {len(counts)} colors, {count / 10.24:.1f}% dominant")
 
-    anchor = Image.open(ROOT / "asset" / "stages" / "bamboo_forest" / "ground_tile.png")
-    anchor_blocks = block_luminance_stats(anchor)
     base_blocks = block_luminance_stats(ground["ground_tile"])
-    if base_blocks["full_range_percent"] > 25.0:
-        raise ValueError("ground_tile 4x4 block luminance span exceeds 25% of full range")
-    if base_blocks["span"] > anchor_blocks["span"] + 0.01:
-        raise ValueError("ground_tile block contrast exceeds the bamboo anchor")
+    if not 4.0 <= base_blocks["span"] <= 10.0:
+        raise ValueError(f"ground_tile block luminance span {base_blocks['span']:.3f} is outside 4..10")
 
-    base_mean = average_rgb(ground["ground_tile"])
+    base_mean = average_luminance(ground["ground_tile"])
     for name in ("ash_drift", "scorched_earth", "broken_paving"):
-        variant_mean = average_rgb(ground[name])
-        differences = tuple(abs(variant_mean[i] - base_mean[i]) for i in range(3))
-        if max(differences) > 24.0:
-            raise ValueError(f"{name} mean RGB differs by {differences}")
+        variant_blocks = block_luminance_stats(ground[name])
+        if variant_blocks["span"] < 6.0:
+            raise ValueError(f"{name} block luminance span {variant_blocks['span']:.3f} is below 6")
+        mean_lift = average_luminance(ground[name]) - base_mean
+        if not 8.0 <= mean_lift <= 20.0:
+            raise ValueError(f"{name} mean luminance lift {mean_lift:.3f} is outside 8..20")
+        if max(max(pixel) - min(pixel) for pixel in GROUND_PALETTES[name]) > 25:
+            raise ValueError(f"{name} palette is too saturated")
 
     for name, sprite in props.items():
         colors = {pixel for pixel in sprite.get_flattened_data() if pixel[3]}
@@ -463,22 +480,28 @@ def main() -> None:
     validate(ground, props)
     save_assets(ground, props)
     make_contact_sheet(ground, props)
-    anchor = Image.open(ROOT / "asset" / "stages" / "bamboo_forest" / "ground_tile.png")
-    anchor_blocks = block_luminance_stats(anchor)
-    base_blocks = block_luminance_stats(ground["ground_tile"])
-    print(
-        "[A] anchor block span %.4f (%.3f%% full range); ruined %.4f (%.3f%% full range)"
-        % (
-            anchor_blocks["span"], anchor_blocks["full_range_percent"],
-            base_blocks["span"], base_blocks["full_range_percent"],
-        )
+    anchor_root = ROOT / "asset" / "stages" / "bamboo_forest"
+    comparisons = (
+        ("ground_tile", ground["ground_tile"], Image.open(anchor_root / "ground_tile.png")),
+        ("ash_drift / patchy_grass", ground["ash_drift"], Image.open(anchor_root / "ground_variants" / "patchy_grass.png")),
+        ("scorched_earth / dirt", ground["scorched_earth"], Image.open(anchor_root / "ground_variants" / "dirt.png")),
+        ("broken_paving / moss", ground["broken_paving"], Image.open(anchor_root / "ground_variants" / "moss.png")),
     )
-    base_mean = average_rgb(ground["ground_tile"])
-    print("[B] base mean RGB (%.3f, %.3f, %.3f)" % base_mean)
-    for name in ("ash_drift", "scorched_earth", "broken_paving"):
-        mean = average_rgb(ground[name])
-        differences = tuple(abs(mean[i] - base_mean[i]) for i in range(3))
-        print("[B] %s mean RGB %s channel diff %s" % (name, tuple(round(v, 3) for v in mean), tuple(round(v, 3) for v in differences)))
+    base_mean = average_luminance(ground["ground_tile"])
+    print("[GROUND] 32x32 nearest; 64 x 4x4-block luminance means")
+    for label, ruined, anchor in comparisons:
+        ruined_blocks = block_luminance_stats(ruined)
+        anchor_blocks = block_luminance_stats(anchor)
+        print(
+            "[GROUND] %-31s ruined span %7.4f mean %7.4f | anchor span %7.4f mean %7.4f | lift %+7.4f"
+            % (
+                label,
+                ruined_blocks["span"], average_luminance(ruined),
+                anchor_blocks["span"], average_luminance(anchor),
+                average_luminance(ruined) - base_mean,
+            )
+        )
+    print("[GROUND] 5x5 unrotated tiling + alpha 0.68 patches: %s" % (OUT / "ground-verification.png").as_posix())
     print(
         "[C] crossed beam parallelograms 2; roof ridges %d; ash ratio %.2f; jar components %d; comparison %s"
         % (

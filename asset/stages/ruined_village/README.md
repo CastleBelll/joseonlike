@@ -22,25 +22,30 @@ dithering, then exported at 16x with nearest-neighbour sampling.
 | `props/ember_glow.png` | 16x12 | Non-colliding decor |
 
 Every prop has binary alpha and at most 6 opaque colours. The four ground
-tiles use 4 flat colours. No asset contains an antialiased edge, gradient, or
+tiles use 5 flat colours. No asset contains an antialiased edge, gradient, or
 dither pattern.
 
 `contact-sheet.png` places the ruined props at gameplay size beside the bamboo
 forest's fallen log, small rock, and shrine post. `ground-verification.png`
-shows an 8x8 runtime-style mix with per-tile rotations and the three variants
-composited at the game's 68% alpha. `prop-comparison.png` is the blind [C]
+shows an unrotated 5x5 base tiling, deliberately exposing repetition and seams,
+with three variant patches composited at the game's 68% alpha.
+`prop-comparison.png` is the blind [C]
 check: all eight props in one unlabeled row at 3x gameplay size (36-72px wide).
 
-## Second-pass self-check
+## Ground correction self-check
 
-- [A] The bamboo anchor's 64 4x4-block luminance means span 6.3758, or 2.500%
-  of the full 0-255 luminance range. The revised ruined-village base span is
-  0.0000 (0.000%): every block has identical four-colour counts with a unique
-  hashed order, so the tile has grain but no named or repeating motif.
-- [B] Base mean RGB is `(23.625, 26.312, 27.000)`. Absolute per-channel mean
-  differences are ash drift `(7.375, 7.312, 7.250)`, scorched earth
-  `(5.188, 5.750, 6.312)`, and broken paving `(4.188, 4.125, 4.062)`; every
-  channel is below the required 24.
+- Each measurement downsamples to 32x32 with nearest-neighbour sampling, then
+  compares the means of all 64 4x4 blocks. Base span/mean is `8.8324/28.3408`
+  versus the bamboo anchor's `6.3758/33.7610`.
+- Ash drift span/mean/lift is `12.6800/38.8192/+10.4784`, beside patchy grass
+  at `15.6613/49.3402`. Scorched earth is `11.6265/37.1356/+8.7948`, beside
+  dirt at `11.4083/34.8462`. Broken paving is
+  `12.6843/44.0191/+15.6782`, beside moss at `13.4673/48.9753`.
+- The base therefore stays inside the required 4-10 span; every variant is
+  above span 6 and 8-20 luminance above the base. All four use five low-chroma
+  night colours. The unrotated 5x5 inspection has no recognizable repeated
+  landmark or seam, while all three 0.68-alpha patches remain visible without
+  hard sticker-like edges.
 - [C] Geometry checks require two crossed beam parallelograms, four diagonal
   roof ridges, the wall's long horizontal crown and vertical cut, two stump
   rings, an ash-pile visible-bounds ratio of 3.20:1, three connected jar
@@ -113,7 +118,7 @@ $env:PYTHONDONTWRITEBYTECODE='1'
 python asset/stages/ruined_village/build_assets.py
 ```
 
-The builder fails if [A]'s block span exceeds either 25% of the full luminance
-range or the bamboo anchor, if any [B] mean channel differs by more than 24,
-if a prop is empty/partially transparent/off its placement row, if any prop
-exceeds 64 opaque colours, or if [C]'s measurable geometry contracts fail.
+The builder fails unless the base's block span is 4-10, every variant's span is
+at least 6, and every variant's mean luminance is 8-20 above the base. It also
+rejects a saturated ground palette, an empty/partially transparent/off-row
+prop, more than 64 opaque prop colours, or a failed [C] geometry contract.
