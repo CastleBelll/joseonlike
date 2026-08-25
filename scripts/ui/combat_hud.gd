@@ -84,7 +84,9 @@ var _pause_overlay: Control
 var _overlay_layer: CanvasLayer
 ## N9-112 pause tabs: 빌드 (weapons/passives/stats) and 개조 경로.
 var _evolution_section: VBoxContainer
-var _pause_tab_buttons: Dictionary = {}  # tab id -> Button
+var _pause_tab_buttons: Dictionary = {}
+## The tab the paper is showing, so a rotation can re-lay the same one.
+var _pause_tab: String = PAUSE_TAB_BUILD  # tab id -> Button
 var _pause_tab_heights: Dictionary = {}  # tab id -> content height px
 var _pause_panel: PanelContainer
 var _build_section: VBoxContainer
@@ -104,6 +106,10 @@ func _ready() -> void:
 	build_ui()
 	# N9-152: rotation changes the width the bands center inside.
 	resized.connect(_layout_bar_bands)
+	# Owner (모든 UI/UX는 반응형으로): the pause paper measured its band and
+	# height when the tab was picked, so a rotation while paused left the
+	# sheet sized for the old screen.
+	resized.connect(_relayout_pause_paper)
 
 
 ## Anchor-relative offsets that center a TOP_WIDE strip inside BAR_MAX_WIDTH
@@ -540,7 +546,15 @@ func _make_pause_tab_bar() -> Control:
 	return bar
 
 
+## Re-runs the open tab's layout against the current screen.
+func _relayout_pause_paper() -> void:
+	if _pause_panel == null:
+		return
+	_select_pause_tab(_pause_tab)
+
+
 func _select_pause_tab(tab: String) -> void:
+	_pause_tab = tab
 	_build_section.visible = tab == PAUSE_TAB_BUILD
 	_evolution_section.visible = tab == PAUSE_TAB_EVOLUTIONS
 	for key: String in _pause_tab_buttons:

@@ -101,6 +101,11 @@ var _body: Control
 var _scroll: ScrollContainer
 var _owned_row: HFlowContainer
 var _title: Label
+## What the open popup is showing, so a rotation can rebuild the same screen.
+var _last_cards: Array[Dictionary] = []
+var _last_owned: Dictionary = {}
+var _last_weapons: Dictionary = {}
+var _built_landscape: bool = false
 
 
 func _init() -> void:
@@ -156,6 +161,10 @@ func _ready() -> void:
 	_owned_row.add_theme_constant_override("v_separation", int(OWNED_WRAP_GAP))
 	_owned_row.position = Vector2(PANEL_MARGIN_X, PANEL_TOP + CARD_HEIGHT_MIN)
 	_root.add_child(_owned_row)
+	# Owner (모든 UI/UX는 반응형으로): the columns-or-rows choice is made when
+	# the popup opens, and the tree is PAUSED while it is up — a rotation mid
+	# choice would otherwise leave the old layout on screen.
+	_root.resized.connect(_relayout_on_flip)
 	visible = false
 
 
@@ -174,6 +183,10 @@ func open(
 		child.queue_free()
 	_title.text = header_text
 	var landscape: bool = _is_landscape()
+	_last_cards = display_cards
+	_last_owned = owned_levels
+	_last_weapons = weapons
+	_built_landscape = landscape
 	# Owner (2026-08-24): landscape rows scroll horizontally if they ever
 	# outgrow the band; the portrait stack keeps its vertical-only scroll.
 	_scroll.horizontal_scroll_mode = (
@@ -258,6 +271,16 @@ func open(
 	visible = true
 	var first: Control = cards.get_child(0)
 	first.call_deferred("grab_focus")
+
+
+## Rebuilds the open screen from the cards it is already showing, but only
+## when the orientation actually flips.
+func _relayout_on_flip() -> void:
+	if not visible or _last_cards.is_empty():
+		return
+	if _is_landscape() == _built_landscape:
+		return
+	open(_title.text, _last_cards, _last_owned, _last_weapons)
 
 
 func close() -> void:

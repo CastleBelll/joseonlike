@@ -62,6 +62,7 @@ const BACK_BOTTOM_MARGIN := 48
 const LOCKED_TEXT_DARKEN := 0.25
 
 var _characters: Dictionary = {}
+var _was_landscape: bool = false
 var _selected_id: String = ""
 ## Whose detail panel is on screen. Follows the selection unless the player
 ## taps a locked tile to read its unlock condition.
@@ -157,8 +158,23 @@ func _live_profile() -> Dictionary:
 	return {}
 
 
+## Owner (모든 UI/UX는 반응형으로): the roster picks its landscape layout at
+## build time, so a rotation has to rebuild it — only on an actual flip, so a
+## plain resize keeps focus and the viewed pick.
+func _on_resized() -> void:
+	var now: bool = _is_landscape()
+	if now == _was_landscape:
+		return
+	_was_landscape = now
+	for child: Node in get_children():
+		child.queue_free()
+	build_ui()
+
+
 func _ready() -> void:
 	build_ui()
+	_was_landscape = _is_landscape()
+	resized.connect(_on_resized)
 	_focus_viewed_tile()
 
 
