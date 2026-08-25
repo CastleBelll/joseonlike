@@ -79,7 +79,8 @@
     "type": "guard",
     "cooldown_sec": 30.0,
     "duration_sec": 4.0,
-    "damage_taken_scale": 0.3
+    "damage_taken_scale": 0.3,
+    "effect": "skill_cheolbyeok"
    },
    {
     "id": "chamgyeok",
@@ -90,7 +91,8 @@
     "radius_px": 150.0,
     "arc_deg": 130.0,
     "damage": 140.0,
-    "knockback_scale": 2.0
+    "knockback_scale": 2.0,
+    "effect": "skill_chamgyeok"
    }
   ]
  },

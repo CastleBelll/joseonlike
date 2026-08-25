@@ -871,6 +871,9 @@ func _execute_active(active: Dictionary) -> void:
 				float(active.get("duration_sec", 0.0)),
 				float(active.get("damage_taken_scale", 1.0))
 			)
+			# N9-169: it used to be invisible — a button that changed a number
+			# and nothing on screen. The art plays where he plants himself.
+			_play_active_art(active, _player.global_position, 0.0)
 		_:
 			push_error("stage: unknown active type in " + str(active))
 
@@ -936,6 +939,17 @@ func _execute_burst(active: Dictionary) -> void:
 		_on_hit_landed(damage, hit_at, boss_hit)
 
 
+## One-shot art for an active, at its own named sheet. `reach` of 0 keeps the
+## sheet's own logical size (a guard aura), anything else draws it to that
+## diameter so what is seen matches what the skill covers.
+func _play_active_art(active: Dictionary, at: Vector2, reach: float) -> void:
+	var effect_id: String = String(active.get("effect", ""))
+	if effect_id.is_empty() or not EffectSprite.available(effect_id):
+		return
+	var art: EffectSprite = _fx_pool.acquire()
+	art.play_effect(effect_id, at, reach, UiPalette.ACCENT_WARRIOR)
+
+
 ## N9-168 참격: the warrior's second art. Where 벽사진 clears a full circle
 ## around the taoist, this one is a swing — everything inside the arc the
 ## blade actually covers, in the direction he faces. Same damage pipeline and
@@ -949,12 +963,14 @@ func _execute_cleave(active: Dictionary) -> void:
 	var damage: float = (
 		float(active.get("damage", 0.0)) * (1.0 + _passive_bonus("skill_power"))
 	)
-	# The swing art the 환도 line already uses, drawn at the skill's own reach
-	# so what is seen is what is hit.
-	if EffectSprite.available("swing_sword"):
+	# Every art names its own sheet (N9-169). Borrowing the 환도 swing made the
+	# skill look like a weapon attack; the fallback only keeps a nameless art
+	# visible at all.
+	var effect_id: String = String(active.get("effect", "swing_arc"))
+	if EffectSprite.available(effect_id):
 		var art: EffectSprite = _fx_pool.acquire()
 		art.play_effect(
-			"swing_sword", origin + Vector2.from_angle(aim) * radius * 0.5,
+			effect_id, origin + Vector2.from_angle(aim) * radius * 0.5,
 			radius, UiPalette.ACCENT_WARRIOR
 		)
 		art.rotation = aim

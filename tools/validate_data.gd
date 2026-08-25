@@ -410,6 +410,14 @@ func _check_character_actives(character: Dictionary, character_id: String) -> vo
 		for field: Variant in fields:
 			typed_fields.append(String(field))
 		_require_positive_numbers(active, typed_fields, label)
+		# N9-169 (owner: 이펙트를 왜 같은 걸 쓰냐): an art that names no sheet of
+		# its own borrows another skill's, which is what made 참격 look like a
+		# 환도 swing. A named sheet must also exist in the effect registry.
+		var effect_id: String = String(active.get("effect", ""))
+		if effect_id.is_empty():
+			continue
+		if not WeaponEffects.sprite_config(effect_id).has("file"):
+			_fail("%s.effect '%s' is not a registered sprite effect" % [label, effect_id])
 
 
 ## N4-2 elite variants: multipliers over a real, non-elite base monster.
