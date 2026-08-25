@@ -86,6 +86,21 @@ Fallback:  wood-token drawn discs with the skill name
 ## Missing
 
 ```
+[MISSING] 야광귀 sprite set (N10-1a)
+Size:      32px logical frame, figure ~29px drawn — trash tier, between the
+           goblin (30) and the player (38). Canvas = logical x 16, drawn on a
+           grid ~3x finer than the logical one (smallest uniform run 5 canvas
+           px, matching asset/monsters/forest_goblin).
+Members:   res://asset/monsters/yagwanggwi/idle.png (+ walk.png, 4 frames min)
+Used by:   data/monsters.json "yagwanggwi", ruined_village waves at 2:30 / 5:00
+Reference: 세시풍속의 신발 도둑. 하늘에서 내려온 여윈 그림자에 남의 신발만
+           크게 — 훔친 물건을 머리에 이고 달아나는 실루엣이어야 한다. 때려
+           죽이는 적이 아니라 쫓아가는 적이므로 위협적일 필요가 없고, 오히려
+           도망치는 자세가 읽혀야 한다.
+Fallback:  PlaceholderArt rect (a missing texture never blocks a feature)
+```
+
+```
 [MISSING] xp orb sprite (AC-4)
 Size:      orb ~10x10 px
 Members:   res://asset/drop/xp_orb.png (idle, optional 2-frame shimmer)
