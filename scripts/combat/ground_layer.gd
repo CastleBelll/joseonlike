@@ -20,7 +20,11 @@ extends Node2D
 const STAGE_ART_DIR := "res://asset/stages/"
 const FALLBACK_STAGE := "bamboo_forest"
 const TILE_FILE := "ground_tile.png"
-const VARIANT_FILES: Array[String] = [
+const VARIANT_DIR := "ground_variants"
+## The bamboo forest's variant names, used only when a stage ships no variant
+## directory of its own — a stage names its variants whatever its place calls
+## them (재 무더기, 그을린 자국) and the layer reads whatever is there.
+const FALLBACK_VARIANT_FILES: Array[String] = [
 	"patchy_grass.png", "dirt.png", "moss.png",
 ]
 const TILE_SIZE_PX := 32.0
@@ -67,6 +71,29 @@ static func ground_path(stage_id: String, file_name: String) -> String:
 	return STAGE_ART_DIR + FALLBACK_STAGE + "/" + file_name
 
 
+## The variant textures for one stage. A stage's OWN variant directory wins
+## whole: mixing the village's ash with the forest's moss is how a green patch
+## ended up on burnt ground. Only a stage with no variants of its own borrows
+## the forest's, and then it borrows all three.
+static func variant_paths(stage_id: String) -> Array[String]:
+	var paths: Array[String] = []
+	if not stage_id.is_empty():
+		var own_dir: String = STAGE_ART_DIR + stage_id + "/" + VARIANT_DIR
+		var listing: PackedStringArray = ResourceLoader.list_directory(own_dir)
+		var names: Array[String] = []
+		for entry: String in listing:
+			if entry.ends_with(".png"):
+				names.append(entry)
+		names.sort()
+		for entry: String in names:
+			paths.append(own_dir + "/" + entry)
+		if not paths.is_empty():
+			return paths
+	for file_name: String in FALLBACK_VARIANT_FILES:
+		paths.append(STAGE_ART_DIR + FALLBACK_STAGE + "/" + VARIANT_DIR + "/" + file_name)
+	return paths
+
+
 ## Tile window (in tile coordinates) whose tiles fully cover `view` — the
 ## covered rect always contains the view rect by construction (tested).
 static func tile_window(view: Rect2) -> Rect2i:
@@ -101,12 +128,13 @@ static func make_type_noise(field_seed: int) -> FastNoiseLite:
 ## Variant index for one world tile (-1 = base tile). Pure per-tile function
 ## of the seeded noises, so any window reproduces the same pattern.
 static func tile_variant(
-	density_noise: FastNoiseLite, type_noise: FastNoiseLite, col: int, row: int
+	density_noise: FastNoiseLite, type_noise: FastNoiseLite, col: int, row: int,
+	variant_count: int = FALLBACK_VARIANT_FILES.size()
 ) -> int:
 	if density_noise.get_noise_2d(float(col), float(row)) <= DENSITY_THRESHOLD:
 		return -1
 	var type_value: float = (type_noise.get_noise_2d(float(col), float(row)) + 1.0) / 2.0
-	return clampi(int(type_value * VARIANT_FILES.size()), 0, VARIANT_FILES.size() - 1)
+	return clampi(int(type_value * variant_count), 0, maxi(variant_count - 1, 0))
 
 
 ## Seeded 90-degree-step rotation, a pure hash of the world tile coordinate —
@@ -149,8 +177,7 @@ func build(_field: Dictionary, field_seed: int, stage_id: String = "") -> void:
 	if ResourceLoader.exists(tile_path, "Texture2D"):
 		_base_texture = load(tile_path)
 		_variant_textures = []
-		for file_name: String in VARIANT_FILES:
-			var path: String = ground_path(stage_id, "ground_variants/" + file_name)
+		for path: String in variant_paths(stage_id):
 			_variant_textures.append(load(path) if ResourceLoader.exists(path, "Texture2D") else null)
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	queue_redraw()
@@ -176,7 +203,9 @@ func _draw() -> void:
 	var variant_tint := Color(1.0, 1.0, 1.0, VARIANT_ALPHA)
 	for row: int in range(_window.position.y, _window.end.y):
 		for col: int in range(_window.position.x, _window.end.x):
-			var variant: int = tile_variant(_density_noise, _type_noise, col, row)
+			var variant: int = tile_variant(
+				_density_noise, _type_noise, col, row, _variant_textures.size()
+			)
 			var center: Vector2 = Vector2(float(col), float(row)) * TILE_SIZE_PX + tile_size / 2.0
 			draw_set_transform(center, tile_rotation(_seed, col, row), Vector2.ONE)
 			draw_texture_rect(_base_texture, Rect2(-tile_size / 2.0, tile_size), false)
