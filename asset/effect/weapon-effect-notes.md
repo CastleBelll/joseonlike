@@ -1,8 +1,10 @@
 # Dedicated weapon and warrior effects
 
-`build_weapon_skill_effects.py` authors the four sheets directly at their
-128px frame resolution. This keeps every edge pixel-aligned and reproducible;
-the shipped sheets have binary alpha, no antialiasing, and 6-7 RGBA colours.
+`build_weapon_skill_effects.py` keeps the staff sheets at 128px per frame and
+normalizes both warrior actives onto a 64px logical grid before exact x2
+nearest-neighbour enlargement. This keeps every edge pixel-aligned and
+reproducible; the shipped sheets have binary alpha, no antialiasing, and 6-7
+RGBA colours.
 
 ## Deliverables
 
@@ -26,7 +28,7 @@ second row shows all six cheolbyeok frames at 96px.
 
 - Maximum peak-silhouette IoU between either staff and any sword: `0.2676`.
 - Maximum peak-silhouette IoU between chamgyeok and any of the seven weapon
-  swings: `0.4141`.
+  swings: `0.4138`.
 - The staff pair shares the same blunt-impact skeleton but separates by
   material: dust and gravel versus floating souls and pale violet ring echoes.
 - At gameplay size, the staff wedges remain straight, broad masses; all five
@@ -43,5 +45,6 @@ python asset/effect/build_weapon_skill_effects.py
 ```
 
 The builder rejects wrong dimensions, partial alpha, empty frames, more than
-64 colours, a staff/sword peak IoU of 0.45 or greater, or a chamgyeok/weapon
-peak IoU of 0.45 or greater.
+64 colours, a warrior-active logical-grid roundtrip difference of 2% or more,
+a staff/sword peak IoU of 0.45 or greater, or a chamgyeok/weapon peak IoU of
+0.45 or greater.

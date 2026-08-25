@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "asset" / "effect"
 FRAME = 128
+LOGICAL_EFFECT_FRAME = 64
 
 INK = (14, 12, 15, 255)
 BRASS_DARK = (91, 67, 36, 255)
@@ -38,6 +39,13 @@ def canvas() -> tuple[Image.Image, ImageDraw.ImageDraw]:
 def save_sheet(name: str, frames: list[Image.Image]) -> Image.Image:
     sheet = Image.new("RGBA", (FRAME * len(frames), FRAME))
     for index, frame in enumerate(frames):
+        if name.startswith("skill_"):
+            # Warrior actives are authored on the 64px gameplay grid, then
+            # enlarged exactly x2. This intentionally discards sub-grid detail.
+            logical = frame.resize(
+                (LOGICAL_EFFECT_FRAME, LOGICAL_EFFECT_FRAME), Image.Resampling.NEAREST
+            )
+            frame = logical.resize((FRAME, FRAME), Image.Resampling.NEAREST)
         sheet.alpha_composite(frame, (index * FRAME, 0))
     sheet.save(OUT / f"{name}.png", optimize=True)
     return sheet
@@ -353,6 +361,18 @@ def validate(sheets: dict[str, Image.Image]) -> None:
             raise ValueError(f"{name} uses {len(colors)} RGBA colors")
         if any(frame.getchannel("A").getbbox() is None for frame in split_frames(sheet)):
             raise ValueError(f"{name} has an empty animation frame")
+        if name.startswith("skill_"):
+            logical = sheet.resize(
+                (sheet.width // 2, sheet.height // 2), Image.Resampling.NEAREST
+            )
+            restored = logical.resize(sheet.size, Image.Resampling.NEAREST)
+            different = sum(
+                left != right
+                for left, right in zip(sheet.get_flattened_data(), restored.get_flattened_data())
+            )
+            percent = different / float(sheet.width * sheet.height) * 100.0
+            if percent >= 2.0:
+                raise ValueError(f"{name} logical-grid roundtrip differs by {percent:.4f}%")
 
     sword_names = ("swing_sword.png", "swing_twin_sword.png", "swing_sharp_sword.png", "swing_ghost_sword.png", "swing_flame_sword.png")
     sword_peaks = [peak_frame(Image.open(OUT / name).convert("RGBA")) for name in sword_names]
@@ -385,7 +405,13 @@ def main() -> None:
     ]
     staff_peaks = [peak_frame(sheets["swing_seokjang"]), peak_frame(sheets["swing_ghost_staff"])]
     for name, sheet in sheets.items():
-        print(f"{name}: {sheet.width}x{sheet.height}, {len(set(sheet.get_flattened_data()))} RGBA colors, binary alpha")
+        detail = ""
+        if name.startswith("skill_"):
+            logical = sheet.resize((sheet.width // 2, sheet.height // 2), Image.Resampling.NEAREST)
+            restored = logical.resize(sheet.size, Image.Resampling.NEAREST)
+            different = sum(left != right for left, right in zip(sheet.get_flattened_data(), restored.get_flattened_data()))
+            detail = f", 64x64 x2 roundtrip {different} px ({different / float(sheet.width * sheet.height) * 100.0:.6f}%)"
+        print(f"{name}: {sheet.width}x{sheet.height}, {len(set(sheet.get_flattened_data()))} RGBA colors, binary alpha{detail}")
     print("staff/sword peak silhouette max IoU: %.4f" % max(silhouette_iou(staff, sword) for staff in staff_peaks for sword in sword_peaks))
     print("chamgyeok/weapon peak silhouette max IoU: %.4f" % max(silhouette_iou(peak_frame(sheets["skill_chamgyeok"]), weapon) for weapon in sword_peaks + staff_peaks))
     print(f"comparison: {comparison_path.as_posix()}")
