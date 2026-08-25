@@ -38,7 +38,9 @@ const PAUSE_TAB_HEIGHT := 44.0
 const PAUSE_TAB_BUILD := "build"
 const PAUSE_TAB_EVOLUTIONS := "evolutions"
 const OVERLAY_PANEL_MARGIN_X := 64.0
-const OVERLAY_PANEL_HEIGHT := 260.0
+## A floor, not a size: below this the sheet reads as a scrap rather than a
+## paper. What it actually takes is measured (see _pause_paper_height).
+const OVERLAY_PANEL_MIN_HEIGHT := 200.0
 ## N9-163 (owner: 탭 전환 시 상단 고정으로 아래로만 자라야 한다): the paper's
 ## fixed top line, and the bottom margin the panel may never cross — content
 ## beyond it scrolls inside instead of pushing the buttons off the paper.
@@ -87,7 +89,14 @@ var _evolution_section: VBoxContainer
 var _pause_tab_buttons: Dictionary = {}
 ## The tab the paper is showing, so a rotation can re-lay the same one.
 var _pause_tab: String = PAUSE_TAB_BUILD  # tab id -> Button
-var _pause_tab_heights: Dictionary = {}  # tab id -> content height px
+## The paper's own column. Its combined minimum is the chrome — title, tabs and
+## the two buttons — with the scroll counting as nothing, so adding the visible
+## section's minimum to it gives the exact height the sheet needs.
+var _pause_layout: VBoxContainer
+## Resume and quit: stacked in portrait, side by side in landscape.
+var _pause_buttons: BoxContainer
+## The paper's inner margin. Landscape spends less of a short screen on it.
+var _pause_pad: MarginContainer
 var _pause_panel: PanelContainer
 var _build_section: VBoxContainer
 var _resume_button: Button
@@ -478,18 +487,18 @@ func _build_pause_overlay() -> void:
 	panel.anchor_top = 0.0
 	panel.anchor_bottom = 0.0
 	panel.offset_top = OVERLAY_PANEL_TOP
-	panel.offset_bottom = OVERLAY_PANEL_TOP + OVERLAY_PANEL_HEIGHT
+	panel.offset_bottom = OVERLAY_PANEL_TOP + OVERLAY_PANEL_MIN_HEIGHT
 	_layout_pause_panel_width(panel)
 	_pause_overlay.add_child(panel)
 	var pad := MarginContainer.new()
 	pad.name = "Pad"
-	for side: String in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
-		pad.add_theme_constant_override(side, UiPalette.SPACE_LG)
 	panel.add_child(pad)
+	_pause_pad = pad
 	var layout := VBoxContainer.new()
 	layout.name = "Layout"
 	layout.add_theme_constant_override("separation", UiPalette.SPACE_MD)
 	pad.add_child(layout)
+	_pause_layout = layout
 	var title := _label(UiLocale.t("일시 정지"), UiPalette.FONT_SIZE_TITLE, UiPalette.VERMILION)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	layout.add_child(title)
@@ -518,10 +527,21 @@ func _build_pause_overlay() -> void:
 	_evolution_section.visible = false
 	content.add_child(_evolution_section)
 	_resume_button = _overlay_button("ResumeButton", UiLocale.t("계속하기"), _on_resume_pressed)
-	layout.add_child(_resume_button)
 	# N9-111 (owner direction): settings left this popup for the top-right
 	# gear button — the popup keeps only resume and quit.
-	layout.add_child(_overlay_button("QuitButton", UiLocale.t("타이틀로"), _on_quit_pressed))
+	var quit_button: Button = _overlay_button(
+		"QuitButton", UiLocale.t("타이틀로"), _on_quit_pressed
+	)
+	# Owner (자꾸 스크롤이 생길정도라서): stacked, these two buttons are 128px of
+	# a 540-tall screen's paper, and the build summary loses exactly that much.
+	# Side by side in landscape they cost half, which is room the stat sheet
+	# uses instead of a scrollbar.
+	_pause_buttons = VBoxContainer.new()
+	_pause_buttons.name = "PauseButtons"
+	_pause_buttons.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	_pause_buttons.add_child(_resume_button)
+	_pause_buttons.add_child(quit_button)
+	layout.add_child(_pause_buttons)
 	_pause_panel = panel
 	_overlay_layer.add_child(_pause_overlay)
 
@@ -565,11 +585,74 @@ func _select_pause_tab(tab: String) -> void:
 	# Each tab carries its own content height; the top stays put and the
 	# paper grows downward, clamped above the bottom margin so the buttons
 	# can never leave the sheet (N9-163). Content beyond the clamp scrolls.
-	var wanted: float = OVERLAY_PANEL_HEIGHT + float(_pause_tab_heights.get(tab, 0.0))
+	_orient_pause_buttons()
+	_apply_pause_spacing()
+	var wanted: float = _pause_paper_height(tab)
 	var available: float = size.y - OVERLAY_PANEL_TOP - OVERLAY_PANEL_BOTTOM_MARGIN
 	_pause_panel.offset_top = OVERLAY_PANEL_TOP
 	_pause_panel.offset_bottom = OVERLAY_PANEL_TOP + minf(wanted, available)
 	_layout_pause_panel_width(_pause_panel)
+
+
+## A short screen spends its height on the summary, not on the paper's margins.
+func _apply_pause_spacing() -> void:
+	if _pause_pad == null or _pause_layout == null:
+		return
+	var landscape: bool = size.x > size.y
+	var margin: int = UiPalette.SPACE_MD if landscape else UiPalette.SPACE_LG
+	for side: String in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+		_pause_pad.add_theme_constant_override(side, margin)
+	_pause_layout.add_theme_constant_override(
+		"separation", UiPalette.SPACE_SM if landscape else UiPalette.SPACE_MD
+	)
+
+
+## Godot cannot re-flow a BoxContainer between rows and columns, so the pair is
+## rebuilt into the shape the screen wants — cheap, and only on an actual flip.
+func _orient_pause_buttons() -> void:
+	if _pause_buttons == null or _pause_layout == null:
+		return
+	var wants_row: bool = size.x > size.y
+	if wants_row == (_pause_buttons is HBoxContainer):
+		return
+	var children: Array[Node] = _pause_buttons.get_children()
+	for child: Node in children:
+		_pause_buttons.remove_child(child)
+	var index: int = _pause_buttons.get_index()
+	_pause_layout.remove_child(_pause_buttons)
+	_pause_buttons.queue_free()
+	_pause_buttons = HBoxContainer.new() if wants_row else VBoxContainer.new()
+	_pause_buttons.name = "PauseButtons"
+	_pause_buttons.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	for child: Node in children:
+		(child as Control).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_pause_buttons.add_child(child)
+	_pause_layout.add_child(_pause_buttons)
+	_pause_layout.move_child(_pause_buttons, index)
+
+
+## What the sheet actually needs for a tab: its chrome plus the section on show.
+##
+## This used to be a hand-kept sum — a 260px chrome constant plus a per-tab
+## total added up from row-height constants — and it drifted the way such sums
+## do: the tab bar was counted twice, and the rest was a guess that ran long, so
+## the paper carried a band of empty sheet and a scroll track over a list that
+## fits. Asking the containers what they need cannot drift, and it deletes four
+## constants that existed only to be added together.
+func _pause_paper_height(tab: String) -> float:
+	if _pause_layout == null:
+		return OVERLAY_PANEL_MIN_HEIGHT
+	var section: Control = (
+		_evolution_section if tab == PAUSE_TAB_EVOLUTIONS else _build_section
+	)
+	var content: float = (
+		section.get_combined_minimum_size().y if section != null else 0.0
+	)
+	# The layout's own minimum counts the scroll as nothing, which is why the
+	# section is added separately rather than measured through it.
+	var pad: float = float(_pause_pad.get_theme_constant("margin_top")) * 2.0
+	var chrome: float = _pause_layout.get_combined_minimum_size().y + pad
+	return maxf(chrome + content, OVERLAY_PANEL_MIN_HEIGHT)
 
 
 ## Centered band width shared by build and resize (N9-163).
@@ -610,13 +693,11 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		child.queue_free()
 	var weapons: Array = summary.get("weapons", [])
 	var passives: Array = summary.get("passives", [])
-	var extra_height: float = 0.0
 
 	if not weapons.is_empty():
 		# N9-23: the build has slots now, so the pause screen says how many are
 		# spent — otherwise "no new weapons are being offered" reads as a bug.
 		_build_section.add_child(_slot_header(UiLocale.t("무기"), weapons.size(), LevelUp.WEAPON_SLOTS))
-		extra_height += BUILD_PASSIVE_ROW_HEIGHT
 		var grid := GridContainer.new()
 		grid.name = "WeaponGrid"
 		grid.columns = BUILD_WEAPON_COLUMNS
@@ -626,13 +707,11 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 			grid.add_child(_build_weapon_cell(entry))
 		_build_section.add_child(grid)
 		var weapon_rows: int = ceili(float(weapons.size()) / float(BUILD_WEAPON_COLUMNS))
-		extra_height += weapon_rows * BUILD_CELL_HEIGHT + UiPalette.SPACE_SM
 
 	if not passives.is_empty():
 		_build_section.add_child(
 			_slot_header(UiLocale.t("패시브"), passives.size(), LevelUp.PASSIVE_SLOTS)
 		)
-		extra_height += BUILD_PASSIVE_ROW_HEIGHT
 		# N9-160 (owner: 빌드를 글 말고 이미지로): the passive list mirrors the
 		# weapon grid — icon wells with a stack readout under each.
 		var grid := GridContainer.new()
@@ -645,7 +724,6 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 			grid.add_child(line)
 		_build_section.add_child(grid)
 		var passive_rows: int = ceili(float(passives.size()) / float(BUILD_WEAPON_COLUMNS))
-		extra_height += passive_rows * BUILD_CELL_HEIGHT + UiPalette.SPACE_SM
 
 	# N9-25: the character sheet. Two columns of name/value pairs; a line the
 	# run has actually moved off its base reads in ink, an untouched one stays
@@ -657,7 +735,13 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		box.add_child(_label(UiLocale.t("능력치"), UiPalette.FONT_SIZE_LABEL, UiPalette.VERMILION))
 		var grid := GridContainer.new()
 		grid.name = "StatGrid"
-		grid.columns = BUILD_PASSIVE_COLUMNS
+		# The stat sheet is twelve short lines and the tallest thing on the
+		# paper. A landscape sheet has width to spare and no height to spare,
+		# so it reads them in more columns — which is what finally lets the
+		# summary fit without a scrollbar.
+		grid.columns = (
+			BUILD_PASSIVE_COLUMNS * 2 if size.x > size.y else BUILD_PASSIVE_COLUMNS
+		)
 		grid.add_theme_constant_override("h_separation", UiPalette.SPACE_MD)
 		for entry: Dictionary in stats:
 			var modified: bool = bool(entry.get("modified", false))
@@ -670,14 +754,11 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 			grid.add_child(line)
 		box.add_child(grid)
 		_build_section.add_child(box)
-		var stat_rows: int = ceili(float(stats.size()) / float(BUILD_PASSIVE_COLUMNS))
-		extra_height += (stat_rows + 1) * BUILD_PASSIVE_ROW_HEIGHT + UiPalette.SPACE_SM
 
 	# N9-9 → N9-112: evolution paths (base → result · material, √ when the
 	# material is held) now live on their own tab instead of stretching the
 	# build scroll (owner: 개조 경로를 탭으로 빼자).
 	var evolutions: Array = summary.get("evolutions", [])
-	var evolution_height: float = 0.0
 	if evolutions.is_empty():
 		# Empty state stays explicit — a blank tab reads as broken (QA-2).
 		var none := _label(
@@ -686,7 +767,6 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		)
 		none.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_evolution_section.add_child(none)
-		evolution_height = BUILD_PASSIVE_ROW_HEIGHT
 	for line_text: Variant in evolutions:
 		var row_label: Label = _label(
 			String(line_text), UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
@@ -697,12 +777,7 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		row_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		row_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_evolution_section.add_child(row_label)
-		evolution_height += BUILD_PASSIVE_ROW_HEIGHT
 
-	_pause_tab_heights = {
-		PAUSE_TAB_BUILD: extra_height + PAUSE_TAB_HEIGHT,
-		PAUSE_TAB_EVOLUTIONS: evolution_height + PAUSE_TAB_HEIGHT,
-	}
 	# Every open lands on the build tab — the one the player checks most.
 	_select_pause_tab(PAUSE_TAB_BUILD)
 
