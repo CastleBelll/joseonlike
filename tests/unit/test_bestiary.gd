@@ -301,7 +301,9 @@ func test_real_data_rosters_are_consistent() -> bool:
 func test_screen_builds_with_mixed_record() -> bool:
 	var screen: BestiaryScreen = (load(BESTIARY_SCENE) as PackedScene).instantiate()
 	screen.build_ui()
-	var rows: VBoxContainer = screen.get_node("Layout/Column/Scroll/Rows")
+	# The list is a grid now — one column in portrait, two in landscape — so
+	# this asks for the container by name and by what it IS, a box of rows.
+	var rows: Container = screen.find_child("Rows", true, false)
 	var monsters: Dictionary = _load_json("res://data/monsters.json")
 	var stages: Dictionary = _load_json("res://data/stages.json")
 	var expected: int = Bestiary.monster_roster(stages, monsters).size()

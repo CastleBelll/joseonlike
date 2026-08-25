@@ -44,7 +44,13 @@ var _mods: Dictionary = {}
 var _record: Dictionary = Bestiary.default_record()
 var _tab: String = Bestiary.KIND_MONSTERS
 var _tab_buttons: Dictionary = {}
-var _rows_box: VBoxContainer
+## Owner (가로모드도 어색하고 자꾸 스크롤이 생길정도라서): one column of
+## full-width rows spent 900px of a landscape screen on 300px of text and
+## showed four of thirteen entries. A GridContainer at one column IS the
+## vertical list, so the orientation only changes a number — and the column
+## count is set per layout pass, never cached, so a flip cannot leave the old
+## one behind.
+var _rows_box: GridContainer
 var _progress_label: Label
 
 
@@ -101,14 +107,23 @@ func build_ui() -> void:
 	scroll.name = "Scroll"
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_rows_box = VBoxContainer.new()
+	_rows_box = GridContainer.new()
 	_rows_box.name = "Rows"
 	_rows_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_rows_box.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	_rows_box.add_theme_constant_override("h_separation", UiPalette.SPACE_SM)
+	_rows_box.add_theme_constant_override("v_separation", UiPalette.SPACE_SM)
 	scroll.add_child(_rows_box)
 	column.add_child(scroll)
 
+	_apply_columns()
+	resized.connect(_apply_columns)
 	_refresh()
+
+
+## One column in portrait, two on a screen wide enough to read them side by side.
+func _apply_columns() -> void:
+	if _rows_box != null:
+		_rows_box.columns = 2 if size.x > size.y else 1
 
 
 func _build_header() -> Control:
@@ -240,6 +255,9 @@ func _build_row(row: Dictionary) -> Control:
 	var card := PanelContainer.new()
 	card.name = "Row_" + String(row["id"])
 	card.custom_minimum_size = Vector2(0.0, CARD_MIN_HEIGHT)
+	# In the two-column grid a cell has to claim its half, or the cards shrink
+	# to their text and the pair drifts apart down the middle of the page.
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var box := StyleBoxFlat.new()
 	box.bg_color = UiPalette.CARD_BG
 	box.border_color = UiPalette.CARD_BORDER_DIM

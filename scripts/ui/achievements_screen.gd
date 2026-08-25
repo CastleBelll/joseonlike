@@ -33,7 +33,9 @@ const LOCKED_ALPHA := 0.75
 
 var _data: Dictionary = {}
 var _unlocks: Dictionary = {}
-var _rows_box: VBoxContainer
+## Same reason as the bestiary: a full-width row wastes a landscape screen and
+## halves how much of the list is on it. One column is the vertical list.
+var _rows_box: GridContainer
 var _count_label: Label
 
 
@@ -72,13 +74,22 @@ func _ready() -> void:
 	scroll.name = "Scroll"
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_rows_box = VBoxContainer.new()
+	_rows_box = GridContainer.new()
 	_rows_box.name = "Rows"
 	_rows_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_rows_box.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	_rows_box.add_theme_constant_override("h_separation", UiPalette.SPACE_SM)
+	_rows_box.add_theme_constant_override("v_separation", UiPalette.SPACE_SM)
 	scroll.add_child(_rows_box)
 	column.add_child(scroll)
+	_apply_columns()
+	resized.connect(_apply_columns)
 	_refresh()
+
+
+## One column in portrait, two on a screen wide enough to read them side by side.
+func _apply_columns() -> void:
+	if _rows_box != null:
+		_rows_box.columns = 2 if size.x > size.y else 1
 
 
 func _build_header() -> Control:
@@ -136,6 +147,8 @@ func _build_row(row: Dictionary) -> Control:
 	var card := PanelContainer.new()
 	card.name = "Row_" + String(row["id"])
 	card.custom_minimum_size = Vector2(0.0, CARD_MIN_HEIGHT)
+	# A grid cell has to be claimed, or the cards shrink to their text.
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.add_theme_stylebox_override("panel", _card_box(earned))
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
