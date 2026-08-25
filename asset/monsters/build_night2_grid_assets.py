@@ -8,17 +8,25 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[2]
 MONSTERS = ROOT / "asset" / "monsters"
-EFFECTS = ROOT / "asset" / "effect"
 
 INK = (8, 11, 13, 255)
 ASH_DARK = (34, 37, 40, 255)
+ASH_MID = (51, 53, 53, 255)
 ASH = (69, 72, 73, 255)
+ASH_COOL = (82, 87, 89, 255)
 ASH_HI = (119, 119, 113, 255)
+ASH_PALE = (151, 149, 139, 255)
+EMBER_DARK = (120, 38, 23, 255)
 EMBER = (224, 74, 30, 255)
 EMBER_HI = (255, 165, 55, 255)
 HOUND_DARK = (30, 25, 24, 255)
 HOUND = (62, 49, 43, 255)
 HOUND_HI = (96, 73, 57, 255)
+HOUND_TAIL = (78, 57, 45, 255)
+HOUND_LEG = (51, 38, 35, 255)
+HOUND_MUZZLE = (75, 55, 48, 255)
+CURSE_DARK = (47, 31, 55, 255)
+CURSE = (100, 61, 112, 255)
 FANG = (218, 205, 169, 255)
 RED_DARK = (91, 27, 23, 255)
 RED = (162, 52, 39, 255)
@@ -39,6 +47,10 @@ GHOST_HI = (137, 218, 211, 220)
 GHOST_PALE = (209, 247, 232, 235)
 FLAG_DARK = (73, 22, 31, 235)
 FLAG = (142, 42, 49, 235)
+FLAG_HI = (190, 61, 63, 235)
+STEEL_DARK = (55, 75, 79, 255)
+STEEL = (131, 172, 166, 255)
+STEEL_HI = (220, 246, 224, 255)
 
 
 def blank(size: int) -> tuple[Image.Image, ImageDraw.ImageDraw]:
@@ -46,65 +58,125 @@ def blank(size: int) -> tuple[Image.Image, ImageDraw.ImageDraw]:
     return image, ImageDraw.Draw(image)
 
 
+def cel_shade(image: Image.Image, seed: int) -> Image.Image:
+    """Split every painted material into deliberate hard-edged light bands."""
+    source = image.copy()
+    output = image.copy()
+    source_pixels = source.load()
+    output_pixels = output.load()
+    offsets = (-18, -6, 6, 18)
+
+    def same_material(x: int, y: int, color: tuple[int, int, int, int]) -> bool:
+        return 0 <= x < image.width and 0 <= y < image.height and source_pixels[x, y] == color
+
+    for y in range(image.height):
+        for x in range(image.width):
+            color = source_pixels[x, y]
+            if color[3] == 0 or color == INK:
+                continue
+            lit_edge = not same_material(x - 1, y, color) or not same_material(x, y - 1, color)
+            shaded_edge = not same_material(x + 1, y, color) or not same_material(x, y + 1, color)
+            if lit_edge and not shaded_edge:
+                tone = 3
+            elif shaded_edge and not lit_edge:
+                tone = 0
+            else:
+                # Three- to five-cell patches read as cel-shaded facets rather
+                # than one-pixel noise at the logical display size.
+                tone = 1 + ((x // 4 + 2 * (y // 5) + seed) & 1)
+            delta = offsets[tone]
+            output_pixels[x, y] = (
+                max(0, min(255, color[0] + delta)),
+                max(0, min(255, color[1] + delta)),
+                max(0, min(255, color[2] + delta)),
+                color[3],
+            )
+    return output
+
+
 def ash_wraith() -> Image.Image:
     image, draw = blank(32)
-    # Four broad ash steps form the disappearing lower body.
-    draw.polygon(((9, 17), (23, 17), (25, 21), (22, 23), (25, 25), (21, 26),
-                  (22, 29), (18, 28), (16, 31), (13, 28), (8, 29), (11, 25),
-                  (6, 24), (9, 21)), fill=INK)
-    draw.polygon(((11, 18), (21, 18), (23, 21), (19, 23), (23, 25), (18, 25),
-                  (20, 28), (16, 27), (15, 29), (13, 27), (10, 27), (12, 24),
-                  (9, 23), (11, 21)), fill=ASH)
-    draw.polygon(((13, 20), (20, 20), (18, 22), (21, 24), (16, 24), (18, 27),
-                  (14, 25), (13, 27), (12, 24)), fill=ASH_HI)
-    # Big torn sleeves, not fingers or cloth folds.
-    draw.polygon(((10, 13), (6, 15), (4, 20), (6, 23), (10, 20), (12, 17)), fill=INK)
-    draw.polygon(((9, 15), (7, 16), (6, 20), (7, 21), (10, 19), (11, 17)), fill=ASH)
-    draw.polygon(((22, 13), (26, 15), (29, 19), (27, 22), (23, 20), (20, 17)), fill=INK)
-    draw.polygon(((23, 15), (25, 16), (27, 19), (26, 20), (23, 18), (21, 17)), fill=ASH)
-    # Hooded head and two explicit 2x2 ember eyes.
-    draw.ellipse((8, 2, 24, 18), fill=INK)
-    draw.polygon(((11, 5), (20, 4), (23, 8), (22, 15), (18, 17), (12, 15), (9, 10)), fill=ASH_DARK)
-    draw.polygon(((12, 6), (20, 6), (21, 9), (20, 13), (12, 13), (10, 9)), fill=ASH)
+    # A pale ash mantle surrounds a dark, heat-hollowed face.
+    draw.polygon(((10, 3), (20, 2), (25, 7), (24, 14), (22, 17), (26, 19),
+                  (24, 23), (21, 23), (23, 27), (19, 27), (20, 30), (16, 29),
+                  (13, 31), (11, 27), (7, 28), (9, 24), (6, 22), (9, 18),
+                  (7, 14), (8, 7)), fill=INK)
+    draw.polygon(((11, 5), (20, 4), (23, 8), (22, 14), (19, 17), (22, 20),
+                  (20, 22), (21, 25), (17, 25), (18, 28), (15, 27), (13, 29),
+                  (12, 25), (9, 26), (11, 22), (8, 21), (11, 17), (9, 13),
+                  (10, 7)), fill=ASH_MID)
+    # Broad stepped strata make the torso and dissolving base read as ash.
+    draw.polygon(((9, 15), (22, 15), (21, 18), (24, 20), (20, 21), (22, 23),
+                  (17, 23), (19, 26), (14, 25), (16, 28), (12, 26), (11, 23),
+                  (8, 21), (11, 19)), fill=ASH)
+    draw.polygon(((11, 17), (20, 17), (18, 19), (21, 20), (16, 21), (19, 23),
+                  (13, 23), (15, 25), (11, 24), (10, 21)), fill=ASH_HI)
+    draw.polygon(((13, 18), (18, 18), (16, 20), (19, 21), (14, 22), (12, 20)), fill=ASH_PALE)
+    # Torn sleeves end in square soot clumps rather than hands.
+    draw.polygon(((10, 13), (6, 14), (3, 19), (5, 23), (9, 21), (12, 17)), fill=INK)
+    draw.polygon(((9, 15), (7, 15), (5, 19), (6, 21), (9, 19), (11, 17)), fill=ASH)
+    draw.polygon(((22, 13), (26, 15), (30, 19), (28, 23), (24, 20), (20, 17)), fill=INK)
+    draw.polygon(((23, 15), (25, 16), (28, 19), (27, 21), (24, 18), (21, 17)), fill=ASH_HI)
+    # Two 2x2 ember eyes sit inside a clearly darker cinder hollow.
+    draw.polygon(((11, 6), (20, 5), (22, 9), (20, 14), (12, 14), (9, 10)), fill=ASH_DARK)
+    draw.polygon(((12, 7), (20, 7), (20, 12), (12, 12), (10, 9)), fill=INK)
     draw.rectangle((12, 9, 13, 10), fill=EMBER)
     draw.rectangle((18, 9, 19, 10), fill=EMBER)
     draw.point((13, 9), fill=EMBER_HI)
     draw.point((19, 9), fill=EMBER_HI)
-    draw.rectangle((14, 13, 18, 14), fill=ASH_DARK)
-    # Detached ash clumps remain deliberately 2x2 or larger.
-    draw.rectangle((4, 25, 5, 26), fill=ASH_HI)
-    draw.rectangle((25, 27, 27, 29), fill=ASH)
-    draw.rectangle((6, 29, 8, 30), fill=ASH_DARK)
-    return image
+    draw.rectangle((14, 12, 18, 13), fill=EMBER_DARK)
+    # Detached ash chunks extend the stair-step breakup beyond the body.
+    draw.rectangle((3, 24, 5, 25), fill=ASH_PALE)
+    draw.rectangle((5, 28, 7, 29), fill=ASH_HI)
+    draw.rectangle((8, 30, 10, 31), fill=ASH_DARK)
+    draw.rectangle((24, 25, 26, 26), fill=ASH)
+    draw.rectangle((27, 28, 29, 30), fill=ASH_COOL)
+    return cel_shade(image, 1)
 
 
 def cursed_hound() -> Image.Image:
     image, draw = blank(32)
-    # Raised tail and long quadruped torso establish the silhouette first.
-    draw.polygon(((8, 12), (5, 10), (4, 6), (2, 5), (1, 9), (3, 14), (7, 17)), fill=INK)
-    draw.polygon(((7, 13), (5, 11), (5, 8), (3, 7), (3, 10), (5, 14)), fill=HOUND_HI)
-    draw.ellipse((5, 9, 23, 22), fill=INK)
-    draw.polygon(((7, 11), (18, 10), (23, 14), (21, 19), (9, 20), (6, 17)), fill=HOUND)
-    draw.polygon(((9, 12), (18, 12), (20, 14), (16, 16), (8, 16)), fill=HOUND_HI)
-    # Forward canine head, pointed ears, eye and fang.
-    draw.polygon(((19, 11), (21, 6), (23, 10), (27, 9), (30, 13), (31, 17),
-                  (28, 20), (22, 19), (19, 16)), fill=INK)
-    draw.polygon(((21, 12), (22, 9), (24, 12), (27, 11), (29, 14), (29, 17),
-                  (27, 18), (22, 17)), fill=HOUND)
-    draw.rectangle((25, 13, 26, 14), fill=EMBER_HI)
-    draw.rectangle((28, 17, 30, 18), fill=HOUND_DARK)
-    draw.rectangle((27, 18, 28, 20), fill=FANG)
-    # Four separated weight-bearing legs.
-    legs = (((7, 18), (11, 18), (10, 27), (6, 27)),
-            ((13, 18), (16, 18), (17, 27), (13, 27)),
-            ((20, 17), (23, 17), (24, 27), (20, 27)),
-            ((25, 18), (28, 18), (30, 27), (25, 27)))
-    for index, points in enumerate(legs):
-        draw.polygon(points, fill=INK)
-        draw.rectangle((points[0][0] + 1, 20, points[1][0] - 1, 25), fill=HOUND if index % 2 else HOUND_DARK)
-        draw.rectangle((points[3][0], 27, points[2][0] + 1, 28), fill=INK)
-        draw.point((points[3][0] + 1, 27), fill=FANG)
-    return image
+    # Raised tail, high rump and dipped shoulders form one curved animal back.
+    draw.polygon(((8, 14), (5, 12), (4, 8), (2, 5), (1, 7), (2, 12), (5, 16), (8, 18)), fill=INK)
+    draw.polygon(((7, 14), (5, 11), (4, 8), (3, 7), (3, 11), (6, 16)), fill=HOUND_TAIL)
+    draw.polygon(((6, 13), (10, 9), (17, 10), (21, 13), (24, 16), (22, 21),
+                  (14, 20), (9, 22), (5, 18)), fill=INK)
+    draw.polygon(((7, 14), (10, 11), (16, 11), (20, 14), (22, 16), (20, 19),
+                  (14, 18), (9, 20), (7, 17)), fill=HOUND)
+    draw.polygon(((9, 13), (12, 11), (17, 12), (20, 15), (17, 16), (11, 15)), fill=HOUND_HI)
+    draw.polygon(((8, 17), (14, 17), (12, 20), (8, 20)), fill=HOUND_DARK)
+    # Low forward head, separate muzzle and pointed ears.
+    draw.polygon(((19, 14), (21, 8), (24, 11), (27, 10), (31, 14), (31, 19),
+                  (28, 22), (22, 20), (19, 18)), fill=INK)
+    draw.polygon(((21, 14), (22, 10), (24, 13), (27, 12), (29, 14), (30, 17),
+                  (28, 19), (23, 18)), fill=HOUND_MUZZLE)
+    draw.polygon(((23, 14), (27, 13), (29, 15), (27, 16), (23, 16)), fill=HOUND_HI)
+    draw.rectangle((25, 14, 26, 15), fill=EMBER_HI)
+    draw.rectangle((28, 17, 31, 19), fill=HOUND_DARK)
+    draw.point((30, 17), fill=CURSE)
+    draw.rectangle((27, 19, 28, 21), fill=FANG)
+    # Curse scars break up the fur without changing the canine silhouette.
+    draw.line((10, 12, 12, 15), fill=CURSE_DARK, width=1)
+    draw.line((15, 12, 17, 16), fill=CURSE, width=1)
+    draw.line((20, 15, 21, 18), fill=CURSE_DARK, width=1)
+    # Rear legs push backward while the front pair brace at different angles.
+    draw.polygon(((7, 18), (11, 18), (10, 22), (7, 26), (3, 27), (2, 25),
+                  (6, 22)), fill=INK)
+    draw.polygon(((8, 19), (10, 19), (8, 23), (5, 25), (3, 25), (7, 21)), fill=HOUND_LEG)
+    draw.polygon(((12, 18), (15, 18), (16, 22), (19, 24), (18, 27), (15, 26),
+                  (13, 23)), fill=INK)
+    draw.polygon(((13, 19), (14, 19), (15, 22), (18, 24), (17, 25), (14, 23)), fill=HOUND)
+    draw.polygon(((20, 18), (23, 18), (23, 22), (21, 25), (18, 25), (18, 23),
+                  (20, 21)), fill=INK)
+    draw.polygon(((21, 19), (22, 19), (22, 21), (20, 24), (19, 24), (21, 21)), fill=HOUND_LEG)
+    draw.polygon(((24, 18), (27, 18), (28, 26), (31, 27), (30, 29), (26, 28),
+                  (25, 23)), fill=INK)
+    draw.polygon(((25, 19), (26, 19), (27, 26), (29, 27), (28, 27), (26, 26)), fill=HOUND)
+    draw.point((3, 26), fill=FANG)
+    draw.point((18, 26), fill=FANG)
+    draw.point((19, 24), fill=FANG)
+    draw.point((29, 27), fill=FANG)
+    return cel_shade(image, 2)
 
 
 def powder_dokkaebi() -> Image.Image:
@@ -137,7 +209,7 @@ def powder_dokkaebi() -> Image.Image:
     draw.rectangle((20, 15, 23, 16), fill=RED_DARK)
     draw.rectangle((16, 16, 17, 19), fill=FANG)
     draw.rectangle((25, 16, 26, 19), fill=FANG)
-    return image
+    return cel_shade(image, 3)
 
 
 def rusted_armor() -> Image.Image:
@@ -183,58 +255,62 @@ def rusted_armor() -> Image.Image:
     draw.polygon(((29, 42), (38, 42), (44, 47), (43, 50), (29, 49)), fill=INK)
     draw.rectangle((11, 46, 21, 48), fill=IRON_HI)
     draw.rectangle((31, 46, 41, 48), fill=IRON_HI)
-    return image
+    return cel_shade(image, 4)
 
 
 def general_wraith() -> Image.Image:
     image, draw = blank(88)
-    # Banner and pole establish command rank behind the body.
-    draw.line((28, 6, 24, 71), fill=INK, width=5)
-    draw.line((28, 7, 25, 70), fill=GHOST_HI, width=2)
-    draw.polygon(((28, 9), (8, 14), (14, 25), (7, 37), (25, 47)), fill=INK)
-    draw.polygon(((26, 12), (11, 15), (17, 25), (11, 35), (24, 42)), fill=FLAG)
-    draw.polygon(((23, 14), (14, 16), (19, 24), (13, 31), (23, 36)), fill=FLAG_DARK)
-    # Large ghost-fire mantle and disappearing base.
-    draw.polygon(((27, 34), (20, 41), (14, 53), (22, 57), (14, 64), (25, 65),
-                  (18, 74), (31, 72), (27, 83), (42, 78), (48, 87), (56, 77),
-                  (68, 82), (65, 69), (75, 66), (67, 58), (76, 51), (65, 45),
-                  (60, 35)), fill=INK)
-    draw.polygon(((29, 37), (23, 43), (19, 51), (27, 55), (20, 62), (31, 61),
-                  (24, 70), (36, 68), (33, 78), (43, 73), (49, 82), (54, 72),
-                  (64, 77), (61, 67), (70, 64), (62, 58), (70, 51), (61, 47),
-                  (57, 38)), fill=GHOST)
-    draw.polygon(((35, 43), (28, 52), (36, 57), (31, 65), (42, 63), (39, 72),
-                  (48, 67), (53, 75), (55, 63), (63, 61), (56, 54), (61, 47),
-                  (52, 43)), fill=GHOST_HI)
-    # Helmeted face and translucent armor blocks.
-    draw.polygon(((35, 13), (52, 13), (58, 20), (56, 33), (51, 38), (37, 36),
-                  (31, 29), (32, 19)), fill=INK)
-    draw.polygon(((37, 15), (50, 15), (55, 20), (53, 31), (49, 35), (38, 33),
-                  (34, 28), (35, 19)), fill=GHOST_DARK)
-    draw.rectangle((32, 22, 56, 26), fill=GHOST_HI)
-    draw.polygon(((38, 25), (49, 25), (51, 32), (47, 36), (39, 33)), fill=GHOST_PALE)
-    draw.rectangle((42, 28, 46, 29), fill=INK)
-    draw.polygon(((30, 34), (56, 34), (64, 47), (58, 63), (47, 68), (33, 63),
-                  (24, 49)), fill=INK)
-    draw.polygon(((32, 36), (54, 36), (61, 47), (56, 59), (47, 65), (35, 60),
-                  (27, 48)), fill=GHOST_DARK)
-    draw.rectangle((35, 39, 52, 54), fill=GHOST)
-    draw.polygon(((35, 39), (44, 44), (52, 39), (50, 54), (37, 54)), fill=GHOST_HI)
-    draw.ellipse((40, 47, 47, 54), fill=GHOST_PALE)
-    draw.polygon(((25, 35), (14, 42), (13, 53), (25, 56), (33, 47)), fill=INK)
-    draw.polygon(((26, 38), (18, 43), (17, 51), (24, 53), (30, 47)), fill=GHOST)
-    draw.polygon(((57, 35), (69, 39), (73, 50), (63, 57), (54, 48)), fill=INK)
-    draw.polygon(((58, 38), (66, 41), (69, 49), (63, 53), (57, 47)), fill=GHOST)
-    # Guan dao crosses the whole silhouette and ends in a huge readable blade.
-    draw.line((12, 75, 72, 37), fill=INK, width=7)
-    draw.line((13, 74, 72, 38), fill=GHOST_DARK, width=3)
-    draw.polygon(((67, 40), (73, 28), (82, 17), (85, 20), (82, 33), (87, 36),
-                  (78, 43), (72, 44)), fill=INK)
-    draw.polygon(((70, 39), (75, 29), (81, 21), (82, 29), (79, 35), (83, 36),
-                  (77, 40)), fill=GHOST_PALE)
-    draw.rectangle((10, 72, 18, 78), fill=INK)
-    draw.rectangle((12, 73, 16, 76), fill=GHOST_HI)
-    return image
+    # Command flag stays behind the figure and has a clearly torn fly edge.
+    draw.line((24, 7, 21, 72), fill=INK, width=5)
+    draw.line((24, 8, 22, 71), fill=STEEL_DARK, width=2)
+    draw.polygon(((23, 10), (6, 13), (12, 22), (6, 31), (13, 39), (22, 44)), fill=INK)
+    draw.polygon(((21, 12), (9, 15), (15, 22), (9, 30), (15, 36), (21, 39)), fill=FLAG)
+    draw.polygon(((18, 14), (11, 16), (16, 22), (11, 28), (18, 32)), fill=FLAG_DARK)
+    draw.line((11, 18, 19, 17), fill=FLAG_HI, width=2)
+    # A horsehair plume rises from a compact helmet crown.
+    draw.polygon(((42, 14), (43, 5), (48, 1), (57, 3), (52, 7), (47, 8), (47, 15)), fill=INK)
+    draw.polygon(((44, 13), (45, 6), (49, 3), (54, 4), (50, 6), (46, 7), (46, 14)), fill=FLAG)
+    draw.rectangle((45, 7, 46, 13), fill=FLAG_HI)
+    # Helmet crown, broad brim and dark face are three separate silhouettes.
+    draw.polygon(((35, 14), (51, 14), (56, 19), (55, 26), (32, 26), (32, 19)), fill=INK)
+    draw.polygon(((37, 16), (49, 16), (53, 19), (52, 23), (35, 23), (35, 19)), fill=GHOST_DARK)
+    draw.polygon(((30, 23), (57, 23), (62, 27), (58, 31), (29, 31), (25, 27)), fill=INK)
+    draw.polygon(((31, 25), (56, 25), (59, 27), (56, 29), (30, 29), (28, 27)), fill=GHOST_HI)
+    draw.polygon(((35, 29), (53, 29), (52, 38), (47, 41), (38, 38), (34, 34)), fill=INK)
+    draw.polygon(((38, 30), (50, 30), (49, 36), (46, 38), (39, 36), (37, 33)), fill=GHOST_PALE)
+    draw.rectangle((40, 32, 42, 33), fill=GHOST_DARK)
+    draw.rectangle((46, 32, 48, 33), fill=GHOST_DARK)
+    # Wide armor shoulders and plated chest sit below the narrow helmet.
+    draw.polygon(((29, 36), (20, 39), (14, 49), (19, 57), (29, 55), (32, 65),
+                  (55, 66), (59, 55), (69, 57), (75, 49), (68, 39), (57, 36)), fill=INK)
+    draw.polygon(((29, 39), (22, 41), (18, 49), (21, 53), (30, 51), (34, 61),
+                  (53, 62), (57, 51), (67, 53), (71, 49), (66, 42), (57, 39)), fill=GHOST_DARK)
+    draw.polygon(((31, 39), (43, 43), (56, 39), (54, 58), (44, 62), (34, 57)), fill=GHOST)
+    draw.polygon(((35, 42), (43, 45), (52, 42), (51, 55), (44, 58), (36, 54)), fill=GHOST_HI)
+    draw.line((34, 47, 53, 47), fill=GHOST_PALE, width=2)
+    draw.line((36, 53, 51, 53), fill=GHOST_PALE, width=2)
+    draw.rectangle((41, 48, 47, 54), fill=GHOST_DARK)
+    # Ghost-fire lower body dissolves in broad stepped tongues.
+    draw.polygon(((31, 58), (57, 58), (64, 66), (59, 70), (68, 74), (59, 77),
+                  (62, 84), (52, 80), (47, 87), (41, 79), (32, 84), (34, 75),
+                  (24, 77), (29, 69), (21, 66)), fill=INK)
+    draw.polygon(((33, 61), (55, 61), (60, 66), (55, 69), (63, 73), (56, 75),
+                  (58, 81), (51, 77), (47, 83), (42, 76), (35, 80), (37, 72),
+                  (28, 74), (32, 68), (26, 66)), fill=GHOST)
+    draw.polygon(((38, 63), (52, 63), (55, 67), (51, 70), (57, 73), (50, 74),
+                  (47, 79), (43, 73), (37, 76), (40, 69), (34, 67)), fill=GHOST_HI)
+    # Guan dao crosses the body; steel shaft and crescent blade remain distinct.
+    draw.line((15, 77, 72, 39), fill=INK, width=7)
+    draw.line((16, 76, 72, 40), fill=STEEL_DARK, width=3)
+    draw.line((20, 72, 65, 43), fill=STEEL, width=1)
+    draw.polygon(((67, 43), (71, 32), (78, 20), (83, 17), (82, 29), (87, 33),
+                  (85, 39), (76, 45), (70, 46)), fill=INK)
+    draw.polygon(((70, 42), (74, 33), (79, 23), (81, 21), (80, 31), (84, 34),
+                  (82, 37), (76, 42)), fill=STEEL)
+    draw.polygon(((74, 39), (77, 31), (80, 26), (79, 34), (82, 35), (79, 39)), fill=STEEL_HI)
+    draw.rectangle((11, 73, 19, 79), fill=INK)
+    draw.rectangle((13, 74, 17, 77), fill=STEEL)
+    return cel_shade(image, 5)
 
 
 # The engine divides every sheet by SpriteSheet.EXPORT_SCALE (16), so any other
@@ -243,8 +319,8 @@ SPECS = {
     "ash_wraith": (32, 16, 32, ash_wraith),
     "cursed_hound": (32, 16, 32, cursed_hound),
     "powder_dokkaebi": (32, 16, 32, powder_dokkaebi),
-    "rusted_armor": (52, 16, 43, rusted_armor),
-    "general_wraith": (88, 16, 84, general_wraith),
+    "rusted_armor": (52, 16, 52, rusted_armor),
+    "general_wraith": (88, 16, 88, general_wraith),
 }
 
 
@@ -253,13 +329,6 @@ def nearest_roundtrip_difference(image: Image.Image, logical_size: tuple[int, in
     restored = logical.resize(image.size, Image.Resampling.NEAREST)
     different = sum(left != right for left, right in zip(image.get_flattened_data(), restored.get_flattened_data()))
     return different, different / float(image.width * image.height) * 100.0
-
-
-def peak_effect_frame(path: Path, frame_count: int) -> Image.Image:
-    sheet = Image.open(path).convert("RGBA")
-    frame_width = sheet.width // frame_count
-    frames = [sheet.crop((index * frame_width, 0, (index + 1) * frame_width, sheet.height)) for index in range(frame_count)]
-    return max(frames, key=lambda frame: sum(bool(alpha) for alpha in frame.getchannel("A").get_flattened_data()))
 
 
 def make_comparison() -> Path:
@@ -271,10 +340,6 @@ def make_comparison() -> Path:
         (name.replace("_", " ").upper(), Image.open(MONSTERS / name / "idle.png").convert("RGBA"), display)
         for name, (_, _, display, _) in SPECS.items()
     )
-    entries.extend((
-        ("CHEOLBYEOK", peak_effect_frame(EFFECTS / "skill_cheolbyeok.png", 6), 96),
-        ("CHAMGYEOK", peak_effect_frame(EFFECTS / "skill_chamgyeok.png", 8), 150),
-    ))
     cell_width = 174
     image = Image.new("RGB", (cell_width * len(entries), 190), (11, 15, 17))
     draw = ImageDraw.Draw(image)
@@ -284,16 +349,21 @@ def make_comparison() -> Path:
         x = index * cell_width + (cell_width - display.width) // 2
         y = 4 + (156 - display.height) // 2
         image.paste(display, (x, y), display)
-        draw.text((index * cell_width + 6, 166), label, fill=(190, 197, 196), font=font)
+        visible_colors = len({pixel for pixel in display.get_flattened_data() if pixel[3] > 0})
+        draw.text((index * cell_width + 6, 166), f"{label} {display_size}px / {visible_colors}c", fill=(190, 197, 196), font=font)
         if index:
             draw.line((index * cell_width, 4, index * cell_width, 184), fill=(37, 43, 45))
     path = MONSTERS / "night2-grid-comparison.png"
-    image.quantize(colors=64, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert("RGB").save(path, optimize=True)
+    image.save(path, optimize=True)
     return path
 
 
 def main() -> None:
-    for name, (logical_size, scale, _, builder) in SPECS.items():
+    for name, (logical_size, scale, display_size, builder) in SPECS.items():
+        if scale != 16:
+            raise ValueError(f"{name}: export scale {scale}; engine requires 16")
+        if display_size != logical_size:
+            raise ValueError(f"{name}: display {display_size}; expected logical size {logical_size}")
         logical = builder()
         if logical.size != (logical_size, logical_size):
             raise ValueError(f"{name}: wrong logical size {logical.size}")
@@ -301,10 +371,15 @@ def main() -> None:
         colors = Counter(output.get_flattened_data())
         if len(colors) > 64:
             raise ValueError(f"{name}: {len(colors)} colors")
+        opaque_colors = {color for color in colors if color[3] > 0}
+        if not 30 <= len(opaque_colors) <= 60:
+            raise ValueError(f"{name}: {len(opaque_colors)} display colors; expected 30..60")
         output_path = MONSTERS / name / "idle.png"
         output.save(output_path, optimize=True)
         different, percent = nearest_roundtrip_difference(output, logical.size)
-        print(f"{name}: {logical_size}x{logical_size} x{scale} -> {output.width}x{output.height}; {len(colors)} RGBA colors; roundtrip {different} px ({percent:.6f}%)")
+        if different:
+            raise ValueError(f"{name}: logical-grid roundtrip differs by {different} px")
+        print(f"{name}: {logical_size}x{logical_size} x{scale} -> {output.width}x{output.height}; {len(opaque_colors)} display colors; roundtrip {different} px ({percent:.6f}%)")
     print(f"comparison: {make_comparison().as_posix()}")
 
 
