@@ -24,6 +24,7 @@ const CTA_HEIGHT := 64.0
 
 var _root: Control
 var _panel: PanelContainer
+var _rows: GridContainer
 var _title_label: Label
 var _time_value: Label
 var _kills_value: Label
@@ -56,6 +57,11 @@ func _layout_panel() -> void:
 	_panel.offset_right = half_w
 	_panel.offset_top = -half_h
 	_panel.offset_bottom = half_h
+	# One column is the portrait stack, two is the landscape spread. Set here
+	# rather than at build time so a run that started portrait still spreads
+	# when the result lands on a landscape screen.
+	if _rows != null:
+		_rows.columns = 2 if root_w > root_h else 1
 
 
 func _ready() -> void:
@@ -84,6 +90,9 @@ func _ready() -> void:
 	panel.add_child(layout)
 	layout.add_child(_make_header())
 	layout.add_child(_make_body())
+	# The first pass ran before the rows existed, so the column count is set
+	# here, once they do.
+	_layout_panel()
 	visible = false
 
 
@@ -171,16 +180,18 @@ func _make_body() -> Control:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	# Responsive: a short landscape canvas cannot stack five rows, so it spends
 	# the width it has instead — two columns, same rows, no scroll.
-	var landscape: bool = _root.size.x > _root.size.y
-	var rows: Container = GridContainer.new() if landscape else VBoxContainer.new()
+	#
+	# A GridContainer at one column IS the vertical stack, which is why it is
+	# used for both. Swapping the container class on a flip would mean rebuilding
+	# every row and re-filling its value, and the first attempt did not rebuild
+	# at all: a paper built portrait kept its single column in landscape, and the
+	# five rows went straight back to scrolling (layout_sweep, 960x540).
+	var rows := GridContainer.new()
 	rows.name = "Rows"
-	if landscape:
-		(rows as GridContainer).columns = 2
-		rows.add_theme_constant_override("h_separation", UiPalette.SPACE_LG)
-		rows.add_theme_constant_override("v_separation", UiPalette.SPACE_MD)
-	else:
-		rows.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+	rows.add_theme_constant_override("h_separation", UiPalette.SPACE_LG)
+	rows.add_theme_constant_override("v_separation", UiPalette.SPACE_MD)
 	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_rows = rows
 	scroll.add_child(rows)
 	body.add_child(scroll)
 	_death_value = _add_row(rows, UiLocale.t("죽음"))

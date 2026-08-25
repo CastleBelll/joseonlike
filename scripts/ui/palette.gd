@@ -50,6 +50,10 @@ const CARD_WELL := Color("#2b2531")
 const ENEMY_GOBLIN := Color("#6faa4e")
 const ENEMY_SPIRIT := Color("#d8dfd2")
 const ENEMY_BRUTE := Color("#a4763b")
+## 야광귀 (N10-1a). A thief has to be picked out of a crowd at a glance —
+## the player decides whether to break off and chase it — so it cannot
+## share the goblin green every artless monster falls back to.
+const ENEMY_THIEF := Color("#e6d98f")
 # XP orb glow per DESIGN.md §5.1 (cyan-green) and white damage numbers.
 ## N9-142 (owner: 민트색이 필드의 청록과 겹친다): warm spirit-gold, matching
 ## the icon_pickup_xp_orb concept — hundreds of 7px orbs read better as a

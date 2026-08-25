@@ -39,6 +39,7 @@ const PLACEHOLDER_COLORS: Dictionary = {
 	"forest_goblin": UiPalette.ENEMY_GOBLIN,
 	"forest_spirit": UiPalette.ENEMY_SPIRIT,
 	"bamboo_brute": UiPalette.ENEMY_BRUTE,
+	"yagwanggwi": UiPalette.ENEMY_THIEF,
 }
 
 ## SpriteFrames are built once per sprite set and shared by every pooled
