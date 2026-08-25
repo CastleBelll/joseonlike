@@ -101,6 +101,17 @@ Fallback:  PlaceholderArt rect (a missing texture never blocks a feature)
 ```
 
 ```
+[MISSING] 체 (hung sieve) prop (N10-1b)
+Size:      18x22 px, drawn 1x like every other prop texture
+Members:   res://asset/stages/bamboo_forest/props/hung_sieve.png
+Used by:   data/props.json "hung_sieve" (wayside / camp themes), the 야광귀
+           counterplay — a thief stops inside its 150px radius
+Reference: 마루에 걸어두는 체. 둥근 나무 테에 성긴 망, 끈으로 매달린 모습.
+           구멍이 보여야 한다 — 야광귀가 세는 것이 그 구멍이다.
+Fallback:  round palette shape (placeholder "shrine")
+```
+
+```
 [MISSING] xp orb sprite (AC-4)
 Size:      orb ~10x10 px
 Members:   res://asset/drop/xp_orb.png (idle, optional 2-frame shimmer)
