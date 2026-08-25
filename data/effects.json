@@ -186,6 +186,16 @@
    "fps": 20.0,
    "logical_px": 96.0
   },
+  "skill_chamgyeok": {
+   "file": "res://asset/effect/skill_chamgyeok.png",
+   "fps": 20.0,
+   "logical_px": 150.0
+  },
+  "skill_cheolbyeok": {
+   "file": "res://asset/effect/skill_cheolbyeok.png",
+   "fps": 18.0,
+   "logical_px": 96.0
+  },
   "hit_sal": {
    "file": "res://asset/effect/hit_sal.png",
    "fps": 22.0,
