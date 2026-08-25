@@ -29,6 +29,8 @@ const PANEL_WIDTH_LANDSCAPE := 760.0
 const HEADER_HEIGHT := 72.0
 const BODY_MARGIN := 32.0
 const ROW_HEIGHT := 56.0
+## The control side of a slider row, matched to TOGGLE_WIDTH.
+const SLIDER_WIDTH := 176.0
 const SLIDER_STEP := 0.01
 const CTA_HEIGHT := 64.0
 const TOGGLE_WIDTH := 160.0
@@ -335,11 +337,20 @@ static func tab_box(selected: bool) -> StyleBoxFlat:
 	return box
 
 
+## Owner (가로모드도 어색하고): every other row on this paper is label on the
+## left, control on the right, one ROW_HEIGHT tall. The sliders were the only
+## ones stacking their label above the track, so in the landscape two-column
+## grid they sat at a different height from the row beside them and the page
+## read as misaligned. Same shape as the rest now — the track takes the control
+## side, which is also where the eye already looks for something to touch.
 func _make_slider_row(key: String, min_value: float = 0.0) -> Control:
-	var row := VBoxContainer.new()
+	var row := HBoxContainer.new()
 	row.name = key.to_pascal_case()
-	row.add_theme_constant_override("separation", UiPalette.SPACE_XS)
+	row.custom_minimum_size = Vector2(0.0, ROW_HEIGHT)
+	row.add_theme_constant_override("separation", UiPalette.SPACE_MD)
 	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_row_labels[key] = name_label
 	row.add_child(name_label)
 	var slider := HSlider.new()
@@ -348,7 +359,10 @@ func _make_slider_row(key: String, min_value: float = 0.0) -> Control:
 	slider.max_value = 1.0
 	slider.step = SLIDER_STEP
 	slider.value = float(SaveService.instance.get_setting(key))
-	slider.custom_minimum_size = Vector2(0.0, UiPalette.TOUCH_TARGET_MIN)
+	# Wide enough to aim at, and matched to the toggle/choice buttons opposite
+	# it so the control column lines up down the page.
+	slider.custom_minimum_size = Vector2(SLIDER_WIDTH, UiPalette.TOUCH_TARGET_MIN)
+	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	slider.add_theme_stylebox_override("slider", _track_style(UiPalette.WOOD_BORDER))
 	slider.add_theme_stylebox_override("grabber_area", _track_style(UiPalette.WOOD))
 	slider.add_theme_stylebox_override("grabber_area_highlight", _track_style(UiPalette.WOOD_HOVER))

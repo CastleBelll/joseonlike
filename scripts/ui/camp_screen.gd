@@ -189,12 +189,26 @@ func build_ui() -> void:
 	if hint_label != null:
 		column.add_child(hint_label)
 
+	# Owner (본거지 세로에 빈 띠가 크다): all the slack used to go above the
+	# departure cluster, which pinned it to the bottom margin and left one wide
+	# band of backdrop doing nothing in the middle. The cluster still belongs
+	# low — 출정 is the thumb's button — so the slack is split rather than
+	# moved: most of it above, a quarter below, which lifts the cluster off the
+	# edge and turns the band into breathing room with ground under it.
 	var spacer := Control.new()
+	spacer.name = "TopSlack"
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	spacer.size_flags_stretch_ratio = 3.0
 	column.add_child(spacer)
 
 	column.add_child(_notice_label)
 	column.add_child(_build_menu())
+
+	var bottom_slack := Control.new()
+	bottom_slack.name = "BottomSlack"
+	bottom_slack.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	bottom_slack.size_flags_stretch_ratio = 1.0
+	column.add_child(bottom_slack)
 
 
 ## N9-157: per-orientation pixel-art backdrops with the painted single as
