@@ -101,6 +101,18 @@ Fallback:  PlaceholderArt rect (a missing texture never blocks a feature)
 ```
 
 ```
+[PLACEHOLDER] 무쇠 · 생달걀 · 버드나무 가지 loot icons (N10-3b)
+Size:      512x512 (32px logical x16), like every other loot icon
+Members:   res://asset/ui/loot_icons/{cast_iron,raw_egg,willow_branch}.png
+Used by:   data/loot.json, the 삼두구미 part gates
+Why:       Drawn on the grid by asset/ui/build_material_icons.py because the
+           image-generation credits ran out mid-feature. They read at a glance
+           and they ship, but they carry five to seven colours against the
+           neighbouring 귀철·주사 icons' shaded crystals — replace them when
+           credits return, then delete the build script.
+```
+
+```
 [MISSING] 삼두구미 sprite set (N10-3a)
 Size:      64px logical frame, figure ~58px drawn — an elite, between the
            rusted armour (50) and the boss (86). Canvas = logical x 16, drawn
