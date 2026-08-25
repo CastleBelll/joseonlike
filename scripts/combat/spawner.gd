@@ -406,6 +406,14 @@ func _despawn_far_enemies() -> void:
 			_release(enemy)
 
 
+## Take an enemy off the field without calling it a kill. 야광귀 (N10-1a) needs
+## this: a thief that gets clear has BEATEN the player, and routing it through
+## died() would pay out the kill count, the xp orb and the kill sound for
+## something the player just lost.
+func dismiss(enemy: Enemy) -> void:
+	_release(enemy)
+
+
 func _on_enemy_died(enemy: Enemy) -> void:
 	if enemy.is_burning() and enemy.burn_spread_px > 0.0:
 		_spread_burn(enemy)

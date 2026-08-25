@@ -384,6 +384,13 @@
     "interval_sec": 0.6
    },
    {
+    "_note": "N10-1a 야광귀. One at a time, a long way apart: a thief is an interruption the player chooses to answer, and a crowd of them would just be a tax on every passive the field lays down (field_passive: one every 22s, at most 3 live).",
+    "at_sec": 150,
+    "monster_id": "yagwanggwi",
+    "count": 4,
+    "interval_sec": 38.0
+   },
+   {
     "at_sec": 150,
     "monster_id": "rusted_armor",
     "count": 24,
@@ -484,6 +491,12 @@
     "monster_id": "rusted_armor_elite",
     "count": 14,
     "interval_sec": 4.0
+   },
+   {
+    "at_sec": 300,
+    "monster_id": "yagwanggwi",
+    "count": 3,
+    "interval_sec": 34.0
    },
    {
     "at_sec": 310,

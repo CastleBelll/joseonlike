@@ -63,10 +63,14 @@ const LOOT_TIERS: Array[String] = ["common", "uncommon", "rare", "epic", "mythic
 ## swarm) are GDD intents that still run as chasers — listed so the vocabulary
 ## stays closed and a typo cannot invent a fourth silent fallback.
 const BEHAVIOURS: Array[String] = [
-	"chase", "boss", "suicide", "ranged", "charger", "swarm"
+	"chase", "boss", "suicide", "ranged", "charger", "swarm", "thief"
 ]
 ## What a suicide's blast is made of — all four are load-bearing.
 const SUICIDE_FIELDS: Array[String] = ["trigger_px", "fuse_sec", "radius_px", "damage"]
+## What a thief's raid is made of. All four are load-bearing: without a reach it
+## can never take anything, without an escape it can never leave with it, and
+## without a flee speed the player simply walks it down.
+const THEFT_FIELDS: Array[String] = ["seek_px", "grab_px", "escape_px", "flee_speed_mult"]
 
 # N4-2 elite variant contract (monsters.json entries with "elite_of").
 const ELITE_MULT_FIELDS: Array[String] = [
@@ -168,7 +172,13 @@ func _check_combat_cross_references() -> void:
 		if (monsters[monster_id] as Dictionary).has("elite_of"):
 			_check_elite(monsters, monster_id)
 			continue
-		_require_positive_numbers(monsters[monster_id], MONSTER_FIELDS, "monsters." + monster_id)
+		# A thief's zero damage is the design, not a missing number, so it is
+		# checked by _check_behaviour instead — which fails a thief that DOES
+		# hurt on touch.
+		var numeric: Array[String] = MONSTER_FIELDS.duplicate()
+		if String((monsters[monster_id] as Dictionary).get("behaviour", "")) == "thief":
+			numeric.erase("damage")
+		_require_positive_numbers(monsters[monster_id], numeric, "monsters." + monster_id)
 		_check_monster_sprites(monsters[monster_id], "monsters." + monster_id)
 		# N9-49 boss patterns: a telegraph nobody can react to is just damage,
 		# and a band that swallows its own middle is a disc with a misleading
@@ -429,16 +439,24 @@ func _check_behaviour(monster: Dictionary, path: String) -> void:
 	if not BEHAVIOURS.has(behaviour):
 		_fail("%s.behaviour '%s' is not one of %s" % [path, behaviour, str(BEHAVIOURS)])
 		return
-	if behaviour != "suicide":
-		if monster.has("suicide"):
-			_fail("%s carries a suicide block but does not behave like one" % path)
-		return
-	if not monster.has("suicide"):
-		_fail("%s behaves as suicide but carries no suicide block" % path)
-		return
-	_require_positive_numbers(
-		monster["suicide"], SUICIDE_FIELDS, path + ".suicide"
-	)
+	if behaviour != "suicide" and monster.has("suicide"):
+		_fail("%s carries a suicide block but does not behave like one" % path)
+	if behaviour != "thief" and monster.has("theft"):
+		_fail("%s carries a theft block but does not behave like one" % path)
+	if behaviour == "suicide":
+		if not monster.has("suicide"):
+			_fail("%s behaves as suicide but carries no suicide block" % path)
+			return
+		_require_positive_numbers(monster["suicide"], SUICIDE_FIELDS, path + ".suicide")
+	elif behaviour == "thief":
+		if not monster.has("theft"):
+			_fail("%s behaves as thief but carries no theft block" % path)
+			return
+		_require_positive_numbers(monster["theft"], THEFT_FIELDS, path + ".theft")
+		# A thief that hits is a chaser wearing a costume: the whole point is
+		# that engaging it is optional, so its damage has to be exactly zero.
+		if not is_zero_approx(float(monster.get("damage", 0.0))):
+			_fail("%s behaves as thief but deals contact damage" % path)
 
 
 func _check_elite(monsters: Dictionary, monster_id: String) -> void:

@@ -131,6 +131,16 @@ var _fuse_left: float = 0.0
 var _fuse_lit: bool = false
 var _spent: bool = false
 
+## 야광귀 (N10-1a) theft state. A thief walks to the loot rather than the
+## player and never lands a hit — the whole threat is that it leaves with
+## something. `theft_goal` is written by the stage, which is the only place
+## that knows where the field's pickups are; a goal of NAN means "nothing to
+## steal" and the thief chases like anything else so it is never left standing.
+var is_thief: bool = false
+var carried_passive: String = ""
+var theft_goal := Vector2(NAN, NAN)
+var _theft: Dictionary = {}
+
 # N10-1a 그슨대: the shadow contract. `shadow_config` empty = an ordinary
 # monster, so every existing enemy is untouched. `light_sources` is the live
 # array the field owns (chunks append to it as the world grows).
@@ -198,6 +208,10 @@ func setup(
 	_fuse_left = 0.0
 	_fuse_lit = false
 	_spent = false
+	is_thief = String(stats.get("behaviour", "")) == "thief"
+	_theft = stats.get("theft", {})
+	carried_passive = ""
+	theft_goal = Vector2(NAN, NAN)
 	is_elite = bool(stats.get("is_elite", false))
 	_size_scale = float(stats.get("size_scale", 1.0))
 	_flash_left = 0.0
@@ -298,8 +312,17 @@ func _physics_process(delta: float) -> void:
 	var desired: Vector2 = CombatMath.chase_direction(
 		global_position, _target.global_position
 	)
-	var steer: Vector2 = CombatMath.avoid_direction(desired, _block_normal, _avoid_sign)
 	var speed: float = _speed * (_shock_scale if _shock_left > 0.0 else 1.0)
+	if is_thief:
+		if not carried_passive.is_empty():
+			# Carrying: the player is the thing to get away from. Same chase
+			# maths, read backwards, so a cornered thief still slides along
+			# props instead of grinding into them.
+			desired = -desired
+			speed *= float(_theft.get("flee_speed_mult", 1.0))
+		elif not is_nan(theft_goal.x):
+			desired = CombatMath.chase_direction(global_position, theft_goal)
+	var steer: Vector2 = CombatMath.avoid_direction(desired, _block_normal, _avoid_sign)
 	# Stunned (진언, N4-4b): the chase stops dead; only knockback still moves it.
 	if _stun_left > 0.0 or _shadow_leashed or _fuse_lit:
 		speed = 0.0
@@ -310,8 +333,10 @@ func _physics_process(delta: float) -> void:
 		else Vector2.ZERO
 	)
 	_update_visual_motion()
-	# A bomb never also body-slams: its whole damage is the blast.
-	if _stun_left <= 0.0 and not is_suicide:
+	# A bomb never also body-slams: its whole damage is the blast. A thief never
+	# lands a hit at all — chasing it has to be the player's choice, not
+	# something they are punished into.
+	if _stun_left <= 0.0 and not is_suicide and not is_thief:
 		_try_contact_damage()
 
 
@@ -381,6 +406,13 @@ func absorbs_damage() -> bool:
 
 func is_shadow() -> bool:
 	return not shadow_config.is_empty()
+
+
+## The thief's four numbers, for the stage that drives it. Handing the block
+## over is cheaper than making the stage load the monster catalogue a second
+## time just to look up what this enemy already knows.
+func theft_config() -> Dictionary:
+	return _theft
 
 
 ## Swell in the dark, shrink in the light, and show which one is happening.

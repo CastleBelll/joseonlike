@@ -345,6 +345,20 @@
   "collision_radius": 12.0,
   "sprite": "res://asset/monsters/powder_dokkaebi"
  },
+ "yagwanggwi": {
+  "name_ko": "야광귀",
+  "name_en": "Yagwanggwi",
+  "origin_ko": "섣달그믐 밤 하늘에서 내려와 남의 신발을 신어보고, 발에 맞으면 신은 채 달아나는 귀신. 때려 죽일 것이 아니라 쫓아가 되찾을 것.",
+  "hp": 16.0,
+  "damage": 0.0,
+  "speed": 78.0,
+  "xp_drop": 4,
+  "behaviour": "thief",
+  "_theft_note": "N10-1a: 세시풍속의 신발 도둑을 그대로 규칙으로 옮겼다. 필드에 놓인 패시브로 곧장 걸어가 집어 들고 플레이어 반대편으로 달아난다. 접촉 피해가 0인 것은 설정이 아니라 설계다 — 쫓을지 말지가 플레이어의 선택이어야 하고, 놓치면 그 패시브는 이 런에서 영영 사라진다.",
+  "theft": {"seek_px": 900.0, "grab_px": 26.0, "escape_px": 1150.0, "flee_speed_mult": 1.35},
+  "_art_note": "No sprite set yet, so PlaceholderArt draws it (CLAUDE.md §5: a missing texture never blocks a gameplay feature). Wanted art is logged in ASSET_REQUIREMENTS.md.",
+  "collision_radius": 11.0
+ },
  "general_wraith": {
   "name_ko": "장군 원혼",
   "name_en": "General's Wraith",

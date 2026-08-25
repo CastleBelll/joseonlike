@@ -54,6 +54,35 @@ static func fuse_fires(fuse_left_after: float, already_spent: bool) -> bool:
 	return not already_spent and fuse_left_after <= 0.0
 
 
+## 야광귀 (N10-1a): the thief goes for the loot on the ground, not the player,
+## so its target is the nearest thing lying in the field. -1 means the field is
+## empty and it has nothing to steal — the caller falls back to plain chasing
+## rather than letting it stand still.
+static func thief_target(from: Vector2, loot: PackedVector2Array) -> int:
+	var best: int = -1
+	var best_distance: float = INF
+	for index: int in range(loot.size()):
+		var distance: float = from.distance_squared_to(loot[index])
+		if distance < best_distance:
+			best_distance = distance
+			best = index
+	return best
+
+
+## Close enough to pick it up. Zero reach can never grab, so a missing number
+## in the data leaves the thief harmlessly empty-handed instead of teleporting
+## the loot away the moment it spawns.
+static func thief_takes(distance: float, grab_px: float) -> bool:
+	return grab_px > 0.0 and distance <= grab_px
+
+
+## Far enough away that the chase is over and the loot is gone for good. The
+## player's own distance is what counts, not the field's: a thief that runs
+## past the screen edge while the player is still on its heels has not escaped.
+static func thief_escaped(distance: float, escape_px: float) -> bool:
+	return escape_px > 0.0 and distance >= escape_px
+
+
 ## What a detonation actually covers. Outside the radius is a clean miss, which
 ## is what makes running the right answer.
 static func blast_covers(distance: float, radius_px: float) -> bool:

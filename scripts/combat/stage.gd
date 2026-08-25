@@ -443,6 +443,7 @@ func _physics_process(delta: float) -> void:
 	_run_elapsed += delta
 	_tick_boss_attacks(delta)
 	_tick_field_passives(delta)
+	_tick_thieves()
 	_tick_minimap(delta)
 	_tick_impact(delta)
 	_tick_breakable_cull(delta)
@@ -631,6 +632,7 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 	)
 	var orb: XpOrb = _orb_pool.acquire()
 	orb.launch(enemy.global_position, enemy.xp_drop, _player, _orb_config)
+	_drop_stolen_passive(enemy)
 	_spawn_loot(enemy)
 	# N5-5: an elite death leaves a reward chest where it fell (walk to open).
 	if enemy.is_elite:
@@ -1732,6 +1734,73 @@ func _tick_field_passives(delta: float) -> void:
 	)
 	_live_field_passives.append(pickup)
 	_field_passives_placed += 1
+
+
+## 야광귀 (N10-1a): the thief walks to what is lying on the ground, takes it,
+## and runs. The stage drives it because the stage is the only thing that knows
+## where the field's pickups are — the enemy just follows the goal it is handed.
+##
+## Losing the passive is the point. It is gone the moment the thief gets clear,
+## and the only way to keep it is to kill the thief before that, which is why
+## the thief itself never deals damage: the chase has to be the player's own
+## choice rather than a fight they are forced into.
+func _tick_thieves() -> void:
+	var thieves: Array[Enemy] = []
+	for enemy: Enemy in _spawner.active_enemies():
+		if enemy.is_thief:
+			thieves.append(enemy)
+	if thieves.is_empty():
+		return
+	var loot := PackedVector2Array()
+	for pickup: Pickup in _live_field_passives:
+		loot.append(pickup.global_position)
+	for thief: Enemy in thieves:
+		var theft: Dictionary = thief.theft_config()
+		var from_player: float = thief.global_position.distance_to(_player.global_position)
+		if not thief.carried_passive.is_empty():
+			if CombatMath.thief_escaped(from_player, float(theft.get("escape_px", 0.0))):
+				_float_label(UiLocale.t("%s 도둑맞았다!") % UiLocale.data_name(
+					_passives_data.get(thief.carried_passive, {}), thief.carried_passive
+				))
+				thief.carried_passive = ""
+				# Dismissed, not killed: it won, and paying a kill's xp and
+				# count for it would read as a reward.
+				_spawner.dismiss(thief)
+			continue
+		var index: int = CombatMath.thief_target(thief.global_position, loot)
+		if index < 0:
+			thief.theft_goal = Vector2(NAN, NAN)
+			continue
+		var seek_px: float = float(theft.get("seek_px", 0.0))
+		var to_loot: float = thief.global_position.distance_to(loot[index])
+		if seek_px > 0.0 and to_loot > seek_px:
+			thief.theft_goal = Vector2(NAN, NAN)
+			continue
+		thief.theft_goal = loot[index]
+		if not CombatMath.thief_takes(to_loot, float(theft.get("grab_px", 0.0))):
+			continue
+		var taken: Pickup = _live_field_passives[index]
+		thief.carried_passive = taken.passive_id
+		_pickup_pool.release(taken)
+		_live_field_passives.remove_at(index)
+		loot.remove_at(index)
+		_refresh_markers()
+		_float_label(UiLocale.t("야광귀가 훔쳐 간다!"))
+
+
+## The stolen passive falls where the thief did, so killing it is what gets the
+## pickup back rather than a refund the player never sees on the field.
+func _drop_stolen_passive(enemy: Enemy) -> void:
+	if not enemy.is_thief or enemy.carried_passive.is_empty():
+		return
+	var pickup: Pickup = _pickup_pool.acquire()
+	pickup.launch_pickup(
+		enemy.global_position, Pickups.KIND_PASSIVE, _player, _orb_config,
+		enemy.carried_passive
+	)
+	_live_field_passives.append(pickup)
+	enemy.carried_passive = ""
+	_refresh_markers()
 
 
 ## A found passive is added whatever the four-slot budget says (owner
