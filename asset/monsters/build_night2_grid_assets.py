@@ -237,10 +237,12 @@ def general_wraith() -> Image.Image:
     return image
 
 
+# The engine divides every sheet by SpriteSheet.EXPORT_SCALE (16), so any other
+# export multiplier lands the drawing on a fractional display scale.
 SPECS = {
-    "ash_wraith": (32, 22, 30, ash_wraith),
-    "cursed_hound": (32, 22, 30, cursed_hound),
-    "powder_dokkaebi": (32, 22, 32, powder_dokkaebi),
+    "ash_wraith": (32, 16, 32, ash_wraith),
+    "cursed_hound": (32, 16, 32, cursed_hound),
+    "powder_dokkaebi": (32, 16, 32, powder_dokkaebi),
     "rusted_armor": (52, 16, 43, rusted_armor),
     "general_wraith": (88, 16, 84, general_wraith),
 }
