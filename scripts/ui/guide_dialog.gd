@@ -2,7 +2,10 @@ class_name GuideDialog
 extends CanvasLayer
 ## First-boot guide dialogue (N9-4), DESIGN.md §3 NPC/내레이션 grammar:
 ## bottom-fixed dark panel (NIGHT_BROWN + gold border), speaker name in
-## GOLD over a divider, white body text, one wood button. The speaker's
+## The speaker's name over a divider, body text below, one wood button. Gold on
+## a dark sheet became gold on paper and stopped being readable, so the name is
+## VERMILION — the accent this UI already uses for a heading on paper. The
+## speaker's
 ## portrait sits in a dark well on the left (우치's select-card portrait).
 ## Pages advance one tap at a time; `finished` fires after the last page.
 ## Runs with PROCESS_MODE_ALWAYS so it works over a paused tree.
@@ -65,13 +68,21 @@ func _ready() -> void:
 
 	var panel := PanelContainer.new()
 	panel.name = "Panel"
-	var style := StyleBoxFlat.new()
-	style.bg_color = UiPalette.NIGHT_BROWN
-	style.border_color = UiPalette.GOLD_BORDER
-	style.set_border_width_all(PANEL_BORDER_WIDTH)
-	style.set_corner_radius_all(PANEL_CORNER)
-	style.set_content_margin_all(PAD)
-	panel.add_theme_stylebox_override("panel", style)
+	# N10-21: the speaker's sheet on the owner's kit plaque — the guide was the
+	# last screen still drawing its own dark panel while everything it interrupts
+	# had already moved to paper.
+	var kit: StyleBox = UiIcons.card_panel()
+	if kit != null:
+		(kit as StyleBoxTexture).set_content_margin_all(PAD)
+		panel.add_theme_stylebox_override("panel", kit)
+	else:
+		var style := StyleBoxFlat.new()
+		style.bg_color = UiPalette.NIGHT_BROWN
+		style.border_color = UiPalette.GOLD_BORDER
+		style.set_border_width_all(PANEL_BORDER_WIDTH)
+		style.set_corner_radius_all(PANEL_CORNER)
+		style.set_content_margin_all(PAD)
+		panel.add_theme_stylebox_override("panel", style)
 	panel.anchor_left = 0.0
 	panel.anchor_right = 1.0
 	panel.anchor_top = 1.0
@@ -115,7 +126,7 @@ func _ready() -> void:
 	_name_label = Label.new()
 	_name_label.name = "SpeakerName"
 	_name_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
-	_name_label.add_theme_color_override("font_color", UiPalette.GOLD)
+	_name_label.add_theme_color_override("font_color", UiPalette.VERMILION)
 	column.add_child(_name_label)
 
 	var divider := ColorRect.new()
@@ -127,7 +138,7 @@ func _ready() -> void:
 	_body_label = Label.new()
 	_body_label.name = "Body"
 	_body_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
-	_body_label.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+	_body_label.add_theme_color_override("font_color", UiPalette.INK)
 	_body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(_body_label)
