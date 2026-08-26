@@ -811,10 +811,15 @@ func _build_passive_cell(entry: Dictionary) -> Control:
 	cell.add_theme_constant_override("separation", 2)
 	var well := PanelContainer.new()
 	well.custom_minimum_size = Vector2(BUILD_CELL_SIZE, BUILD_CELL_SIZE)
-	var well_style := StyleBoxFlat.new()
-	well_style.bg_color = UiPalette.NIGHT_BROWN
-	well_style.set_corner_radius_all(6)
-	well.add_theme_stylebox_override("panel", well_style)
+	# N10-15: the owner's kit slot frame, falling back to the flat well so a
+	# missing kit still renders a usable strip.
+	var slot: StyleBox = UiIcons.slot_panel()
+	if slot == null:
+		var well_style := StyleBoxFlat.new()
+		well_style.bg_color = UiPalette.NIGHT_BROWN
+		well_style.set_corner_radius_all(6)
+		slot = well_style
+	well.add_theme_stylebox_override("panel", slot)
 	var icon: Texture2D = UiIcons.passive_icon(String(entry.get("id", "")))
 	if icon != null:
 		var rect: TextureRect = UiIcons.icon_rect(icon, BUILD_ICON_SIZE)
@@ -844,16 +849,24 @@ func _build_weapon_cell(entry: Dictionary) -> Control:
 	cell.add_theme_constant_override("separation", 2)
 	var well := PanelContainer.new()
 	well.custom_minimum_size = Vector2(BUILD_CELL_SIZE, BUILD_CELL_SIZE)
-	var well_style := StyleBoxFlat.new()
-	well_style.bg_color = UiPalette.NIGHT_BROWN
-	well_style.set_corner_radius_all(6)
-	# N9-27: the well border carries the grade, so the axis the player invested
-	# in is visible at a glance rather than only on the card that sold it.
+	# N9-27: the well carries the grade, so the axis the player invested in is
+	# visible at a glance rather than only on the card that sold it. N10-15
+	# moves that from a flat border to the kit's slot frame TINTED by the same
+	# colour — the signal has to survive the new art, not be traded for it.
 	var grade_id: String = String(entry.get("grade", ""))
-	if not grade_id.is_empty():
-		well_style.border_color = UiPalette.grade_color(grade_id)
-		well_style.set_border_width_all(GRADE_BORDER_WIDTH)
-	well.add_theme_stylebox_override("panel", well_style)
+	var grade_tint: Color = (
+		UiPalette.grade_color(grade_id) if not grade_id.is_empty() else Color.WHITE
+	)
+	var slot: StyleBox = UiIcons.slot_panel(grade_tint)
+	if slot == null:
+		var well_style := StyleBoxFlat.new()
+		well_style.bg_color = UiPalette.NIGHT_BROWN
+		well_style.set_corner_radius_all(6)
+		if not grade_id.is_empty():
+			well_style.border_color = grade_tint
+			well_style.set_border_width_all(GRADE_BORDER_WIDTH)
+		slot = well_style
+	well.add_theme_stylebox_override("panel", slot)
 	var icon: Texture2D = UiIcons.weapon_icon(String(entry.get("id", "")))
 	if icon != null:
 		var rect: TextureRect = UiIcons.icon_rect(icon, BUILD_ICON_SIZE)

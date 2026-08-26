@@ -98,6 +98,34 @@ def split_run(image, count, axis):
     return out
 
 
+## A kit bar is one drawing of three parts: a hexagonal icon cap, a coloured
+## fill, and the rail it sits in. A ProgressBar needs them apart — the cap is a
+## separate control, the rail is the background 9-slice, the fill is the fill
+## 9-slice. The rail is the same drawing in all three bars, so it is emitted
+## once from the hp bar's empty section.
+BAR_CAP_WIDTH = 80
+BAR_FILL_SPAN = (150, 300)
+BAR_TRACK_SPAN = (500, 585)
+
+
+def slice_bars():
+    out = []
+    for name in ("bar_hp", "bar_timer", "bar_level"):
+        path = OUT / f"{name}.png"
+        if not path.exists():
+            continue
+        bar = Image.open(path).convert("RGBA")
+        out.append((f"{name}_cap", bar.crop((0, 0, BAR_CAP_WIDTH, bar.height))))
+        out.append((f"{name}_fill", bar.crop(
+            (BAR_FILL_SPAN[0], 0, BAR_FILL_SPAN[1], bar.height)
+        )))
+        if name == "bar_hp":
+            out.append(("bar_track", bar.crop(
+                (BAR_TRACK_SPAN[0], 0, BAR_TRACK_SPAN[1], bar.height)
+            )))
+    return out
+
+
 def main():
     dry_run = "--dry-run" in sys.argv
     if not KIT.exists():
@@ -126,6 +154,11 @@ def main():
         print(f"  {entry:20}{width}x{height}")
         if not dry_run:
             crop.save(OUT / f"{entry}.png")
+        written += 1
+    for name, part in slice_bars():
+        print(f"  {name:20}{part.width}x{part.height}")
+        if not dry_run:
+            part.save(OUT / f"{name}.png")
         written += 1
     print(f"{written} pieces -> {OUT.relative_to(ROOT)}")
 

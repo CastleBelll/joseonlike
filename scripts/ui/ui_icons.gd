@@ -125,6 +125,22 @@ static func kit_texture(piece: String) -> Texture2D:
 	return texture
 
 
+## N10-15: the inventory well behind a build icon. The kit's slot frame carries
+## the tint rather than a flat box with a coloured border, so grade still reads
+## at a glance — losing that signal to make the strip prettier would be a bad
+## trade.
+const KIT_SLOT_PIECE := "slot_0"
+const KIT_SLOT_MARGIN := 14
+
+
+static func slot_panel(tint: Color = Color.WHITE) -> StyleBox:
+	var box: StyleBox = kit_panel(KIT_SLOT_PIECE, KIT_SLOT_MARGIN)
+	if box == null:
+		return null
+	(box as StyleBoxTexture).modulate_color = tint
+	return box
+
+
 static func kit_panel(piece: String, margin: int) -> StyleBox:
 	var texture: Texture2D = kit_texture(piece)
 	if texture == null:
