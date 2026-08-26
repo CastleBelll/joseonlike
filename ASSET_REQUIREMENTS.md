@@ -83,6 +83,52 @@ Fallback:  wood-token drawn discs with the skill name
 
 ---
 
+## 생성 프롬프트 틀 (오너 지시 2026-08-26: 프롬프트는 일관성 있게)
+
+이미지 생성은 오너가 외부 서비스에서 돌린다 (higgsfield 종료, 이 PC는 내장 GPU라
+로컬 생성 불가). 그래서 프롬프트는 **매번 새로 쓰지 않는다** — 아래 뼈대에 대상
+문단만 갈아 끼운다. 뼈대가 흔들리면 화풍이 흔들리고, 화풍이 흔들리면 다시 만든다.
+
+**A. 공통 스타일 줄 (모든 프롬프트 끝에 그대로 붙는다)**
+
+```
+Match the reference images exactly: chunky readable shapes, crisp 1-pixel dark
+outline around the whole silhouette, flat cel shading with three tones per
+material, small limited palette, no gradients, no anti-aliasing, no glow, no
+texture noise. One subject only, fully inside the frame, no cropping.
+Background must be pure bright magenta RGB 255 0 255 filling every pixel that
+is not the subject. No shadow, no ground, no text, no border.
+```
+
+**B. 대상별로 바뀌는 것 — 이 네 줄만 채운다**
+
+| 항목 | 내용 |
+|---|---|
+| 무엇 | 한 문장. 한국 전승 근거를 포함한다 (예: 세시풍속의 신발 도둑) |
+| 자세·방향 | 옆모습/정면, 좌우 어느 쪽을 보는지, 무엇을 들고 있는지 |
+| 색 | 재질별 색 이름, 3톤까지. 강조색은 하나만 |
+| 하지 말 것 | 이 대상에서 반복해서 틀렸던 것 (예: 초승달 금지, 서양 브로드소드 금지) |
+
+**C. 레퍼런스 이미지 (2장, 항상 함께 올린다)**
+
+- `asset/monsters/forest_goblin/idle.png` — 괴이 밀도 기준
+- `asset/characters/taoist/idle.png` — 캐릭터 밀도 기준
+- 아이콘이면 대신 `asset/ui/loot_icons/ghost_iron.png` + `cinnabar.png`
+- 진화형이면 **기본형 결과물**을 레퍼런스로 넣는다 (실루엣 연속성 규칙)
+
+**D. 크기는 프롬프트가 아니라 여기서 정해진다**
+
+생성물은 1024 정사각이면 충분하다. 논리 크기·그리드는 설치 스크립트가 맞춘다
+(`asset/monsters/build_night2_sheets.py`, `asset/build_from_generated.py`).
+프롬프트에 픽셀 수를 적지 않는다 — 적어도 지켜지지 않고, 지켜지면 오히려
+그리드가 어긋난다.
+
+**E. 받는 자리**
+
+`new_asset/generated/<파일명>.png`. 파일명이 곧 데이터 id다.
+
+---
+
 ## Missing
 
 ```
