@@ -23,6 +23,19 @@ const CHROME_SCALE := 2
 const WOOD_MARGIN_LOGICAL := 3
 const PAPER_MARGIN_LOGICAL := 12
 
+## N10-14: the owner's UI kit, cut into named pieces by
+## asset/ui/slice_chrome_kit.py. The kit is drawn at display resolution rather
+## than as a 16x pixel-art export, so it gets its own downscale.
+const KIT_DIR := "res://asset/ui/chrome/build"
+## Halved. Used at native size the kit's border came to 46px a side against the
+## old chrome's 24, and that extra 44px of frame ate the content area — the
+## level-up panel stopped fitting the 540 portrait and six screens grew
+## scrollbars. The border now weighs what the layouts were built around.
+const KIT_DOWNSCALE := 2
+## Corner zones measured off the art, in post-downscale pixels.
+const KIT_PAPER_MARGIN := 23
+const KIT_PLAQUE_MARGIN := 11
+
 static var _chrome_textures: Dictionary = {}
 
 
@@ -56,7 +69,25 @@ static func icon_rect(texture: Texture2D, display_size: float) -> TextureRect:
 
 
 ## Wood button plate for one state ("normal" / "hover" / "pressed").
+## N10-14: the kit has no per-state button art, so the three states come from
+## one plaque tinted — normal as drawn, hover lifted, pressed sunk. Tinting one
+## drawing keeps the states unmistakably the same object, which three separate
+## drawings never quite manage.
+const KIT_BUTTON_PIECE := "plate_brown"
+const KIT_BUTTON_TINTS: Dictionary = {
+	"normal": Color(1.0, 1.0, 1.0),
+	"hover": Color(1.16, 1.13, 1.06),
+	"pressed": Color(0.78, 0.75, 0.72),
+}
+
+
 static func wood_button(state: String) -> StyleBox:
+	var kit: StyleBox = kit_panel(KIT_BUTTON_PIECE, KIT_PLAQUE_MARGIN)
+	if kit != null:
+		(kit as StyleBoxTexture).modulate_color = KIT_BUTTON_TINTS.get(
+			state, Color.WHITE
+		)
+		return kit
 	var texture: Texture2D = _chrome_texture("wood_button_%s.png" % state)
 	if texture == null:
 		return _flat_fallback(UiPalette.WOOD)
@@ -64,10 +95,41 @@ static func wood_button(state: String) -> StyleBox:
 
 
 static func paper_panel() -> StyleBox:
+	var kit: StyleBox = kit_panel("paper_panel", KIT_PAPER_MARGIN)
+	if kit != null:
+		return kit
 	var texture: Texture2D = _chrome_texture("paper_panel.png")
 	if texture == null:
 		return _flat_fallback(UiPalette.PAPER)
 	return _nine_slice(texture, PAPER_MARGIN_LOGICAL * CHROME_SCALE)
+
+
+## One piece of the owner's kit, at its own resolution. Null when the piece is
+## not there, so every caller keeps whatever it already fell back to.
+static func kit_texture(piece: String) -> Texture2D:
+	var key: String = "kit/" + piece
+	if _chrome_textures.has(key):
+		return _chrome_textures[key]
+	var path: String = KIT_DIR + "/" + piece + ".png"
+	if not ResourceLoader.exists(path, "Texture2D"):
+		return null
+	var image: Image = (load(path) as Texture2D).get_image()
+	image = image.get_region(image.get_used_rect())
+	image.resize(
+		maxi(image.get_width() / KIT_DOWNSCALE, 1),
+		maxi(image.get_height() / KIT_DOWNSCALE, 1),
+		Image.INTERPOLATE_LANCZOS
+	)
+	var texture: Texture2D = ImageTexture.create_from_image(image)
+	_chrome_textures[key] = texture
+	return texture
+
+
+static func kit_panel(piece: String, margin: int) -> StyleBox:
+	var texture: Texture2D = kit_texture(piece)
+	if texture == null:
+		return null
+	return _nine_slice(texture, margin)
 
 
 static func _icon(dir: String, id: String) -> Texture2D:

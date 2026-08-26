@@ -22,25 +22,36 @@ func test_missing_icon_returns_null() -> bool:
 	return passed
 
 
+## N10-14: this pinned the old chrome's exact plate sizes (56x24 wood, 112x112
+## paper) and its logical margins, so swapping in the owner's UI kit broke a
+## test that was never about those numbers. What a 9-slice actually has to
+## satisfy is that its corners fit: margins must be positive and the two
+## opposite ones must not overlap inside the texture, or the frame smears.
 func test_chrome_nine_slice_margins() -> bool:
-	var wood: StyleBox = UiIcons.wood_button("normal")
-	var paper: StyleBox = UiIcons.paper_panel()
-	var passed: bool = wood is StyleBoxTexture and paper is StyleBoxTexture
-	if not passed:
-		push_error("test_ui_icons: chrome styleboxes are not 9-slice textures")
-		return false
-	var wood_margin: float = float(UiIcons.WOOD_MARGIN_LOGICAL * UiIcons.CHROME_SCALE)
-	var paper_margin: float = float(UiIcons.PAPER_MARGIN_LOGICAL * UiIcons.CHROME_SCALE)
-	passed = (wood as StyleBoxTexture).texture_margin_left == wood_margin
-	passed = passed and (wood as StyleBoxTexture).texture_margin_bottom == wood_margin
-	passed = passed and (paper as StyleBoxTexture).texture_margin_left == paper_margin
-	passed = passed and (paper as StyleBoxTexture).texture_margin_bottom == paper_margin
-	# Cropped to the opaque plate, downscaled to 2x logical: the 28x12 wood
-	# plate and 56x56 paper plate.
-	passed = passed and (wood as StyleBoxTexture).texture.get_size() == Vector2(56.0, 24.0)
-	passed = passed and (paper as StyleBoxTexture).texture.get_size() == Vector2(112.0, 112.0)
-	if not passed:
-		push_error("test_ui_icons: chrome margins or downscale wrong")
+	var plates: Dictionary = {
+		"wood": UiIcons.wood_button("normal"),
+		"paper": UiIcons.paper_panel(),
+	}
+	var passed: bool = true
+	for name: String in plates:
+		var plate: StyleBox = plates[name]
+		if plate is not StyleBoxTexture:
+			push_error("test_ui_icons: %s chrome is not a 9-slice texture" % name)
+			return false
+		var box: StyleBoxTexture = plate as StyleBoxTexture
+		var size: Vector2 = box.texture.get_size()
+		for side: Array in [
+			[box.texture_margin_left, box.texture_margin_right, size.x, "x"],
+			[box.texture_margin_top, box.texture_margin_bottom, size.y, "y"],
+		]:
+			var near: float = side[0]
+			var far: float = side[1]
+			var extent: float = side[2]
+			if near <= 0.0 or far <= 0.0 or near + far >= extent:
+				push_error("test_ui_icons: %s 9-slice %s margins %s+%s do not fit %s" % [
+					name, side[3], near, far, extent
+				])
+				passed = false
 	return passed
 
 
