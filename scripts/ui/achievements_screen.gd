@@ -264,4 +264,4 @@ func _label(text_value: String, font_size: int, color: Color) -> Label:
 
 
 func _on_back_pressed() -> void:
-	get_tree().change_scene_to_file(CAMP_SCENE)
+	SceneFadeLayer.go(self, CAMP_SCENE)

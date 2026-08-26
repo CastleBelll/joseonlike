@@ -905,7 +905,7 @@ func _on_resume_pressed() -> void:
 
 func _on_quit_pressed() -> void:
 	get_tree().paused = false
-	get_tree().change_scene_to_file(TITLE_SCENE)
+	SceneFadeLayer.go(self, TITLE_SCENE)
 
 
 ## Small icon-only button with no panel background, per the captures.

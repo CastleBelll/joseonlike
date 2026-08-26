@@ -468,11 +468,11 @@ func _on_depart_pressed() -> void:
 		var routed: String = Ftue.route_character(SaveService.instance.profile)
 		if routed != SaveService.instance.selected_character():
 			SaveService.instance.set_selected_character(routed)
-	get_tree().change_scene_to_file(STAGE_SCENE)
+	SceneFadeLayer.go(self, STAGE_SCENE)
 
 
 func _on_select_pressed() -> void:
-	get_tree().change_scene_to_file(SELECT_SCENE)
+	SceneFadeLayer.go(self, SELECT_SCENE)
 
 
 func _on_building_pressed(building: Dictionary) -> void:
@@ -485,7 +485,7 @@ func _on_building_pressed(building: Dictionary) -> void:
 	if notice.is_empty():
 		var scene: String = Camp.building_scene(building)
 		if not scene.is_empty():
-			get_tree().change_scene_to_file(scene)
+			SceneFadeLayer.go(self, scene)
 		return
 	_show_notice(String(building["label"]) + " — " + notice)
 

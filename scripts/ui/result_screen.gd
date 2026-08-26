@@ -154,7 +154,7 @@ func _earned_name(entry: Dictionary) -> String:
 
 func _on_cta_pressed() -> void:
 	get_tree().paused = false
-	get_tree().change_scene_to_file(CAMP_SCENE)
+	SceneFadeLayer.go(self, CAMP_SCENE)
 
 
 func _make_header() -> Control:

@@ -68,13 +68,13 @@ func _on_menu_selected(id: String) -> void:
 		if SaveService.instance != null:
 			profile = SaveService.instance.profile
 		if Camp.destination_after_title(profile) == Camp.DEST_CAMP:
-			get_tree().change_scene_to_file(CAMP_SCENE)
+			SceneFadeLayer.go(self, CAMP_SCENE)
 			return
 		if SaveService.instance != null:
 			var routed: String = Ftue.route_character(SaveService.instance.profile)
 			if routed != SaveService.instance.selected_character():
 				SaveService.instance.set_selected_character(routed)
-		get_tree().change_scene_to_file(STAGE_SCENE)
+		SceneFadeLayer.go(self, STAGE_SCENE)
 	elif id == "settings" and _settings_popup != null:
 		_settings_popup.open()
 

@@ -382,7 +382,7 @@ func _on_canvas_input(event: InputEvent) -> void:
 
 
 func _on_back_pressed() -> void:
-	get_tree().change_scene_to_file(CAMP_SCENE)
+	SceneFadeLayer.go(self, CAMP_SCENE)
 
 
 ## The CTA acts on the CURRENT selection only and every refusal is feedback,

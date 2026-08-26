@@ -577,9 +577,9 @@ func _on_back_pressed() -> void:
 	if SaveService.instance != null:
 		profile = SaveService.instance.profile
 	if Camp.destination_after_select_exit(profile) == Camp.DEST_CAMP:
-		get_tree().change_scene_to_file(CAMP_SCENE)
+		SceneFadeLayer.go(self, CAMP_SCENE)
 		return
-	get_tree().change_scene_to_file(TITLE_SCENE)
+	SceneFadeLayer.go(self, TITLE_SCENE)
 
 
 func _panel_plate(selected: bool) -> StyleBoxFlat:

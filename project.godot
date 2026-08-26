@@ -22,6 +22,7 @@ SaveManager="*res://scripts/core/save_manager.gd"
 MusicManager="*res://scripts/core/music_player.gd"
 SfxManager="*res://scripts/core/sfx_player.gd"
 DisplayAdapter="*res://scripts/core/display_adapter.gd"
+SceneFade="*res://scripts/core/scene_fade.gd"
 
 [display]
 

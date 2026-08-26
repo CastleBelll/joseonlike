@@ -137,6 +137,7 @@ already settles.**
 |---|---|
 | `new-monster` | a monster, a behaviour, or any run-affecting combat rule |
 | `balance-pass` | numbers and feel — difficulty, pacing, dps, drops, economy, QA sweeps |
+| `game-feel` | how it looks and runs — transitions, tweens, impact, shaders, fps |
 
 If a session finds a better way, or gets caught by something the skill did not
 warn about, update the skill in the same commit. A procedure that is not corrected
