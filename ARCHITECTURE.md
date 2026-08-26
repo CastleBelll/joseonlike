@@ -1,409 +1,198 @@
-# JOSEONLIKE — Architecture & Worktree Contract
+# JOSEONLIKE — Architecture
 
-Engine: **Godot 4.7** (GL Compatibility renderer, mobile-first 540x960 portrait).
-Language: **GDScript**, statically typed.
+Engine: **Godot 4.7** (GL Compatibility renderer, mobile-first 540x960 portrait,
+landscape supported). Language: **GDScript**, statically typed.
 
-This document is the code contract: the shared interfaces and the data schemas.
-Read section 3 (interfaces) before writing any code. How work is scheduled and
-verified is [CLAUDE.md](CLAUDE.md).
+This document describes the code as it is. How work is scheduled and verified is
+[CLAUDE.md](CLAUDE.md); balance numbers are [data/BALANCE.md](data/BALANCE.md);
+art rules are [ASSET_SPEC.md](ASSET_SPEC.md) and
+[ASSET_REQUIREMENTS.md](ASSET_REQUIREMENTS.md).
 
----
-
-## 1. Areas
-
-Development runs one feature at a time in a single session on `main`
-(see [CLAUDE.md](CLAUDE.md)); the parallel-worktree ownership contract that used to
-live here was retired on 2026-08-13 along with the worktrees. The areas below remain
-the map of where code goes.
-
-| Area | Paths |
-|---|---|
-| core | `scripts/core/**`, `scenes/boot/**`, `tests/run_tests.gd`, `tests/core/**` |
-| combat | `scripts/combat/**`, `scripts/weapons/**`, `scenes/combat/**`, `scenes/actors/**`, `tests/combat/**` |
-| content data | `data/**`, `tools/validate_data.gd`, `tests/data/**` |
-| meta / UI | `scripts/ui/**`, `scripts/meta/**`, `scenes/ui/**`, `scenes/basecamp/**`, `tests/ui/**` |
-| infra | `.github/**`, `export_presets.cfg`, `tools/ci/**`, `scripts/services/**` |
-| assets | `asset/**`, `tools/asset/**` — frozen, see [ASSET_REQUIREMENTS.md](ASSET_REQUIREMENTS.md) |
-
-Autoload registration, input map entries, physics layer names and audio bus routing
-live in `project.godot` and `default_bus_layout.tres`. Changing either is an
-architecture change: it gets its own feature session, not a side edit.
+> Rewritten 2026-08-26 against the tree. The previous version described a planned
+> structure — an `EventBus` signal hub, a `GameData` loader, a `SceneRouter`, eight
+> directional rotations per character — none of which was ever built. What follows
+> is what a reader will actually find. Section numbers are kept where other
+> documents cite them (§4 data, §6 conventions).
 
 ---
 
-## 2. Directory Layout
+## 1. Shape of the thing
+
+There is no framework layer. A run is one scene (`scenes/stage.tscn`) whose script
+`Stage` owns the field, the spawner, the player and the HUD, and every system it
+drives is a plain class it holds. Systems talk by direct call, or by a signal from
+the node that owns the fact — a monster tells its spawner it died, the spawner
+relays it to the stage, and the stage decides what that means.
+
+That is deliberate, and it is what CLAUDE.md §4 asks for: prove first, generalise
+later. The only things pulled out into autoloads are the ones that must outlive a
+run.
+
+| Autoload | Script | What it owns |
+|---|---|---|
+| `SaveManager` | `scripts/core/save_manager.gd` | the profile on disk, and the in-memory copy every screen reads |
+| `MusicManager` | `scripts/core/music_player.gd` | which track is playing, and the crossfade between them |
+| `SfxManager` | `scripts/core/sfx_player.gd` | one-shot sounds, with a per-sound minimum interval |
+| `DisplayAdapter` | `scripts/core/display_adapter.gd` | content scale and orientation, including the web fullscreen path |
+
+Registered in `project.godot`. Audio buses (`Master` / `Music` / `Effects`) live in
+`default_bus_layout.tres`; every player names its bus, or a settings slider moves a
+value that changes nothing audible.
+
+---
+
+## 2. Directory layout
 
 ```
-scenes/
-  boot/           boot.tscn — entry point, loads data then routes
-  actors/         player.tscn, enemy_base.tscn
-  combat/         stage.tscn, spawner, pickups
-  ui/             hud, level_up_choice, results
-  basecamp/       camp.tscn, workshop, archive, training_ground, shrine
+scenes/          seven screens, flat: title, character_select, camp, stage,
+                 bestiary, achievements, meta_tree
 scripts/
-  core/           autoloads + data loading + save (core-engine)
-  combat/         combat systems (combat)
-  weapons/        weapon behaviours + evolution (combat)
-  ui/             UI controllers (meta-ui)
-  meta/           progression, achievements, quests (meta-ui)
-  services/       ads, analytics, platform shims (infra-ci)
-data/             JSON content, single source of balance truth (content-data)
-tests/            headless test scripts, mirrored per owner
-tools/            validators and CI helpers
-asset/            art and audio, singular. Owned by asset-forge; others reference only
-  character/<Name>/<State>/rotations/<direction>.png   8-way sprite sets
-  monster/<id>.png                                     single front-facing sprite
-  monster/raw/<id>_raw.png                             pre-cutout generator output
+  core/     (12) autoloads + profile/save + the data-shaped helpers that outlive a
+                 run (bestiary, achievements, unlocks, meta tree, camp, ftue)
+  combat/   (43) everything a run is made of — stage, spawner, enemy, player,
+                 weapons, projectiles, effects, field, pickups, pure maths
+  ui/       (19) screens and HUD, plus the palette, icon and locale tables
+data/       (18) JSON content, the single source of balance truth
+tests/unit/ (54) headless tests, auto-discovered
+tools/      (28) headless harnesses and validators
+asset/           art and audio the game loads
+new_asset/       working originals the game never loads — see new_asset/README.md
 ```
 
-## Assets
+There is no `scripts/weapons/`, `scripts/meta/` or `scripts/services/`. Weapons are
+data plus `scripts/combat/auto_weapon.gd`; meta progression lives in `scripts/core/`;
+there are no service shims.
 
-[ASSET_SPEC.md](ASSET_SPEC.md) is the authoritative art and audio specification — style
-authority and measured sizes, direction naming and facing rules, set composition, generation
-rules including what has been measured not to work, cutting, and the two verification layers.
-Read it before reviewing any asset. Asset production itself is currently frozen —
-[ASSET_REQUIREMENTS.md](ASSET_REQUIREMENTS.md) and [CLAUDE.md](CLAUDE.md) §5 govern that.
-The summary below binds any code that references art, not only asset work.
+---
 
-### Asset sets, not asset images
+## 3. What holds what
 
-Art is commissioned, generated and reviewed as a **complete set per entity**, never as loose
-images. A set that is missing members is unfinished, not partially delivered — earlier rounds
-shipped rotations with no motion and weapons with no attack art, and each gap only surfaced
-when someone looked.
+**`Stage`** (`scripts/combat/stage.gd`) is the run. It loads the data it needs,
+builds the field, owns the pools, and is the one place that turns an event into a
+consequence: a kill into xp and loot, a level into a choice screen, a part coming
+off a 삼두구미 into a float and a changed monster. It is large on purpose —
+splitting it would move the coupling rather than remove it — and its size is a
+registered task, not an accident.
 
-| Set | Required members |
+**`Spawner`** (`scripts/combat/spawner.gd`) owns live enemies: the wave table, the
+live cap, separation, off-screen culling, and the pool. Enemy signals arrive here
+and are relayed onward, so nothing inside an enemy holds a stage reference.
+
+**`Enemy`** (`scripts/combat/enemy.gd`) is one class for every monster. Behaviour is
+data (`behaviour` in `monsters.json`); the ones that actually branch are `boss`,
+`suicide` (화약 도깨비), `thief` (야광귀) and `multipart` (삼두구미), and the rest
+chase. Every source of damage routes through `Enemy.take_damage`, which is why the
+그슨대's absorb guard, the thief's harmlessness and the multipart's armour each live
+in exactly one place instead of in twenty-seven weapons.
+
+**`StageField`** (`scripts/combat/stage_field.gd`) scatters props by theme in seeded
+clusters and streams new chunks as the player walks. A prop that declares a radius
+registers into an index — `light_grid` (lantern light, which 그슨대 needs) and
+`sieve_grid` (체, which stops a thief) — both `PropGrid`, a uniform cell grid, so a
+per-frame proximity question costs local density instead of world size.
+
+**Pure maths** lives in `CombatMath`, `WeaponMath`, `PlayerMotion`, `RunFlow`,
+`Difficulty`, `Endless`, `Pickups`, `Loot`, `MetaTree`, `Bestiary`. Static functions,
+no nodes — which is what lets the headless suite test the rules directly. When a new
+rule needs a decision, the decision goes here and the node calls it.
+
+**Pools**: `NodePool` backs enemies, projectiles, pickups, orbs, chests and puffs. A
+pooled object resets in `setup()`, never in `_ready()`.
+
+---
+
+## 4. Data (`data/*.json`)
+
+Eighteen files, each a JSON object keyed by id. Ids are `snake_case` ASCII; display
+text is `name_ko` / `name_en` and is never hardcoded in a script (`UiLocale` holds
+the UI strings, `UiLocale.data_name()` resolves the data ones).
+
+| File | What it decides |
 |---|---|
-| Character | 8 idle rotations, walk, attack, death |
-| Monster | 8 idle rotations, walk, death |
-| Weapon | 32x32 icon, projectile or VFX art, attack effect |
-| Effect | 4 frames: anticipation, expansion, peak, dissipation |
+| `characters.json` | the roster, base stats, starting weapon, actives, unlock rule |
+| `weapons.json` | 27 weapons: mechanic, damage, cooldown, travel/hit art, evolution |
+| `weapon_mods.json`, `evolutions.json` | 개조 branches and what they require |
+| `passives.json`, `progression.json` | passive stats and the xp curve |
+| `monsters.json` | stats, `collision_radius`, `behaviour`, and the block a behaviour requires |
+| `stages.json` | duration, waves, boss, spawning limits, soft enrage, endless |
+| `props.json` | the prop catalogue, field density, and per-theme placement |
+| `drop_tables.json`, `loot.json`, `pickups.json` | what falls, and what it does |
+| `meta_tree.json`, `unlocks.json`, `achievements.json` | between-run progression |
+| `effects.json` | every timing, radius and sprite sheet the visuals consume |
+| `difficulties.json` | the difficulty ladder and run lengths |
+| `audio.json` | tracks and sound effects, including borrowed stand-ins |
 
-Every member must either exist, or be **explicitly recorded as satisfied another way** with the
-measurement behind it. Character walk and attack are currently satisfied by pixel-snapped
-procedural motion because generated frames were rejected four separate ways; that is a
-documented answer, not a missing member. Silently shipping a partial set is the failure mode
-this table exists to prevent.
+Rules that live here rather than in code, because they are balance:
 
-Review is per set, never per image:
+- **Weapon slots cap at 4** and passive picks at 4 per level-up screen; a found
+  field passive ignores that cap, because walking to something visible is not the
+  same act as picking from a menu.
+- **`collision_radius` is required** on every monster and must fit inside the
+  sprite's own half-width — what you see is what hits.
+- **XP curve** is geometric, from `progression.json` (`base_xp` 6, `growth` 1.28).
 
-- **Facing** — south, south-east and south-west show the face; east and west are opposite
-  profiles; north, north-east and north-west show the back. Adjacent directions must be
-  distinguishable by eye, not merely different in pixel count. A pixel-distance check cannot see
-  this: two back views differ numerically while both remain back views.
-- **Progression** — a motion sequence must advance. Death is judged on irreversible collapse,
-  which is why it passed where walk's identity gate failed.
-- **Coherence** — every member of a set reads as the same entity at the same scale, cut through
-  `pixelize.py` against the same palette.
-
-`tools/asset/verify_assets.py` enforces what can be automated. Anything it cannot check is
-checked by looking at a contact sheet before the set is reported done.
-
-**Asset paths are `res://asset/...`, singular, not `assets/`.** The directory layout
-above is what actually exists on disk; data files and scenes must match it exactly.
-Sprites are chroma-keyed and downscaled with nearest-neighbour, and the project sets
-`default_texture_filter=0`, so never enable filtering on a sprite import — it turns the
-pixel grid to mush.
+`tools/validate_data.gd` is the contract. It checks that every cross-file id
+resolves, that every `res://` path in any data file exists, and that a declared
+behaviour carries the numbers it needs — a suicide's fuse, a thief's escape, a
+multipart's parts and the material each part is gated behind. **A rule that only
+lives in code will drift; put it in the validator.**
 
 ---
 
-## 3. Interfaces (the only cross-worktree API)
+## 5. Testing and harnesses
 
-These signatures are frozen. Changing one requires a coordinator decision gate.
-`core-engine` implements them; everyone else calls them.
-
-### 3.1 `EventBus` (autoload) — decoupled signal hub
-
-```gdscript
-# scripts/core/event_bus.gd
-signal run_started(character_id: String, stage_id: String)
-signal run_ended(result: Dictionary)          # {victory: bool, time_sec: float, kills: int, gold: int}
-signal player_damaged(amount: float, hp_left: float)
-signal player_died()
-signal enemy_killed(monster_id: String, position: Vector2)
-signal xp_gained(amount: int)
-signal level_reached(level: int, choices: Array[Dictionary])
-signal upgrade_chosen(choice_id: String)
-signal weapon_evolved(from_id: String, to_id: String)
-signal boss_spawned(boss_id: String)
-signal boss_defeated(boss_id: String)
-signal stat_recorded(key: String, amount: int)   # achievement/quest counters
+```sh
+godot --headless --path . --import                          # class cache, first
+godot --headless --path . --script tests/run_tests.gd       # 552 tests, must print PASS
+godot --headless --path . --script tools/validate_data.gd   # data cross-references
 ```
 
-Rule: emit through `EventBus`, never hold a direct reference to another system's node.
+`tests/run_tests.gd` discovers `tests/unit/*.gd` and calls every `test_*` method; a
+method fails by returning `false` and pushing an error. Tests cover pure functions
+and data contracts — they do not build scenes.
 
-### 3.2 `GameData` (autoload) — read-only content access
+What a test cannot see, a **harness** drives. Each is a scene under `tools/` that
+boots the real thing and reports:
 
-```gdscript
-# scripts/core/game_data.gd
-func load_all() -> Error                       # called once by boot; parses data/*.json
-func character(id: String) -> Dictionary
-func weapon(id: String) -> Dictionary
-func monster(id: String) -> Dictionary
-func stage(id: String) -> Dictionary
-func passive(id: String) -> Dictionary
-func evolution_for(weapon_id: String, passive_id: String) -> String   # "" when none
-func all_characters() -> Array[Dictionary]
-func all_achievements() -> Array[Dictionary]
-func all_weapons() -> Array[Dictionary]      # added: the level-up pool needs enumeration
-func all_passives() -> Array[Dictionary]     # added: same reason
-```
+| Harness | Answers |
+|---|---|
+| `playtest.tscn` | can a bot finish a run — outcome, level, dps, fps at the surge |
+| `layout_sweep.tscn` | does any screen overflow, clip or scroll (12 screens x 11 devices x 2 locales) |
+| `locale_check.tscn` | is every Korean literal translated, and do the format specifiers match |
+| `thief_check.tscn` | 야광귀: the theft, the escape, and the 체 that stops it |
+| `multipart_check.tscn` | 삼두구미: gated, armoured, taken apart, then killable |
+| `shadow_check.tscn` | 그슨대: absorbs in the dark, dies in the light |
+| `weapon_demo`, `field_check`, `pause_check`, `camp_check`, … | one weapon or one screen, captured |
 
-List accessors inject the JSON key as an `id` field on each returned entry, since the
-files are keyed objects and UI code iterates without the key.
-
-Returns are **duplicated dictionaries**; callers must not mutate shared data.
-A missing id logs an error and returns `{}` — callers guard with `is_empty()`.
-
-### 3.3 `RunState` (autoload) — live state of one run, reset per run
-
-```gdscript
-# scripts/core/run_state.gd
-var character_id: String
-var stage_id: String
-var level: int
-var xp: int
-var elapsed_sec: float
-var kills: int
-var weapons: Array[Dictionary]     # [{id, level}]
-var passives: Dictionary           # {passive_id: stacks}
-
-func begin(character_id: String, stage_id: String) -> void
-func reset() -> void
-func add_xp(amount: int) -> void            # emits xp_gained, level_reached
-func stat_total(key: String) -> float       # aggregated passive value, e.g. "attack_speed"
-func xp_to_next(from_level: int) -> int     # 5 * 1.25^(from_level-1), rounded
-func weapon_level(weapon_id: String) -> int
-func passive_stacks(passive_id: String) -> int
-func grant_weapon(weapon_id: String) -> void
-func grant_passive(passive_id: String) -> void
-func apply_choice(choice_id: String) -> void
-```
-
-**Who applies a level-up pick:** RunState connects to `EventBus.upgrade_chosen` and
-applies the pick itself via `apply_choice`. The UI's only job is to emit
-`upgrade_chosen(choice_id)`. Do not also mutate weapons or passives from UI code, or
-every pick is applied twice.
-
-**XP curve:** `xp_to_next(level) = 5 * 1.25 ^ (level - 1)`, rounded. Geometric, not
-arithmetic. `data/BALANCE.md` was originally derived against a guessed arithmetic curve;
-the geometric one here is authoritative and the balance notes are re-derived against it.
-
-Concurrent weapon slots are capped at 4; the choice pool stops offering `weapon_new`
-once four weapons are held.
-
-### 3.4 `SaveManager` (autoload) — persistence
-
-```gdscript
-# scripts/core/save_manager.gd
-func load_profile() -> Dictionary
-func save_profile() -> Error
-func get_value(key: String, default_value: Variant) -> Variant
-func set_value(key: String, value: Variant) -> void   # marks dirty, autosaves debounced
-```
-
-Save path: `user://profile.save`, JSON, versioned with `{"schema": 1, ...}`.
-Never store PII. Never log save contents.
-
-### 3.5 `SceneRouter` (autoload) — scene transitions
-
-```gdscript
-# scripts/core/scene_router.gd
-func goto_camp() -> void
-func goto_character_select() -> void
-func goto_stage(stage_id: String) -> void
-func goto_results(result: Dictionary) -> void
-```
-
-### 3.6 `MusicDirector` (autoload) — background music
-
-```gdscript
-# scripts/services/music_director.gd
-func play(track_id: String) -> void   # cross-fades in; no-op if that track is already playing
-func stop() -> void                   # fades out
-```
-
-Track ids are `title`, `camp`, `bamboo_forest`. They resolve to files through a table
-inside `music_director.gd`, and callers pass **ids, never `res://` paths** — `asset/`
-belongs to asset-forge, which renames and re-cuts files, and a path baked into a UI or
-combat script silently breaks the next time it does.
-
-`play()` is idempotent by design so that re-entering a screen does not restart the track.
-Camp → stage → results → camp must not chop the music into pieces every transition.
-
-### 3.7 Audio buses
-
-Three buses, defined in `default_bus_layout.tres` (coordinator-owned): `Master`,
-`Music`, `Effects`, the latter two both sending to `Master`.
-
-Every player must name its bus. Music goes to `Music`, every sound effect to `Effects`.
-The settings screen has shipped master/music/effects sliders since M1, but only `Master`
-existed, so two of the three sliders persisted a value and changed nothing audible —
-meta-ui reported that as a gap rather than faking a working control, and this is the
-other half of the fix. A player left on the default bus re-opens exactly that hole.
-
----
-
-## 4. Data Schemas (`data/*.json`)
-
-`content-data` owns these files. Everyone else reads them through `GameData`.
-Every file is a JSON object keyed by id, so lookups are O(1) and diffs stay small.
-All ids are `snake_case` ASCII. Display text lives in `name_ko` / `name_en`;
-never hardcode Korean strings in scripts.
-
-### `data/characters.json`
-```json
-{
-  "taoist": {
-    "name_ko": "도사", "name_en": "Taoist",
-    "role": "magic_aoe",
-    "base_hp": 100, "base_speed": 90.0,
-    "starting_weapon": "old_talisman",
-    "unlock": { "type": "default" }
-  }
-}
-```
-`unlock.type` ∈ `default | achievement | gold`, with `achievement_id` or `cost`.
-
-### `data/weapons.json`
-```json
-{
-  "old_talisman": {
-    "name_ko": "낡은 부적", "name_en": "Old Talisman",
-    "category": "spiritual",
-    "grade": "common",
-    "damage": 12.0, "cooldown_sec": 1.2, "projectile_count": 1,
-    "pierce": 0, "area_scale": 1.0, "speed": 260.0,
-    "max_level": 8,
-    "per_level": { "damage": 3.0, "cooldown_sec": -0.05 },
-    "evolves_to": "fire_talisman",
-    "evolution_only": false,
-    "sprite": "res://asset/weapon/icons/old_talisman.png"
-  }
-}
-```
-`category` ∈ `melee | ranged | spiritual`. `grade` ∈ `common | rare | epic | legendary | mythic`.
-`evolution_only: true` marks a weapon that exists **only** as an evolution result. RunState
-must exclude those from the ordinary `weapon_new` pool — otherwise the payoff for meeting an
-evolution's weapon-level and passive-stack requirements is also handed out as a plain
-level-up pick, and evolution stops being a goal. `evolves_to` must name a weapon that some
-rule in `evolutions.json` actually produces; a pointer with no matching rule is a dead end
-and the validator rejects it.
-
-N4-4a adds the taoist archetypes (GDD §11.1): every weapon may declare
-`mechanic` ∈ `straight | pierce | explosion | chain | melee_arc | orbit`
-(absent = `straight`), plus its mechanic block — `explosion: {radius_px}`,
-`chain: {jumps, falloff, range_px}`, `arc: {angle_deg, knockback_scale}`,
-`orbit: {radius_px, speed_deg_s}` (orb count = `projectile_count`, per-enemy
-re-hit window = `cooldown_sec`), and the `pierce` count (99+ reads as
-"everything on the line"). Branch fields: `on_hit_status`
-(`{id: burn, dps, duration_sec, spread_radius_px?}` or
-`{id: shock, slow_scale, duration_sec}`), `on_hit_seal`
-(`{burst_at, burst_damage_scale}`), `lifesteal` (0–1 fraction of damage
-healed). `tools/validate_data.gd` cross-checks all of them; LevelUp only
-offers weapons whose mechanic the runtime implements.
-
-### `data/passives.json`
-```json
-{
-  "attack_speed": {
-    "name_ko": "공격 속도", "name_en": "Attack Speed",
-    "stat": "attack_speed", "per_stack": 0.08, "max_stacks": 5
-  }
-}
-```
-Valid `stat` keys (frozen — combat reads these): `attack_damage`, `attack_speed`,
-`move_speed`, `crit_chance`, `max_hp`, `xp_gain`, `luck`, `skill_power`.
-
-### `data/evolutions.json`
-```json
-{
-  "phoenix_talisman": {
-    "requires_weapon": "fire_talisman",
-    "requires_passive": "skill_power",
-    "min_weapon_level": 5, "min_passive_stacks": 3,
-    "result_weapon": "phoenix_talisman"
-  }
-}
-```
-
-### `data/monsters.json`
-```json
-{
-  "forest_goblin": {
-    "name_ko": "숲 도깨비", "name_en": "Forest Goblin",
-    "hp": 20.0, "damage": 6.0, "speed": 55.0,
-    "xp_drop": 3, "gold_drop": 1,
-    "behaviour": "chase",
-    "collision_radius": 6.0,
-    "sprite": "res://asset/monster/forest_goblin.png"
-  }
-}
-```
-`behaviour` ∈ `chase | ranged | charger | swarm | boss`.
-`collision_radius` is required and authoritative: sprites range from 26x46 to 60x76, so a
-single hardcoded radius in `enemy_base.tscn` cannot fit them. Combat sizes the collision
-shape from this field and never from the sprite texture, so a resized sprite never
-silently changes hitboxes.
-
-### `data/stages.json`
-```json
-{
-  "bamboo_forest": {
-    "name_ko": "대나무 숲", "name_en": "Bamboo Forest",
-    "duration_sec": 600,
-    "boss_id": "bamboo_spirit_lord",
-    "waves": [
-      { "at_sec": 0,   "monster_id": "forest_goblin", "count": 6,  "interval_sec": 2.0 },
-      { "at_sec": 120, "monster_id": "forest_spirit", "count": 10, "interval_sec": 1.5 }
-    ]
-  }
-}
-```
-
-### `data/achievements.json`
-```json
-{
-  "first_boss": {
-    "name_ko": "첫 보스 처치", "name_en": "First Boss Clear",
-    "counter_key": "boss_defeated", "target": 1,
-    "reward": { "type": "gold", "amount": 100 }
-  }
-}
-```
-`counter_key` must match a key emitted via `EventBus.stat_recorded`.
-
----
-
-## 5. Testing
-
-Headless runner: `godot --headless --path . --script tests/run_tests.gd`.
-Each area adds its own `tests/<area>/test_*.gd`. A test file exposes
-`func run() -> Array[String]` returning failure messages (empty array = pass).
-
-Minimum bar: every non-trivial system has at least one test that fails if the logic
-breaks. `tools/validate_data.gd` verifies that every cross-file id reference in
-`data/**` resolves, and runs alongside the suite.
+Why there are so many: a rule that is invisible from outside — a body that ignores
+damage, a passive that vanishes off-screen — looks exactly like a bug, and only a
+harness that drives the case can tell the two apart.
 
 ---
 
 ## 6. Conventions
 
 - Static typing everywhere: `var hp: float = 100.0`, `func fire(dir: Vector2) -> void`.
-- Constants over magic numbers; balance numbers belong in `data/`, not in code.
+- Balance numbers live in `data/`, never in code. Constants over magic numbers.
 - `snake_case` files and functions, `PascalCase` class names, `UPPER_SNAKE_CASE` consts.
-- Early returns over nested `if`.
-- No `print()` in committed code — use `push_warning` / `push_error`.
-- Comments explain *why*, in English.
+- Early returns over nesting.
+- No `print()` in committed game code — `push_warning` / `push_error`. Harnesses in
+  `tools/` print by design; that is their output.
+- Comments explain **why**, in English, and name the thing that went wrong when the
+  code exists to stop it coming back.
+- Sprites are nearest-neighbour and the project sets `default_texture_filter=0`.
+  Never enable filtering on a sprite import — it turns the pixel grid to mush.
 - Never commit `.godot/`, keystores, or `.env`.
 
 ---
 
-## 7. Milestone 1 — Vertical Slice
+## 7. Where the game is
 
-One playable loop end to end:
-`camp → character select (Taoist) → Bamboo Forest → auto combat → level-up choice →
-boss → results → back to camp with rewards persisted.`
+One night runs end to end: title → camp → region select → run (waves, level-up
+choices, elites, boss at 5:40) → result → camp, with gold, bestiary and achievements
+persisted. Two regions (대나무 숲, 폐허가 된 마을), two playable characters
+(도사 by default, 무사 unlocked by an achievement) with 궁수 declared and not yet
+built, 27 weapons with 개조 branches, a 34-node meta tree, and an endless mode that
+loops a stage's own waves.
 
-Content bar for M1: 1 character, 1 stage, 3 weapons, 3 monsters, 1 boss, 8 passives.
-Everything else expands as data afterwards.
+The queue, and everything already done, is [TASKS.md](TASKS.md).

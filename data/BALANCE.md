@@ -144,7 +144,7 @@ pick pool behaves.
   `grant_weapon`/`grant_passive`, both of which hard-cap at the
   content-declared `max_level`/`max_stacks` — a run cannot stack past what
   this worktree's data declares.
-- Weapon slot cap of 4: **documented** in ARCHITECTURE.md section 3.3, still
+- Weapon slot cap of 4: **documented** in ARCHITECTURE.md section 4, still
   not enforced by a `weapons.size()` check in `run_state.gd`'s
   `_new_weapon_choices()` (doc/code gap, not this worktree's file to fix).
   **This pass, the cap became moot for M1 content anyway:**
