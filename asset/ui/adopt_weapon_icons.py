@@ -30,6 +30,9 @@ ICONS = ROOT / "asset" / "ui" / "weapon_icons"
 KEEP = ROOT / "new_asset" / "source" / "weapon_icons"
 
 SIDE = 512
+## Alpha below this is glow, not subject. Trimming on "any alpha at all" let a
+## nearly invisible halo decide the framing.
+ALPHA_FLOOR = 24
 ## How much of the square the subject fills. Matches the set already there
 ## (measured: 0.87-0.92 wide, 0.91-0.96 tall).
 FILL = 0.94
@@ -48,15 +51,26 @@ ADOPT = {
     "talisman-sal": "sal",
     "talisman-gwisal": "gwisal",
 }
-## Already correctly named, but dropped at a portrait size the square rect
-## would squash.
-RESQUARE = ["old_talisman"]
+## Already correctly named, but not on the frame the set shares — either
+## dropped at a portrait size the square rect would squash, or trimmed wrong
+## by the alpha bug above. Re-fitting an icon that is already 512 square is
+## still worth it: what matters is that the drawing inside sits at the same
+## scale as the rest of its series.
+RESQUARE = ["old_talisman", "honbul"]
 
 
 def to_square(image: Image.Image) -> Image.Image:
     """Trim to the subject, then centre it on a transparent square."""
     image = image.convert("RGBA")
-    box = image.getbbox()
+    # The ALPHA bbox, not the image bbox. These drops carry colour underneath
+    # their transparent pixels, so Image.getbbox() — which reads every band —
+    # returned the whole canvas and trimmed nothing: 낡은 부적 came out half the
+    # size of its own series because its drawing sat in a wide empty margin.
+    # A threshold, not "any alpha at all": these drops carry a wide, nearly
+    # invisible glow, and counting it as subject shrank 혼불 to two thirds of
+    # its series.
+    solid = image.getchannel("A").point(lambda v: 255 if v > ALPHA_FLOOR else 0)
+    box = solid.getbbox()
     if box is None:
         raise ValueError("icon has no visible subject")
     subject = image.crop(box)
@@ -76,6 +90,10 @@ def main() -> None:
     for drop_name, weapon_id in ADOPT.items():
         drop = ICONS / f"{drop_name}.png"
         if not drop.exists():
+            # Already adopted once. Re-cut from the preserved original rather
+            # than from the icon, so a fix costs one resample, not two.
+            drop = KEEP / f"{drop_name}.png"
+        if not drop.exists():
             print(f"  skip {drop_name}: not here")
             continue
         source = Image.open(drop)
@@ -83,20 +101,23 @@ def main() -> None:
         to_square(source).save(ICONS / f"{weapon_id}.png")
         source.close()
         print(f"  {drop_name} {size[0]}x{size[1]} -> {weapon_id}.png {SIDE}x{SIDE}")
-        drop.replace(KEEP / drop.name)
-        sidecar = ICONS / f"{drop_name}.png.import"
-        if sidecar.exists():
-            sidecar.unlink()  # Godot re-imports by filename; a stale one is noise
+        if drop.parent == ICONS:
+            drop.replace(KEEP / drop.name)
+            sidecar = ICONS / f"{drop_name}.png.import"
+            if sidecar.exists():
+                sidecar.unlink()  # Godot re-imports by name; a stale one is noise
     for weapon_id in RESQUARE:
         path = ICONS / f"{weapon_id}.png"
         if not path.exists():
             continue
+        # Keep the drop before overwriting it. Running this without the guard
+        # destroyed the owner's 1024x1536 낡은 부적 and 1156x1360 혼불 — the only
+        # copies, since they were named right and so were never moved aside.
+        kept = KEEP / f"{weapon_id}.png"
+        if not kept.exists():
+            kept.write_bytes(path.read_bytes())
         source = Image.open(path)
         size = source.size
-        if size[0] == size[1] == SIDE:
-            source.close()
-            print(f"  {weapon_id}: already {SIDE}x{SIDE}")
-            continue
         squared = to_square(source)
         source.close()
         squared.save(path)
