@@ -387,12 +387,10 @@ func _build_body(model: Dictionary) -> Control:
 	body.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
 	if model["locked"]:
 		body.text = String(model["unlock_text"])
-		body.add_theme_color_override(
-			"font_color", UiPalette.TEXT_ON_DARK.darkened(LOCKED_TEXT_DARKEN)
-		)
+		body.add_theme_color_override("font_color", UiPalette.TEXT_MUTED_ON_PAPER)
 	else:
 		body.text = String(model["description"])
-		body.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+		body.add_theme_color_override("font_color", UiPalette.INK)
 	column.add_child(body)
 	scroll.add_child(column)
 	return scroll
@@ -433,7 +431,7 @@ func _build_tile(model: Dictionary) -> Button:
 	tile.name = "Tile_" + id
 	tile.custom_minimum_size = Vector2(TILE_SIZE, TILE_STRIP_HEIGHT - UiPalette.SPACE_SM)
 	tile.focus_mode = Control.FOCUS_ALL
-	var plate: StyleBoxFlat = _tile_plate(model["selected"], id == _viewed_id)
+	var plate: StyleBox = _tile_plate(model["selected"], id == _viewed_id)
 	for state: String in ["normal", "hover", "pressed"]:
 		tile.add_theme_stylebox_override(state, plate)
 	tile.add_theme_stylebox_override("focus", _focus_ring())
@@ -582,7 +580,20 @@ func _on_back_pressed() -> void:
 	SceneFadeLayer.go(self, TITLE_SCENE)
 
 
-func _panel_plate(selected: bool) -> StyleBoxFlat:
+## N10-17: the reading panel on the owner's kit plaque. Selection keeps its
+## gold, but as a warmer tint on the paper rather than a border the plaque has
+## no room for. Flat plate stays as the fallback.
+func _panel_plate(selected: bool) -> StyleBox:
+	var kit: StyleBox = UiIcons.card_panel(
+		Color(1.10, 1.04, 0.86) if selected else Color.WHITE
+	)
+	if kit != null:
+		# A 9-slice pads its content by its texture margin unless told
+		# otherwise, and here that pushed the English backstory past the 540
+		# band. The column inside already carries its own margins, so zero here
+		# takes nothing away from the reading and leaves the ornament untouched.
+		(kit as StyleBoxTexture).set_content_margin_all(0.0)
+		return kit
 	var box := StyleBoxFlat.new()
 	box.bg_color = UiPalette.CARD_BG_SELECTED if selected else UiPalette.CARD_BG
 	box.border_color = UiPalette.GOLD if selected else UiPalette.CARD_BORDER_DIM
@@ -594,7 +605,16 @@ func _panel_plate(selected: bool) -> StyleBoxFlat:
 ## Two marks, not one: GOLD says "this is your pick", the lighter well says
 ## "this is what the panel above is showing". They are the same tile except
 ## while the player is reading a locked character.
-func _tile_plate(selected: bool, viewed: bool) -> StyleBoxFlat:
+func _tile_plate(selected: bool, viewed: bool) -> StyleBox:
+	# N10-17: the tiles join the panel above them on the kit plaque. Both marks
+	# survive as tints — warm paper for the picked one, a lighter lift for the
+	# one being read — because losing either would make the row ambiguous.
+	var kit: StyleBox = UiIcons.card_panel(
+		Color(1.10, 1.04, 0.86) if selected
+		else (Color(1.06, 1.05, 1.02) if viewed else Color.WHITE)
+	)
+	if kit != null:
+		return kit
 	var box := StyleBoxFlat.new()
 	box.bg_color = UiPalette.CARD_BG_SELECTED if viewed else UiPalette.CARD_BG
 	box.border_color = UiPalette.GOLD if selected else UiPalette.CARD_BORDER_DIM
