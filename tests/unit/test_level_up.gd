@@ -713,6 +713,70 @@ func test_a_zero_stack_passive_does_not_consume_a_slot() -> bool:
 	return _kinds(pool, LevelUp.KIND_PASSIVE).size() == 5
 
 
+## N10-6 dead-card gates. A passive nothing in the build can spend is a wasted
+## slot on the screen, and the warrior and the archer each had one.
+const MIXED_WEAPONS := {
+	"arc": {
+		"name_ko": "환도", "grade": "common", "damage": 16.0, "cooldown_sec": 0.8,
+		"speed": 0.0, "mechanic": "melee_arc", "max_level": 8,
+		"per_level": {"damage": 3.5}, "evolution_only": false,
+	},
+	"shot": {
+		"name_ko": "각궁", "grade": "common", "damage": 10.0, "cooldown_sec": 0.9,
+		"speed": 380.0, "mechanic": "straight", "max_level": 8,
+		"per_level": {"damage": 2.5}, "evolution_only": false,
+	},
+}
+const SHOT_PASSIVES := {
+	"projectile_count": {"name_ko": "다중 투사", "stat": "projectile_count", "per_stack": 1.0, "max_stacks": 2},
+	"projectile_speed": {"name_ko": "신속 투사", "stat": "projectile_speed", "per_stack": 0.1, "max_stacks": 5},
+	"skill_power": {"name_ko": "도력", "stat": "skill_power", "per_stack": 0.1, "max_stacks": 5},
+	"attack_damage": {"name_ko": "공격력", "stat": "attack_damage", "per_stack": 0.06, "max_stacks": 5},
+}
+
+
+func _offered_passives(
+	owned: Dictionary, stacks: Dictionary, has_damaging_active: bool
+) -> Array[String]:
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		MIXED_WEAPONS, SHOT_PASSIVES, owned, stacks, {}, {}, [], [], false,
+		has_damaging_active
+	)
+	return _kinds(pool, LevelUp.KIND_PASSIVE)
+
+
+func test_a_swing_only_build_is_not_offered_projectile_passives() -> bool:
+	var offered: Array[String] = _offered_passives({"arc": 1}, {}, true)
+	return (
+		not offered.has("projectile_count")
+		and not offered.has("projectile_speed")
+		and offered.has("attack_damage")
+	)
+
+
+func test_owning_one_projectile_weapon_reopens_them() -> bool:
+	var offered: Array[String] = _offered_passives({"arc": 1, "shot": 1}, {}, true)
+	return offered.has("projectile_count") and offered.has("projectile_speed")
+
+
+func test_a_character_with_no_damaging_art_is_not_offered_skill_power() -> bool:
+	# The archer carries no actives at all, so 도력 could never pay her back.
+	return not _offered_passives({"shot": 1}, {}, false).has("skill_power")
+
+
+func test_a_character_with_a_damaging_art_still_gets_skill_power() -> bool:
+	return _offered_passives({"shot": 1}, {}, true).has("skill_power")
+
+
+func test_a_dead_passive_already_stacked_keeps_growing() -> bool:
+	# N9-110 holds: a mod can swap the build under an investment, and punishing
+	# the pick afterwards would be worse than offering it.
+	var offered: Array[String] = _offered_passives(
+		{"arc": 1}, {"projectile_count": 1}, true
+	)
+	return offered.has("projectile_count")
+
+
 ## N10-5 card mix. The draw must not read a class's roster size as its odds.
 func _mixed_pool(weapon_cards: int, passive_cards: int) -> Array[Dictionary]:
 	var pool: Array[Dictionary] = []

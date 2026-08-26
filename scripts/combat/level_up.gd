@@ -135,7 +135,8 @@ static func candidates(
 	grades: Dictionary = {},
 	replaced: Array = [],
 	allowed_categories: Array = [],
-	ignore_slots: bool = false
+	ignore_slots: bool = false,
+	has_damaging_active: bool = true
 ) -> Array[Dictionary]:
 	var pool: Array[Dictionary] = []
 	var rungs: Array[String] = WeaponGrade.ladder(grades)
@@ -188,7 +189,9 @@ static func candidates(
 		# actually use it — a card that does nothing is a wasted slot. An
 		# already-stacked one keeps growing regardless: a mod can swap the
 		# build under the investment, and punishing the pick would be worse.
-		if stacks == 0 and not _passive_has_a_customer(passive_id, weapons, owned_levels):
+		if stacks == 0 and not _passive_has_a_customer(
+			passive_id, weapons, owned_levels, has_damaging_active
+		):
 			continue
 		pool.append({"kind": KIND_PASSIVE, "id": passive_id})
 	if not pool.is_empty():
@@ -200,7 +203,7 @@ static func candidates(
 		return pool  # genuinely nothing left to offer; caller falls back
 	return candidates(
 		weapons, passives, owned_levels, passive_stacks, owned_grades, grades,
-		replaced, allowed_categories, true
+		replaced, allowed_categories, true, has_damaging_active
 	)
 
 
@@ -213,11 +216,31 @@ const MECHANIC_PASSIVE_BLOCKS: Dictionary = {
 	"chain_amount": ["chain"],
 	"seal_haste": ["on_hit_seal"],
 }
+## N10-6: passives that only pay a build which flies an actual Projectile. A
+## 환도 build swings an arc, so 다중 투사 and 신속 투사 changed nothing for the
+## warrior — and were offered to him all run because nothing checked.
+const PROJECTILE_PASSIVES: Array[String] = ["projectile_count", "projectile_speed"]
+## N10-6: 도력 scales active-art damage and nothing else, so a character with no
+## damaging active (the archer has no actives at all) can never spend it.
+const ACTIVE_PASSIVES: Array[String] = ["skill_power"]
 
 
 static func _passive_has_a_customer(
-	passive_id: String, weapons: Dictionary, owned_levels: Dictionary
+	passive_id: String,
+	weapons: Dictionary,
+	owned_levels: Dictionary,
+	has_damaging_active: bool = true
 ) -> bool:
+	if ACTIVE_PASSIVES.has(passive_id):
+		return has_damaging_active
+	if PROJECTILE_PASSIVES.has(passive_id):
+		for weapon_id: String in owned_levels:
+			var mechanic: String = String(
+				(weapons.get(weapon_id, {}) as Dictionary).get("mechanic", "straight")
+			)
+			if PROJECTILE_MECHANICS.has(mechanic):
+				return true
+		return false
 	if not MECHANIC_PASSIVE_BLOCKS.has(passive_id) and passive_id != "burn_power":
 		return true
 	for weapon_id: String in owned_levels:

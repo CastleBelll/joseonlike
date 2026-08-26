@@ -1076,11 +1076,22 @@ func _on_level_reached(_new_level: int) -> void:
 		_advance_popup_queue()
 
 
+## N10-6: 도력 raises active-art damage and nothing else, so it is a card that
+## does nothing for a character whose arts deal none — the archer has no actives
+## at all, and 철벽 is a guard, not a hit.
+func _has_damaging_active() -> bool:
+	for active: Dictionary in _actives:
+		if float(active.get("damage", 0.0)) > 0.0:
+			return true
+	return false
+
+
 func _show_next_level_up() -> void:
 	get_tree().paused = true
 	var pool: Array[Dictionary] = LevelUp.candidates(
 		_weapons_data, _passives_data, _owned_levels, _passive_stacks,
-		_owned_grades, _grades_config, _replaced_weapons, _weapon_categories
+		_owned_grades, _grades_config, _replaced_weapons, _weapon_categories,
+		false, _has_damaging_active()
 	)
 	# N9-31 (owner report: 낡은 부적 Lv.5 안됐는데도 개조가 되네): the level gate
 	# now applies on the first run too. It used to be waived so the scripted
@@ -2130,7 +2141,8 @@ func _show_next_chest_reward() -> void:
 	_chest_batch_index += 1
 	var pool: Array[Dictionary] = LevelUp.candidates(
 		_weapons_data, _passives_data, _owned_levels, _passive_stacks,
-		_owned_grades, _grades_config, _replaced_weapons, _weapon_categories
+		_owned_grades, _grades_config, _replaced_weapons, _weapon_categories,
+		false, _has_damaging_active()
 	)
 	# Owner direction: a chest only deepens what the run already has; new
 	# skills belong to the level-up screen. The weapon half of that shipped in
