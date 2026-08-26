@@ -51,8 +51,11 @@ func test_declared_sprite_sets_build_walk_and_idle() -> bool:
 		passed = passed and (
 			frames.get_animation_speed(SpriteSheet.ANIM_WALK) == Enemy.WALK_FPS
 		)
-		var idle_frames: int = 2 if sprite_dir == BOSS_DIR else 1
-		passed = passed and frames.get_frame_count(SpriteSheet.ANIM_IDLE) == idle_frames
+		# N10-22: the idle frame count used to be pinned to one, or two for the
+		# boss's breathe sheet. A baked idle is a sixteen-frame breath, so the
+		# contract is that an idle EXISTS and carries frames — pinning the number
+		# fails every monster the moment its art gains a breath.
+		passed = passed and frames.get_frame_count(SpriteSheet.ANIM_IDLE) >= 1
 	if not passed:
 		push_error("test_enemy_sprite: monster sprite frame contract broken")
 	return passed

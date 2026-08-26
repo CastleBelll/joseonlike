@@ -15,15 +15,27 @@ const TIMER_FONT_SIZE := 48
 const TIMER_OUTLINE_SIZE := 8
 const BUTTON_SIZE := 44.0  # UiPalette.TOUCH_TARGET_MIN
 const BAR_TOP := 92.0
-const BAR_HEIGHT := 8.0
+## N10-22: 8px was as thin as a flat strip can be and still read. The owner's
+## kit draws its bars with a gilt rail top and bottom, and at 8 those two rails
+## meet in the middle — the bar becomes a gold line with no room for a value.
+## 18 is the first height that shows rail, fill and rail as three things.
+const BAR_HEIGHT := 18.0
 const BAR_MARGIN_X := 8.0
+## 9-slice margin for the kit bar art, in post-downscale pixels: the gilt rail
+## is about four, and the ends must not eat a short bar's middle.
+const BAR_ART_MARGIN := 5
+## The fill sits inside the rail, so it is rounded to match rather than
+## squaring off against the gilt.
+const BAR_FILL_CORNER := 3
 ## N9-152 (owner: 가로에서 바가 너무 길다): the strips cap at a centered
 ## band on wide viewports instead of spanning the whole width.
 const BAR_MAX_WIDTH := 720.0
 # N6-2 HUD HP bar: a second thin strip right under the XP bar — same minimal
 # grammar (token colours, no chip background, no numbers).
 const HP_BAR_GAP := 2.0
-const HP_BAR_HEIGHT := 5.0
+## Deliberately shorter than the xp bar above it: two identical rails stacked
+## read as one control, and these are different numbers.
+const HP_BAR_HEIGHT := 14.0
 const HP_BAR_BOTTOM := BAR_TOP + BAR_HEIGHT + HP_BAR_GAP + HP_BAR_HEIGHT
 const COUNTER_ROW_HEIGHT := 36.0
 const COUNTER_STACK_WIDTH := 144.0
@@ -60,7 +72,7 @@ const BUILD_PASSIVE_COLUMNS := 2
 const BUILD_PASSIVE_ROW_HEIGHT := 26.0
 # N5-1 boss bar: thin strip across the very top, above the timer.
 const BOSS_BAR_TOP := 8.0
-const BOSS_BAR_HEIGHT := 6.0
+const BOSS_BAR_HEIGHT := 16.0
 # N3-8 player-hit vignette edge thickness and peak opacity.
 const VIGNETTE_THICKNESS := 28.0
 const VIGNETTE_MAX_ALPHA := 0.45
@@ -78,7 +90,9 @@ var _elapsed: float = 0.0
 var _timer_label: Label
 var _xp_bar: ProgressBar
 var _hp_bar: ProgressBar
-var _hp_fill: StyleBoxFlat
+## The hp fill's own stylebox, kept so the low-health colour can be swapped on
+## it. Kit or flat — both are a StyleBox, and only the tint differs.
+var _hp_fill: StyleBox
 var _level_label: Label
 var _kill_label: Label
 var _gold_label: Label
@@ -123,6 +137,30 @@ func _ready() -> void:
 
 ## Anchor-relative offsets that center a TOP_WIDE strip inside BAR_MAX_WIDTH
 ## on wide viewports; narrow viewports keep the old edge margins.
+## N10-22: the owner's kit rail behind the value, with the flat strip as the
+## fallback. The FILL stays a flat colour on purpose. The kit ships one fill per
+## bar in a fixed colour, and this game's hp fill turns from green to vermilion
+## to warn you — modulating a red drawing toward green multiplies to near black,
+## and swapping to the kit's red would mean the bar looks like danger at full
+## health. A colour that carries meaning outranks a colour that carries texture.
+func _apply_bar_art(bar: ProgressBar, flat_fill: Color) -> void:
+	var track: StyleBox = UiIcons.kit_panel("bar_track", BAR_ART_MARGIN)
+	if track == null:
+		var flat_track := StyleBoxFlat.new()
+		flat_track.bg_color = UiPalette.NIGHT_BROWN
+		flat_track.border_color = UiPalette.WOOD_BORDER
+		flat_track.set_border_width_all(1)
+		track = flat_track
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = flat_fill
+	fill.set_corner_radius_all(BAR_FILL_CORNER)
+	fill.set_content_margin_all(0.0)
+	bar.add_theme_stylebox_override("background", track)
+	bar.add_theme_stylebox_override("fill", fill)
+	if bar == _hp_bar:
+		_hp_fill = fill
+
+
 func _apply_bar_band(bar: Control) -> void:
 	var inset: float = maxf(BAR_MARGIN_X, (size.x - BAR_MAX_WIDTH) / 2.0)
 	bar.offset_left = inset
@@ -221,7 +259,12 @@ func set_hp(hp: float, hp_max: float, threshold: float, pulse_sec: float) -> voi
 	_hp_bar.max_value = float(view["max"])
 	_hp_bar.value = float(view["value"])
 	var low: bool = bool(view["low"])
-	_hp_fill.bg_color = UiPalette.VERMILION if low else UiPalette.SUCCESS
+	# N10-22: the kit fill carries its colour as a modulate, the flat one as a
+	# background. The low-health signal has to land either way.
+	if _hp_fill is StyleBoxFlat:
+		(_hp_fill as StyleBoxFlat).bg_color = (
+			UiPalette.VERMILION if low else UiPalette.SUCCESS
+		)
 	_vignette.set_looping(low, pulse_sec)
 
 
@@ -341,14 +384,7 @@ func _build_xp_bar() -> void:
 	_xp_bar.name = "XpBar"
 	_xp_bar.show_percentage = false
 	_xp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var track := StyleBoxFlat.new()
-	track.bg_color = UiPalette.NIGHT_BROWN
-	track.border_color = UiPalette.WOOD_BORDER
-	track.set_border_width_all(1)
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = UiPalette.WOOD
-	_xp_bar.add_theme_stylebox_override("background", track)
-	_xp_bar.add_theme_stylebox_override("fill", fill)
+	_apply_bar_art(_xp_bar, UiPalette.WOOD)
 	_xp_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_apply_bar_band(_xp_bar)
 	_xp_bar.offset_top = BAR_TOP
@@ -364,14 +400,7 @@ func _build_hp_bar() -> void:
 	_hp_bar.name = "HpBar"
 	_hp_bar.show_percentage = false
 	_hp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var track := StyleBoxFlat.new()
-	track.bg_color = UiPalette.NIGHT_BROWN
-	track.border_color = UiPalette.WOOD_BORDER
-	track.set_border_width_all(1)
-	_hp_fill = StyleBoxFlat.new()
-	_hp_fill.bg_color = UiPalette.SUCCESS
-	_hp_bar.add_theme_stylebox_override("background", track)
-	_hp_bar.add_theme_stylebox_override("fill", _hp_fill)
+	_apply_bar_art(_hp_bar, UiPalette.SUCCESS)
 	_hp_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_apply_bar_band(_hp_bar)
 	_hp_bar.offset_top = BAR_TOP + BAR_HEIGHT + HP_BAR_GAP
