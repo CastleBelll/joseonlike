@@ -43,7 +43,9 @@ func test_declared_sprite_sets_build_walk_and_idle() -> bool:
 		var frames: SpriteFrames = Enemy.frames_for(sprite_dir)
 		passed = passed and frames.has_animation(SpriteSheet.ANIM_IDLE)
 		passed = passed and frames.has_animation(SpriteSheet.ANIM_WALK)
-		var declared: int = _strip_frame_count(sprite_dir.path_join("walk.png"))
+		var declared: int = _strip_frame_count(
+			SpriteSheet.strip_path(sprite_dir, SpriteSheet.WALK_STRIP, "walk.png")
+		)
 		passed = passed and declared >= MIN_WALK_FRAMES
 		passed = passed and frames.get_frame_count(SpriteSheet.ANIM_WALK) == declared
 		passed = passed and (
@@ -63,7 +65,9 @@ func test_drawn_height_hierarchy() -> bool:
 	var passed := true
 	var heights: Dictionary = {}
 	for sprite_dir: String in EXPECTED_HEIGHTS:
-		var idle: Texture2D = load(sprite_dir.path_join("idle.png"))
+		var idle: Texture2D = load(
+			SpriteSheet.strip_path(sprite_dir, SpriteSheet.IDLE_STRIP, "idle.png")
+		)
 		var height: float = (
 			float(idle.get_image().get_used_rect().size.y) / SpriteSheet.EXPORT_SCALE
 		)
@@ -89,7 +93,9 @@ func test_collision_radius_fits_sprite_footprint() -> bool:
 		var monster: Dictionary = monsters[monster_id]
 		if not monster.has("sprite"):
 			continue
-		var idle: Texture2D = load(String(monster["sprite"]).path_join("idle.png"))
+		var idle: Texture2D = load(SpriteSheet.strip_path(
+			String(monster["sprite"]), SpriteSheet.IDLE_STRIP, "idle.png"
+		))
 		var half_width: float = (
 			float(idle.get_image().get_used_rect().size.x) / SpriteSheet.EXPORT_SCALE / 2.0
 		)

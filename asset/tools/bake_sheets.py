@@ -22,6 +22,13 @@ Three things happen per sheet, and each exists because of something measured:
    height it must keep, and the bake scales to hit it. Nothing downstream —
    collision radius, the drawn-height hierarchy, balance — has to move.
 
+Outputs NEVER share a path with a drop. The first version wrote the baked
+strip back over `walk.png` and saved the baked breath as `idle.png`, which
+destroyed the owner's originals and cost a re-download of every sheet (owner,
+2026-08-26: "산출물을 같은 이름으로 저장하지마 따로 연결해"). Built strips go to
+`<sprite dir>/build/<anim>_strip.png` and the guard below refuses to run at all
+if an output ever lands on a source.
+
 No retouching. An earlier cutter erased burned-in frame numbers by hunting
 near-white pixels; eye highlights are near-white too, and it took the
 characters' eyes with the numbers.
@@ -37,6 +44,9 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
 KEEP = ROOT / "new_asset" / "source" / "sheets"
+## SpriteSheet.BUILD_DIR / IDLE_STRIP / WALK_STRIP — the engine looks here first
+## and falls back to the drop-in-place names for art not yet baked.
+BUILD_DIR = "build"
 EXPORT_SCALE = 16          # SpriteSheet.EXPORT_SCALE
 FRAME_PAD = 0.06           # empty margin kept around the figure, per side
 
@@ -50,7 +60,9 @@ class Sheet:
 
     def __init__(self, source, out, grid, logical_h, note="", share_scale=True):
         self.source = ROOT / source
-        self.out = ROOT / out
+        # `out` is a bare filename: it always lands in the source's own build/
+        # folder, so no call site can aim an output at a drop by accident.
+        self.out = self.source.parent / BUILD_DIR / out
         self.grid = grid          # (rows, cols); None for a single-frame image
         self.logical_h = logical_h
         self.note = note
@@ -69,22 +81,31 @@ class Sheet:
 ## shorter than a stand, and that difference has to survive the bake.
 ACTORS = [
     ("taoist", 38.0, [
-        Sheet("asset/characters/taoist/breath.png", "asset/characters/taoist/idle.png",
+        Sheet("asset/characters/taoist/breath.png", "idle_strip.png",
               (4, 4), 38.0, "breath becomes the idle animation"),
-        Sheet("asset/characters/taoist/walk.png", "asset/characters/taoist/walk.png",
-              (4, 4), 38.0),
+        Sheet("asset/characters/taoist/walk.png", "walk_strip.png", (4, 4), 38.0),
     ]),
     ("warrior", 38.0, [
-        Sheet("asset/characters/warrior/breath.png", "asset/characters/warrior/idle.png",
+        Sheet("asset/characters/warrior/breath.png", "idle_strip.png",
               (4, 4), 38.0, "breath becomes the idle animation"),
-        Sheet("asset/characters/warrior/walk.png", "asset/characters/warrior/walk.png",
-              (4, 4), 38.0),
+        Sheet("asset/characters/warrior/walk.png", "walk_strip.png", (4, 4), 38.0),
+    ]),
+    ("archer", 38.0, [
+        Sheet("asset/characters/archer/breath.png", "idle_strip.png",
+              (4, 4), 38.0, "breath becomes the idle animation"),
+        Sheet("asset/characters/archer/walk.png", "walk_strip.png", (4, 4), 38.0),
+    ]),
+    ("cursed_hound", 30.0, [
+        Sheet("asset/monsters/cursed_hound/idle.png", "idle_strip.png", (4, 4), 30.0),
+        Sheet("asset/monsters/cursed_hound/walk.png", "walk_strip.png",
+              (4, 4), 30.0, "drawn at its own scale, not the idle's",
+              share_scale=False),
     ]),
     ("ash_wraith", 33.0, [
-        Sheet("asset/monsters/ash_wraith/idle.png", "asset/monsters/ash_wraith/idle.png",
-              None, 33.0),
-        Sheet("asset/monsters/ash_wraith/walk.png", "asset/monsters/ash_wraith/walk.png",
-              (4, 4), 33.0, "drawn at its own scale, not the idle's", share_scale=False),
+        Sheet("asset/monsters/ash_wraith/idle.png", "idle_strip.png", (4, 4), 33.0),
+        Sheet("asset/monsters/ash_wraith/walk.png", "walk_strip.png",
+              (4, 4), 33.0, "drawn at its own scale, not the idle's",
+              share_scale=False),
     ]),
 ]
 
@@ -191,6 +212,9 @@ def bake(sheet, factor, side, dry_run=False):
     kept = KEEP / f"{sheet.source.parent.name}-{sheet.source.name}"
     if not kept.exists():
         kept.write_bytes(sheet.source.read_bytes())
+    if sheet.out.resolve() == sheet.source.resolve():
+        raise SystemExit(f"refusing to write over the source: {sheet.source}")
+    sheet.out.parent.mkdir(parents=True, exist_ok=True)
     strip.save(sheet.out)
     return len(frames)
 

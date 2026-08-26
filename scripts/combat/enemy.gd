@@ -293,7 +293,7 @@ func _apply_visual(sprite_dir: String) -> void:
 	_facing = PlayerMotion.FACING_RIGHT
 	_visual.scale = Vector2.ONE
 	_has_art = not sprite_dir.is_empty() and ResourceLoader.exists(
-		sprite_dir.path_join("idle.png")
+		SpriteSheet.strip_path(sprite_dir, SpriteSheet.IDLE_STRIP, "idle.png")
 	)
 	_sprite.visible = _has_art
 	_body.visible = not _has_art
@@ -314,11 +314,16 @@ func _apply_visual(sprite_dir: String) -> void:
 static func frames_for(sprite_dir: String) -> SpriteFrames:
 	if _frames_cache.has(sprite_dir):
 		return _frames_cache[sprite_dir]
-	var idle_path: String = sprite_dir.path_join(BREATHE_FILE)
+	# A built strip wins; then the legacy breathe sheet; then the plain drop.
+	var idle_path: String = SpriteSheet.strip_path(
+		sprite_dir, SpriteSheet.IDLE_STRIP, BREATHE_FILE
+	)
 	if not ResourceLoader.exists(idle_path):
 		idle_path = sprite_dir.path_join("idle.png")
 	var frames: SpriteFrames = SpriteSheet.build_frames(
-		idle_path, sprite_dir.path_join("walk.png"), WALK_FPS, IDLE_FPS
+		idle_path,
+		SpriteSheet.strip_path(sprite_dir, SpriteSheet.WALK_STRIP, "walk.png"),
+		WALK_FPS, IDLE_FPS
 	)
 	_frames_cache[sprite_dir] = frames
 	return frames

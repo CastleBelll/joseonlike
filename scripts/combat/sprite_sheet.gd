@@ -10,6 +10,26 @@ const ANIM_WALK := "walk"
 ## blocks of the logical frames, downscaled back in-engine via sprite scale.
 const EXPORT_SCALE := 16.0
 
+## N10-13 (owner: 산출물을 같은 이름으로 저장하지마 ... 너 때매 덮어씌워져서 다시
+## 받아왔잖아). Built strips live in their own folder under their own names. The
+## owner's drops keep `idle.png` / `walk.png` / `breath.png` in the sprite
+## directory and no tool may write there: the bake used to save over `walk.png`,
+## and over `breath.png` as `idle.png`, which destroyed the originals and cost
+## the owner a re-download of every sheet.
+const BUILD_DIR := "build"
+const IDLE_STRIP := "idle_strip.png"
+const WALK_STRIP := "walk_strip.png"
+
+
+## The file an animation actually loads from: the built strip when one exists,
+## otherwise the legacy drop-in-place name. The fallback is what lets art
+## migrate one entity at a time instead of in a single flag day.
+static func strip_path(sprite_dir: String, built: String, legacy: String) -> String:
+	var path: String = sprite_dir.path_join(BUILD_DIR).path_join(built)
+	if ResourceLoader.exists(path):
+		return path
+	return sprite_dir.path_join(legacy)
+
 
 static func build_frames(
 	idle_path: String, walk_path: String, walk_fps: float, idle_fps: float

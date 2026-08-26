@@ -263,7 +263,8 @@ static func build_sprite_frames(character_id: String = "") -> SpriteFrames:
 	var entry: Dictionary = _character_entry(id)
 	var sprite_dir: String = String(entry.get("sprite", DEFAULT_SPRITE_DIR))
 	var frames: SpriteFrames = SpriteSheet.build_frames(
-		sprite_dir.path_join("idle.png"), sprite_dir.path_join("walk.png"),
+		SpriteSheet.strip_path(sprite_dir, SpriteSheet.IDLE_STRIP, "idle.png"),
+		SpriteSheet.strip_path(sprite_dir, SpriteSheet.WALK_STRIP, "walk.png"),
 		WALK_FPS, IDLE_FPS
 	)
 	# N9-64 took the standing pose from the walk cycle because the separate idle
