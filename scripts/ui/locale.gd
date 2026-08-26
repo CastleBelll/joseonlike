@@ -136,10 +136,18 @@ const INLINE_EN := {
 	"변신!": "Evolved!",
 	"개조": "Remake",
 	"%s — 피해 %s · 쿨다운 %s초": "%s — %s damage · %ss cooldown",
-	"피해 %s→%s · 쿨다운 %s초→%s초": "Damage %s→%s · Cooldown %ss→%ss",
+	"피해 %s→%s
+쿨다운 %s초→%s초": "Damage %s→%s
+Cooldown %ss→%ss",
+	"피해 %s
+쿨다운 %s초": "Damage %s
+Cooldown %ss",
+	"등급 %s→%s": "Grade %s→%s",
 	"%s · 등급 %s→%s · %s": "%s · grade %s→%s · %s",
 	"%s → %s (레벨 유지)": "%s → %s (keeps its level)",
-	"%s → %s · 피해 %s→%s (레벨 유지)": "%s → %s · damage %s→%s (keeps its level)",
+	"%s → %s
+피해 %s→%s": "%s → %s
+Damage %s→%s",
 	"투사체 +%s": "Projectiles +%s",
 	"관통 +%s": "Pierce +%s",
 	"관통 피해 유지 +%s": "Pierce damage kept +%s",

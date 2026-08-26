@@ -664,6 +664,23 @@ static func well_label(
 ## Effect description with real numbers, per the owner's rule — never a bare
 ## level counter. Weapon-up shows before→after (at the weapon's run grade),
 ## grade-up shows the grade jump with its damage delta, passives show +N%.
+## N10-16 (owner: 글씨 줄바꿈이 제대로 안 되어있고 쓸데없는 설명이 많아). Card
+## copy used to flow independent facts into one paragraph joined by " · ", and
+## word wrap then broke them wherever the width ran out — "쿨다운 3.04" on one
+## line and "초→2.96초" on the next, which reads as a typo rather than a number.
+## One fact per line wraps at a place that means something, and a card that
+## needs three short lines is quicker to read than one that needs six wrapped
+## ones. Empty clauses drop out so a card never shows a blank row.
+static func _lines(parts: Array) -> String:
+	var kept: Array[String] = []
+	for part: Variant in parts:
+		var text: String = String(part).strip_edges()
+		if not text.is_empty():
+			kept.append(text)
+	return "
+".join(kept)
+
+
 static func describe(
 	choice: Dictionary,
 	weapons: Dictionary,
@@ -680,7 +697,8 @@ static func describe(
 			var stats: Dictionary = weapons.get(id, {})
 			var level: int = int(owned_levels.get(id, 1))
 			var grade: String = current_grade(id, weapons, owned_grades)
-			var numbers: String = UiLocale.t("피해 %s→%s · 쿨다운 %s초→%s초") % [
+			var numbers: String = UiLocale.t("피해 %s→%s
+쿨다운 %s초→%s초") % [
 				_fmt(WeaponGrade.stat_at(stats, "damage", level, grade, grades)),
 				_fmt(WeaponGrade.stat_at(stats, "damage", level + 1, grade, grades)),
 				_fmt(WeaponGrade.stat_at(stats, "cooldown_sec", level, grade, grades)),
@@ -690,11 +708,11 @@ static func describe(
 			# not just the numbers — that IS the reason to pick this card.
 			var extra: String = milestone_text(milestone_delta(stats, level + 1))
 			if not extra.is_empty():
-				return "%s · %s%s" % [numbers, MILESTONE_MARK, extra]
+				return _lines([numbers, MILESTONE_MARK + extra])
 			# No milestone this level — lead with the plain-language mechanic
 			# reminder instead (owner report: pure numbers read as noise once
 			# a build has several weapons and you forget which does what).
-			return "%s · %s" % [_weapon_mechanic_line(stats), numbers]
+			return _lines([_weapon_mechanic_line(stats), numbers])
 		KIND_GRADE_UP:
 			var stats: Dictionary = weapons.get(id, {})
 			var grade: String = current_grade(id, weapons, owned_grades)
@@ -704,12 +722,14 @@ static func describe(
 			)
 			if granted.is_empty():
 				granted = UiLocale.t("등급 상승")
-			return UiLocale.t("%s · 등급 %s→%s · %s") % [
+			return _lines([
 				_weapon_mechanic_line(stats),
-				UiLocale.t(String(GRADE_KO.get(grade, DEFAULT_GRADE_KO))),
-				UiLocale.t(String(GRADE_KO.get(raised, DEFAULT_GRADE_KO))),
+				UiLocale.t("등급 %s→%s") % [
+					UiLocale.t(String(GRADE_KO.get(grade, DEFAULT_GRADE_KO))),
+					UiLocale.t(String(GRADE_KO.get(raised, DEFAULT_GRADE_KO))),
+				],
 				granted,
-			]
+			])
 		KIND_MOD:
 			# Reads like the old loot popup did: the full transformation, plus
 			# the real damage change at the carried level and grade (N4-6).
@@ -726,7 +746,8 @@ static func describe(
 				]
 			var level: int = int(owned_levels.get(base_id, 1))
 			var carried: String = mod_carried_grade(mod, weapons, owned_grades, grades)
-			var line: String = UiLocale.t("%s → %s · 피해 %s→%s (레벨 유지)") % [
+			var line: String = UiLocale.t("%s → %s
+피해 %s→%s") % [
 				UiLocale.data_name(weapons.get(base_id, {}) as Dictionary, base_id),
 				UiLocale.data_name(weapons.get(result_id, {}) as Dictionary, result_id),
 				_fmt(WeaponGrade.stat_at(
@@ -737,20 +758,25 @@ static func describe(
 					weapons.get(result_id, {}) as Dictionary, "damage", level, carried, grades
 				)),
 			]
-			# The branch the mod buys (burn spread, shock, seal…) is the point
-			# of the card (N4-4a) — spell it out with the result's numbers.
-			var extra: String = mechanic_text(weapons.get(result_id, {}) as Dictionary)
-			return line if extra.is_empty() else "%s · %s" % [line, extra]
+			# N10-16 (owner: 쓸데없는 설명이 많아): the result's full stat list —
+			# blast radius, stun, knockback, seal threshold — used to ride along
+			# here and made the 개조 card four lines longer than any other. The
+			# card's job is to say what it turns into and what that costs in
+			# damage; the rest is what the 괴이록 is for.
+			return _lines([line])
 		KIND_NEW_WEAPON:
 			var stats: Dictionary = weapons.get(id, {})
 			# The plain-language mechanic line now covers what mechanic_text's
 			# raw numbers used to be the ONLY explanation for — keeping both
 			# doubled the card length for no added clarity.
-			return UiLocale.t("%s — 피해 %s · 쿨다운 %s초") % [
+			return _lines([
 				_weapon_mechanic_line(stats),
-				_fmt(float(stats.get("damage", 0.0))),
-				_fmt(float(stats.get("cooldown_sec", 0.0))),
-			]
+				UiLocale.t("피해 %s
+쿨다운 %s초") % [
+					_fmt(float(stats.get("damage", 0.0))),
+					_fmt(float(stats.get("cooldown_sec", 0.0))),
+				],
+			])
 		KIND_PASSIVE:
 			var passive: Dictionary = passives.get(id, {})
 			var per_stack: float = float(passive.get("per_stack", 0.0))
@@ -763,10 +789,10 @@ static func describe(
 			# N9-105 (owner: a bare % never says WHAT it touches): the body
 			# leads with the data desc — the name already sits in the title,
 			# repeating it here was the line the explanation now fills.
-			return "%s — %s (%d/%d)" % [
+			return _lines([
 				UiLocale.data_desc(passive, UiLocale.data_name(passive, id)),
-				amount, next_stack, max_stacks,
-			]
+				"%s (%d/%d)" % [amount, next_stack, max_stacks],
+			])
 	return ""
 
 

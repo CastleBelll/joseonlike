@@ -279,7 +279,8 @@ func test_mod_card_reads_like_the_old_popup() -> bool:
 	# Result damage 18 stays flat: the carried grade equals its own base rung.
 	return (
 		String(card["name"]) == "개조"
-		and String(card["desc"]) == "낡은 부적 → 화염 부적 · 피해 12→18 (레벨 유지)"
+		and String(card["desc"]) == "낡은 부적 → 화염 부적
+피해 12→18"
 		and String(card["grade"]) == "희귀"
 		and String(card["well_label"]) == "변신!"
 		and card["payload"] == choice
@@ -401,15 +402,21 @@ func test_describe_weapon_up_shows_real_numbers() -> bool:
 	var at_2: String = LevelUp.describe(choice, WEAPONS, {}, {"talisman": 2}, {})
 	var mechanic_line: String = Bestiary.mechanic_line("straight", "ko")
 	return (
-		at_1 == "%s · 피해 12→15 · 쿨다운 1.2초→1.15초" % mechanic_line
-		and at_2 == "%s · 피해 15→18 · 쿨다운 1.15초→1.1초" % mechanic_line
+		at_1 == "%s
+피해 12→15
+쿨다운 1.2초→1.15초" % mechanic_line
+		and at_2 == "%s
+피해 15→18
+쿨다운 1.15초→1.1초" % mechanic_line
 	)
 
 
 func test_describe_new_weapon_shows_base_stats() -> bool:
 	var choice := {"kind": LevelUp.KIND_NEW_WEAPON, "id": "bow"}
 	var mechanic_line: String = Bestiary.mechanic_line("straight", "ko")
-	return LevelUp.describe(choice, WEAPONS, {}, {}, {}) == "%s — 피해 10 · 쿨다운 0.9초" % mechanic_line
+	return LevelUp.describe(choice, WEAPONS, {}, {}, {}) == "%s
+피해 10
+쿨다운 0.9초" % mechanic_line
 
 
 func test_describe_passive_percent_at_several_stacks() -> bool:
@@ -418,7 +425,9 @@ func test_describe_passive_percent_at_several_stacks() -> bool:
 	var choice := {"kind": LevelUp.KIND_PASSIVE, "id": "attack_damage"}
 	var first: String = LevelUp.describe(choice, {}, PASSIVES, {}, {})
 	var second: String = LevelUp.describe(choice, {}, PASSIVES, {}, {"attack_damage": 1})
-	return first == "공격력 — +6% (1/2)" and second == "공격력 — +6% (2/2)"
+	return first == "공격력
++6% (1/2)" and second == "공격력
++6% (2/2)"
 
 
 func test_describe_passive_flat_amount() -> bool:
@@ -426,7 +435,8 @@ func test_describe_passive_flat_amount() -> bool:
 		"projectile_count": {"name_ko": "다중 투사", "per_stack": 1.0, "max_stacks": 2}
 	}
 	var choice := {"kind": LevelUp.KIND_PASSIVE, "id": "projectile_count"}
-	return LevelUp.describe(choice, {}, passives, {}, {}) == "다중 투사 — +1 (1/2)"
+	return LevelUp.describe(choice, {}, passives, {}, {}) == "다중 투사
++1 (1/2)"
 
 
 func test_mechanic_passives_need_a_customer_weapon() -> bool:
@@ -496,7 +506,8 @@ func test_describe_passive_leads_with_its_desc() -> bool:
 	}
 	var choice := {"kind": LevelUp.KIND_PASSIVE, "id": "area_scale"}
 	var line: String = LevelUp.describe(choice, {}, passives, {}, {})
-	return line == "폭발·장판·파동의 반경이 넓어진다 — +8% (1/5)"
+	return line == "폭발·장판·파동의 반경이 넓어진다
++8% (1/5)"
 
 
 func test_apply_weapon_up_bumps_exactly_that_weapon() -> bool:

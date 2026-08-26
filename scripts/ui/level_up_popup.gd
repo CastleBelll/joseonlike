@@ -32,7 +32,14 @@ const PANEL_MAX_WIDTH := 492.0
 ## scroll — the choices lay out as side-by-side columns on a wide band
 ## instead. Trimmed below the full 960 so the field shows at the sides
 ## (owner: the popup covered the whole screen).
-const PANEL_MAX_WIDTH_LANDSCAPE := 872.0
+## N10-16 (owner: 가로모드에서 파워업 하면 너무 여백이 많아서 별로고 너무 커):
+## 872 of 960 left the sheet reading as the whole screen, and with the card copy
+## now one fact per line the columns no longer need that width — the space was
+## going to margin, not to text.
+## 3 columns at CARD_COLUMN_MIN_WIDTH + 2 gaps + both body margins. Set below
+## this and the row scrolls sideways instead of shrinking — measured at 728,
+## which is exactly the columns and leaves nothing for the margins.
+const PANEL_MAX_WIDTH_LANDSCAPE := 768.0
 const PANEL_TOP := 96.0
 ## Landscape has 540 design px of height; the portrait 96px top would eat it.
 const PANEL_TOP_LANDSCAPE := 16.0
@@ -41,16 +48,26 @@ const DESIGN_HEIGHT := 960.0
 const DESIGN_HEIGHT_LANDSCAPE := 540.0
 ## A column card narrower than this clips its name line; below it the row
 ## scrolls horizontally instead of shrinking further (pathological counts).
-const CARD_COLUMN_MIN_WIDTH := 232.0
+## N10-16: 232 was sized for card copy that ran as one long paragraph. With one
+## fact per line the name is the widest thing left, and holding the old floor
+## against the narrowed landscape band clamped three columns wider than the band
+## and summoned the very sideways scroll this floor exists to avoid.
+const CARD_COLUMN_MIN_WIDTH := 206.0
 ## Owner (2026-08-24): the landscape popup covered the whole screen — the
 ## floor only guarantees a two-line card, so short screens stay short.
-const CARD_COLUMN_HEIGHT_MIN := 196.0
+## N10-16: shorter copy means the floor, not the text, was setting the height,
+## and the cards stood half empty. Three short lines fit in 158.
+const CARD_COLUMN_HEIGHT_MIN := 158.0
 const HEADER_HEIGHT := 64.0
 ## Owner (자꾸 스크롤이 생길정도라서): a landscape screen is 540 tall and the
 ## chrome around the cards was written for 960 — title band plus five body
 ## margins came to a third of the sheet, so the card the player is reading
 ## scrolled. Landscape spends less on the frame and gives it to the card.
-const HEADER_HEIGHT_LANDSCAPE := 44.0
+## N10-16 trims four more off the landscape title band. It buys no room on the
+## 540 canvases — there the panel is capped by the band, and shrinking the
+## header shrinks the estimate by the same amount — but on taller screens it is
+## four fewer pixels of frame around the card the player is reading.
+const HEADER_HEIGHT_LANDSCAPE := 40.0
 const BODY_MARGIN := 20.0
 const BODY_MARGIN_LANDSCAPE := 12.0
 ## Cards grow with their wrapped description (N3-17); this is the floor that
@@ -62,11 +79,20 @@ const CARD_BORDER_WIDTH := 2
 const FOCUS_RING_WIDTH := 4
 const WELL_SIZE := 72.0
 const WELL_CORNER := 8
-const WELL_MARGIN := 16.0
+## N10-16: trimmed from 16. On a 540 canvas the band is hard-capped and the
+## cards were the last few pixels short; the well's own inset is the only place
+## left that costs nothing to read.
+const WELL_MARGIN := 12.0
 ## Column cards (landscape) stack name and description under the icon well
 ## row; these are the y offsets of that stacked layout (the name line starts
 ## right where the well's own label row ends).
-const COLUMN_NAME_TOP := WELL_MARGIN + WELL_SIZE + 24.0
+## N10-16: trimmed from 24, but only to 20 — the "변신!" well label lives in
+## this gap, and taking all fourteen the 540 canvas needed put the label on top
+## of the name. The rest comes from the name-to-description gap below, which
+## holds nothing.
+const COLUMN_NAME_TOP := WELL_MARGIN + WELL_SIZE + 20.0
+## The name line's own height. Trimming this is not free space — at 18 the
+## description rendered on top of the name.
 const COLUMN_DESC_TOP := COLUMN_NAME_TOP + 28.0
 # Weapon icons show at integer multiples of their 32px logical size and the
 # loot badge at its native 24px, so NEAREST sampling stays lossless
@@ -89,7 +115,11 @@ const DESC_BREAK_FLAGS := (
 const OWNED_STRIP_RESERVE := 120.0
 ## The landscape band is wide enough for the whole roster in ONE strip row,
 ## so its reserve only needs that row plus a tight gap above it.
-const OWNED_STRIP_RESERVE_LANDSCAPE := 56.0
+## N10-16: on a 540-tall canvas the panel already filled its band and the cards
+## were still three pixels short. The band is what caps it there, so the room
+## has to come from the strip's reserve — eight pixels, taken from padding the
+## one-row landscape strip never needed.
+const OWNED_STRIP_RESERVE_LANDSCAPE := 48.0
 const PILL_SIZE := Vector2(64.0, 30.0)
 const PILL_MARGIN := 12.0
 const OWNED_WELL_SIZE := 48.0
@@ -287,10 +317,14 @@ func open(
 		stack_heights, _panel_style_margins_y(), _header_height(), _body_margin()
 	)
 	# Landscape takes the whole band rather than the estimate. The estimate is a
-	# text measurement, and it runs short on the longer English descriptions —
-	# layout_sweep caught the cards scrolling by about three lines at several
-	# canvases. Growing to what is there costs nothing (the sheet is centred in
-	# a band that is already reserved) and cannot be wrong the way a guess can.
+	# text measurement and it runs short — N10-16 tried three times to close the
+	# gap with slack and layout_sweep found the cards still scrolling at 1280x720
+	# every time. Growing to what is there cannot be wrong the way a guess can.
+	#
+	# The owner's "너무 커" is answered by making the band itself narrower (768
+	# from 872) and the copy shorter, not by trusting a measurement that has
+	# already been wrong four times. Trimming the leftover paper under the cards
+	# needs the scroll's real height after layout, which is its own change.
 	var panel_height: float = available if landscape else minf(estimated, available)
 	# Owner (2026-08-24): a short landscape panel floats centred instead of
 	# hugging the top, so the field stays visible above and below the paper.
@@ -492,7 +526,23 @@ static func column_card_height_for(
 	var line_height: float = maxf(font.get_height(UiPalette.FONT_SIZE_LABEL), 1.0)
 	var lines: int = maxi(int(ceilf(measured.y / (line_height + float(line_spacing)))), 1)
 	var text_height: float = measured.y + float(line_spacing * (lines - 1))
-	return maxf(CARD_COLUMN_HEIGHT_MIN, COLUMN_DESC_TOP + text_height + DESC_BOTTOM_PAD)
+	# N10-16: the bottom pad is a full well margin in portrait, where the card is
+	# a wide row with air to spare. A landscape column is the tight axis — on a
+	# 540 canvas the cards asked for three pixels more than the band could ever
+	# give — and half a margin under the last line still reads as a margin.
+	# The line count divides by height PLUS spacing while measured.y carries no
+	# spacing, so a description one line from the boundary is counted short and
+	# its last line renders past the card. One line of headroom covers that off
+	# by one — and it is why the landscape panel needed a slack constant before:
+	# the shortfall was here, not in the panel.
+	# One line of headroom because the line count divides by height PLUS spacing
+	# while measured.y carries no spacing, so a description one line from the
+	# boundary is counted short and renders past the card. No bottom pad in a
+	# column: the headroom already reads as one, and on a 540 canvas the band is
+	# hard-capped — every pixel here is one the cards do not get.
+	return maxf(
+		CARD_COLUMN_HEIGHT_MIN, COLUMN_DESC_TOP + text_height + line_height
+	)
 
 
 ## Equal column split of the body width; floored so a pathological card count

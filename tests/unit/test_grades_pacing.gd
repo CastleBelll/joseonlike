@@ -148,7 +148,11 @@ func test_grade_up_card_shows_next_grade_and_real_numbers() -> bool:
 	var mechanic_line: String = Bestiary.mechanic_line("straight", "ko")
 	# The card names what the rung grants. Describing it as a damage change
 	# would print an unchanged number now that grades no longer scale damage.
-	return pill == "희귀" 		and desc == "%s · 등급 일반→희귀 · 치명타 확률 +10%%" % mechanic_line
+	# N10-16: one fact per line — the card's clauses are independent, and word
+	# wrap used to break them mid-number when they flowed as one paragraph.
+	return pill == "희귀" and desc == "%s
+등급 일반→희귀
+치명타 확률 +10%%" % mechanic_line
 
 
 func test_weapon_up_description_reflects_run_grade() -> bool:
@@ -157,7 +161,9 @@ func test_weapon_up_description_reflects_run_grade() -> bool:
 		choice, WEAPONS, {}, {"talisman": 1}, {}, {"talisman": "rare"}, MULT_GRADES
 	)
 	var mechanic_line: String = Bestiary.mechanic_line("straight", "ko")
-	return desc == "%s · 피해 24→30 · 쿨다운 0.6초→0.5초" % mechanic_line
+	return desc == "%s
+피해 24→30
+쿨다운 0.6초→0.5초" % mechanic_line
 
 
 func test_elite_stats_derive_from_base() -> bool:
@@ -288,7 +294,8 @@ func test_a_grade_rung_with_no_effect_block_still_reads_as_something() -> bool:
 	var desc: String = LevelUp.describe(
 		choice, WEAPONS, {}, {"talisman": 1}, {}, {"talisman": "rare"}, GRADES
 	)
-	return desc.ends_with("등급 희귀→신화 · 등급 상승")
+	return desc.ends_with("등급 희귀→신화
+등급 상승")
 
 
 func test_grade_bonuses_accumulate_across_rungs() -> bool:
