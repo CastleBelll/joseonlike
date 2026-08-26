@@ -1518,5 +1518,161 @@
  },
  "_evolution": {
   "damage_mult": 2.0
+ },
+ "wolto": {
+  "name_ko": "월도",
+  "name_en": "Moon Blade",
+  "category": "melee",
+  "grade": "common",
+  "mechanic": "melee_arc",
+  "damage": 30.0,
+  "cooldown_sec": 1.3,
+  "projectile_count": 1,
+  "pierce": 3,
+  "speed": 0.0,
+  "range_px": 135.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 6.0,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": false,
+  "milestones": {
+   "3": {
+    "arc": {
+     "angle_deg": 20.0
+    }
+   },
+   "5": {
+    "pierce": 1
+   },
+   "7": {
+    "arc": {
+     "angle_deg": 20.0
+    }
+   }
+  },
+  "hit_effect": "hit_sword",
+  "swing_effect": "swing_sword",
+  "arc": {
+   "angle_deg": 210.0,
+   "knockback_scale": 2.2
+  }
+ },
+ "pyeongon": {
+  "name_ko": "편곤",
+  "name_en": "Flail",
+  "category": "melee",
+  "grade": "common",
+  "mechanic": "melee_arc",
+  "damage": 11.0,
+  "cooldown_sec": 0.42,
+  "projectile_count": 1,
+  "pierce": 1,
+  "speed": 0.0,
+  "range_px": 78.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 2.2,
+   "cooldown_sec": -0.02
+  },
+  "evolution_only": false,
+  "milestones": {
+   "3": {
+    "pierce": 1
+   },
+   "5": {
+    "arc": {
+     "knockback_scale": 0.6
+    }
+   },
+   "7": {
+    "pierce": 1
+   }
+  },
+  "hit_effect": "hit_sword",
+  "swing_effect": "swing_sword",
+  "arc": {
+   "angle_deg": 100.0,
+   "knockback_scale": 3.2
+  }
+ },
+ "cheongryong_wolto": {
+  "name_ko": "청룡언월도",
+  "name_en": "Azure Dragon Glaive",
+  "category": "melee",
+  "grade": "rare",
+  "mechanic": "melee_arc",
+  "damage": 38.0,
+  "cooldown_sec": 1.15,
+  "projectile_count": 1,
+  "pierce": 4,
+  "speed": 0.0,
+  "range_px": 150.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 7.0,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": true,
+  "milestones": {
+   "3": {
+    "arc": {
+     "angle_deg": 25.0
+    }
+   },
+   "5": {
+    "pierce": 1
+   },
+   "7": {
+    "arc": {
+     "angle_deg": 25.0
+    }
+   }
+  },
+  "hit_effect": "hit_ghost_sword",
+  "swing_effect": "swing_ghost_sword",
+  "arc": {
+   "angle_deg": 240.0,
+   "knockback_scale": 2.4
+  }
+ },
+ "masang_pyeongon": {
+  "name_ko": "마상편곤",
+  "name_en": "Mounted Flail",
+  "category": "melee",
+  "grade": "rare",
+  "mechanic": "melee_arc",
+  "damage": 14.0,
+  "cooldown_sec": 0.36,
+  "projectile_count": 1,
+  "pierce": 2,
+  "speed": 0.0,
+  "range_px": 92.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 2.8,
+   "cooldown_sec": -0.02
+  },
+  "evolution_only": true,
+  "milestones": {
+   "3": {
+    "pierce": 1
+   },
+   "5": {
+    "arc": {
+     "knockback_scale": 0.6
+    }
+   },
+   "7": {
+    "pierce": 1
+   }
+  },
+  "hit_effect": "hit_sharp_sword",
+  "swing_effect": "swing_sharp_sword",
+  "arc": {
+   "angle_deg": 120.0,
+   "knockback_scale": 3.6
+  }
  }
 }

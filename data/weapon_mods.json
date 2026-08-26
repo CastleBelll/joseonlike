@@ -1,110 +1,122 @@
 {
-  "sharp_sword_mod": {
-    "weapon_id": "sword",
-    "loot_id": "whetstone",
-    "result_weapon": "sharp_sword",
-    "level_required": 5
-  },
-  "ghost_sword_mod": {
-    "weapon_id": "sword",
-    "loot_id": "ghost_iron",
-    "result_weapon": "ghost_sword",
-    "level_required": 5
-  },
-  "flame_sword_mod": {
-    "weapon_id": "sword",
-    "loot_id": "fire_spirit_stone",
-    "result_weapon": "flame_sword",
-    "level_required": 5
-  },
-  "fire_talisman_mod": {
-    "weapon_id": "old_talisman",
-    "loot_id": "fire_spirit_stone",
-    "result_weapon": "fire_talisman",
-    "level_required": 5
-  },
-  "hwaryeongbu_mod": {
-    "weapon_id": "hwabu",
-    "loot_id": "fire_spirit_stone",
-    "result_weapon": "hwaryeongbu",
-    "level_required": 5
-  },
-  "noejeongbu_mod": {
-    "weapon_id": "noebu",
-    "loot_id": "thunder_stone",
-    "result_weapon": "noejeongbu",
-    "level_required": 5
-  },
-  "bongmageom_mod": {
-    "weapon_id": "beopgeom",
-    "loot_id": "cinnabar",
-    "result_weapon": "bongmageom",
-    "level_required": 5
-  },
-  "ghost_staff_mod": {
-    "weapon_id": "seokjang",
-    "loot_id": "ghost_iron",
-    "result_weapon": "ghost_staff",
-    "level_required": 5
-  },
-  "flame_honbul_mod": {
-    "weapon_id": "honbul",
-    "loot_id": "fire_spirit_stone",
-    "result_weapon": "flame_honbul",
-    "level_required": 5
-  },
-  "hwayeom_gyeolgye_mod": {
-    "weapon_id": "gyeolgye",
-    "loot_id": "fire_spirit_stone",
-    "result_weapon": "hwayeom_gyeolgye",
-    "level_required": 5
-  },
-  "noe_sinjang_mod": {
-    "weapon_id": "sinjang",
-    "loot_id": "thunder_stone",
-    "result_weapon": "noe_sinjang",
-    "level_required": 5
-  },
-  "bongin_jineon_mod": {
-    "weapon_id": "jineon",
-    "loot_id": "cinnabar",
-    "result_weapon": "bongin_jineon",
-    "level_required": 5
-  },
-  "gwisal_mod": {
-    "weapon_id": "sal",
-    "loot_id": "dokkaebi_flame",
-    "result_weapon": "gwisal",
-    "level_required": 5
-  },
-  "twin_sword_mod": {
-    "weapon_id": "sharp_sword",
-    "loot_id": "whetstone",
-    "result_weapon": "twin_sword",
-    "level_required": 5
-  },
-  "divine_bow_mod": {
-    "weapon_id": "bow",
-    "loot_id": "cinnabar",
-    "result_weapon": "divine_bow",
-    "level_required": 5
-  },
-  "hwabu_mod": {
-    "weapon_id": "fire_talisman",
-    "loot_id": "fire_spirit_stone",
-    "result_weapon": "hwabu",
-    "level_required": 5
-  },
-  "noebu_mod": {
-    "weapon_id": "old_talisman",
-    "loot_id": "thunder_stone",
-    "result_weapon": "noebu",
-    "level_required": 5
-  },
-  "sal_mod": {
-    "weapon_id": "old_talisman",
-    "loot_id": "dokkaebi_flame",
-    "result_weapon": "sal",
-    "level_required": 5
-  }
+ "sharp_sword_mod": {
+  "weapon_id": "sword",
+  "loot_id": "whetstone",
+  "result_weapon": "sharp_sword",
+  "level_required": 5
+ },
+ "ghost_sword_mod": {
+  "weapon_id": "sword",
+  "loot_id": "ghost_iron",
+  "result_weapon": "ghost_sword",
+  "level_required": 5
+ },
+ "flame_sword_mod": {
+  "weapon_id": "sword",
+  "loot_id": "fire_spirit_stone",
+  "result_weapon": "flame_sword",
+  "level_required": 5
+ },
+ "fire_talisman_mod": {
+  "weapon_id": "old_talisman",
+  "loot_id": "fire_spirit_stone",
+  "result_weapon": "fire_talisman",
+  "level_required": 5
+ },
+ "hwaryeongbu_mod": {
+  "weapon_id": "hwabu",
+  "loot_id": "fire_spirit_stone",
+  "result_weapon": "hwaryeongbu",
+  "level_required": 5
+ },
+ "noejeongbu_mod": {
+  "weapon_id": "noebu",
+  "loot_id": "thunder_stone",
+  "result_weapon": "noejeongbu",
+  "level_required": 5
+ },
+ "bongmageom_mod": {
+  "weapon_id": "beopgeom",
+  "loot_id": "cinnabar",
+  "result_weapon": "bongmageom",
+  "level_required": 5
+ },
+ "ghost_staff_mod": {
+  "weapon_id": "seokjang",
+  "loot_id": "ghost_iron",
+  "result_weapon": "ghost_staff",
+  "level_required": 5
+ },
+ "flame_honbul_mod": {
+  "weapon_id": "honbul",
+  "loot_id": "fire_spirit_stone",
+  "result_weapon": "flame_honbul",
+  "level_required": 5
+ },
+ "hwayeom_gyeolgye_mod": {
+  "weapon_id": "gyeolgye",
+  "loot_id": "fire_spirit_stone",
+  "result_weapon": "hwayeom_gyeolgye",
+  "level_required": 5
+ },
+ "noe_sinjang_mod": {
+  "weapon_id": "sinjang",
+  "loot_id": "thunder_stone",
+  "result_weapon": "noe_sinjang",
+  "level_required": 5
+ },
+ "bongin_jineon_mod": {
+  "weapon_id": "jineon",
+  "loot_id": "cinnabar",
+  "result_weapon": "bongin_jineon",
+  "level_required": 5
+ },
+ "gwisal_mod": {
+  "weapon_id": "sal",
+  "loot_id": "dokkaebi_flame",
+  "result_weapon": "gwisal",
+  "level_required": 5
+ },
+ "twin_sword_mod": {
+  "weapon_id": "sharp_sword",
+  "loot_id": "whetstone",
+  "result_weapon": "twin_sword",
+  "level_required": 5
+ },
+ "divine_bow_mod": {
+  "weapon_id": "bow",
+  "loot_id": "cinnabar",
+  "result_weapon": "divine_bow",
+  "level_required": 5
+ },
+ "hwabu_mod": {
+  "weapon_id": "fire_talisman",
+  "loot_id": "fire_spirit_stone",
+  "result_weapon": "hwabu",
+  "level_required": 5
+ },
+ "noebu_mod": {
+  "weapon_id": "old_talisman",
+  "loot_id": "thunder_stone",
+  "result_weapon": "noebu",
+  "level_required": 5
+ },
+ "sal_mod": {
+  "weapon_id": "old_talisman",
+  "loot_id": "dokkaebi_flame",
+  "result_weapon": "sal",
+  "level_required": 5
+ },
+ "cheongryong_wolto_mod": {
+  "weapon_id": "wolto",
+  "loot_id": "ghost_iron",
+  "result_weapon": "cheongryong_wolto",
+  "level_required": 5
+ },
+ "masang_pyeongon_mod": {
+  "weapon_id": "pyeongon",
+  "loot_id": "whetstone",
+  "result_weapon": "masang_pyeongon",
+  "level_required": 5
+ }
 }
