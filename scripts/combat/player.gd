@@ -20,10 +20,10 @@ const SPRITE_EXPORT_SCALE := SpriteSheet.EXPORT_SCALE
 const WALK_FRAME_COUNT := 16
 ## Doubled with the frame count so the 16-frame run keeps the 8-frame cadence.
 const WALK_FPS := 16.0
-const IDLE_FPS := 1.0  # single idle frame; the speed value is inert
-## Which walk frame stands still (narrowest stance). Per-character in the
-## data ("idle_walk_frame"); this is the fallback.
-const IDLE_WALK_FRAME := 0
+## The idle is a sixteen-frame breath now, so this value stopped being inert:
+## 8 fps gives one breath every two seconds, which is the cadence the sheets
+## were drawn to (inhale over frames 1-8, exhale over 9-16).
+const IDLE_FPS := 8.0
 const ANIM_IDLE := SpriteSheet.ANIM_IDLE
 const ANIM_WALK := SpriteSheet.ANIM_WALK
 
@@ -255,18 +255,11 @@ static func build_sprite_frames(character_id: String = "") -> SpriteFrames:
 		sprite_dir.path_join("idle.png"), sprite_dir.path_join("walk.png"),
 		WALK_FPS, IDLE_FPS
 	)
-	# N9-64 (owner: "가만히 있을 때 애셋이 이상해서 걷는 폼 중에 서있는 자세를
-	# 기본 자세로"). The standing pose is taken from the walk cycle instead of
-	# the separate idle drawing, whose hat and posture read as a different
-	# character the moment the player stops.
-	#
-	# idle.png is left alone rather than overwritten: build_walk.py uses it as
-	# the reference the walk frames are aligned to, so replacing it with one of
-	# those frames would make the pipeline feed on its own output.
-	SpriteSheet.idle_from_strip(
-		frames, sprite_dir.path_join("walk.png"),
-		int(entry.get("idle_walk_frame", IDLE_WALK_FRAME))
-	)
+	# N9-64 took the standing pose from the walk cycle because the separate idle
+	# drawing read as a different character the moment the player stopped. That
+	# is fixed at the source now: the breath sheet is generated FROM the idle
+	# reference, so the standing pose and the walk agree, and idle.png carries a
+	# real sixteen-frame breath. Overriding it here would throw that away.
 	return frames
 
 
