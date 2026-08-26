@@ -126,10 +126,27 @@ hard bugs, and difficult reviews. Do not keep several agents alive analysing the
 whole repository — Orca orchestration is for running this loop, not for parallel
 long-lived worktree teams.
 
+## 9a. Project skills
+
+`.claude/skills/` holds the procedures this repo has already paid for. They load
+themselves — a skill is picked up when the work matches its description, without
+anyone naming it — so the rule here is simply: **do not re-derive what one of them
+already settles.**
+
+| Skill | When it applies |
+|---|---|
+| `new-monster` | a monster, a behaviour, or any run-affecting combat rule |
+| `balance-pass` | numbers and feel — difficulty, pacing, dps, drops, economy, QA sweeps |
+
+If a session finds a better way, or gets caught by something the skill did not
+warn about, update the skill in the same commit. A procedure that is not corrected
+where it failed will fail the same way next time.
+
 ## 10. Source of truth
 
 `CLAUDE.md` · `ARCHITECTURE.md` · `JOSEONLIKE_GDD.md` · `ROADMAP.md` · `TASKS.md` ·
 `ASSET_SPEC.md` · `ASSET_REQUIREMENTS.md` · `ASSET_LICENSES.md` · `data/BALANCE.md` ·
+`.claude/skills/**` ·
 `docs/CI.md` · `docs/SESSION_STATE.md` · the code · the git history. Nothing else.
 
 A fresh session starts with [docs/SESSION_STATE.md](docs/SESSION_STATE.md): where the
