@@ -148,6 +148,23 @@ static func card_panel(tint: Color = Color.WHITE) -> StyleBox:
 	return box
 
 
+## N10-20: the 수련 tree draws its nodes as circles, and the kit has round
+## plates for exactly that. No 9-slice: a circle sliced into nine and stretched
+## stops being a circle, and the nodes are a fixed square anyway, so the whole
+## texture scales as one.
+const KIT_DISC_PIECE := "disc_0"
+
+
+static func disc_panel(tint: Color = Color.WHITE) -> StyleBox:
+	var texture: Texture2D = kit_texture(KIT_DISC_PIECE)
+	if texture == null:
+		return null
+	var box := StyleBoxTexture.new()
+	box.texture = texture
+	box.modulate_color = tint
+	return box
+
+
 static func slot_panel(tint: Color = Color.WHITE) -> StyleBox:
 	var box: StyleBox = kit_panel(KIT_SLOT_PIECE, KIT_SLOT_MARGIN)
 	if box == null:

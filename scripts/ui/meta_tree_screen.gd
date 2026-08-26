@@ -311,13 +311,18 @@ func _build_detail_card() -> Control:
 	var card := PanelContainer.new()
 	card.name = "DetailCard"
 	card.custom_minimum_size = Vector2(0.0, DETAIL_MIN_HEIGHT)
-	var box := StyleBoxFlat.new()
-	box.bg_color = UiPalette.CARD_BG
-	box.border_color = UiPalette.CARD_BORDER_DIM
-	box.set_border_width_all(NODE_BORDER_WIDTH)
-	box.set_corner_radius_all(CARD_CORNER_RADIUS)
-	box.set_content_margin_all(CARD_PADDING)
-	card.add_theme_stylebox_override("panel", box)
+	var kit: StyleBox = UiIcons.card_panel()
+	if kit != null:
+		(kit as StyleBoxTexture).set_content_margin_all(CARD_PADDING)
+		card.add_theme_stylebox_override("panel", kit)
+	else:
+		var box := StyleBoxFlat.new()
+		box.bg_color = UiPalette.CARD_BG
+		box.border_color = UiPalette.CARD_BORDER_DIM
+		box.set_border_width_all(NODE_BORDER_WIDTH)
+		box.set_corner_radius_all(CARD_CORNER_RADIUS)
+		box.set_content_margin_all(CARD_PADDING)
+		card.add_theme_stylebox_override("panel", box)
 
 	var row := HBoxContainer.new()
 	row.name = "DetailRow"
@@ -340,14 +345,14 @@ func _build_detail_card() -> Control:
 	lines.name = "DetailLines"
 	lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lines.add_theme_constant_override("separation", UiPalette.SPACE_XS)
-	_detail_name = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
+	_detail_name = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.INK)
 	_detail_name.name = "DetailName"
 	lines.add_child(_detail_name)
-	_detail_effect = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_ON_DARK)
+	_detail_effect = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.INK)
 	_detail_effect.name = "DetailEffect"
 	_detail_effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lines.add_child(_detail_effect)
-	_detail_info = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_DARK)
+	_detail_info = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER)
 	_detail_info.name = "DetailInfo"
 	lines.add_child(_detail_info)
 	row.add_child(lines)
@@ -717,7 +722,13 @@ func _draw_graph() -> void:
 ## --- helpers --------------------------------------------------------------
 
 
-func _node_plate(fill: Color, border: Color) -> StyleBoxFlat:
+## N10-20: the kit's round plate, tinted by the same border colour the flat
+## node used. The border was the SECOND cue by design — the status word carries
+## the first — so the tint has to keep saying it, and does.
+func _node_plate(fill: Color, border: Color) -> StyleBox:
+	var kit: StyleBox = UiIcons.disc_panel(border)
+	if kit != null:
+		return kit
 	var box := StyleBoxFlat.new()
 	box.bg_color = fill
 	box.border_color = border
