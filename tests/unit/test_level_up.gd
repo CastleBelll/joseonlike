@@ -713,6 +713,55 @@ func test_a_zero_stack_passive_does_not_consume_a_slot() -> bool:
 	return _kinds(pool, LevelUp.KIND_PASSIVE).size() == 5
 
 
+## N10-5 card mix. The draw must not read a class's roster size as its odds.
+func _mixed_pool(weapon_cards: int, passive_cards: int) -> Array[Dictionary]:
+	var pool: Array[Dictionary] = []
+	for i: int in range(weapon_cards):
+		pool.append({"kind": LevelUp.KIND_WEAPON_UP, "id": "w%d" % i})
+	for i: int in range(passive_cards):
+		pool.append({"kind": LevelUp.KIND_PASSIVE, "id": "p%d" % i})
+	return pool
+
+
+func _weapon_card_rate(pool: Array[Dictionary], draws: int, share: float) -> float:
+	var rng: RandomNumberGenerator = _rng()
+	var weapons: int = 0
+	for i: int in range(draws):
+		for card: Dictionary in LevelUp.pick(pool, 1, rng, [], share):
+			if String(card["kind"]) != LevelUp.KIND_PASSIVE:
+				weapons += 1
+	return float(weapons) / float(draws)
+
+
+func test_weapon_card_odds_do_not_follow_the_roster_size() -> bool:
+	# The warrior owns one melee weapon and the taoist eight spiritual arts; a
+	# flat shuffle gave the warrior ~7% weapon cards and left his 환도 on level 1.
+	var lean: float = _weapon_card_rate(_mixed_pool(1, 12), 400, 0.55)
+	var deep: float = _weapon_card_rate(_mixed_pool(8, 12), 400, 0.55)
+	return absf(lean - 0.55) < 0.08 and absf(deep - 0.55) < 0.08
+
+
+func test_a_screen_with_no_weapon_left_still_fills_every_card() -> bool:
+	# An empty side must cost the player nothing: fall back, never show fewer.
+	var passives_only: Array[Dictionary] = _mixed_pool(0, 6)
+	var weapons_only: Array[Dictionary] = _mixed_pool(6, 0)
+	return (
+		LevelUp.pick(passives_only, 3, _rng(), [], 1.0).size() == 3
+		and LevelUp.pick(weapons_only, 3, _rng(), [], 0.0).size() == 3
+	)
+
+
+func test_the_card_mix_still_never_repeats_a_subject() -> bool:
+	var pool: Array[Dictionary] = _mixed_pool(4, 4)
+	var seen: Array[String] = []
+	for card: Dictionary in LevelUp.pick(pool, 4, _rng(), [], 0.55):
+		var id: String = String(card["id"])
+		if seen.has(id):
+			return false
+		seen.append(id)
+	return seen.size() == 4
+
+
 func test_a_maxed_full_build_reopens_the_slots_instead_of_going_blank() -> bool:
 	# Four weapons at max level with no grade ladder, four passives at max
 	# stacks: without the reopen the player would face an empty screen.

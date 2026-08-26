@@ -51,6 +51,8 @@ var _orb_pool: NodePool
 var _number_pool: NodePool
 var _orb_config: Dictionary = {}
 var _orb_config_base: Dictionary = {}
+## N10-5: how much of one level-up screen is weapon cards, from progression.json.
+var _weapon_card_share: float = LevelUp.DEFAULT_WEAPON_CARD_SHARE
 
 # N3-6 run build state: weapon levels, passive stacks and their nodes/effects.
 var _weapons_data: Dictionary = {}
@@ -294,6 +296,9 @@ func _stage_ready_field() -> void:
 	_run_state.level_reached.connect(_on_level_reached)
 	_orb_config_base = RunState.load_orb_config()
 	_orb_config = _orb_config_base.duplicate()
+	_weapon_card_share = float(RunState.load_level_up_config().get(
+		"weapon_card_share", LevelUp.DEFAULT_WEAPON_CARD_SHARE
+	))
 	var meta_data: Dictionary = MetaTree.load_tree()
 	var meta_clean: Dictionary = MetaTree.sanitize_state(
 		meta_data, _profile().get("meta_tree", {}) as Dictionary
@@ -1089,7 +1094,8 @@ func _show_next_level_up() -> void:
 	)
 	# N7-2 혜안: the choice_count meta bonus widens every level-up screen.
 	var choices: Array[Dictionary] = LevelUp.assemble(
-		pool, mod_pool, CHOICES_PER_LEVEL + int(_meta_bonus("choice_count")), _choice_rng
+		pool, mod_pool, CHOICES_PER_LEVEL + int(_meta_bonus("choice_count")),
+		_choice_rng, _weapon_card_share
 	)
 	var masked: Array[String] = _unknown_mod_results(choices)
 	var cards: Array[Dictionary] = []

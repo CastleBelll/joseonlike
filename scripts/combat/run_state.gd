@@ -30,6 +30,16 @@ static func load_orb_config() -> Dictionary:
 	return data["orb"]
 
 
+## Level-up screen composition (N10-5) — the weapon/passive card mix. Same file,
+## consumed by the stage when it assembles a screen.
+static func load_level_up_config() -> Dictionary:
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(PROGRESSION_PATH))
+	if data is not Dictionary or (data as Dictionary).get("level_up") is not Dictionary:
+		push_error("run_state: cannot read level_up config from " + PROGRESSION_PATH)
+		return {}
+	return data["level_up"]
+
+
 static func load_curve() -> Dictionary:
 	var text: String = FileAccess.get_file_as_string(PROGRESSION_PATH)
 	var data: Variant = JSON.parse_string(text)

@@ -76,6 +76,11 @@ const WEAPON_SLOTS := 4
 const PASSIVE_SLOTS := 4
 const PIERCE_ALL := 99
 
+## Fallback share of level-up cards that are weapon cards (N10-5). Play reads the
+## real number from data/progression.json → "level_up.weapon_card_share"; this
+## default only serves tests and probes that assemble a screen without the file.
+const DEFAULT_WEAPON_CARD_SHARE := 0.55
+
 ## N4-8 milestone vocabulary: every field a weapons.json "milestones" delta
 ## may touch, mapped to its card fragment. validate_data rejects any other
 ## path, so a typo'd milestone fails CI instead of silently doing nothing.
@@ -276,13 +281,16 @@ static func assemble(
 	pool: Array[Dictionary],
 	mod_pool: Array[Dictionary],
 	count: int,
-	rng: RandomNumberGenerator
+	rng: RandomNumberGenerator,
+	weapon_share: float = DEFAULT_WEAPON_CARD_SHARE
 ) -> Array[Dictionary]:
 	if mod_pool.is_empty():
-		return pick(pool, count, rng)
+		return pick(pool, count, rng, [], weapon_share)
 	var mod_choice: Dictionary = mod_pool[rng.randi_range(0, mod_pool.size() - 1)]
 	var cards: Array[Dictionary] = [mod_choice]
-	cards.append_array(pick(pool, count - 1, rng, subject_ids(mod_choice)))
+	cards.append_array(
+		pick(pool, count - 1, rng, subject_ids(mod_choice), weapon_share)
+	)
 	return cards
 
 
@@ -298,29 +306,58 @@ static func subject_ids(choice: Dictionary) -> Array[String]:
 ## Draw up to `count` choices from the pool without mutating it, guaranteed
 ## distinct by subject id (N4-7): the pool legitimately holds a level card AND
 ## a grade card for the same weapon, and one screen must never show both.
+##
+## N10-5: the draw picks the CATEGORY first, then uniformly inside it. A flat
+## shuffle made a class's weapon-card odds a function of how many weapons its
+## category owns — the taoist's seven spiritual arts filled ~38% of the pool, the
+## warrior's single 환도 ~7% — and a measured warrior run reached 350s with the
+## sword still on level 1, so the level-5 개조 gate was unreachable and three of
+## his four weapon slots could never fill. Roster size must decide what you can
+## build, never how often you get to build it.
 static func pick(
 	pool: Array[Dictionary],
 	count: int,
 	rng: RandomNumberGenerator,
-	excluded_ids: Array[String] = []
+	excluded_ids: Array[String] = [],
+	weapon_share: float = DEFAULT_WEAPON_CARD_SHARE
 ) -> Array[Dictionary]:
-	var shuffled: Array[Dictionary] = pool.duplicate()
-	for i: int in range(shuffled.size() - 1, 0, -1):
-		var j: int = rng.randi_range(0, i)
-		var swap: Dictionary = shuffled[i]
-		shuffled[i] = shuffled[j]
-		shuffled[j] = swap
+	var weapon_cards: Array[Dictionary] = []
+	var passive_cards: Array[Dictionary] = []
+	for choice: Dictionary in pool:
+		if String(choice.get("kind", "")) == KIND_PASSIVE:
+			passive_cards.append(choice)
+		else:
+			weapon_cards.append(choice)
+	_shuffle(weapon_cards, rng)
+	_shuffle(passive_cards, rng)
 	var taken: Array[String] = excluded_ids.duplicate()
 	var picked: Array[Dictionary] = []
-	for choice: Dictionary in shuffled:
-		if picked.size() >= count:
-			break
+	while picked.size() < count \
+			and not (weapon_cards.is_empty() and passive_cards.is_empty()):
+		var wants_weapon: bool = rng.randf() < weapon_share
+		# An empty side never costs a card: the screen falls back to the other
+		# one rather than showing fewer choices than it promised.
+		if wants_weapon and weapon_cards.is_empty():
+			wants_weapon = false
+		elif not wants_weapon and passive_cards.is_empty():
+			wants_weapon = true
+		var choice: Dictionary = (
+			weapon_cards.pop_back() if wants_weapon else passive_cards.pop_back()
+		)
 		var ids: Array[String] = subject_ids(choice)
 		if ids.any(func(id: String) -> bool: return taken.has(id)):
 			continue
 		taken.append_array(ids)
 		picked.append(choice)
 	return picked
+
+
+static func _shuffle(cards: Array[Dictionary], rng: RandomNumberGenerator) -> void:
+	for i: int in range(cards.size() - 1, 0, -1):
+		var j: int = rng.randi_range(0, i)
+		var swap: Dictionary = cards[i]
+		cards[i] = cards[j]
+		cards[j] = swap
 
 
 ## Pure state transition for one picked card. Returns new copies:

@@ -751,7 +751,15 @@ func _pick_card() -> void:
 			if labels.size() >= 3 and labels[2].text.contains(LevelUp.MILESTONE_MARK):
 				_milestone_shot_done = true
 				await _capture(MILESTONE_SHOT_PATH)
+				# The capture spans frames, and the popup can be dismissed and
+				# its buttons freed underneath it — the list below must be a
+				# fresh one or the probe reads previously-freed objects.
+				buttons.clear()
+				if is_instance_valid(_stage._popup):
+					_collect_buttons(_stage._popup, buttons)
 				break
+	if buttons.is_empty():
+		return
 	var chosen: Button = null
 	if _forced != "":
 		chosen = _choose_forced(buttons)
