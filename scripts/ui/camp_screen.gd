@@ -255,11 +255,18 @@ func _build_header(summary: Dictionary) -> Control:
 func _build_stats(summary: Dictionary) -> Control:
 	var panel := PanelContainer.new()
 	panel.name = "Stats"
-	var box := StyleBoxFlat.new()
-	box.bg_color = UiPalette.NIGHT_BROWN
-	box.set_corner_radius_all(PANEL_CORNER_RADIUS)
-	box.set_content_margin_all(PANEL_PADDING)
-	panel.add_theme_stylebox_override("panel", box)
+	# N10-17: the run summary sits on the owner's kit plaque, so the hub reads
+	# as the same game as the pause sheet. Flat brown stays as the fallback.
+	var kit: StyleBox = UiIcons.card_panel()
+	if kit != null:
+		(kit as StyleBoxTexture).set_content_margin_all(PANEL_PADDING)
+		panel.add_theme_stylebox_override("panel", kit)
+	else:
+		var box := StyleBoxFlat.new()
+		box.bg_color = UiPalette.NIGHT_BROWN
+		box.set_corner_radius_all(PANEL_CORNER_RADIUS)
+		box.set_content_margin_all(PANEL_PADDING)
+		panel.add_theme_stylebox_override("panel", box)
 	var rows := VBoxContainer.new()
 	rows.name = "Rows"
 	rows.add_theme_constant_override("separation", UiPalette.SPACE_SM)
@@ -310,9 +317,11 @@ func _build_buildings() -> Control:
 		spot.add_theme_stylebox_override("hover", _spot_plate(UiPalette.CARD_BG_SELECTED))
 		spot.add_theme_stylebox_override("pressed", _spot_plate(UiPalette.CARD_BG_SELECTED))
 		spot.add_theme_stylebox_override("focus", _focus_ring())
-		spot.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
-		spot.add_theme_color_override("font_hover_color", UiPalette.TEXT_ON_DARK)
-		spot.add_theme_color_override("font_pressed_color", UiPalette.TEXT_ON_DARK)
+		# The plate is paper now, so the label is ink — left dark-on-dark it
+		# sank into the plaque exactly the way the 업적 titles did.
+		spot.add_theme_color_override("font_color", UiPalette.INK)
+		spot.add_theme_color_override("font_hover_color", UiPalette.INK)
+		spot.add_theme_color_override("font_pressed_color", UiPalette.INK)
 		spot.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
 		spot.pressed.connect(_on_building_pressed.bind(building))
 		grid.add_child(spot)
@@ -525,17 +534,26 @@ func _add_stat_row(rows: VBoxContainer, row_name: String, value_text: String) ->
 	var row := HBoxContainer.new()
 	row.name = row_name
 	row.custom_minimum_size = Vector2(0.0, STAT_ROW_HEIGHT)
-	var name_label := _label(row_name, UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_DARK)
+	var name_label := _label(row_name, UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(name_label)
-	var value := _label(value_text, UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_ON_DARK)
+	var value := _label(value_text, UiPalette.FONT_SIZE_BODY, UiPalette.INK)
 	value.name = "Value"
 	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	row.add_child(value)
 	rows.add_child(row)
 
 
-func _spot_plate(fill: Color) -> StyleBoxFlat:
+## N10-17: the building spots wear the kit plaque like every other button on
+## this screen — they sat one style apart from the 출정 row right below them,
+## which read as two different menus stacked. Hover keeps its lift through the
+## tint rather than a second fill colour.
+func _spot_plate(fill: Color) -> StyleBox:
+	var kit: StyleBox = UiIcons.card_panel(
+		Color(1.12, 1.10, 1.05) if fill == UiPalette.CARD_BG_SELECTED else Color.WHITE
+	)
+	if kit != null:
+		return kit
 	var box := StyleBoxFlat.new()
 	box.bg_color = fill
 	box.border_color = UiPalette.CARD_BORDER_DIM
