@@ -51,7 +51,21 @@ static func passive_icon(passive_id: String) -> Texture2D:
 	return _icon(PASSIVE_ICON_DIR, passive_id)
 
 
+## N10-23 (owner: 톱니나 이런것도 ui 프레임 준거로 하라고 했잖아). The kit draws
+## some HUD icons complete with their own frame — the gear and the info mark —
+## so those come from the kit and the rest keep the hud set. A name with no kit
+## piece falls through unchanged; this is a lookup, not a rename.
+const KIT_HUD_PIECES: Dictionary = {
+	"settings": "icon_gear",
+	"info": "icon_info",
+}
+
+
 static func hud_icon(icon_name: String) -> Texture2D:
+	if KIT_HUD_PIECES.has(icon_name):
+		var kit: Texture2D = kit_texture(String(KIT_HUD_PIECES[icon_name]))
+		if kit != null:
+			return kit
 	return _icon(HUD_ICON_DIR, icon_name)
 
 

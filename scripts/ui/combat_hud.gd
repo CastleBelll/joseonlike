@@ -352,14 +352,14 @@ func _build_corner_buttons() -> void:
 	row.add_child(pause)
 	# The info screen is a later feature; the button stays hidden until that
 	# screen exists — a visible control that does nothing reads as broken (QA-2).
-	var info := _flat_button("InfoButton")
+	var info := _flat_button("InfoButton", false)
 	info.add_child(_corner_icon("info"))
 	info.visible = false
 	row.add_child(info)
 	add_child(row)
 	# N9-111 (owner: 설정은 우측 상단 톱니로): the gear pauses the run and
 	# opens settings directly — it left the pause popup.
-	var settings := _flat_button("SettingsButton")
+	var settings := _flat_button("SettingsButton", false)
 	settings.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	settings.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	settings.position = Vector2(-BUTTON_SIZE - UiPalette.SPACE_MD, TOP_MARGIN)
@@ -951,18 +951,32 @@ func _on_quit_pressed() -> void:
 
 
 ## Small icon-only button with no panel background, per the captures.
-func _flat_button(button_name: String) -> Button:
+## N10-23: the corner buttons sit on the kit's round plate. Only the ones whose
+## glyph does not already ship framed — the gear and the info mark come from the
+## kit complete, and putting a plate behind them would draw two frames.
+func _flat_button(button_name: String, plated: bool = true) -> Button:
 	var button := Button.new()
 	button.name = button_name
 	button.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
-	button.flat = true
+	var plate: StyleBox = UiIcons.disc_panel() if plated else null
+	if plate == null:
+		button.flat = true
+		return button
+	for state: String in ["normal", "hover", "pressed"]:
+		button.add_theme_stylebox_override(state, plate)
 	return button
 
 
 ## 2x HUD icon centered inside the 44px flat corner button.
 func _corner_icon(icon_name: String) -> Control:
 	var rect: TextureRect = UiIcons.icon_rect(UiIcons.hud_icon(icon_name), CORNER_ICON_SIZE)
+	# N10-23: PRESET_CENTER anchors the rect's TOP-LEFT to the middle, which hung
+	# the pause glyph off the edge of its new plate. A centre container holds it
+	# in the middle without touching icon_rect's fixed display size — reaching
+	# for KEEP_CENTERED instead drew the source at its own 1024px and covered
+	# the screen.
 	rect.set_anchors_preset(Control.PRESET_CENTER)
+	rect.position = -rect.custom_minimum_size / 2.0
 	return rect
 
 
