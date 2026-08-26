@@ -27,6 +27,9 @@ const BAR_ART_MARGIN := 5
 ## The fill sits inside the rail, so it is rounded to match rather than
 ## squaring off against the gilt.
 const BAR_FILL_CORNER := 3
+## The hexagonal cap on a bar's left end, a little taller than the rail so it
+## reads as capping it rather than sitting inside it.
+const BAR_CAP_SIZE := 26.0
 ## N9-152 (owner: 가로에서 바가 너무 길다): the strips cap at a centered
 ## band on wide viewports instead of spanning the whole width.
 const BAR_MAX_WIDTH := 720.0
@@ -143,7 +146,7 @@ func _ready() -> void:
 ## to warn you — modulating a red drawing toward green multiplies to near black,
 ## and swapping to the kit's red would mean the bar looks like danger at full
 ## health. A colour that carries meaning outranks a colour that carries texture.
-func _apply_bar_art(bar: ProgressBar, flat_fill: Color) -> void:
+func _apply_bar_art(bar: ProgressBar, flat_fill: Color, cap_piece: String = "") -> void:
 	var track: StyleBox = UiIcons.kit_panel("bar_track", BAR_ART_MARGIN)
 	if track == null:
 		var flat_track := StyleBoxFlat.new()
@@ -159,6 +162,16 @@ func _apply_bar_art(bar: ProgressBar, flat_fill: Color) -> void:
 	bar.add_theme_stylebox_override("fill", fill)
 	if bar == _hp_bar:
 		_hp_fill = fill
+	# N10-24: the kit's hexagonal cap sits on the bar's left end — a heart for
+	# health, Lv for the level track. It is what tells the two strips apart at a
+	# glance now that they are the same rail; before N10-22 raised them there was
+	# no height to hang it in.
+	if not cap_piece.is_empty():
+		var cap: TextureRect = UiIcons.kit_icon_button(cap_piece, BAR_CAP_SIZE)
+		if cap != null:
+			cap.set_anchors_preset(Control.PRESET_CENTER_LEFT)
+			cap.position = Vector2(-BAR_CAP_SIZE * 0.5, -BAR_CAP_SIZE * 0.5)
+			bar.add_child(cap)
 
 
 func _apply_bar_band(bar: Control) -> void:
@@ -384,7 +397,7 @@ func _build_xp_bar() -> void:
 	_xp_bar.name = "XpBar"
 	_xp_bar.show_percentage = false
 	_xp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_apply_bar_art(_xp_bar, UiPalette.WOOD)
+	_apply_bar_art(_xp_bar, UiPalette.WOOD, "bar_level_cap")
 	_xp_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_apply_bar_band(_xp_bar)
 	_xp_bar.offset_top = BAR_TOP
@@ -400,7 +413,7 @@ func _build_hp_bar() -> void:
 	_hp_bar.name = "HpBar"
 	_hp_bar.show_percentage = false
 	_hp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_apply_bar_art(_hp_bar, UiPalette.SUCCESS)
+	_apply_bar_art(_hp_bar, UiPalette.SUCCESS, "bar_hp_cap")
 	_hp_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_apply_bar_band(_hp_bar)
 	_hp_bar.offset_top = BAR_TOP + BAR_HEIGHT + HP_BAR_GAP

@@ -99,7 +99,15 @@ func _build_header() -> Control:
 
 	var back := Button.new()
 	back.name = "BackButton"
-	back.text = "‹"
+	# N10-24: the kit's framed back arrow replaces the "‹" glyph. When the
+	# piece is missing the text stays, so the button never becomes invisible.
+	var arrow: TextureRect = UiIcons.kit_icon_button("btn_left", BACK_SIZE * 0.72)
+	if arrow != null:
+		arrow.set_anchors_preset(Control.PRESET_CENTER)
+		arrow.position = -arrow.custom_minimum_size / 2.0
+		back.add_child(arrow)
+	else:
+		back.text = "‹"
 	back.flat = true
 	back.custom_minimum_size = Vector2(BACK_SIZE, BACK_SIZE)
 	back.add_theme_color_override("font_color", UiPalette.GOLD)

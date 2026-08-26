@@ -169,6 +169,16 @@ static func card_panel(tint: Color = Color.WHITE) -> StyleBox:
 const KIT_DISC_PIECE := "disc_0"
 
 
+## N10-24: a kit icon button used whole — frame and glyph are one drawing, so
+## it replaces both the plate and the text glyph a hand-built button needed.
+## Null when the piece is absent, and the caller keeps whatever it drew before.
+static func kit_icon_button(piece: String, display_size: float) -> TextureRect:
+	var texture: Texture2D = kit_texture(piece)
+	if texture == null:
+		return null
+	return icon_rect(texture, display_size)
+
+
 static func disc_panel(tint: Color = Color.WHITE) -> StyleBox:
 	var texture: Texture2D = kit_texture(KIT_DISC_PIECE)
 	if texture == null:

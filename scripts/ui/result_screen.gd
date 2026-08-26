@@ -162,6 +162,11 @@ func _make_header() -> Control:
 	header.name = "Header"
 	header.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	header.offset_bottom = HEADER_HEIGHT
+	# N10-24: the kit's banner was tried here and does not fit. It is a hanging
+	# 현판 — tall, with tassels below the plate — so sized to the 72px header its
+	# plate lands under the title and covers the first stats row, and sized to
+	# the title it is too small to read as a banner at all. The verdict keeps
+	# its bare-paper heading; the banner belongs somewhere with height to spare.
 	_title_label = _label("", UiPalette.FONT_SIZE_TITLE, UiPalette.VERMILION)
 	_title_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
