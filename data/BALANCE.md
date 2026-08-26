@@ -49,7 +49,19 @@ every "N of 5 wins" figure in this document before this pass — was ever
 statistically valid. combat routed every random stream through one seeded
 RNG and verified a seed now reruns bit-identical. **This pass's numbers are
 from the first genuinely controlled sweep, extended to ten seeds because
-the headline question is a rate.** Treat every dps/win-rate figure dated
+the headline question is a rate.**
+
+> **2026-08-26, C6 re-measured this and the "bit-identical" claim above is
+> false.** Seeding was still incomplete — the spawner and the loot table both
+> called `randomize()`, which reads OS entropy and ignores the run seed
+> outright, and crits came off the global stream. C6 closed all three, so
+> `--seed` now genuinely drives every combat random. It still does not make a
+> run repeat: with the harness bot driving, the same seed gave 1091–1116 kills
+> before the fix and 1073–1158 after. Take the bot out (`--idle`) and a seed
+> repeats exactly, before and after — so the remaining variance is the bot, not
+> randomness (C6b). Every single-seed before/after in this document, including
+> the ten-seed pass below, carries roughly ±3% of bot noise. Aggregate across
+> seeds; never read one seed as a measurement. Treat every dps/win-rate figure dated
 before this correction as directional noise, not a measurement — the
 *diagnoses* built on them (projectile_count, the ranged-pressure danger
 model, the survivability fix) held up when re-checked against controlled

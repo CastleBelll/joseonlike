@@ -145,7 +145,7 @@ func _tick() -> void:
 		var boss_hit: bool = enemy.is_boss
 		# N9-19: one crit roll per enemy per tick.
 		var tick_damage: float = _damage
-		var crit: bool = _crit_chance > 0.0 and randf() < _crit_chance
+		var crit: bool = CombatRng.hits(_crit_chance)
 		if crit:
 			tick_damage *= _crit_multiplier
 		enemy.take_damage(tick_damage)

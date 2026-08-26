@@ -240,6 +240,13 @@ func _stage_ready_field() -> void:
 	# field layout; tests drive StageField.generate with fixed seeds instead.
 	# Ground and props share one seed so a run's tiles and prop scatter match.
 	var field_seed: int = randi()
+	# C6: combat draws from its own stream, seeded from the same number. Crits
+	# used to come off the global generator, which effects, sprite frames and orb
+	# phases also draw from — so how many of those had happened by the time a
+	# weapon fired decided where the crits landed, and no seed ever reproduced a
+	# run. Seeding here ties the combat stream to the field seed the harness
+	# already fixes with `seed(run_seed)`.
+	CombatRng.seed_run(field_seed)
 	_ground.build(field_config, field_seed, _spawner.stage_id())
 	_field.build(
 		props_config.get("props", {}) as Dictionary, field_config, _decor_layer, field_seed
@@ -257,7 +264,7 @@ func _stage_ready_field() -> void:
 			_generated_chunks[Vector2i(cx, cy)] = true
 	_player.died.connect(_on_player_died)
 	_player.hit_taken.connect(_on_player_hit)
-	_spawner.setup(_player)
+	_spawner.setup(_player, _field_seed)
 	_spawner.enemy_killed.connect(_on_enemy_killed)
 	# 화약 도깨비 (N9-165): the same telegraph the boss uses draws the fuse, so
 	# a warning circle means one thing in this game no matter who lit it.
@@ -330,7 +337,10 @@ func _stage_ready_field() -> void:
 	_drop_tables = _load_json(DROP_TABLES_PATH)
 	_mods_data = _load_json(WEAPON_MODS_PATH)
 	_loot_pool = NodePool.new(self, _create_loot_drop)
-	_loot_rng.randomize()  # the run RNG: one seed replays a run's drops
+	# C6: this used to call randomize(), which reads OS entropy and ignores the
+	# run seed entirely — the comment here claimed one seed replayed a run's
+	# drops and it never did. Seeded from the field seed, it now does.
+	_loot_rng.seed = _field_seed
 	# N5-5: destructible props + pickups + elite chests. The spawner carries
 	# the breakable list because it is the target registry weapons already hold.
 	_pickups_data = _load_json(PICKUPS_PATH)

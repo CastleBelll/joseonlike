@@ -126,7 +126,7 @@ func _try_strike(enemy: Enemy) -> void:
 			float(_status.get("duration_sec", 0.0))
 		)
 	var damage: float = _damage
-	var crit: bool = _crit_chance > 0.0 and randf() < _crit_chance
+	var crit: bool = CombatRng.hits(_crit_chance)
 	if crit:
 		damage *= _crit_multiplier
 	enemy.take_damage(damage, CombatMath.chase_direction(global_position, at))

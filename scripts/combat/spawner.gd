@@ -100,11 +100,17 @@ var _sep_neighbour_radii: Array[float] = []
 var _creep_pool: NodePool
 
 
-func setup(player: Player) -> void:
+## `run_seed` of 0 means "no run seed" — the spawner picks its own, which is
+## what a demo scene or a bare test wants. A real stage passes the field seed so
+## the same seed spawns the same waves (C6).
+func setup(player: Player, run_seed: int = 0) -> void:
 	_player = player
 	_pool = EnemyPool.new(self)
 	_creep_pool = NodePool.new(self, _create_curse_creep)
-	_rng.randomize()
+	if run_seed == 0:
+		_rng.randomize()
+	else:
+		_rng.seed = run_seed
 	var stage_data: Dictionary = _load_json(STAGES_PATH)
 	_monsters = _load_json(MONSTERS_PATH)
 	_resolve_elites()

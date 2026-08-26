@@ -44,7 +44,11 @@ func launch(at: Vector2, xp: int, player: Player, orb_config: Dictionary) -> voi
 	_acceleration = float(orb_config.get("magnet_accel_px_s2", 0.0))
 	_max_speed = float(orb_config.get("max_speed_px_s", 0.0))
 	_speed = 0.0
-	_idle_skip = randi() % IDLE_CHECK_FRAMES
+	# C6: from the combat stream, not the global one. Which frame an orb checks
+	# its distance on decides when it is collected, which decides when the player
+	# levels — that is a run outcome, not decoration, and drawing it from the
+	# stream the effects share made it move with the frame rate.
+	_idle_skip = int(CombatRng.roll() * float(IDLE_CHECK_FRAMES)) % IDLE_CHECK_FRAMES
 
 
 ## N5-5 magnet pickup: pull this orb in from anywhere on the field, ignoring

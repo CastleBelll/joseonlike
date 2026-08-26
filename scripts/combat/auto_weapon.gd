@@ -279,7 +279,7 @@ func set_crit(chance: float, multiplier: float) -> void:
 
 ## Damage for one hit, with the crit roll folded in.
 func _roll_damage() -> float:
-	_last_crit = _crit_chance > 0.0 and randf() < _crit_chance
+	_last_crit = CombatRng.hits(_crit_chance)
 	return _damage * _crit_multiplier if _last_crit else _damage
 
 
