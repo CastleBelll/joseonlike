@@ -29,5 +29,15 @@ func test_facing_held_when_moving_vertically_only() -> bool:
 	return PlayerMotion.facing_sign(0.0, PlayerMotion.FACING_LEFT) == PlayerMotion.FACING_LEFT
 
 
+## N10-12: pinned to the literal speed before, so it broke on every class
+## rebalance. The contract is that the loader reads the file — so the test reads
+## it too rather than carrying a copy of the number that has to be maintained.
 func test_player_speed_reads_characters_json() -> bool:
-	return absf(Player.load_move_speed() - SPEED) < EPSILON
+	var parsed: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string("res://data/characters.json")
+	)
+	if parsed is not Dictionary:
+		return false
+	var entry: Dictionary = (parsed as Dictionary).get(SaveProfile.DEFAULT_CHARACTER, {})
+	var declared: float = float(entry.get("base_speed", 0.0))
+	return declared > 0.0 and absf(Player.load_move_speed() - declared) < EPSILON

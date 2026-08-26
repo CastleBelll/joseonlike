@@ -53,6 +53,8 @@ var _orb_config: Dictionary = {}
 var _orb_config_base: Dictionary = {}
 ## N10-5: how much of one level-up screen is weapon cards, from progression.json.
 var _weapon_card_share: float = LevelUp.DEFAULT_WEAPON_CARD_SHARE
+## N10-12: the selected character's permanent trait, empty when it declares none.
+var _innate: Dictionary = {}
 
 # N3-6 run build state: weapon levels, passive stacks and their nodes/effects.
 var _weapons_data: Dictionary = {}
@@ -149,6 +151,9 @@ var _feedback: Dictionary = {}
 var _puff_pool: NodePool
 # N3-18: pooled 벽사진 wave rings (one per cast; pooled like every effect).
 var _burst_ring_pool: NodePool
+## N10-11 철질려: the archer's caltrop field, pooled like every other ground
+## effect so a run that spams it does not allocate.
+var _trap_pool: NodePool
 # N3-17 art integration: pooled sprite puffs for 축지 when the sheet shipped.
 var _fx_pool: NodePool
 var _gold: int = 0
@@ -285,6 +290,7 @@ func _stage_ready_field() -> void:
 	_puff_pool = NodePool.new(self, _create_puff)
 	_telegraph_pool = NodePool.new(self, _create_telegraph)
 	_burst_ring_pool = NodePool.new(self, _create_burst_ring)
+	_trap_pool = NodePool.new(self, _create_trap_ward)
 	if EffectSprite.available("blink_puff"):
 		_fx_pool = NodePool.new(self, _create_effect_sprite)
 	_result = ResultScreen.new()
@@ -360,6 +366,7 @@ func _stage_ready_field() -> void:
 	# the selected character's categories (도사 gets no 각궁).
 	_weapon_categories = Player.load_weapon_categories()
 	_actives = Player.load_actives()
+	_innate = Player.load_innate()
 	for active: Dictionary in _actives:
 		_active_cooldowns[String(active.get("id", ""))] = 0.0
 	_hud.build_actives(_actives)
@@ -880,6 +887,8 @@ func _execute_active(active: Dictionary) -> void:
 			_execute_burst(active)
 		"cleave":
 			_execute_cleave(active)
+		"trap":
+			_execute_trap(active)
 		"guard":
 			# N9-148 철벽: the warrior plants his feet — incoming damage drops
 			# to the data scale for the duration. No movement penalty; the
@@ -893,6 +902,25 @@ func _execute_active(active: Dictionary) -> void:
 			_play_active_art(active, _player.global_position, 0.0)
 		_:
 			push_error("stage: unknown active type in " + str(active))
+
+
+## 철질려 (N10-11): the archer scatters caltrops where she stands and backs
+## away over them. It is her survival art, and it is deliberately NOT a blink —
+## the taoist already teleports, and giving the archer the same escape would
+## have made the two classes read the same. She buys distance with ground she
+## has denied, which is what a bow needs and a teleport hands out for free.
+##
+## The field is a Ward, the same object 결계 places: a persistent radius that
+## ticks damage and slows what stands in it. Reusing it means the caltrops
+## inherit every fix that mechanic has already had.
+func _execute_trap(active: Dictionary) -> void:
+	var ward: Ward = _trap_pool.acquire()
+	ward.arm(
+		_player.global_position, _spawner, active.get("ward", {}),
+		float(active.get("damage", 0.0)) * (1.0 + _passive_bonus("skill_power")),
+		{}, UiPalette.ACCENT_ARCHER
+	)
+	_play_active_art(active, _player.global_position, 0.0)
 
 
 ## 축지: blink along the movement direction, stopped at the first solid prop
@@ -1312,7 +1340,19 @@ func _passive_bonus(passive_id: String) -> float:
 	var per_stack: float = float(
 		(_passives_data.get(passive_id, {}) as Dictionary).get("per_stack", 0.0)
 	)
-	return per_stack * float(_passive_stacks.get(passive_id, 0))
+	var stacked: float = per_stack * float(_passive_stacks.get(passive_id, 0))
+	# N10-12 기본 스킬: the class's own trait, folded in here so it reaches every
+	# reader of that stat without any of them learning a new concept — the
+	# taoist's 음양 widens the same area_scale the passive card grows. It is
+	# permanent and unstackable, which is what separates a class from a build.
+	return stacked + _innate_bonus(passive_id)
+
+
+## The one innate a character carries, if it feeds this stat.
+func _innate_bonus(stat_id: String) -> float:
+	if String(_innate.get("stat", "")) != stat_id:
+		return 0.0
+	return float(_innate.get("value", 0.0))
 
 
 ## N9-3e: live build snapshot for the pause overlay (CombatHud.build_provider).
@@ -2232,6 +2272,16 @@ func _create_effect_sprite() -> EffectSprite:
 		func(done: EffectSprite) -> void: _fx_pool.release(done)
 	)
 	return sprite
+
+
+func _create_trap_ward() -> Ward:
+	var ward := Ward.new()
+	ward.ticked.connect(
+		func(amount: float, at: Vector2, boss_hit: bool, _crit: bool) -> void:
+			_on_hit_landed(amount, at, boss_hit)
+	)
+	ward.finished.connect(func(done: Ward) -> void: _trap_pool.release(done))
+	return ward
 
 
 func _create_burst_ring() -> BlastRing:

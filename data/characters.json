@@ -11,8 +11,8 @@
   "quote_en": "One talisman is enough to part a hundred ghosts.",
   "accent": "taoist_blue",
   "role": "magic_aoe",
-  "base_hp": 120,
-  "base_speed": 90.0,
+  "base_hp": 105,
+  "base_speed": 92.0,
   "hit_invuln_sec": 0.8,
   "starting_weapon": "old_talisman",
   "unlock": {
@@ -42,7 +42,16 @@
    "spiritual"
   ],
   "sprite": "res://asset/characters/taoist",
-  "idle_walk_frame": 0
+  "idle_walk_frame": 0,
+  "innate": {
+   "id": "eumyang",
+   "name_ko": "음양",
+   "name_en": "Yin and Yang",
+   "desc_ko": "술법과 무기의 범위가 넓다",
+   "desc_en": "Every art reaches further",
+   "stat": "area_scale",
+   "value": 0.12
+  }
  },
  "warrior": {
   "name_ko": "무사",
@@ -54,9 +63,9 @@
   "quote_en": "No hesitation remains on the edge of my blade.",
   "accent": "warrior_crimson",
   "role": "melee_bruiser",
-  "base_hp": 140,
-  "base_speed": 80.0,
-  "hit_invuln_sec": 0.8,
+  "base_hp": 170,
+  "base_speed": 76.0,
+  "hit_invuln_sec": 1.0,
   "starting_weapon": "sword",
   "unlock": {
    "type": "achievement",
@@ -94,7 +103,16 @@
     "knockback_scale": 2.0,
     "effect": "skill_chamgyeok"
    }
-  ]
+  ],
+  "innate": {
+   "id": "cheolsim",
+   "name_ko": "철심",
+   "name_en": "Iron Heart",
+   "desc_ko": "받는 피해가 줄어든다",
+   "desc_en": "You take less damage",
+   "stat": "defense",
+   "value": 0.12
+  }
  },
  "archer": {
   "name_ko": "궁수",
@@ -106,17 +124,53 @@
   "quote_en": "An arrow loosed never returns.",
   "accent": "archer_green",
   "role": "ranged_dps",
-  "base_hp": 80,
-  "base_speed": 100.0,
-  "hit_invuln_sec": 0.8,
+  "base_hp": 78,
+  "base_speed": 110.0,
+  "hit_invuln_sec": 0.72,
   "starting_weapon": "bow",
   "unlock": {
-   "type": "coming_soon"
+   "type": "achievement",
+   "achievement_id": "boss_slayer"
   },
-  "unlock_text_ko": "무기와 술법이 아직 없다. 도사의 밤이 끝나면 온다.",
-  "unlock_text_en": "Her weapons and arts are not built yet — she comes after the taoist's night is finished.",
+  "unlock_text_ko": "밤의 주인을 열 번 넘어뜨리면 온다 — 멀리서 끝내는 법은 가까이서 열 번 버텨본 자에게만 온다.",
+  "unlock_text_en": "Fell the night's master ten times and she comes — the way to end it from afar is only given to someone who has stood close ten times.",
   "weapon_categories": [
    "ranged"
-  ]
+  ],
+  "actives": [
+   {
+    "id": "cheoljillyeo",
+    "name_ko": "철질려",
+    "name_en": "Caltrops",
+    "type": "trap",
+    "cooldown_sec": 14.0,
+    "damage": 9.0,
+    "ward": {
+     "radius_px": 130.0,
+     "duration_sec": 6.0,
+     "tick_sec": 0.5,
+     "slow_scale": 0.45
+    }
+   },
+   {
+    "id": "iljesa",
+    "name_ko": "일제사",
+    "name_en": "Volley",
+    "type": "cleave",
+    "cooldown_sec": 34.0,
+    "radius_px": 520.0,
+    "arc_deg": 20.0,
+    "damage": 150.0
+   }
+  ],
+  "innate": {
+   "id": "bosa",
+   "name_ko": "보사",
+   "name_en": "Walking Shot",
+   "desc_ko": "투사체가 더 빠르게 날아간다",
+   "desc_en": "Arrows fly faster",
+   "stat": "projectile_speed",
+   "value": 0.2
+  }
  }
 }

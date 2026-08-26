@@ -118,5 +118,17 @@
   "loot_id": "whetstone",
   "result_weapon": "masang_pyeongon",
   "level_required": 5
+ },
+ "sunogi_mod": {
+  "weapon_id": "soenoe",
+  "loot_id": "ghost_iron",
+  "result_weapon": "sunogi",
+  "level_required": 5
+ },
+ "yungnyangjeon_mod": {
+  "weapon_id": "pyeonjeon",
+  "loot_id": "whetstone",
+  "result_weapon": "yungnyangjeon",
+  "level_required": 5
  }
 }

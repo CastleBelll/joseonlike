@@ -1674,5 +1674,129 @@
    "angle_deg": 120.0,
    "knockback_scale": 3.6
   }
+ },
+ "soenoe": {
+  "name_ko": "쇠뇌",
+  "name_en": "Crossbow",
+  "category": "ranged",
+  "grade": "common",
+  "mechanic": "pierce",
+  "damage": 26.0,
+  "cooldown_sec": 1.45,
+  "projectile_count": 1,
+  "pierce": 4,
+  "speed": 460.0,
+  "range_px": 560.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 5.0,
+   "cooldown_sec": -0.06
+  },
+  "evolution_only": false,
+  "milestones": {
+   "3": {
+    "pierce": 1
+   },
+   "5": {
+    "pierce": 1
+   },
+   "7": {
+    "projectile_count": 1
+   }
+  },
+  "hit_effect": "hit_bow"
+ },
+ "pyeonjeon": {
+  "name_ko": "편전",
+  "name_en": "Short Arrow",
+  "category": "ranged",
+  "grade": "common",
+  "mechanic": "straight",
+  "damage": 7.0,
+  "cooldown_sec": 0.38,
+  "projectile_count": 2,
+  "pierce": 0,
+  "speed": 620.0,
+  "range_px": 470.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 1.5,
+   "cooldown_sec": -0.015
+  },
+  "evolution_only": false,
+  "milestones": {
+   "3": {
+    "pierce": 1
+   },
+   "5": {
+    "projectile_count": 1
+   },
+   "7": {
+    "pierce": 1
+   }
+  },
+  "hit_effect": "hit_bow"
+ },
+ "sunogi": {
+  "name_ko": "수노기",
+  "name_en": "Repeating Crossbow",
+  "category": "ranged",
+  "grade": "rare",
+  "mechanic": "pierce",
+  "damage": 30.0,
+  "cooldown_sec": 1.1,
+  "projectile_count": 2,
+  "pierce": 5,
+  "speed": 500.0,
+  "range_px": 600.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 6.0,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": true,
+  "milestones": {
+   "3": {
+    "pierce": 1
+   },
+   "5": {
+    "pierce": 1
+   },
+   "7": {
+    "projectile_count": 1
+   }
+  },
+  "hit_effect": "hit_divine_bow"
+ },
+ "yungnyangjeon": {
+  "name_ko": "육량전",
+  "name_en": "Six-Tael Bolt",
+  "category": "ranged",
+  "grade": "rare",
+  "mechanic": "straight",
+  "damage": 11.0,
+  "cooldown_sec": 0.32,
+  "projectile_count": 3,
+  "pierce": 1,
+  "speed": 660.0,
+  "range_px": 500.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 2.2,
+   "cooldown_sec": -0.012
+  },
+  "evolution_only": true,
+  "milestones": {
+   "3": {
+    "pierce": 1
+   },
+   "5": {
+    "projectile_count": 1
+   },
+   "7": {
+    "pierce": 1
+   }
+  },
+  "hit_effect": "hit_divine_bow"
  }
 }

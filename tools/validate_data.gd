@@ -88,7 +88,7 @@ const SOFT_ENRAGE_FIELDS: Array[String] = [
 # N4-4a/N4-4b weapon mechanic contract (weapons.json "mechanic" + its blocks).
 const STATUS_IDS: Array[String] = ["burn", "shock", "curse"]
 # N4-4b character actives contract (characters.json "actives").
-const ACTIVE_TYPES: Array[String] = ["blink", "burst", "guard", "cleave"]
+const ACTIVE_TYPES: Array[String] = ["blink", "burst", "guard", "cleave", "trap"]
 # N3-13 icon binding contract (asset/ui/README.md): filenames are data ids.
 const WEAPON_ICON_DIR := "res://asset/ui/weapon_icons"
 const LOOT_ICON_DIR := "res://asset/ui/loot_icons"
@@ -99,7 +99,14 @@ const ACTIVE_TYPE_FIELDS: Dictionary = {
 	# N9-168 참격: a swing, so it needs a reach AND the arc it covers — a
 	# cleave without an arc is just a smaller 벽사진.
 	"cleave": ["radius_px", "arc_deg", "damage"],
+	# N10-11 철질려: a field that stays. The damage is the per-tick number, and
+	# the ward block carries how long it lasts and how hard it holds.
+	"trap": ["damage"],
 }
+## The ward block a trap declares, checked as its own contract: a field with no
+## radius covers nothing, one with no duration vanishes the frame it lands, and
+## one that never ticks is decoration.
+const TRAP_WARD_FIELDS: Array[String] = ["radius_px", "duration_sec", "tick_sec"]
 
 var _errors: int = 0
 
@@ -425,6 +432,16 @@ func _check_character_actives(character: Dictionary, character_id: String) -> vo
 		for field: Variant in fields:
 			typed_fields.append(String(field))
 		_require_positive_numbers(active, typed_fields, label)
+		if type == "trap":
+			_require_positive_numbers(
+				active.get("ward", {}), TRAP_WARD_FIELDS, label + ".ward"
+			)
+			# A slow of 1.0 slows nothing and a slow of 0 freezes forever; the
+			# field is the archer's escape, not a stun.
+			var ward_block: Dictionary = active.get("ward", {})
+			var slow: float = float(ward_block.get("slow_scale", 1.0))
+			if slow <= 0.0 or slow >= 1.0:
+				_fail(label + ".ward.slow_scale must be in (0, 1)")
 		# N9-169 (owner: 이펙트를 왜 같은 걸 쓰냐): an art that names no sheet of
 		# its own borrows another skill's, which is what made 참격 look like a
 		# 환도 swing. A named sheet must also exist in the effect registry.

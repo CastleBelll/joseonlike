@@ -107,6 +107,17 @@ static func load_weapon_categories() -> Array:
 	return (data[character_id] as Dictionary).get("weapon_categories", [])
 
 
+## N10-12 기본 스킬: one permanent trait per character — 음양 widens every art,
+## 철심 thins every hit, 보사 speeds every arrow. It is what makes a class read
+## as a class before the first level-up card, and it is deliberately a stat the
+## passive pool already uses, so nothing downstream has to learn a new concept.
+static func load_innate(character_id: String = "") -> Dictionary:
+	var id: String = character_id if not character_id.is_empty() else _character_id()
+	var entry: Dictionary = _character_entry(id)
+	var innate: Variant = entry.get("innate", {})
+	return innate if innate is Dictionary else {}
+
+
 ## N4-4b: the selected character's active skills (empty for characters that
 ## have none yet — the HUD then shows no active buttons).
 static func load_actives() -> Array[Dictionary]:

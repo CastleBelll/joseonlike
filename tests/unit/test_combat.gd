@@ -98,8 +98,23 @@ func test_despawn_only_beyond_margin() -> bool:
 	return keeps_near and CombatMath.should_despawn(far, center, VIEW, 480.0)
 
 
+## N10-12: this used to assert the literal 120, so every class rebalance broke a
+## test that was never about the number. What it actually guards is that the
+## loader reads the file rather than a hardcoded default — so it reads the file
+## too, and compares.
 func test_player_hp_reads_characters_json() -> bool:
-	return absf(Player.load_base_hp() - 120.0) < EPSILON
+	var declared: float = _character_field("base_hp")
+	return declared > 0.0 and absf(Player.load_base_hp() - declared) < EPSILON
+
+
+func _character_field(field: String) -> float:
+	var parsed: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string("res://data/characters.json")
+	)
+	if parsed is not Dictionary:
+		return 0.0
+	var entry: Dictionary = (parsed as Dictionary).get(SaveProfile.DEFAULT_CHARACTER, {})
+	return float(entry.get(field, 0.0))
 
 
 func test_player_invuln_reads_characters_json() -> bool:
