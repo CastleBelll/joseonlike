@@ -133,6 +133,21 @@ const KIT_SLOT_PIECE := "slot_0"
 const KIT_SLOT_MARGIN := 14
 
 
+## N10-17: the list-row card every screen outside combat draws. Six screens
+## still painted a flat CARD_BG box with a coloured border while the four that
+## call paper_panel() had already moved to the owner's kit, so the game looked
+## like two games. The tint carries whatever state the border used to.
+const KIT_CARD_PIECE := "plaque_cream"
+
+
+static func card_panel(tint: Color = Color.WHITE) -> StyleBox:
+	var box: StyleBox = kit_panel(KIT_CARD_PIECE, KIT_PLAQUE_MARGIN)
+	if box == null:
+		return null
+	(box as StyleBoxTexture).modulate_color = tint
+	return box
+
+
 static func slot_panel(tint: Color = Color.WHITE) -> StyleBox:
 	var box: StyleBox = kit_panel(KIT_SLOT_PIECE, KIT_SLOT_MARGIN)
 	if box == null:

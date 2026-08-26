@@ -258,13 +258,20 @@ func _build_row(row: Dictionary) -> Control:
 	# In the two-column grid a cell has to claim its half, or the cards shrink
 	# to their text and the pair drifts apart down the middle of the page.
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var box := StyleBoxFlat.new()
-	box.bg_color = UiPalette.CARD_BG
-	box.border_color = UiPalette.CARD_BORDER_DIM
-	box.set_border_width_all(CARD_BORDER_WIDTH)
-	box.set_corner_radius_all(CARD_CORNER_RADIUS)
-	box.set_content_margin_all(CARD_PADDING)
-	card.add_theme_stylebox_override("panel", box)
+	# N10-17: the owner's kit plaque, so the 괴이록 reads as the same game as the
+	# pause sheet. The flat box stays as the fallback for a missing kit.
+	var kit: StyleBox = UiIcons.card_panel()
+	if kit != null:
+		(kit as StyleBoxTexture).set_content_margin_all(CARD_PADDING)
+		card.add_theme_stylebox_override("panel", kit)
+	else:
+		var box := StyleBoxFlat.new()
+		box.bg_color = UiPalette.CARD_BG
+		box.border_color = UiPalette.CARD_BORDER_DIM
+		box.set_border_width_all(CARD_BORDER_WIDTH)
+		box.set_corner_radius_all(CARD_CORNER_RADIUS)
+		box.set_content_margin_all(CARD_PADDING)
+		card.add_theme_stylebox_override("panel", box)
 
 	var content := HBoxContainer.new()
 	content.name = "Content"
@@ -277,7 +284,7 @@ func _build_row(row: Dictionary) -> Control:
 	texts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	texts.add_theme_constant_override("separation", UiPalette.SPACE_XS)
 	var discovered: bool = bool(row["discovered"])
-	var name_color: Color = UiPalette.TEXT_ON_DARK
+	var name_color: Color = UiPalette.INK
 	if not discovered:
 		name_color.a = UNDISCOVERED_TEXT_ALPHA
 	var name_label := _label(String(row["name"]), UiPalette.FONT_SIZE_BODY, name_color)
@@ -286,7 +293,7 @@ func _build_row(row: Dictionary) -> Control:
 	for line: String in row["lines"] as Array[String]:
 		if line.is_empty():
 			continue
-		var line_label := _label(line, UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_DARK)
+		var line_label := _label(line, UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER)
 		line_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		texts.add_child(line_label)
 	content.add_child(texts)

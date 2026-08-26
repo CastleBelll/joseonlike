@@ -168,7 +168,7 @@ func _build_row(row: Dictionary) -> Control:
 	top.add_theme_constant_override("separation", UiPalette.SPACE_SM)
 	var name_label: Label = _label(
 		String(row["name"]), UiPalette.FONT_SIZE_BODY,
-		UiPalette.TEXT_ON_DARK if earned else UiPalette.TEXT_MUTED_ON_DARK
+		UiPalette.INK if earned else UiPalette.TEXT_MUTED_ON_PAPER
 	)
 	name_label.name = "Name"
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -177,7 +177,7 @@ func _build_row(row: Dictionary) -> Control:
 	box.add_child(top)
 
 	var desc: Label = _label(
-		String(row["desc"]), UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_DARK
+		String(row["desc"]), UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
 	)
 	desc.name = "Desc"
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -235,7 +235,14 @@ func _profile() -> Dictionary:
 	return SaveService.instance.profile
 
 
-func _card_box(earned: bool) -> StyleBoxFlat:
+## N10-17: the owner's kit plaque, tinted to keep the earned/unearned signal the
+## coloured border used to carry. Falls back to the flat box so a missing kit
+## still renders a readable list.
+func _card_box(earned: bool) -> StyleBox:
+	var tint: Color = Color.WHITE if earned else Color(0.72, 0.70, 0.68)
+	var kit: StyleBox = UiIcons.card_panel(tint)
+	if kit != null:
+		return kit
 	var box := StyleBoxFlat.new()
 	box.bg_color = UiPalette.CARD_BG
 	box.set_corner_radius_all(CARD_CORNER_RADIUS)
