@@ -3,18 +3,24 @@
 **Asset production is frozen.** The owner supplies art and audio. Do not generate, cut,
 commission or "temporarily improve" assets during a feature session.
 
-## Drop box layout (reorganised 2026-08-20)
+## Drop box layout (정리 2026-08-26)
 
 ```
 new_asset/
-  owner/      every pack and file the OWNER sourced — one folder per pack
-  generated/  art generated on request inside this project
+  owner/      오너가 그렸거나 받아온 것 — 팩 하나에 폴더 하나
+  generated/  생성 모델로 뽑은 원본. 파일명이 곧 설치 대상 id
+  sheets/     스프라이트 시트 요청·수령분
+  needs_sprite/ 아직 시트가 없는 것들의 참고 그림
+  source/     게임 밖 원본 (지금은 오너의 BGM 원본)
+  archive/    이제 쓰지 않는 것 — 지우지 않고 여기 둔다
 ```
 
-Two folders, because the two have different standing. Owner packs are source
-material with their own licensing; generated files are this project's output
-and can be re-made from a prompt. Build scripts read from `new_asset/owner/…`;
-nothing under either folder is ever loaded by the game directly.
+폴더별로 무엇을 어떤 스크립트가 읽는지는 [new_asset/README.md](new_asset/README.md)에
+표로 있다. 넷은 성격이 다르다: 오너 팩은 자체 라이선스가 붙은 원자재고, 생성물은
+프롬프트로 다시 만들 수 있는 이 프로젝트의 산출물이며, `source/`는 게임 밖 원본,
+`archive/`는 더 쓰지 않지만 버리지 않은 것이다 (오너 지시 2026-08-26: 삭제는 하지
+말고 정리만). 어느 폴더의 것도 게임이 직접 읽지 않는다 — `.gdignore`가 임포트를
+막고, 빌드 스크립트만 여기서 읽어 `asset/`으로 내보낸다.
 
 ## Owner drop box (2026-08-14)
 
