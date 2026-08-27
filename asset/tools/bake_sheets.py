@@ -130,17 +130,25 @@ EXTRA = {
     "powder_dokkaebi": [("bombing.png", "bombing_strip.png")],
 }
 
+## Grids are stated per sheet, never guessed — every attempt to detect one has
+## cut a subject in half, and the 2026-08-27 evening drop is not uniform: the
+## rusted armour came back 7x7 while everything else is 5x5.
+MONSTER_GRIDS = {
+    "rusted_armor": (7, 7),
+}
+
 for _name, _h in MONSTER_HEIGHTS:
+    _grid = MONSTER_GRIDS.get(_name, GRID)
     _sheets = [
         Sheet(f"asset/monsters/{_name}/idle.png", "idle_strip.png", None, _h),
         # NOT share_scale: the idle is one big drawing and the walk is a grid of
         # small cells, so the subject sits at a different scale in each source.
-        Sheet(f"asset/monsters/{_name}/walk.png", "walk_strip.png", GRID, _h,
+        Sheet(f"asset/monsters/{_name}/walk.png", "walk_strip.png", _grid, _h,
               share_scale=False),
     ]
     for _src, _out in EXTRA.get(_name, []):
         _sheets.append(Sheet(
-            f"asset/monsters/{_name}/{_src}", _out, GRID, _h, share_scale=False,
+            f"asset/monsters/{_name}/{_src}", _out, _grid, _h, share_scale=False,
         ))
     ACTORS.append((_name, _h, _sheets))
 

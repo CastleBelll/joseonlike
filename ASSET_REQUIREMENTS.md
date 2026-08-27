@@ -147,6 +147,40 @@ is not the subject. No shadow, no ground, no text, no border.
 앞으로 들어올 것: 당파(thrust) · 등패(bulwark) · 철퇴(returning) · 돌격창(charge) ·
 화전 · 철질려 · 비격진천뢰 · 노포 · 비도. 각각 같은 방식으로 임시본을 먼저 넣는다.
 
+## 3차 — 장수 원귀·녹슨 갑주 복구, 그리고 남은 프롭 넷 (2026-08-27 밤)
+
+오너가 `general_wraith/walk.png` 이름을 고쳤고 `rusted_armor`를 다시 뽑았다. 둘 다 구웠다.
+
+| 대상 | 격자 | 결과 |
+|---|---|---|
+| 장수 원귀 걷기 | 5×5 | 19프레임 (한계에서 자동 솎임) |
+| 장수 원귀 공격 | 5×5 | 19프레임 |
+| 녹슨 갑주 걷기 | **7×7** | 25프레임 |
+
+**격자가 시트마다 다르다.** 녹슨 갑주만 7×7이고 나머지는 5×5다. 표에 명시했다 —
+격자를 감지로 추측하면 피사체가 잘린다. 장수 원귀도 자동 감지로는 5×3(15프레임)으로
+잡혔는데 실제로는 5×5였다(푸른 불꽃이 세로로 이어져 빈 띠가 안 생긴다). 눈으로 확인했다.
+
+### 아직 막힌 것 — 프롭 4종 (내가 만들 수 없다)
+
+`props.json`이 참조하는데 파일이 없고, **HEAD에도 작업 트리에도 한 번도 존재한 적이 없다.**
+`validate_data`가 이것 때문에 계속 4건 FAIL이다.
+
+| 프롭 | 참조 경로 | 상태 |
+|---|---|---|
+| `water_puddle` | 대숲 props | 생성기(`asset/stages/bamboo_forest/build_assets.py`)의 `SPRITES` 표에 **이미 등록돼 있다** — contact-sheet의 (0,1) 칸 |
+| `prop_flame` | 대숲 props (석등 불꽃) | 생성기 표에 없음 |
+| `anvil` | 대숲 props | 생성기 표에 없음. 대장간 소품인데 대숲 경로를 가리킨다 |
+| `stone_marker` | 대숲 props | 생성기 표에 없음 |
+
+**내가 생성기를 돌릴 수 없다** — `build_assets.py`가 오너만 받을 수 있는 Higgsfield 원본
+두 장을 `tmp/bamboo_forest`에 요구하고, 없으면 거부한다.
+`water_puddle`·`prop_flame`·`stone_marker`는 `.png.import`만 남아 있어 **예전엔 존재했던
+파일**임이 드러난다.
+
+오너가 할 일: 원본 시트를 `tmp/bamboo_forest`에 넣고 생성기를 돌리면 `water_puddle`은
+바로 나온다. 나머지 셋은 생성기 `SPRITES` 표에 칸 좌표를 추가해야 한다.
+
 ## 2차 애셋 재세팅 적용 (2026-08-27 저녁)
 
 오너가 전 애셋을 다시 세팅하고 **캐릭터 이동을 walk / run으로 분리**했다.
