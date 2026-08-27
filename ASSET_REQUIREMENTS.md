@@ -186,8 +186,8 @@ is not the subject. No shadow, no ground, no text, no border.
 
 | 대상 | 상태 |
 |---|---|
-| 도사 | idle(숨쉬기 16프레임) · walk(달리기 16프레임) — 화면 38 논리px 유지 |
-| 무사 | idle(숨쉬기 16프레임) · walk(달리기 16프레임) — 화면 38 논리px 유지 |
+| 도사 | ~~idle(숨쉬기 16프레임) · walk(달리기 16프레임)~~ ✅ **2026-08-27 오너 드롭 적용** — breath/walk 4×4 시트를 `bake_sheets.py`가 16프레임 스트립으로 굽고 `AnimatedSprite2D`가 문다. 논리 38px 유지 |
+| 무사 | ~~idle(숨쉬기 16프레임) · walk(달리기 16프레임)~~ ✅ **2026-08-27 적용** — 위와 동일 |
 | 잿귀 | idle 1장 · walk 16프레임 — 화면 33 논리px |
 
 ### 재생성 필요 — 피사체가 셀 밖으로 잘린다
