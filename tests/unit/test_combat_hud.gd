@@ -470,3 +470,52 @@ func test_bar_caps_never_hang_off_the_left_edge() -> bool:
 	if not passed:
 		push_error("test_combat_hud: a bar cap hangs off the left edge")
 	return passed
+
+
+func test_the_hp_bar_changes_before_the_emergency() -> bool:
+	# QA (visual, b735bc0 H8): at 28% the bar was still full-health green, so the
+	# first warning a player got was already the last one.
+	var full: Color = CombatHud.hp_fill_color(1.0, false)
+	var half: Color = CombatHud.hp_fill_color(0.5, false)
+	var nearly: Color = CombatHud.hp_fill_color(0.28, false)
+	var critical: Color = CombatHud.hp_fill_color(0.2, true)
+	var passed: bool = full == UiPalette.SUCCESS
+	# Anything under the warning band has to differ from full health...
+	passed = passed and half != full
+	passed = passed and nearly != full
+	# ...and keep moving as it falls, rather than snapping once.
+	passed = passed and nearly != half
+	# The threshold still owns the emergency colour.
+	passed = passed and critical == UiPalette.VERMILION
+	if not passed:
+		push_error("test_combat_hud: hp bar does not warn before the threshold")
+	return passed
+
+
+func test_the_boss_bar_joins_the_stack_instead_of_covering_it() -> bool:
+	# QA (visual, b735bc0 H7): the boss bar sat at a fixed y that B0-1b moved the
+	# landscape bars on top of, so a boss fight covered the Lv badge — and it was
+	# the same vermilion as the player's low-health bar, so neither said whose
+	# health it was.
+	var hud := CombatHud.new()
+	hud.build_ui()
+	hud.size = Vector2(960.0, 540.0)
+	hud._layout_top_band()
+	var boss: Control = hud.get_node("BossBar")
+	var xp: Control = hud.get_node("XpBar")
+	# Hidden: it costs the band nothing.
+	var quiet_top: float = xp.offset_top
+	var passed: bool = not boss.visible
+	hud.show_boss_bar()
+	# Showing: it takes the top and pushes the rest down, never overlapping.
+	passed = passed and boss.offset_top < xp.offset_top
+	passed = passed and boss.offset_bottom <= xp.offset_top
+	passed = passed and xp.offset_top > quiet_top
+	# And it is not the player's colour.
+	var fill: StyleBox = boss.get_theme_stylebox("fill")
+	if fill is StyleBoxFlat:
+		passed = passed and (fill as StyleBoxFlat).bg_color != UiPalette.VERMILION
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: the boss bar still fights the player's band")
+	return passed

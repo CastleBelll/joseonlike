@@ -341,6 +341,31 @@ static func hp_view(hp: float, hp_max: float, threshold: float) -> Dictionary:
 	}
 
 
+## QA (visual, b735bc0 H8): at 28% hp the bar was the same green as full health,
+## because the warning was a single switch at the 25% threshold. Everything from
+## full down to just above the line looked identical, so the first warning a
+## player got was already an emergency.
+##
+## The colour now moves the whole way down: green while there is room, through
+## gold as it goes, vermilion once the threshold is crossed. The threshold still
+## means something — it is where the pulse starts and where the colour stops
+## changing — but it is no longer the only thing that says anything.
+const HP_WARN_AT := 0.6
+
+
+static func hp_fill_color(ratio: float, low: bool) -> Color:
+	if low:
+		return UiPalette.VERMILION
+	if ratio >= HP_WARN_AT:
+		return UiPalette.SUCCESS
+	# Between the warning band and the threshold, walk green to gold so the bar
+	# is already changing before the emergency colour arrives.
+	var span: float = maxf(HP_WARN_AT, 0.0001)
+	return UiPalette.SUCCESS.lerp(
+		UiPalette.GOLD, clampf(1.0 - ratio / span, 0.0, 1.0)
+	)
+
+
 ## N6-2: HUD HP readout plus the low-HP warning. `threshold` and `pulse_sec`
 ## come from data (effects.json hit_feedback) via the stage — the HUD never
 ## reads data files itself. While low, the fill turns vermilion AND the edge
@@ -353,8 +378,8 @@ func set_hp(hp: float, hp_max: float, threshold: float, pulse_sec: float) -> voi
 	# N10-22: the kit fill carries its colour as a modulate, the flat one as a
 	# background. The low-health signal has to land either way.
 	if _hp_fill is StyleBoxFlat:
-		(_hp_fill as StyleBoxFlat).bg_color = (
-			UiPalette.VERMILION if low else UiPalette.SUCCESS
+		(_hp_fill as StyleBoxFlat).bg_color = hp_fill_color(
+			float(view["ratio"]), low
 		)
 	_vignette.set_looping(low, pulse_sec)
 
@@ -368,8 +393,10 @@ func set_gold(amount: int) -> void:
 
 
 ## N5-1 boss bar: shown only while the boss lives.
+## Re-lays the band, because the boss bar is part of the stack now.
 func show_boss_bar() -> void:
 	_boss_bar.visible = true
+	_layout_top_band()
 
 
 func set_boss_hp(current: float, hp_max: float) -> void:
@@ -621,6 +648,14 @@ func _layout_top_band() -> void:
 	var cursor: float = LANDSCAPE_BAR_TOP if landscape else BAR_TOP
 	if not landscape:
 		_timer_label.offset_top = TOP_MARGIN
+	# QA (visual, b735bc0 H7): the boss bar sat at a fixed y=8 that B0-1b moved
+	# the landscape bars on top of, so a boss fight covered the Lv badge. It is
+	# part of the stack now — it takes the top of the band when it is showing and
+	# costs nothing when it is not.
+	if _boss_bar != null and _boss_bar.visible:
+		_boss_bar.offset_top = cursor
+		_boss_bar.offset_bottom = cursor + BOSS_BAR_HEIGHT
+		cursor += BOSS_BAR_HEIGHT + HP_BAR_GAP * 2.0
 	_xp_bar.offset_top = cursor
 	_xp_bar.offset_bottom = cursor + BAR_HEIGHT
 	cursor += BAR_HEIGHT + HP_BAR_GAP
@@ -863,7 +898,7 @@ func _build_boss_bar() -> void:
 	track.border_color = UiPalette.WOOD_BORDER
 	track.set_border_width_all(1)
 	var fill := StyleBoxFlat.new()
-	fill.bg_color = UiPalette.VERMILION
+	fill.bg_color = UiPalette.BOSS
 	_boss_bar.add_theme_stylebox_override("background", track)
 	_boss_bar.add_theme_stylebox_override("fill", fill)
 	_boss_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)

@@ -15,6 +15,12 @@ const INK := Color("#1a1613")
 const GOLD := Color("#ffd94a")
 const GOLD_BORDER := Color("#c49a3d")
 const VERMILION := Color("#bf402a")
+## QA (visual, b735bc0 H7): the boss bar and the player's low-health bar were
+## both VERMILION, so the two most urgent readouts on screen were the same
+## colour and neither said whose health it was. The boss gets its own — a
+## desaturated violet that reads on the night ground and belongs to nothing
+## else, so red stays the player's and only the player's.
+const BOSS := Color("#8c4fb0")
 const SUCCESS := Color("#58d858")
 const TEXT_ON_DARK := Color("#f0e6d2")
 
