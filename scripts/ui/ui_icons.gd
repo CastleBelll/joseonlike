@@ -61,7 +61,20 @@ const KIT_HUD_PIECES: Dictionary = {
 }
 
 
+## The owner's newer HUD sheet, cut to hud/build by asset/ui/slice_hud_icons.py.
+## Only the names listed here are switched over: the owner asked for the pause
+## mark specifically, and this project has already found that an HD remake can
+## read WORSE than the old glyph once it is drawn at HUD size. Adding a name is
+## how the rest come across, after someone has looked at them at 32px.
+const HUD_BUILD_DIR := "res://asset/ui/hud/build"
+const HUD_BUILD_PIECES: Array[String] = ["pause"]
+
+
 static func hud_icon(icon_name: String) -> Texture2D:
+	if HUD_BUILD_PIECES.has(icon_name):
+		var fresh: Texture2D = _icon(HUD_BUILD_DIR, icon_name)
+		if fresh != null:
+			return fresh
 	if KIT_HUD_PIECES.has(icon_name):
 		var kit: Texture2D = kit_texture(String(KIT_HUD_PIECES[icon_name]))
 		if kit != null:

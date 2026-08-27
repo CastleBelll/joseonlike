@@ -136,10 +136,10 @@ func test_empty_slots_are_drawn_so_the_budget_is_visible() -> bool:
 	# One weapon of four held: the other three must still occupy cells, because
 	# "what is left" is exactly the fact the pause screen used to hold alone.
 	var hud: CombatHud = _belongings_hud([{"id": "sword"}], [], [])
-	var run: Control = hud.get_node_or_null("Belongings/Weapons")
+	var run: Control = hud.belongings_run("Weapons")
 	var passed: bool = run != null
 	passed = passed and run.get_child_count() == LevelUp.WEAPON_SLOTS
-	var passives: Control = hud.get_node_or_null("Belongings/Passives")
+	var passives: Control = hud.belongings_run("Passives")
 	passed = passed and passives != null
 	passed = passed and passives.get_child_count() == LevelUp.PASSIVE_SLOTS
 	hud.free()
@@ -155,7 +155,7 @@ func test_field_passives_past_the_budget_are_still_drawn() -> bool:
 	for i: int in range(LevelUp.PASSIVE_SLOTS + 2):
 		over.append({"id": "attack_damage", "stacks": 1})
 	var hud: CombatHud = _belongings_hud([], over, [])
-	var run: Control = hud.get_node_or_null("Belongings/Passives")
+	var run: Control = hud.belongings_run("Passives")
 	var passed: bool = run != null and run.get_child_count() == over.size()
 	hud.free()
 	if not passed:
@@ -166,14 +166,14 @@ func test_field_passives_past_the_budget_are_still_drawn() -> bool:
 func test_materials_appear_and_overflow_collapses() -> bool:
 	var few: Array = [{"id": "whetstone", "count": 2}]
 	var hud: CombatHud = _belongings_hud([], [], few)
-	var run: Control = hud.get_node_or_null("Belongings/Materials")
+	var run: Control = hud.belongings_run("Materials")
 	var passed: bool = run != null and run.get_child_count() == 1
 	hud.free()
 	var many: Array = []
 	for i: int in range(CombatHud.BELONGINGS_MATERIAL_MAX + 3):
 		many.append({"id": "whetstone", "count": 1})
 	var over_hud: CombatHud = _belongings_hud([], [], many)
-	var over_run: Control = over_hud.get_node_or_null("Belongings/Materials")
+	var over_run: Control = over_hud.belongings_run("Materials")
 	# Capped cells plus exactly one "+N" label, so the slots are never pushed
 	# off the right edge no matter how many loot types a run banks.
 	passed = passed and over_run != null
@@ -187,7 +187,7 @@ func test_materials_appear_and_overflow_collapses() -> bool:
 func test_no_materials_means_no_material_node() -> bool:
 	# An empty container still claims the group separation and shifts the slots.
 	var hud: CombatHud = _belongings_hud([{"id": "sword"}], [], [])
-	var passed: bool = hud.get_node_or_null("Belongings/Materials") == null
+	var passed: bool = hud.belongings_run("Materials") == null
 	hud.free()
 	if not passed:
 		push_error("test_combat_hud: empty material run should not be built")
@@ -234,7 +234,7 @@ func test_cells_are_the_size_they_declare() -> bool:
 	# cell and pushed the run under the counter stack (captures/b0-1). The frame
 	# is decoration, so the declared size has to be the real size.
 	var hud: CombatHud = _belongings_hud([{"id": "sword"}], [], [])
-	var cell: Control = hud.get_node("Belongings/Weapons").get_child(0)
+	var cell: Control = hud.belongings_run("Weapons").get_child(0)
 	var passed: bool = cell.get_combined_minimum_size().x <= CombatHud.BELONGINGS_SLOT
 	passed = passed and cell.get_combined_minimum_size().y <= CombatHud.BELONGINGS_SLOT
 	# And the row clips, so no build size can ever draw past the clamp.
@@ -242,4 +242,63 @@ func test_cells_are_the_size_they_declare() -> bool:
 	hud.free()
 	if not passed:
 		push_error("test_combat_hud: belongings cells exceed their declared size")
+	return passed
+
+
+func test_landscape_splits_the_row_and_portrait_does_not() -> bool:
+	# Owner (가로모드일때 무기 가로배치하고 그 밑으로 패시브 배치): landscape puts
+	# weapons on one line and passives on the next; portrait keeps one line,
+	# where height is the scarce axis rather than width.
+	var hud := CombatHud.new()
+	hud.build_ui()
+	hud.size = Vector2(960.0, 540.0)
+	hud._layout_belongings()
+	hud.set_belongings([{"id": "sword"}], [{"id": "attack_damage", "stacks": 2}], [])
+	var passed: bool = hud.get_node_or_null("Belongings/Line1") != null
+	passed = passed and hud.belongings_run("Weapons").get_parent().name == "Line0"
+	passed = passed and hud.belongings_run("Passives").get_parent().name == "Line1"
+	# Rotating must re-split without the stage pushing the build again.
+	hud.size = Vector2(540.0, 960.0)
+	hud._layout_belongings()
+	passed = passed and hud.get_node_or_null("Belongings/Line1") == null
+	passed = passed and hud.belongings_run("Weapons") != null
+	passed = passed and hud.belongings_run("Passives") != null
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: belongings row does not follow the orientation")
+	return passed
+
+
+func test_landscape_puts_the_bars_above_the_clock() -> bool:
+	# Owner (경험치, 체력이 상단으로 가고). Portrait keeps the clock on top.
+	var hud := CombatHud.new()
+	hud.build_ui()
+	hud.size = Vector2(960.0, 540.0)
+	hud._layout_top_band()
+	var xp: Control = hud.get_node("XpBar")
+	var hp: Control = hud.get_node("HpBar")
+	var clock: Control = hud.get_node("TimerLabel")
+	var passed: bool = xp.offset_top < clock.offset_top
+	passed = passed and hp.offset_top < clock.offset_top
+	passed = passed and xp.offset_bottom <= hp.offset_top
+	hud.size = Vector2(540.0, 960.0)
+	hud._layout_top_band()
+	passed = passed and clock.offset_top < xp.offset_top
+	# Whatever the order, nothing below may start above the bars.
+	passed = passed and (hud.get_node("Counters") as Control).offset_top > hp.offset_bottom
+	passed = passed and hud._belongings.offset_top > hp.offset_bottom
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: top band order is wrong for the orientation")
+	return passed
+
+
+func test_pause_uses_the_new_hud_sheet() -> bool:
+	# Owner (일시정지 표시는 새로운 UI chrome에 있어 일시정지가 그거 써).
+	var fresh: Texture2D = UiIcons.hud_icon("pause")
+	var passed: bool = fresh != null
+	if ResourceLoader.exists("res://asset/ui/hud/build/pause.png"):
+		passed = passed and fresh.resource_path == "res://asset/ui/hud/build/pause.png"
+	if not passed:
+		push_error("test_combat_hud: pause icon is not the owner's new sheet")
 	return passed

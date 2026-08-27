@@ -11,8 +11,11 @@ extends Control
 const TITLE_SCENE := "res://scenes/title.tscn"
 
 const TOP_MARGIN := 20.0
-const TIMER_FONT_SIZE := 48
-const TIMER_OUTLINE_SIZE := 8
+## Owner (시간이 너무 커 좀 줄이고): the clock was set when it was the only
+## thing in the top band. It now shares that band with the bars and the
+## belongings row, and at 48 it read as the subject of the screen.
+const TIMER_FONT_SIZE := 32
+const TIMER_OUTLINE_SIZE := 5
 const BUTTON_SIZE := 44.0  # UiPalette.TOUCH_TARGET_MIN
 const BAR_TOP := 92.0
 ## N10-22: 8px was as thin as a flat strip can be and still read. The owner's
@@ -65,6 +68,15 @@ const BELONGINGS_COUNT_FONT := 12
 ## Materials are unbounded in principle and the row has a hard right edge. Past
 ## this many the rest collapse into a "+N" so the slots are never pushed out.
 const BELONGINGS_MATERIAL_MAX := 4
+## Owner (가로모드일때 무기 가로배치하고 그 밑으로 패시브 배치): landscape
+## splits the row in two — weapons on one line, passives and materials on
+## the next. Portrait keeps one line, where the height matters more than
+## the width does.
+const BELONGINGS_LINE_GAP := 3
+## Owner (경험치, 체력이 상단으로 가고): in landscape the bars move to the
+## very top and the clock drops under them. Portrait keeps the clock on top,
+## where the wide empty band above the bars is already its own.
+const LANDSCAPE_BAR_TOP := 14.0
 # 2x of the 16px logical HUD icon (asset/ui/README.md) — the capture's
 # counter icons read ~30 logical px, and 2x NEAREST stays pixel-crisp.
 const ICON_SIZE := 32.0
@@ -145,7 +157,9 @@ var _settings_popup: SettingsPopup
 ## the live build (no push-sync to drift). Returns
 ## {"weapons": [{"id", "name", "level"}], "passives": [{"name", "stacks", "max"}]}.
 var build_provider: Callable
-var _belongings: HBoxContainer
+var _belongings: VBoxContainer
+var _belongings_held: Dictionary = {}
+var _belongings_lines: int = 1
 var _boss_bar: ProgressBar
 var _vignette: DamageVignette
 var _screen_flash: ScreenFlash
@@ -157,6 +171,7 @@ func _ready() -> void:
 	# N9-152: rotation changes the width the bands center inside.
 	resized.connect(_layout_bar_bands)
 	resized.connect(_layout_belongings)
+	resized.connect(_layout_top_band)
 	# Owner (모든 UI/UX는 반응형으로): the pause paper measured its band and
 	# height when the tab was picked, so a rotation while paused left the
 	# sheet sized for the old screen.
@@ -239,6 +254,7 @@ func build_ui() -> void:
 	_build_belongings()
 	_build_boss_bar()
 	_build_pause_overlay()
+	_layout_top_band()
 
 
 ## N9-14 tutorial highlight: global rect of the actives cluster so the
@@ -487,10 +503,10 @@ func _counter_row(stack: VBoxContainer, row_name: String, icon: Control) -> Labe
 
 
 func _build_belongings() -> void:
-	_belongings = HBoxContainer.new()
+	_belongings = VBoxContainer.new()
 	_belongings.name = "Belongings"
 	_belongings.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_belongings.add_theme_constant_override("separation", BELONGINGS_GROUP_GAP)
+	_belongings.add_theme_constant_override("separation", BELONGINGS_LINE_GAP)
 	# An HBoxContainer lays children out at their minimum size and happily
 	# overflows its own box. The width clamp below is the intent; this is what
 	# makes it true for build sizes nobody predicted — N9-55 passives past the
@@ -504,12 +520,57 @@ func _build_belongings() -> void:
 
 
 ## Stops the row short of the counter stack so the two never overlap on a narrow
-## viewport. Re-run on resize because rotation changes what "short of" means.
+## viewport, and re-splits it if the rotation changed how many lines it takes.
 func _layout_belongings() -> void:
 	if _belongings == null:
 		return
 	_belongings.offset_left = UiPalette.SPACE_MD
 	_belongings.offset_right = -(COUNTER_STACK_WIDTH + UiPalette.SPACE_SM)
+	var wanted: int = 2 if _is_landscape() else 1
+	if wanted != _belongings_lines and not _belongings_held.is_empty():
+		_rebuild_belongings()
+	_belongings.offset_bottom = _belongings.offset_top + _belongings_height()
+
+
+func _belongings_height() -> float:
+	var lines: float = float(_belongings_lines)
+	return lines * BELONGINGS_SLOT + (lines - 1.0) * BELONGINGS_LINE_GAP
+
+
+## Owner (경험치, 체력이 상단으로 가고 / 시간이 너무 커): the top band is stacked
+## from one cursor rather than from fixed offsets, so moving one thing moves what
+## follows instead of leaving a hole or an overlap.
+##
+## Landscape leads with the bars and drops the clock under them — the viewport is
+## only 540 tall there, so the band has to earn every pixel. Portrait keeps the
+## clock on top, where the wide empty strip above the bars is already its own and
+## nothing is gained by shuffling it.
+func _layout_top_band() -> void:
+	if _xp_bar == null or _hp_bar == null or _timer_label == null:
+		return
+	var landscape: bool = _is_landscape()
+	var cursor: float = LANDSCAPE_BAR_TOP if landscape else BAR_TOP
+	if not landscape:
+		_timer_label.offset_top = TOP_MARGIN
+	_xp_bar.offset_top = cursor
+	_xp_bar.offset_bottom = cursor + BAR_HEIGHT
+	cursor += BAR_HEIGHT + HP_BAR_GAP
+	_hp_bar.offset_top = cursor
+	_hp_bar.offset_bottom = cursor + HP_BAR_HEIGHT
+	cursor += HP_BAR_HEIGHT
+	if landscape:
+		cursor += UiPalette.SPACE_XS
+		_timer_label.offset_top = cursor
+		cursor += float(TIMER_FONT_SIZE)
+	cursor += UiPalette.SPACE_XS
+	if _level_label != null:
+		_level_label.position.y = cursor
+	var counters: Control = get_node_or_null("Counters")
+	if counters != null:
+		counters.offset_top = cursor
+	if _belongings != null:
+		_belongings.offset_top = cursor + BELONGINGS_LEVEL_ROW
+		_belongings.offset_bottom = _belongings.offset_top + _belongings_height()
 
 
 ## Always-on answer to "what am I carrying" (B0-1). `weapons` and `passives` use
@@ -522,17 +583,55 @@ func set_belongings(
 ) -> void:
 	if _belongings == null:
 		return
+	# Kept so a rotation can redraw the row in the other shape without the stage
+	# having to notice the rotation and push again.
+	_belongings_held = {
+		"weapons": weapons, "passives": passives, "materials": materials,
+	}
+	_rebuild_belongings()
+
+
+## One line in portrait, two in landscape. The runs keep their names either way
+## so callers ask for them by name (`belongings_run`) rather than by position.
+func _rebuild_belongings() -> void:
 	for child: Node in _belongings.get_children():
+		_belongings.remove_child(child)
 		child.queue_free()
-	_belongings.add_child(
-		_belongings_slots(weapons, LevelUp.WEAPON_SLOTS, true)
+	_belongings_lines = 2 if _is_landscape() else 1
+	var first := HBoxContainer.new()
+	first.name = "Line0"
+	first.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	first.add_theme_constant_override("separation", BELONGINGS_GROUP_GAP)
+	_belongings.add_child(first)
+	var second: HBoxContainer = first
+	if _belongings_lines == 2:
+		second = HBoxContainer.new()
+		second.name = "Line1"
+		second.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		second.add_theme_constant_override("separation", BELONGINGS_GROUP_GAP)
+		_belongings.add_child(second)
+	first.add_child(_belongings_slots(
+		_belongings_held.get("weapons", []) as Array, LevelUp.WEAPON_SLOTS, true
+	))
+	second.add_child(_belongings_slots(
+		_belongings_held.get("passives", []) as Array, LevelUp.PASSIVE_SLOTS, false
+	))
+	var carried: Control = _belongings_materials(
+		_belongings_held.get("materials", []) as Array
 	)
-	_belongings.add_child(
-		_belongings_slots(passives, LevelUp.PASSIVE_SLOTS, false)
-	)
-	var carried: Control = _belongings_materials(materials)
 	if carried != null:
-		_belongings.add_child(carried)
+		second.add_child(carried)
+
+
+## The run of cells with this name, wherever the current orientation put it.
+func belongings_run(run_name: String) -> Control:
+	if _belongings == null:
+		return null
+	return _belongings.find_child(run_name, true, false) as Control
+
+
+func _is_landscape() -> bool:
+	return size.x > size.y
 
 
 ## One run of cells: what is held, then empty cells for what is not. The empties
