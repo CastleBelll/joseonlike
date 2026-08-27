@@ -132,11 +132,10 @@ func _load_monsters() -> Dictionary:
 
 func test_the_texture_limit_is_the_one_the_renderer_enforces() -> bool:
 	# QA (auto, b735bc0 B1): a 24320px strip failed at the desktop driver. Then
-	# itch.io hung on its loading bar forever, because the WEB build runs on
-	# WebGL where 8192 is the common device maximum — the upload fails and boot
-	# never completes. The game ships to the web, so the web's ceiling is the
-	# ceiling everywhere; this pins that number.
-	var passed: bool = SpriteSheet.MAX_STRIP_PX == 8192
+	# itch.io hung forever — on MOBILE only, where WebGL commonly tops out at
+	# 4096. The smallest shipping target's ceiling is the ceiling everywhere;
+	# this pins that number.
+	var passed: bool = SpriteSheet.MAX_STRIP_PX == 4096
 	# And every strip actually in the tree has to fit it, or the pin is theatre.
 	for dir_path: String in _declared_sprite_dirs():
 		for strip_name: String in ["idle_strip.png", "walk_strip.png", "attack_strip.png"]:

@@ -13,19 +13,23 @@ const ANIM_ATTACK := "attack"
 const ANIM_RUN := "run"
 ## Export contract (asset/*/README.md): PNGs are exact 16x nearest-neighbor
 ## blocks of the logical frames, downscaled back in-engine via sprite scale.
-const EXPORT_SCALE := 16.0
+## Was 16 — chosen when strips were tiny. At 16x the baked strips decoded to
+## 515MB of RGBA, and a phone browser tab dies well under that: desktop web
+## loaded, mobile web sat on the loading bar forever (owner report). The math:
+## a 38-logical-px character on a 3x-retina phone shows at ~114 real px, so 4x
+## (152px) still covers every device with headroom, at 1/16th the memory.
+const EXPORT_SCALE := 4.0
 
 ## The widest texture every TARGET renderer will accept. Desktop GLES3 takes
 ## 16384 and refuses past it with a driver assertion that names load(), not the
 ## sheet (QA auto B1 traced dudueori's 24320px strip that way). The web build
-## runs on WebGL, where 8192 is the common device maximum — a strip past it
-## uploads as nothing and itch.io sits on the loading bar forever. The game
-## ships to the web, so the web's ceiling is the ceiling everywhere; a desktop
-## that could take more gains nothing from a texture the web build cannot boot.
+## runs on WebGL, and MOBILE WebGL commonly tops out at 4096 — a strip past it
+## uploads as nothing and the loading bar never ends. The game ships to mobile
+## web, so the smallest target's ceiling is the ceiling everywhere.
 ##
 ## The guard does not repair the sheet — it names the file, the number and the
 ## fix, so the next person reads a sentence instead of a driver assertion.
-const MAX_STRIP_PX := 8192
+const MAX_STRIP_PX := 4096
 
 ## N10-13 (owner: 산출물을 같은 이름으로 저장하지마 ... 너 때매 덮어씌워져서 다시
 ## 받아왔잖아). Built strips live in their own folder under their own names. The

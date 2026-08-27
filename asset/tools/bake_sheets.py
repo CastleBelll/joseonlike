@@ -47,7 +47,7 @@ KEEP = ROOT / "new_asset" / "source" / "sheets"
 ## SpriteSheet.BUILD_DIR / IDLE_STRIP / WALK_STRIP — the engine looks here first
 ## and falls back to the drop-in-place names for art not yet baked.
 BUILD_DIR = "build"
-EXPORT_SCALE = 16          # SpriteSheet.EXPORT_SCALE
+EXPORT_SCALE = 4           # SpriteSheet.EXPORT_SCALE — see its comment
 FRAME_PAD = 0.06           # empty margin kept around the figure, per side
 
 
@@ -201,7 +201,7 @@ def uniform_cuts(profile, count):
 ## strip past it made itch.io hang on the loading bar forever: the texture
 ## upload fails and the boot never completes. The game ships to the web, so the
 ## web's ceiling is the ceiling.
-MAX_STRIP_PX = 8192
+MAX_STRIP_PX = 4096
 
 
 def thin_frames(frames, keep):
