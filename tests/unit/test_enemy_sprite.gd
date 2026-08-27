@@ -131,14 +131,20 @@ func _load_monsters() -> Dictionary:
 
 
 func test_the_texture_limit_is_the_one_the_renderer_enforces() -> bool:
-	# QA (auto, b735bc0 B1): a 24320px walk strip failed at the driver, and the
-	# error named load() rather than the sheet. The guard turns that into a
-	# sentence naming the file and the fix; this pins the number it guards.
-	var passed: bool = SpriteSheet.MAX_STRIP_PX == 16384
-	# And it has to be a real ceiling for the export contract: a 16-frame cycle
-	# of 1024px cells is exactly at it, one of 1520px cells is past it.
-	passed = passed and 16 * 1024 <= SpriteSheet.MAX_STRIP_PX
-	passed = passed and 16 * 1520 > SpriteSheet.MAX_STRIP_PX
+	# QA (auto, b735bc0 B1): a 24320px strip failed at the desktop driver. Then
+	# itch.io hung on its loading bar forever, because the WEB build runs on
+	# WebGL where 8192 is the common device maximum — the upload fails and boot
+	# never completes. The game ships to the web, so the web's ceiling is the
+	# ceiling everywhere; this pins that number.
+	var passed: bool = SpriteSheet.MAX_STRIP_PX == 8192
+	# And every strip actually in the tree has to fit it, or the pin is theatre.
+	for dir_path: String in _declared_sprite_dirs():
+		for strip_name: String in ["idle_strip.png", "walk_strip.png", "attack_strip.png"]:
+			var path: String = dir_path.path_join("build").path_join(strip_name)
+			if not ResourceLoader.exists(path):
+				continue
+			var texture: Texture2D = load(path)
+			passed = passed and texture.get_width() <= SpriteSheet.MAX_STRIP_PX
 	if not passed:
 		push_error("test_enemy_sprite: the strip width ceiling moved")
 	return passed

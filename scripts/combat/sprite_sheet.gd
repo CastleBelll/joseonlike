@@ -15,15 +15,17 @@ const ANIM_RUN := "run"
 ## blocks of the logical frames, downscaled back in-engine via sprite scale.
 const EXPORT_SCALE := 16.0
 
-## The widest texture the renderer will accept. project.godot runs
-## gl_compatibility on desktop AND mobile, and GLES3 refuses anything past this
-## with a driver-level "Condition p_width > 16384 is true" and a backtrace that
-## names load(), not the sheet. QA (auto, b735bc0 B1) traced one that way:
-## dudueori/walk.png at 24320x1520, sixteen 1520px frames in a row.
+## The widest texture every TARGET renderer will accept. Desktop GLES3 takes
+## 16384 and refuses past it with a driver assertion that names load(), not the
+## sheet (QA auto B1 traced dudueori's 24320px strip that way). The web build
+## runs on WebGL, where 8192 is the common device maximum — a strip past it
+## uploads as nothing and itch.io sits on the loading bar forever. The game
+## ships to the web, so the web's ceiling is the ceiling everywhere; a desktop
+## that could take more gains nothing from a texture the web build cannot boot.
 ##
 ## The guard does not repair the sheet — it names the file, the number and the
 ## fix, so the next person reads a sentence instead of a driver assertion.
-const MAX_STRIP_PX := 16384
+const MAX_STRIP_PX := 8192
 
 ## N10-13 (owner: 산출물을 같은 이름으로 저장하지마 ... 너 때매 덮어씌워져서 다시
 ## 받아왔잖아). Built strips live in their own folder under their own names. The

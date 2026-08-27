@@ -195,10 +195,13 @@ def uniform_cuts(profile, count):
             for i in range(count)]
 
 
-## Widest texture GLES3 will accept — the same ceiling SpriteSheet.MAX_STRIP_PX
-## guards at load time, restated here so a bake cannot produce a file the engine
-## will refuse.
-MAX_STRIP_PX = 16384
+## Widest texture every TARGET will accept — the same ceiling
+## SpriteSheet.MAX_STRIP_PX guards at load time. Desktop GLES3 takes 16384, but
+## the web export runs on WebGL where 8192 is the common device maximum, and a
+## strip past it made itch.io hang on the loading bar forever: the texture
+## upload fails and the boot never completes. The game ships to the web, so the
+## web's ceiling is the ceiling.
+MAX_STRIP_PX = 8192
 
 
 def thin_frames(frames, keep):
