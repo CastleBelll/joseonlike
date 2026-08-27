@@ -990,9 +990,9 @@ func _make_pause_tab_bar() -> Control:
 		button.name = "Tab_" + tab
 		button.custom_minimum_size = Vector2(0.0, PAUSE_TAB_HEIGHT)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.add_theme_color_override("font_color", UiPalette.WOOD_TEXT)
-		button.add_theme_color_override("font_hover_color", UiPalette.WOOD_TEXT)
-		button.add_theme_color_override("font_pressed_color", UiPalette.WOOD_TEXT)
+		button.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+		button.add_theme_color_override("font_hover_color", UiPalette.TEXT_ON_DARK)
+		button.add_theme_color_override("font_pressed_color", UiPalette.TEXT_ON_DARK)
 		button.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 		button.text = UiLocale.t("빌드" if tab == PAUSE_TAB_BUILD else "개조 경로")
 		button.pressed.connect(_select_pause_tab.bind(tab))
@@ -1558,5 +1558,5 @@ class ActiveButton:
 		draw_string(
 			font, center + Vector2(-text_size.x / 2.0, text_size.y * 0.35),
 			skill_name, HORIZONTAL_ALIGNMENT_CENTER, -1.0, FONT_SIZE,
-			UiPalette.WOOD_TEXT
+			UiPalette.TEXT_ON_DARK
 		)

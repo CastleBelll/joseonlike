@@ -19,8 +19,21 @@ static func apply(button: Button) -> void:
 		button.add_theme_stylebox_override(state, UiIcons.wood_button(state))
 	button.add_theme_stylebox_override("disabled", _disabled_plate())
 	button.add_theme_stylebox_override("focus", _focus_ring())
+	# QA (visual, b735bc0 H2): 1.57:1, nowhere near the 4.5:1 WCAG AA needs.
+	# WOOD_TEXT is a dark brown chosen against the old FLAT orange plate, which
+	# it clears at 5.56:1. N10-14 swapped that plate for the kit's wood plank —
+	# measured #734728 in the band a label sits in — and the text colour stayed
+	# behind, so every wood CTA in the game went nearly invisible: 출정, 수행자
+	# 선택, 계속하기, 타이틀로, 본거지로, the whole settings column.
+	#
+	# Light text on the plank measures 6.37:1. The plank is dark art now, so the
+	# label is treated as text on dark, which is what the rest of this project
+	# already does everywhere a dark surface carries type.
 	for state: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		button.add_theme_color_override(state, UiPalette.WOOD_TEXT)
+		button.add_theme_color_override(state, UiPalette.TEXT_ON_DARK)
+	# The plank art is busy, so an outline keeps the glyph edges off the grain.
+	button.add_theme_color_override("font_outline_color", UiPalette.INK)
+	button.add_theme_constant_override("outline_size", 4)
 	# QA-3: dark WOOD_TEXT was illegible on the darkened disabled plate — the
 	# "엽전 부족" CTA reads only with a light muted tone.
 	button.add_theme_color_override(

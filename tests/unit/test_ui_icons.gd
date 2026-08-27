@@ -68,3 +68,43 @@ func test_wood_button_apply_uses_chrome_and_keeps_gold_focus() -> bool:
 	if not passed:
 		push_error("test_ui_icons: WoodButton chrome states or focus ring broken")
 	return passed
+
+
+## QA (visual, b735bc0 H2): the wood CTA measured 1.57:1 against the kit plank.
+## WOOD_TEXT was picked for the old flat orange plate and stayed behind when
+## N10-14 swapped in dark wood art, so every 출정 / 계속하기 / 본거지로 went
+## nearly invisible. This pins the ratio rather than the colour, so the guard
+## survives a repaint of either side.
+const WCAG_AA := 4.5
+## Measured from asset/ui/chrome/build/plate_brown.png across the band a label
+## occupies — the average a glyph actually sits on, not the plank's extremes.
+const PLATE_BAND := Color("#734728")
+
+
+static func _relative_luminance(c: Color) -> float:
+	var parts: Array[float] = [c.r, c.g, c.b]
+	var out: Array[float] = []
+	for v: float in parts:
+		out.append(v / 12.92 if v <= 0.03928 else pow((v + 0.055) / 1.055, 2.4))
+	return 0.2126 * out[0] + 0.7152 * out[1] + 0.0722 * out[2]
+
+
+static func _contrast(a: Color, b: Color) -> float:
+	var la: float = _relative_luminance(a)
+	var lb: float = _relative_luminance(b)
+	return (maxf(la, lb) + 0.05) / (minf(la, lb) + 0.05)
+
+
+func test_wood_button_label_clears_wcag_aa_on_the_plank() -> bool:
+	var ratio: float = _contrast(UiPalette.TEXT_ON_DARK, PLATE_BAND)
+	var passed: bool = ratio >= WCAG_AA
+	if not passed:
+		push_error(
+			"test_ui_icons: wood button label is %.2f:1 on the plank, under %.1f:1"
+			% [ratio, WCAG_AA]
+		)
+	# And the colour it replaced must still fail, or this test proves nothing.
+	if _contrast(UiPalette.WOOD_TEXT, PLATE_BAND) >= WCAG_AA:
+		push_error("test_ui_icons: the plank or WOOD_TEXT moved — re-measure both")
+		return false
+	return passed

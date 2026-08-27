@@ -302,9 +302,9 @@ func _make_tab_bar() -> Control:
 		button.name = "Tab_" + tab
 		button.custom_minimum_size = Vector2(0.0, TAB_HEIGHT)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.add_theme_color_override("font_color", UiPalette.WOOD_TEXT)
-		button.add_theme_color_override("font_hover_color", UiPalette.WOOD_TEXT)
-		button.add_theme_color_override("font_pressed_color", UiPalette.WOOD_TEXT)
+		button.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
+		button.add_theme_color_override("font_hover_color", UiPalette.TEXT_ON_DARK)
+		button.add_theme_color_override("font_pressed_color", UiPalette.TEXT_ON_DARK)
 		button.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 		button.pressed.connect(_on_tab_pressed.bind(tab))
 		bar.add_child(button)
