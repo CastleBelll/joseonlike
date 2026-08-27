@@ -57,6 +57,7 @@ const STRINGS := {
 	"bestiary.appears_fmt": {"ko": "출몰: %s", "en": "Appears in: %s"},
 	"bestiary.boss": {"ko": "보스", "en": "Boss"},
 	"bestiary.branch_fmt": {"ko": "개조: %s", "en": "Mod: %s"},
+	"bestiary.recipe_level_fmt": {"ko": "Lv.%d", "en": "Lv.%d"},
 	"bestiary.camp_hint_fmt": {"ko": "괴이록에 새 기록 %d건", "en": "%d new records in the archive"},
 }
 

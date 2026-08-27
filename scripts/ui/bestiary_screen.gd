@@ -242,7 +242,9 @@ func _refresh() -> void:
 		Bestiary.KIND_LOOT:
 			rows = Bestiary.loot_rows(loot_ids, _loot, _mods, _weapons, _record, locale)
 		Bestiary.KIND_WEAPONS:
-			rows = Bestiary.weapon_rows(weapon_ids, _weapons, _mods, _record, locale)
+			rows = Bestiary.weapon_rows(
+				weapon_ids, _weapons, _mods, _record, locale, _loot
+			)
 	var fresh_ids: Array[String] = []
 	for row: Dictionary in rows:
 		_rows_box.add_child(_build_row(row))

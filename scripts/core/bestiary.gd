@@ -313,9 +313,10 @@ static func loot_rows(
 				var mod: Dictionary = mods[mod_id]
 				if String(mod.get("loot_id", "")) != loot_id:
 					continue
+				# The loot row already names the material it is about, so this
+				# line only has to say what it turns into and at what level.
 				lines.append(_recipe_line(
-					weapons, String(mod.get("weapon_id", "")),
-					String(mod.get("result_weapon", "")), clean, locale
+					weapons, String(mod.get("weapon_id", "")), mod, clean, locale
 				))
 		rows.append({
 			"id": loot_id,
@@ -331,9 +332,12 @@ static func loot_rows(
 
 ## View-model rows for the 무기 section: the weapon's mechanic in one line,
 ## then its mod branches with undiscovered ends masked.
+## B0-3 (owner: 진화 하는 방식도 제대로 느낌이 안 오고 ... 사람들이 보기도
+## 어려울 것 같고). `loot` is optional so older callers keep working; without it
+## a recipe line simply omits the material it would otherwise name.
 static func weapon_rows(
 	roster_ids: Array[String], weapons: Dictionary, mods: Dictionary,
-	record: Dictionary, locale: String
+	record: Dictionary, locale: String, loot: Dictionary = {}
 ) -> Array[Dictionary]:
 	var clean: Dictionary = normalized_record(record)
 	var discovered_ids: Array = clean[KIND_WEAPONS]
@@ -343,15 +347,22 @@ static func weapon_rows(
 		var stats: Dictionary = weapons.get(weapon_id, {})
 		var discovered: bool = discovered_ids.has(weapon_id)
 		var lines: Array[String] = []
+		# How the weapon fights is knowledge, so it stays behind the discovery.
 		if discovered:
 			lines.append(mechanic_line(String(stats.get("mechanic", "")), locale))
-			for mod_id: String in mods:
-				var mod: Dictionary = mods[mod_id]
-				if String(mod.get("weapon_id", "")) != weapon_id:
-					continue
-				lines.append(UiLocale.text("bestiary.branch_fmt") % _recipe_line(
-					weapons, weapon_id, String(mod.get("result_weapon", "")), clean, locale
-				))
+		# The recipes are NOT. They used to be inside the branch above, so a
+		# weapon you had not found yet showed no paths at all and the archive
+		# could not answer "how many are left" — the one question that makes a
+		# collection worth filling. The result name stays masked (N4-9); what is
+		# revealed is that a path exists and what it costs, which is the half a
+		# player can act on.
+		for mod_id: String in mods:
+			var mod: Dictionary = mods[mod_id]
+			if String(mod.get("weapon_id", "")) != weapon_id:
+				continue
+			lines.append(UiLocale.text("bestiary.branch_fmt") % _recipe_line(
+				weapons, weapon_id, mod, clean, locale, loot, true
+			))
 		rows.append({
 			"id": weapon_id,
 			"discovered": discovered,
@@ -374,12 +385,33 @@ static func _tier_label(tier: String, locale: String) -> String:
 	return String(entry.get(locale, entry.get("ko", tier)))
 
 
+## "환도 → ??? · 숫돌 · Lv.5" — the arrow says a path exists, the material and
+## the level say what it takes, and the result stays earned.
+## `omit_base` belongs to the weapons tab only, where the row heading already
+## names the weapon. The loot tab's heading is the MATERIAL, so dropping the
+## base there would lose which weapon the recipe even starts from.
 static func _recipe_line(
-	weapons: Dictionary, base_id: String, result_id: String,
-	clean_record: Dictionary, locale: String
+	weapons: Dictionary, base_id: String, mod: Dictionary,
+	clean_record: Dictionary, locale: String, loot: Dictionary = {},
+	omit_base: bool = false
 ) -> String:
 	var discovered: Array = clean_record[KIND_WEAPONS]
-	return "%s → %s" % [
+	var result_id: String = String(mod.get("result_weapon", ""))
+	var result_name: String = masked_name(
+		weapons.get(result_id, {}), discovered.has(result_id), locale
+	)
+	# When the base is unknown AND the row already stands for it, the heading is
+	# a "???" too — repeating it put three of them on two lines and said nothing.
+	var line: String = "%s → %s" % [
 		masked_name(weapons.get(base_id, {}), discovered.has(base_id), locale),
-		masked_name(weapons.get(result_id, {}), discovered.has(result_id), locale),
+		result_name,
 	]
+	if omit_base and not discovered.has(base_id):
+		line = "→ %s" % result_name
+	var loot_id: String = String(mod.get("loot_id", ""))
+	if not loot_id.is_empty() and loot.has(loot_id):
+		line += " · %s" % UiLocale.data_name(loot[loot_id] as Dictionary, loot_id)
+	var need: int = int(mod.get("level_required", 0))
+	if need > 1:
+		line += " · " + UiLocale.text("bestiary.recipe_level_fmt") % need
+	return line

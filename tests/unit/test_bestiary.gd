@@ -364,3 +364,121 @@ static func _load_json(path: String) -> Dictionary:
 	if data is not Dictionary:
 		return {}
 	return data
+
+
+## B0-3: the archive has to answer "how many are left", which it could not do
+## while a recipe was hidden behind the discovery of the weapon it starts from.
+const B03_WEAPONS: Dictionary = {
+	"sword": {"name_ko": "환도", "name_en": "Sword", "mechanic": "melee_arc"},
+	"sharp_sword": {"name_ko": "예리한 환도", "name_en": "Sharp Sword", "mechanic": "melee_arc"},
+}
+const B03_MODS: Dictionary = {
+	"sharp_sword_mod": {
+		"weapon_id": "sword", "loot_id": "whetstone",
+		"result_weapon": "sharp_sword", "level_required": 5,
+	},
+}
+const B03_LOOT: Dictionary = {
+	"whetstone": {"name_ko": "숫돌", "name_en": "Whetstone"},
+}
+
+
+func _b03_rows(discovered: Array) -> Array[Dictionary]:
+	var record: Dictionary = Bestiary.default_record()
+	for id: String in discovered:
+		record = Bestiary.record_discovery(
+			{"bestiary": record}, Bestiary.KIND_WEAPONS, id
+		)["profile"]["bestiary"]
+	return Bestiary.weapon_rows(
+		["sword", "sharp_sword"], B03_WEAPONS, B03_MODS, record, "ko", B03_LOOT
+	)
+
+
+func test_an_undiscovered_weapon_still_shows_that_a_path_exists() -> bool:
+	# Nothing found yet. The row is masked, but the recipe must still be listed
+	# — otherwise the archive shows no blank to fill and the count is invisible.
+	var rows: Array[Dictionary] = _b03_rows([])
+	var base: Dictionary = {}
+	for row: Dictionary in rows:
+		if String(row.get("id", "")) == "sword":
+			base = row
+	var lines: Array = base.get("lines", [])
+	var joined: String = "\n".join(PackedStringArray(lines))
+	var passed: bool = not lines.is_empty()
+	# The mechanic is knowledge and stays hidden; the recipe is not.
+	passed = passed and not joined.contains("휘두")
+	passed = passed and joined.contains("→")
+	if not passed:
+		push_error("test_bestiary: an undiscovered weapon hides its recipes")
+	return passed
+
+
+func test_the_recipe_names_its_material_and_level_but_not_its_result() -> bool:
+	var rows: Array[Dictionary] = _b03_rows(["sword"])
+	var joined: String = ""
+	for row: Dictionary in rows:
+		if String(row.get("id", "")) == "sword":
+			joined = "\n".join(PackedStringArray(row.get("lines", []) as Array))
+	# What the player can act on is public...
+	var passed: bool = joined.contains("숫돌")
+	passed = passed and joined.contains("Lv.5")
+	# ...and what they have to earn is not.
+	passed = passed and not joined.contains("예리한 환도")
+	if not passed:
+		push_error("test_bestiary: recipe hides the material or leaks the result")
+	return passed
+
+
+func test_performing_the_evolution_reveals_the_result() -> bool:
+	var joined: String = ""
+	for row: Dictionary in _b03_rows(["sword", "sharp_sword"]):
+		if String(row.get("id", "")) == "sword":
+			joined = "\n".join(PackedStringArray(row.get("lines", []) as Array))
+	var passed: bool = joined.contains("예리한 환도")
+	passed = passed and joined.contains("숫돌")
+	if not passed:
+		push_error("test_bestiary: a performed evolution stays masked")
+	return passed
+
+
+func test_recipe_survives_a_caller_with_no_loot_table() -> bool:
+	# The loot argument is optional so older callers keep working; the line
+	# then omits the material rather than printing an empty separator.
+	var rows: Array[Dictionary] = Bestiary.weapon_rows(
+		["sword"], B03_WEAPONS, B03_MODS, Bestiary.default_record(), "ko"
+	)
+	var joined: String = "\n".join(
+		PackedStringArray(rows[0].get("lines", []) as Array)
+	)
+	var passed: bool = joined.contains("→") and not joined.contains("· ·")
+	if not passed:
+		push_error("test_bestiary: recipe line breaks without a loot table")
+	return passed
+
+
+func test_only_the_weapons_tab_drops_the_redundant_base_name() -> bool:
+	# The weapons row heading IS the weapon, so a masked base there would be a
+	# third "???" saying nothing. The loot row heading is the MATERIAL, so the
+	# base has to stay or the recipe loses where it starts.
+	var record: Dictionary = Bestiary.default_record()
+	var weapon_line: String = ""
+	for row: Dictionary in Bestiary.weapon_rows(
+		["sword"], B03_WEAPONS, B03_MODS, record, "ko", B03_LOOT
+	):
+		weapon_line = "\n".join(PackedStringArray(row.get("lines", []) as Array))
+	var passed: bool = weapon_line.contains("→ ???")
+	passed = passed and not weapon_line.contains("??? → ???")
+	# The loot tab still gates its recipes behind finding the material, which is
+	# right: a material you have never seen is not something you can act on.
+	var found_loot: Dictionary = Bestiary.record_discovery(
+		{"bestiary": record}, Bestiary.KIND_LOOT, "whetstone"
+	)["profile"]["bestiary"]
+	var loot_line: String = ""
+	for row: Dictionary in Bestiary.loot_rows(
+		["whetstone"], B03_LOOT, B03_MODS, B03_WEAPONS, found_loot, "ko"
+	):
+		loot_line = "\n".join(PackedStringArray(row.get("lines", []) as Array))
+	passed = passed and loot_line.contains("??? → ???")
+	if not passed:
+		push_error("test_bestiary: base-name omission leaked into the loot tab")
+	return passed
