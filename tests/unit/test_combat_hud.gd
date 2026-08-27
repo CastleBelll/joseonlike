@@ -21,7 +21,9 @@ func test_build_and_update() -> bool:
 	var timer: Label = hud.get_node("TimerLabel")
 	passed = passed and timer.text == "0:00"
 	hud.set_level(3)
-	passed = passed and (hud.get_node("LevelLabel") as Label).text == "Lv.3"
+	# The label carries the NUMBER; whether it also carries the word depends on
+	# whether the kit cap already says it (see test_the_level_is_stated_once).
+	passed = passed and (hud.get_node("LevelLabel") as Label).text.contains("3")
 	hud.set_kills(35)
 	passed = passed and (hud.get_node("Counters/Kills/Value") as Label).text == "35"
 	hud.set_gold(1)
@@ -518,4 +520,25 @@ func test_the_boss_bar_joins_the_stack_instead_of_covering_it() -> bool:
 	hud.free()
 	if not passed:
 		push_error("test_combat_hud: the boss bar still fights the player's band")
+	return passed
+
+
+func test_the_level_is_stated_once() -> bool:
+	# QA (visual, b735bc0 M7): the kit's xp cap has "Lv." drawn into it and the
+	# label under it repeated the word — two things saying level, and the one
+	# carrying the word had no number in it.
+	var hud := CombatHud.new()
+	hud.build_ui()
+	hud.set_level(12)
+	var label: Label = hud.get_node("LevelLabel")
+	var passed: bool = label.text.contains("12")
+	if hud.get_node("XpBar").get_node_or_null("Cap") != null:
+		# The cap says the word, so the label must not say it again.
+		passed = passed and not label.text.contains("Lv")
+	else:
+		# No art, no word anywhere else — the label has to carry it.
+		passed = passed and label.text.contains("Lv")
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: the level readout says its own name twice")
 	return passed

@@ -319,8 +319,20 @@ func _hits_button(node: Node, point: Vector2) -> bool:
 	return false
 
 
+## QA (visual, b735bc0 M7): the level read twice — the kit's xp cap has "Lv."
+## drawn into it and the label under it repeated the word before the number. Two
+## things saying level, and the one with the word carried no value.
+##
+## The cap owns the word when it is there, so the label carries only the number.
+## Without the kit art there is no word anywhere, and the label says it instead.
 func set_level(level: int) -> void:
-	_level_label.text = "Lv.%d" % level
+	_level_label.text = (
+		str(level) if _has_level_cap() else "Lv.%d" % level
+	)
+
+
+func _has_level_cap() -> bool:
+	return _xp_bar != null and _xp_bar.get_node_or_null("Cap") != null
 
 
 func set_xp(current: int, needed: int) -> void:
