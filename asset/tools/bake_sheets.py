@@ -116,11 +116,14 @@ ACTORS = [
 ## thing changes size the moment it starts walking (powder_dokkaebi did exactly
 ## that at 37.5%).
 ##
-## attack.png ships for the boss and the general wraith and is NOT baked: no
-## animation in the engine plays it yet, and a built strip nothing reads is a
-## file that goes stale without anyone noticing.
-## Only the boss needs thinning; see Sheet.keep_frames for why.
+## attack.png ships for the two stage bosses and is baked alongside the rest now
+## that Enemy plays it (owner: 두두리랑 밤2 보스가 공격할 때 모션 취하게).
+## Only the tallest subjects need thinning; see Sheet.keep_frames for why.
 _KEEP = {"dudueori": 8}
+## Bosses that also ship an attack sheet. The stage plays it when a pattern
+## fires, so the cycle has to be short enough to land inside the telegraph
+## rather than trailing after the hit.
+_ATTACK = {"dudueori", "general_wraith"}
 
 MONSTER_HEIGHTS = [
     ("forest_goblin", 30.0),
@@ -136,7 +139,7 @@ MONSTER_HEIGHTS = [
 ]
 
 for _name, _h in MONSTER_HEIGHTS:
-    ACTORS.append((_name, _h, [
+    _sheets = [
         Sheet(f"asset/monsters/{_name}/idle.png", "idle_strip.png", None, _h),
         # NOT share_scale: the idle is one big drawing and the walk is a grid of
         # small cells, so the subject sits at a different scale in each source.
@@ -145,7 +148,13 @@ for _name, _h in MONSTER_HEIGHTS:
         # which is the thing that has to match.
         Sheet(f"asset/monsters/{_name}/walk.png", "walk_strip.png", (4, 4), _h,
               share_scale=False, keep_frames=_KEEP.get(_name, 0)),
-    ]))
+    ]
+    if _name in _ATTACK:
+        _sheets.append(Sheet(
+            f"asset/monsters/{_name}/attack.png", "attack_strip.png", (4, 4), _h,
+            share_scale=False, keep_frames=_KEEP.get(_name, 0),
+        ))
+    ACTORS.append((_name, _h, _sheets))
 
 
 def bands(mask, gap=0, min_len=8):

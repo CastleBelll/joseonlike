@@ -142,3 +142,37 @@ func test_the_texture_limit_is_the_one_the_renderer_enforces() -> bool:
 	if not passed:
 		push_error("test_enemy_sprite: the strip width ceiling moved")
 	return passed
+
+
+## Owner: 두두리랑 밤2 보스가 공격할 때 모션 취하게. The two stage bosses ship an
+## attack sheet; nothing else does, and asking for one that is not there must be
+## a quiet no rather than a broken animation.
+func test_only_the_stage_bosses_carry_an_attack_cycle() -> bool:
+	var stages: Dictionary = JSON.parse_string(
+		FileAccess.get_file_as_string("res://data/stages.json")
+	)
+	var monsters: Dictionary = _load_monsters()
+	var boss_ids: Array[String] = []
+	for stage_id: String in stages:
+		var boss: String = String((stages[stage_id] as Dictionary).get("boss_id", ""))
+		if not boss.is_empty() and not boss_ids.has(boss):
+			boss_ids.append(boss)
+	var passed: bool = not boss_ids.is_empty()
+	for monster_id: String in monsters:
+		var sprite_dir: String = String(
+			(monsters[monster_id] as Dictionary).get("sprite", "")
+		)
+		if sprite_dir.is_empty():
+			continue
+		var frames := SpriteFrames.new()
+		var built: bool = SpriteSheet.add_attack(frames, sprite_dir, 14.0)
+		if boss_ids.has(monster_id):
+			passed = passed and built
+			# One shot: an attack that loops reads as a stuck sprite.
+			passed = passed and not frames.get_animation_loop(SpriteSheet.ANIM_ATTACK)
+			passed = passed and frames.get_frame_count(SpriteSheet.ANIM_ATTACK) > 1
+		else:
+			passed = passed and not built
+	if not passed:
+		push_error("test_enemy_sprite: attack cycles are on the wrong monsters")
+	return passed

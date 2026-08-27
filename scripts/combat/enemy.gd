@@ -99,6 +99,8 @@ var _status_overlay: StatusOverlay
 var _sprite: AnimatedSprite2D
 var _has_art := false
 var _size_scale: float = 1.0  # N4-2: elite variants render bigger
+## True while a one-shot attack cycle is playing and owns the sprite.
+var _attacking: bool = false
 var _facing: int = PlayerMotion.FACING_RIGHT
 var _shape: CollisionShape2D
 var _block_normal := Vector2.ZERO
@@ -311,6 +313,11 @@ func _apply_visual(sprite_dir: String) -> void:
 
 ## Cached per sprite directory. The boss ships a 2-frame idle_breathe strip
 ## that replaces the static idle when present.
+## Faster than the walk: a telegraphed swing has to read as a swing, and the
+## cycle has to be done before the hit it announces lands.
+const ATTACK_FPS := 14.0
+
+
 static func frames_for(sprite_dir: String) -> SpriteFrames:
 	if _frames_cache.has(sprite_dir):
 		return _frames_cache[sprite_dir]
@@ -325,8 +332,25 @@ static func frames_for(sprite_dir: String) -> SpriteFrames:
 		SpriteSheet.strip_path(sprite_dir, SpriteSheet.WALK_STRIP, "walk.png"),
 		WALK_FPS, IDLE_FPS
 	)
+	# Bosses ship an attack cycle; nothing else does, and asking is cheaper than
+	# maintaining a list of who has one.
+	SpriteSheet.add_attack(frames, sprite_dir, ATTACK_FPS)
 	_frames_cache[sprite_dir] = frames
 	return frames
+
+
+## Plays the attack cycle once, if this monster has one. The stage calls it when
+## a boss pattern fires, so the motion lands with the telegraph rather than
+## after the hit. Returns false when there is no attack art, which is every
+## monster but the two stage bosses.
+func play_attack() -> bool:
+	if not _has_art or _sprite.sprite_frames == null:
+		return false
+	if not _sprite.sprite_frames.has_animation(SpriteSheet.ANIM_ATTACK):
+		return false
+	_attacking = true
+	_sprite.play(SpriteSheet.ANIM_ATTACK)
+	return true
 
 
 func _physics_process(delta: float) -> void:
@@ -636,6 +660,12 @@ func _update_visual_motion() -> void:
 	_visual.scale.x = float(_facing) * absf(_visual.scale.x) if is_shadow() 		else float(_facing)
 	if not _has_art:
 		return
+	# The attack owns the sprite until it finishes; otherwise the very next
+	# physics frame would replace it with walk and the motion would never show.
+	if _attacking:
+		if _sprite.is_playing():
+			return
+		_attacking = false
 	if velocity != Vector2.ZERO:
 		_sprite.play(SpriteSheet.ANIM_WALK)
 	else:

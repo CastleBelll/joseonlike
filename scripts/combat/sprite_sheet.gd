@@ -6,6 +6,8 @@ extends RefCounted
 
 const ANIM_IDLE := "idle"
 const ANIM_WALK := "walk"
+## Only the stage bosses ship one. It plays once and hands the sprite back.
+const ANIM_ATTACK := "attack"
 ## Export contract (asset/*/README.md): PNGs are exact 16x nearest-neighbor
 ## blocks of the logical frames, downscaled back in-engine via sprite scale.
 const EXPORT_SCALE := 16.0
@@ -29,6 +31,7 @@ const MAX_STRIP_PX := 16384
 const BUILD_DIR := "build"
 const IDLE_STRIP := "idle_strip.png"
 const WALK_STRIP := "walk_strip.png"
+const ATTACK_STRIP := "attack_strip.png"
 
 
 ## The file an animation actually loads from: the built strip when one exists,
@@ -52,6 +55,21 @@ static func build_frames(
 	frames.set_animation_speed(ANIM_WALK, walk_fps)
 	_add_strip_frames(frames, ANIM_WALK, walk_path)
 	return frames
+
+
+## Adds a one-shot attack cycle when the sprite directory has one, and reports
+## whether it did — a caller has to know whether it can ask for the animation.
+## Non-looping on purpose: an attack that repeats reads as a stuck sprite, and
+## the whole point is that it ENDS and gives the walk back.
+static func add_attack(frames: SpriteFrames, sprite_dir: String, fps: float) -> bool:
+	var path: String = sprite_dir.path_join(BUILD_DIR).path_join(ATTACK_STRIP)
+	if not ResourceLoader.exists(path):
+		return false
+	frames.add_animation(ANIM_ATTACK)
+	frames.set_animation_speed(ANIM_ATTACK, fps)
+	frames.set_animation_loop(ANIM_ATTACK, false)
+	_add_strip_frames(frames, ANIM_ATTACK, path)
+	return frames.get_frame_count(ANIM_ATTACK) > 0
 
 
 ## N9-38: one looping animation from a single strip, for effect sprites that

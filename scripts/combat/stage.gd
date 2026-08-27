@@ -741,6 +741,10 @@ func _tick_boss_attacks(delta: float) -> void:
 	if index < 0:
 		return
 	_boss_attack_since[index] = 0.0
+	# Owner (두두리랑 밤2 보스가 공격할 때 모션 취하게): the swing plays with the
+	# telegraph, not with the damage, so the wind-up is what warns you and the
+	# ring is what tells you where. A monster with no attack art ignores this.
+	_boss.play_attack()
 	var attack: Dictionary = _boss_attacks[index]
 	var radius: float = float(attack.get("radius_px", 0.0))
 	var inner: float = float(attack.get("inner_px", 0.0))
