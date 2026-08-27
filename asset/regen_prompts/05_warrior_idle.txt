@@ -1,0 +1,83 @@
+Pixel art sprite sheet of the character in the attached reference image.
+Keep the character EXACTLY as drawn in the reference: same face, same brown
+topknot with the navy headband and the two red ribbons, same cream jeogori with
+the crimson collar and sash, same brown trousers, same white socks and tan
+shoes, same black sheathed sword at the left hip, same colour palette.
+Do not redesign, restyle or simplify anything.
+
+HOW TO BUILD IT — this is the important part
+Draw frame 1 once. Then produce frames 2 to 16 by COPYING frame 1 and moving
+ONLY the chest, shoulders, head, the topknot and the two red ribbons and the hem. Everything else is
+the identical drawing, pixel for pixel, in the identical position. This is not
+16 drawings of the same character — it is one drawing with a few parts moved.
+Below the chest nothing moves at all.
+
+LAYOUT
+- One image, 1536 x 1024 pixels. Do not produce any other size.
+- An exact 4 x 4 grid: 16 cells, each exactly 384 x 256 pixels.
+- Reading order is left to right, top row first.
+- ONE FACING FOR THE WHOLE SHEET. Every cell shows the character facing the
+  SAME way. Never mirror, flip or turn the character in any frame. Do NOT split
+  the sheet into a right-facing half and a left-facing half — the game flips the
+  sprite in engine, so a left-facing frame is a wasted frame and it makes the
+  animation snap back and forth.
+- One frame per cell. No frame numbers, no labels, no grid lines, no borders,
+  no captions anywhere on the image.
+- Fully transparent background. If transparency is not possible, a solid
+  #FF00FF magenta and no magenta anywhere on the character.
+
+LAYING THE FRAMES OUT — read this, the last two sheets failed here
+This sheet is cut by software. It finds each figure by the transparent space
+around it, crops it, then rescales and re-aligns every frame on one baseline.
+So the size you draw at, the margins and the exact centring DO NOT MATTER and
+you should not fuss over them. Only these three things matter:
+- LEAVE A CLEAR TRANSPARENT GAP around every figure — between neighbours, and
+  between the figures and the outer edge of the image. Roughly a fifth of a cell
+  on every side. Two figures that touch cannot be told apart, and the cut then
+  slices through both of them.
+- NOTHING REACHES THE OUTER EDGE of the image, not the topknot, not the
+  ribbons, not the sheathed sword or its tip. A limb cut off by the edge cannot
+  be recovered; everything else can.
+- THE CHARACTER IS THE SAME SIZE IN EVERY ONE OF THE 16 FRAMES. This is the one
+  thing the cutter cannot repair: a single scale is applied to the whole sheet,
+  so a frame drawn smaller stays smaller and the character visibly shrinks and
+  grows while it animates. Same head, same body, same limbs, same proportions,
+  every frame. Draw all 16 at one comfortable size with room to spare — there
+  is nothing to gain from drawing big.
+
+HARD CONSTRAINTS — the cutter cannot fix these
+- The soles of both feet sit on one ground line, at the same height in all 16
+  frames.
+
+POSE — the reference pose, held
+- Keep exactly the standing pose and the exact facing of the reference image.
+  Do not turn the character to the side.
+- The feet, legs and hips are IDENTICAL in all 16 frames — copy them, do not
+  redraw them.
+- The sword STAYS SHEATHED at the left hip in every frame. It never changes
+  side, never leaves the sash, and never swings freely — it rides the hip,
+  tilting a few degrees. Its tip never swings behind the heel of the trailing
+  foot.
+
+THE CYCLE — one slow breath, and it must LOOP
+  1-8   inhale: chest and shoulders rise gradually, the head lifts a little.
+        Frame 8 is the top of the breath.
+  9-16  exhale: everything settles back down, slightly past neutral on frame
+        14, then eases back so frame 16 leads into frame 1 with no jump.
+
+AMPLITUDE — a breath, not a jump
+- Shoulders and chest move about 4 pixels total between the lowest and the
+  highest frame. Nothing moves more than that.
+- The topknot and the two red ribbons ride the body, moving 2 pixels at most.
+- The hem drifts about one frame BEHIND the body.
+- The hips, legs and feet do not move at all.
+
+EYES
+- The eyes stay open, identical, and in the same position in every frame,
+  EXCEPT a single blink: frame 13 half-closed, frame 14 fully closed, frame 15
+  half-closed again. Nothing else about the face changes.
+
+STYLE
+Pixel art. 1px black outline, flat cel shading, no gradients, no drop shadow on
+the background. Keep the palette tight and readable at small size — this is a
+game sprite, not an illustration.

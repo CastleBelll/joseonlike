@@ -236,6 +236,9 @@ func _stage_ready_field() -> void:
 	# N9-6 infinite field: no bounds — the ground already follows the camera
 	# (N3-16) and props stream in per chunk as the player travels.
 	_player.bounds = Rect2()
+	# Owner: 본거지에서만 걷고 출정은 뛰어야지. A stage is the 출정 — the camp
+	# leaves this false and keeps the walk.
+	_player.running = true
 	# randi() is auto-seeded per process start, so every run scatters a fresh
 	# field layout; tests drive StageField.generate with fixed seeds instead.
 	# Ground and props share one seed so a run's tiles and prop scatter match.

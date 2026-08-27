@@ -17,7 +17,11 @@ const SPRITE_EXPORT_SCALE := SpriteSheet.EXPORT_SCALE
 ## derives the count from the strip itself; this constant exists so a test can
 ## assert the art and the code still agree — which is exactly what caught the
 ## mismatch when the new sheet landed.
-const WALK_FRAME_COUNT := 16
+## Smallest cycle that still reads as movement. The real count comes from the
+## sheet — the owner has shipped 16, 24 and 25 frame walks — so pinning a number
+## here only breaks the suite on legitimate art, which is exactly what happened
+## when the 5x5 re-set landed.
+const WALK_FRAME_MIN := 8
 ## Doubled with the frame count so the 16-frame run keeps the 8-frame cadence.
 const WALK_FPS := 16.0
 ## The idle is a sixteen-frame breath now, so this value stopped being inert:
@@ -229,15 +233,33 @@ func take_hit(damage: float, source_name: String = "") -> bool:
 	return true
 
 
-## Walk speed_scale follows actual travel speed so slow joystick pushes read
-## as a slower stride around the WALK_FPS baseline.
+## Owner (본거지에서만 걷고 출정은 뛰어야지): the split is by PLACE, not by how
+## hard the stick is pushed. On a run you are being chased — nobody strolls
+## through that — and the camp is the one place there is nothing to run from.
+##
+## Off by default so a scene that never says which it is gets the walk, which is
+## the safe half: a walking character in combat reads as odd, a running one in
+## the camp reads as broken.
+var running: bool = false
+
+
 func _update_animation() -> void:
-	if velocity != Vector2.ZERO:
-		_sprite.play(ANIM_WALK)
-		_sprite.speed_scale = velocity.length() / _speed if _speed > 0.0 else 1.0
-	else:
+	if velocity == Vector2.ZERO:
 		_sprite.play(ANIM_IDLE)
 		_sprite.speed_scale = 1.0
+		return
+	if running and _has_run():
+		_sprite.play(SpriteSheet.ANIM_RUN)
+		_sprite.speed_scale = 1.0
+		return
+	# Walking still follows travel speed, so easing off the stick in the camp
+	# reads as slowing down rather than as a different animation.
+	_sprite.play(ANIM_WALK)
+	_sprite.speed_scale = velocity.length() / _speed if _speed > 0.0 else 1.0
+
+
+func _has_run() -> bool:
+	return _sprite.sprite_frames != null 		and _sprite.sprite_frames.has_animation(SpriteSheet.ANIM_RUN)
 
 
 ## The wrapper keeps the facing flip on Visual.scale.x = ±1 while the sprite
@@ -267,6 +289,9 @@ static func build_sprite_frames(character_id: String = "") -> SpriteFrames:
 		SpriteSheet.strip_path(sprite_dir, SpriteSheet.WALK_STRIP, "walk.png"),
 		WALK_FPS, IDLE_FPS
 	)
+	# The owner split movement in two on 2026-08-27; without the art this is a
+	# quiet no and the walk keeps doing both jobs.
+	SpriteSheet.add_run(frames, sprite_dir, WALK_FPS)
 	# N9-64 took the standing pose from the walk cycle because the separate idle
 	# drawing read as a different character the moment the player stopped. That
 	# is fixed at the source now: the breath sheet is generated FROM the idle

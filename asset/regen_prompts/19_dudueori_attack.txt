@@ -1,0 +1,72 @@
+Pixel art sprite sheet of the creature in the attached reference image.
+Keep the creature EXACTLY as drawn in the reference: same silhouette, same body,
+same horns, armour, cloth and ornaments, same eyes, same colour palette. Every
+part that exists in the reference exists in every frame, with the same number of
+pixels.
+Do not redesign, restyle or simplify anything.
+
+HOW TO BUILD IT — this is the important part
+Draw the creature ONCE, then pose that same drawing 16 times. Head, body,
+clothing, the heavy wooden club and the cloth and limbs are the same shapes and the same number of pixels in
+every frame — only their angles and positions change. This is one creature
+re-posed, not 16 separate drawings.
+
+LAYOUT
+- One image, 1536 x 1024 pixels. Do not produce any other size.
+- An exact 4 x 4 grid: 16 cells, each exactly 384 x 256 pixels.
+- Reading order is left to right, top row first.
+- ONE FACING FOR THE WHOLE SHEET. Every cell shows the character facing the
+  SAME way. Never mirror, flip or turn the character in any frame. Do NOT split
+  the sheet into a right-facing half and a left-facing half — the game flips the
+  sprite in engine, so a left-facing frame is a wasted frame and it makes the
+  animation snap back and forth.
+- One frame per cell. No frame numbers, no labels, no grid lines, no borders,
+  no captions anywhere on the image.
+- Fully transparent background. If transparency is not possible, a solid
+  #FF00FF magenta and no magenta anywhere on the creature.
+
+LAYING THE FRAMES OUT — read this, the last two sheets failed here
+This sheet is cut by software. It finds each figure by the transparent space
+around it, crops it, then rescales and re-aligns every frame on one baseline.
+So the size you draw at, the margins and the exact centring DO NOT MATTER and
+you should not fuss over them. Only these three things matter:
+- LEAVE A CLEAR TRANSPARENT GAP around every figure — between neighbours, and
+  between the figures and the outer edge of the image. Roughly a fifth of a cell
+  on every side. Two figures that touch cannot be told apart, and the cut then
+  slices through both of them.
+- NOTHING REACHES THE OUTER EDGE of the image, not the heavy wooden club at the
+  widest point of the swing. A limb cut off by the edge cannot be recovered;
+  everything else can.
+- THE CREATURE IS THE SAME SIZE IN EVERY ONE OF THE 16 FRAMES. This is the one
+  thing the cutter cannot repair: a single scale is applied to the whole sheet,
+  so a frame drawn smaller stays smaller and the creature visibly shrinks and
+  grows while it animates. Same head, same body, same limbs, same proportions,
+  every frame. Draw all 16 at one comfortable size with room to spare — there
+  is nothing to gain from drawing big.
+
+HARD CONSTRAINTS — the cutter cannot fix these
+- The GROUND LINE is at the same height in every frame, and both feet stay planted on it. The creature may lunge, but it does not leave the
+  ground and does not travel forward across the frames.
+- Strict side view, facing RIGHT in all 16 frames.
+
+THE CYCLE — one swing, and it must return to the start
+  1-4    wind-up: the heavy wooden club winds back and the weight settles onto the back foot.
+         The body twists away from the target.
+  5-6    strike: the fastest two frames — the heavy wooden club sweeps across the front of the
+         body and the arms extend fully.
+  7-10   follow-through: the heavy wooden club carries past on its own momentum and the
+         shoulders turn after it.
+  11-16  recovery: the pose returns slowly to frame 1. Frame 16 leads into
+         frame 1 with no jump.
+- Frames 5 and 6 are the impact: the pose changes MOST between 4 and 5, and
+  between 5 and 6. Everywhere else the change per frame is small. Do not space
+  the swing evenly — an even swing reads as waving, not striking.
+
+MOTION DETAIL
+- The eyes stay open and identical in every frame.
+- Cloth and any hanging ornament trail BEHIND the motion by about one frame.
+
+STYLE
+Side-view pixel art. 1px black outline, flat cel shading, no gradients, no
+drop shadow on the background. Keep the palette tight and readable at small
+size — this is a game sprite, not an illustration.

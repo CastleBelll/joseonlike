@@ -1,0 +1,69 @@
+Pixel art sprite sheet of the creature in the attached reference image.
+Keep the creature EXACTLY as drawn in the reference: same silhouette, same body,
+same horns, armour, cloth and ornaments, same eyes, same colour palette. Every
+part that exists in the reference exists in every frame, with the same number of
+pixels.
+Do not redesign, restyle or simplify anything.
+
+HOW TO BUILD IT — this is the important part
+Frames 1 to 6 are ONE drawing of the creature re-posed — same shapes, same
+number of pixels, only angles change. From frame 7 the creature is replaced by
+the blast, and from frame 13 only smoke and falling debris remain.
+
+HARD CONSTRAINTS — the cutter cannot fix these
+- The blast, its sparks, its smoke and every piece of flying debris must stay
+  well inside its own cell, with clear transparent space to the neighbours.
+  In the previous sheet the debris crossed the top edge into the cell above, so
+  cutting the sheet put one frame's fragments on top of another. If the blast
+  does not fit, draw the blast smaller.
+- The centre of the explosion stays at the same x in every frame, within 6
+  pixels. It does not travel sideways.
+- Frames 1 to 6: the creature is the same size throughout and its feet stay on
+  one ground line.
+- Strict side view, facing RIGHT in frames 1 to 6.
+
+THE CYCLE — one detonation, and it does NOT loop
+  1-3    the creature lifts the keg and the fuse catches — small, quick motion
+  4-6    it hunches over the keg, the fuse burning down, the body tensing
+  7-8    detonation: the two brightest frames, a white-hot core with the
+         creature's silhouette vanishing inside it
+  9-12   the fireball expands and cools from white to orange to deep red, with
+         debris thrown outward
+  13-16  only smoke and falling debris remain, thinning frame by frame. Frame 16
+         is nearly empty — a few last embers.
+
+LAYOUT
+- One image, 1536 x 1024 pixels. Do not produce any other size.
+- An exact 4 x 4 grid: 16 cells, each exactly 384 x 256 pixels.
+- Reading order is left to right, top row first.
+- ONE FACING FOR THE WHOLE SHEET. Every cell shows the character facing the
+  SAME way. Never mirror, flip or turn the character in any frame. Do NOT split
+  the sheet into a right-facing half and a left-facing half — the game flips the
+  sprite in engine, so a left-facing frame is a wasted frame and it makes the
+  animation snap back and forth.
+- One frame per cell. No frame numbers, no labels, no grid lines, no borders,
+  no captions anywhere on the image.
+- Fully transparent background. If transparency is not possible, a solid
+  #FF00FF magenta and no magenta anywhere on the creature.
+
+LAYING THE FRAMES OUT — read this, the last two sheets failed here
+This sheet is cut by software. It finds each figure by the transparent space
+around it, crops it, then rescales and re-aligns every frame on one baseline.
+So the size you draw at, the margins and the exact centring DO NOT MATTER and
+you should not fuss over them. Only these three things matter:
+- LEAVE A CLEAR TRANSPARENT GAP around every figure — between neighbours, and
+  between the figures and the outer edge of the image. Roughly a fifth of a cell
+  on every side. Two figures that touch cannot be told apart, and the cut then
+  slices through both of them. In the previous sheet the debris crossed into the
+  cell above, which put one frame's fragments on top of another.
+- NOTHING REACHES THE OUTER EDGE of the image, not a single spark or fragment.
+  If the blast does not fit, draw the blast smaller.
+- THE CREATURE IS THE SAME SIZE IN EVERY FRAME. This is the one thing the cutter
+  cannot repair: a single scale is applied to the whole sheet, so a frame drawn
+  smaller stays smaller and the creature visibly shrinks and grows while it
+  animates. Same head, same body, same limbs, every frame.
+
+STYLE
+Side-view pixel art. 1px black outline, flat cel shading, no gradients, no
+drop shadow on the background. Keep the palette tight and readable at small
+size — this is a game sprite, not an illustration.

@@ -87,44 +87,27 @@ class Sheet:
 ## same factor. Scaling each sheet to its own height would make the character
 ## change size between standing and running — a run's crouch is supposed to be
 ## shorter than a stand, and that difference has to survive the bake.
-ACTORS = [
-    ("taoist", 38.0, [
-        Sheet("asset/characters/taoist/breath.png", "idle_strip.png",
-              (4, 4), 38.0, "breath becomes the idle animation"),
-        Sheet("asset/characters/taoist/walk.png", "walk_strip.png", (4, 4), 38.0),
-    ]),
-    ("warrior", 38.0, [
-        Sheet("asset/characters/warrior/breath.png", "idle_strip.png",
-              (4, 4), 38.0, "breath becomes the idle animation"),
-        Sheet("asset/characters/warrior/walk.png", "walk_strip.png", (4, 4), 38.0),
-    ]),
-    ("archer", 38.0, [
-        Sheet("asset/characters/archer/breath.png", "idle_strip.png",
-              (4, 4), 38.0, "breath becomes the idle animation"),
-        Sheet("asset/characters/archer/walk.png", "walk_strip.png", (4, 4), 38.0),
-    ]),
-]
+## The 2026-08-27 re-set ships 5x5 sheets (25 frames) for everything that moves,
+## and splits the characters' movement into walk AND run. `grid=None` still marks
+## a single drawing. Frame counts are not declared: the texture ceiling thins
+## each strip to what fits (see fits_the_row), because 25 frames only survive a
+## row while the subject stays under ~36 logical px.
+GRID = (5, 5)
+CHAR_H = 38.0
 
-## The 2026-08-27 monster drop arrives in the same shape the characters do: a
-## single-frame idle and a 4x4 walk sheet. `grid=None` is what marks the idle as
-## one drawing rather than a sheet — declaring a grid it does not have is how
-## every earlier bake cut a subject in half.
-##
-## The heights are the size hierarchy the tests hold the game to: the small
-## trash below the player at 38, the heavies above it, the boss well clear of
-## everything. Both animations of one monster share a height on purpose, or the
-## thing changes size the moment it starts walking (powder_dokkaebi did exactly
-## that at 37.5%).
-##
-## attack.png ships for the two stage bosses and is baked alongside the rest now
-## that Enemy plays it (owner: 두두리랑 밤2 보스가 공격할 때 모션 취하게).
-## Only the tallest subjects need thinning; see Sheet.keep_frames for why.
-_KEEP = {"dudueori": 8}
-## Bosses that also ship an attack sheet. The stage plays it when a pattern
-## fires, so the cycle has to be short enough to land inside the telegraph
-## rather than trailing after the hit.
-_ATTACK = {"dudueori", "general_wraith"}
+ACTORS = []
+for _name in ("taoist", "warrior", "archer"):
+    ACTORS.append((_name, CHAR_H, [
+        Sheet(f"asset/characters/{_name}/breath.png", "idle_strip.png",
+              GRID, CHAR_H, "breath becomes the idle animation"),
+        Sheet(f"asset/characters/{_name}/walk.png", "walk_strip.png",
+              GRID, CHAR_H, share_scale=False),
+        Sheet(f"asset/characters/{_name}/run.png", "run_strip.png",
+              GRID, CHAR_H, "owner split run from walk", share_scale=False),
+    ]))
 
+## Both animations of one monster share a height on purpose, or the thing
+## changes size the moment it starts walking.
 MONSTER_HEIGHTS = [
     ("forest_goblin", 30.0),
     ("cursed_hound", 30.0),
@@ -138,21 +121,26 @@ MONSTER_HEIGHTS = [
     ("dudueori", 84.0),
 ]
 
+## Extra one-shot cycles, by the file that carries them. The stage plays attack
+## when a boss pattern fires; bombing belongs to the powder dokkaebi's suicide
+## and has no consumer yet, so it is baked but not wired (see TASKS).
+EXTRA = {
+    "dudueori": [("attack.png", "attack_strip.png")],
+    "general_wraith": [("attack.png", "attack_strip.png")],
+    "powder_dokkaebi": [("bombing.png", "bombing_strip.png")],
+}
+
 for _name, _h in MONSTER_HEIGHTS:
     _sheets = [
         Sheet(f"asset/monsters/{_name}/idle.png", "idle_strip.png", None, _h),
         # NOT share_scale: the idle is one big drawing and the walk is a grid of
         # small cells, so the subject sits at a different scale in each source.
-        # Reusing the idle's scale shrank every walk cycle to a sixth of its
-        # height. Each sheet normalises to the same LOGICAL height instead,
-        # which is the thing that has to match.
-        Sheet(f"asset/monsters/{_name}/walk.png", "walk_strip.png", (4, 4), _h,
-              share_scale=False, keep_frames=_KEEP.get(_name, 0)),
+        Sheet(f"asset/monsters/{_name}/walk.png", "walk_strip.png", GRID, _h,
+              share_scale=False),
     ]
-    if _name in _ATTACK:
+    for _src, _out in EXTRA.get(_name, []):
         _sheets.append(Sheet(
-            f"asset/monsters/{_name}/attack.png", "attack_strip.png", (4, 4), _h,
-            share_scale=False, keep_frames=_KEEP.get(_name, 0),
+            f"asset/monsters/{_name}/{_src}", _out, GRID, _h, share_scale=False,
         ))
     ACTORS.append((_name, _h, _sheets))
 
@@ -213,6 +201,20 @@ def thin_frames(frames, keep):
     return [frames[min(int(i * step), len(frames) - 1)] for i in range(keep)]
 
 
+def fits_the_row(count, side):
+    """How many frames of `side` px fit one row under the texture ceiling.
+
+    The 2026-08-27 sheets are 5x5, and 25 frames only fit while the subject
+    stays small: at 36 logical px a frame bakes to 645 and 25 of them come to
+    16125, just inside. The player at 38 is already over. Rather than hand-list
+    who has to be thinned — a list that goes stale the moment art is redrawn —
+    the ceiling decides, and the cycle keeps as many frames as it can.
+    """
+    if side <= 0:
+        return count
+    return max(min(count, MAX_STRIP_PX // side), 2)
+
+
 def cut_frames(image, grid):
     arr = np.array(image)
     alpha = arr[:, :, 3] > 16
@@ -251,6 +253,9 @@ def bake(sheet, factor, side, dry_run=False):
         print(f"  {sheet.out.name}: nothing cut")
         return None
 
+    allowed = fits_the_row(len(frames), side)
+    if allowed < len(frames):
+        frames = thin_frames(frames, allowed)
     width = side * len(frames)
     if width > MAX_STRIP_PX:
         raise SystemExit(
@@ -304,7 +309,7 @@ def main():
     for name, logical_h, sheets in ACTORS:
         missing = [s for s in sheets if not s.source.exists()]
         if missing:
-            print(f"{name}: source missing — " + ", ".join(s.source.name for s in missing))
+            print(f"{name}: source missing - " + ", ".join(s.source.name for s in missing))
             continue
         factor, side = reference_scale(sheets[0], logical_h)
         if factor is None:

@@ -8,6 +8,9 @@ const ANIM_IDLE := "idle"
 const ANIM_WALK := "walk"
 ## Only the stage bosses ship one. It plays once and hands the sprite back.
 const ANIM_ATTACK := "attack"
+## The owner split movement into two cycles on 2026-08-27. Walking is the small
+## push, running the full one.
+const ANIM_RUN := "run"
 ## Export contract (asset/*/README.md): PNGs are exact 16x nearest-neighbor
 ## blocks of the logical frames, downscaled back in-engine via sprite scale.
 const EXPORT_SCALE := 16.0
@@ -32,6 +35,7 @@ const BUILD_DIR := "build"
 const IDLE_STRIP := "idle_strip.png"
 const WALK_STRIP := "walk_strip.png"
 const ATTACK_STRIP := "attack_strip.png"
+const RUN_STRIP := "run_strip.png"
 
 
 ## The file an animation actually loads from: the built strip when one exists,
@@ -55,6 +59,21 @@ static func build_frames(
 	frames.set_animation_speed(ANIM_WALK, walk_fps)
 	_add_strip_frames(frames, ANIM_WALK, walk_path)
 	return frames
+
+
+## Adds the run cycle when the sprite directory has one, and reports whether it
+## did — without the art a caller has to keep asking for the walk. Looping, and
+## the same length as the walk it sits beside, so switching between them at speed
+## does not read as a stutter.
+static func add_run(frames: SpriteFrames, sprite_dir: String, fps: float) -> bool:
+	var path: String = sprite_dir.path_join(BUILD_DIR).path_join(RUN_STRIP)
+	if not ResourceLoader.exists(path):
+		return false
+	frames.add_animation(ANIM_RUN)
+	frames.set_animation_speed(ANIM_RUN, fps)
+	frames.set_animation_loop(ANIM_RUN, true)
+	_add_strip_frames(frames, ANIM_RUN, path)
+	return frames.get_frame_count(ANIM_RUN) > 0
 
 
 ## Adds a one-shot attack cycle when the sprite directory has one, and reports

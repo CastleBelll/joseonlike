@@ -1,0 +1,77 @@
+Pixel art sprite sheet of the creature in the attached reference image.
+Keep the creature EXACTLY as drawn in the reference: same silhouette, same body,
+same horns, armour, cloth and ornaments, same eyes, same colour palette. Every
+part that exists in the reference exists in every frame, with the same number of
+pixels.
+Do not redesign, restyle or simplify anything.
+
+HOW TO BUILD IT — this is the important part
+Draw the creature ONCE, then pose that same drawing 16 times. Head, body,
+clothing, every carried item and limbs are the same shapes and the same number of pixels in
+every frame — only their angles and positions change. This is one creature
+re-posed, not 16 separate drawings.
+
+LAYOUT
+- One image, 1536 x 1024 pixels. Do not produce any other size.
+- An exact 4 x 4 grid: 16 cells, each exactly 384 x 256 pixels.
+- Reading order is left to right, top row first.
+- ONE FACING FOR THE WHOLE SHEET. Every cell shows the character facing the
+  SAME way. Never mirror, flip or turn the character in any frame. Do NOT split
+  the sheet into a right-facing half and a left-facing half — the game flips the
+  sprite in engine, so a left-facing frame is a wasted frame and it makes the
+  animation snap back and forth.
+- One frame per cell. No frame numbers, no labels, no grid lines, no borders,
+  no captions anywhere on the image.
+- Fully transparent background. If transparency is not possible, a solid
+  #FF00FF magenta and no magenta anywhere on the creature.
+
+LAYING THE FRAMES OUT — read this, the last two sheets failed here
+This sheet is cut by software. It finds each figure by the transparent space
+around it, crops it, then rescales and re-aligns every frame on one baseline.
+So the size you draw at, the margins and the exact centring DO NOT MATTER and
+you should not fuss over them. Only these three things matter:
+- LEAVE A CLEAR TRANSPARENT GAP around every figure — between neighbours, and
+  between the figures and the outer edge of the image. Roughly a fifth of a cell
+  on every side. Two figures that touch cannot be told apart, and the cut then
+  slices through both of them.
+- NOTHING REACHES THE OUTER EDGE of the image. A limb cut off by the edge
+  cannot be recovered; everything else can.
+- THE CREATURE IS THE SAME SIZE IN EVERY ONE OF THE 16 FRAMES. This is the one
+  thing the cutter cannot repair: a single scale is applied to the whole sheet,
+  so a frame drawn smaller stays smaller and the creature visibly shrinks and
+  grows while it animates. Same head, same body, same limbs, same proportions,
+  every frame. Draw all 16 at one comfortable size with room to spare — there
+  is nothing to gain from drawing big.
+
+HARD CONSTRAINTS — the cutter cannot fix these
+- The GROUND LINE is at the same height in every frame. Whenever a paw is
+  planted, it lands on that line.
+
+- Strict side view, facing RIGHT in all 16 frames.
+
+THE CYCLE — two full four-legged strides, eight frames each, and it must LOOP
+  1  contact: front-right paw strikes ahead, hind-left pushing off behind
+  2  down: weight settles, the spine compresses SLIGHTLY — it does not crouch
+  3  pass: front-right straightens under the body, hind legs gathering forward
+  4  up: push-off, body at its highest point, no more than 11 pixels above the
+     down frame
+  5  suspension: all four paws off the ground, body extended
+  6  reach: front-left reaches forward, hind legs fully behind
+  7  pre-contact: front-left almost down, head lowering
+  8  transition: front-left about to strike — this pose leads into frame 9
+Frames 9-16 are the SECOND STRIDE of the same run, still facing RIGHT. Pose 9
+is pose 1, pose 10 is pose 2, and so on through pose 16 which is pose 8 — with
+ONLY the two diagonal leg pairs exchanging roles. The body is NOT mirrored and
+the beast does NOT turn around: it keeps running to the RIGHT for all 16 frames.
+Frame 16 must lead back into frame 1 with no jump.
+
+MOTION DETAIL
+- The head bobs no more than 6 pixels; it does not swing side to side.
+- The tail trails BEHIND the motion by about one frame and never rises above the
+  line of the back.
+- The eyes stay open and identical in every frame.
+
+STYLE
+Side-view pixel art. 1px black outline, flat cel shading, no gradients, no
+drop shadow on the background. Keep the palette tight and readable at small
+size — this is a game sprite, not an illustration.

@@ -18,7 +18,15 @@ func test_sprite_frames_contract() -> bool:
 	var passed: bool = frames.has_animation(Player.ANIM_IDLE)
 	passed = passed and frames.has_animation(Player.ANIM_WALK)
 	passed = passed and frames.get_frame_count(Player.ANIM_IDLE) > 1
-	passed = passed and frames.get_frame_count(Player.ANIM_WALK) == Player.WALK_FRAME_COUNT
+	# The count belongs to the art, not to this file: 16, 24 and 25 frame walks
+	# have all shipped. What has to hold is that it is a cycle, not a still.
+	passed = passed and frames.get_frame_count(Player.ANIM_WALK) >= Player.WALK_FRAME_MIN
+	# Owner split run from walk — where the art exists, both must be cycles and
+	# both must loop, or easing off the stick would stutter.
+	if frames.has_animation(SpriteSheet.ANIM_RUN):
+		passed = passed and frames.get_frame_count(SpriteSheet.ANIM_RUN) >= Player.WALK_FRAME_MIN
+		passed = passed and frames.get_animation_loop(SpriteSheet.ANIM_RUN)
+		passed = passed and frames.get_animation_loop(Player.ANIM_WALK)
 	passed = passed and frames.get_animation_speed(Player.ANIM_WALK) == Player.WALK_FPS
 	passed = passed and frames.get_animation_speed(Player.ANIM_IDLE) == Player.IDLE_FPS
 	if not passed:
@@ -32,7 +40,7 @@ func test_frames_are_square_and_one_size() -> bool:
 	var passed: bool = side.x == side.y and side.x > 0.0
 	for i: int in range(frames.get_frame_count(Player.ANIM_IDLE)):
 		passed = passed and frames.get_frame_texture(Player.ANIM_IDLE, i).get_size() == side
-	for i: int in range(Player.WALK_FRAME_COUNT):
+	for i: int in range(frames.get_frame_count(Player.ANIM_WALK)):
 		passed = passed and frames.get_frame_texture(Player.ANIM_WALK, i).get_size() == side
 	if not passed:
 		push_error("test_player_sprite: frames are not one square size: " + str(side))
@@ -73,3 +81,34 @@ func _drawn_height(frames: SpriteFrames, anim: String) -> float:
 		var used: Rect2i = frames.get_frame_texture(anim, i).get_image().get_used_rect()
 		tallest = maxf(tallest, float(used.size.y))
 	return tallest
+
+
+## Owner: 본거지에서만 걷고 출정은 뛰어야지. The split is by place, not by input.
+func test_running_is_a_place_not_a_joystick_push() -> bool:
+	var frames: SpriteFrames = Player.build_sprite_frames()
+	if not frames.has_animation(SpriteSheet.ANIM_RUN):
+		return true  # no run art in this checkout; nothing to guard
+	var player := Player.new()
+	player._sprite = AnimatedSprite2D.new()
+	player._sprite.sprite_frames = frames
+	player.add_child(player._sprite)
+	player._speed = 100.0
+	# Standing still is idle wherever you are.
+	player.velocity = Vector2.ZERO
+	player.running = true
+	player._update_animation()
+	var passed: bool = player._sprite.animation == Player.ANIM_IDLE
+	# Moving in the camp walks, however hard the stick is pushed...
+	player.running = false
+	player.velocity = Vector2(100.0, 0.0)
+	player._update_animation()
+	passed = passed and player._sprite.animation == Player.ANIM_WALK
+	# ...and moving on a run runs, however gently.
+	player.running = true
+	player.velocity = Vector2(12.0, 0.0)
+	player._update_animation()
+	passed = passed and player._sprite.animation == SpriteSheet.ANIM_RUN
+	player.free()
+	if not passed:
+		push_error("test_player_sprite: run/walk is not decided by place")
+	return passed

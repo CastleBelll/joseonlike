@@ -1,0 +1,91 @@
+Pixel art sprite sheet of the character in the attached reference image.
+Keep the character EXACTLY as drawn in the reference: same face, same brown
+topknot with the navy headband and the two red ribbons, same cream jeogori with
+the crimson collar and sash, same brown trousers, same white socks and tan
+shoes, same black sheathed sword at the left hip, same colour palette.
+Do not redesign, restyle or simplify anything.
+
+HOW TO BUILD IT — this is the important part
+Draw the character ONCE, then pose that same drawing 16 times. Head, body,
+clothing, the topknot, the ribbons and the sheathed sword and limbs are the same shapes and the same number of pixels in
+every frame — only their angles and positions change. This is one character
+re-posed, not 16 separate drawings.
+
+LAYOUT
+- One image, 1536 x 1024 pixels. Do not produce any other size.
+- An exact 4 x 4 grid: 16 cells, each exactly 384 x 256 pixels.
+- Reading order is left to right, top row first.
+- ONE FACING FOR THE WHOLE SHEET. Every cell shows the character facing the
+  SAME way. Never mirror, flip or turn the character in any frame. Do NOT split
+  the sheet into a right-facing half and a left-facing half — the game flips the
+  sprite in engine, so a left-facing frame is a wasted frame and it makes the
+  animation snap back and forth.
+- One frame per cell. No frame numbers, no labels, no grid lines, no borders,
+  no captions anywhere on the image.
+- Fully transparent background. If transparency is not possible, a solid
+  #FF00FF magenta and no magenta anywhere on the character.
+
+LAYING THE FRAMES OUT — read this, the last two sheets failed here
+This sheet is cut by software. It finds each figure by the transparent space
+around it, crops it, then rescales and re-aligns every frame on one baseline.
+So the size you draw at, the margins and the exact centring DO NOT MATTER and
+you should not fuss over them. Only these three things matter:
+- LEAVE A CLEAR TRANSPARENT GAP around every figure — between neighbours, and
+  between the figures and the outer edge of the image. Roughly a fifth of a cell
+  on every side. Two figures that touch cannot be told apart, and the cut then
+  slices through both of them.
+- NOTHING REACHES THE OUTER EDGE of the image, not the topknot, not the
+  ribbons, not the sheathed sword or its tip. A limb cut off by the edge cannot
+  be recovered; everything else can.
+- THE CHARACTER IS THE SAME SIZE IN EVERY ONE OF THE 16 FRAMES. This is the one
+  thing the cutter cannot repair: a single scale is applied to the whole sheet,
+  so a frame drawn smaller stays smaller and the character visibly shrinks and
+  grows while it animates. Same head, same body, same limbs, same proportions,
+  every frame. Draw all 16 at one comfortable size with room to spare — there
+  is nothing to gain from drawing big.
+
+HARD CONSTRAINTS — the cutter cannot fix these
+- The GROUND LINE is at the same height in every frame. Whenever a foot is
+  planted, its sole lands on that line. Only the airborne frames sit above it,
+  and only slightly.
+
+- Strict side view, facing RIGHT in all 16 frames.
+
+THE CYCLE — two full strides, eight frames each, and it must LOOP
+Frames 1-8, right leg leading:
+  1  contact: right foot strikes ground ahead, left leg extended behind, torso
+     leaning forward, both arms mid-swing
+  2  down: weight settles onto the right leg, the knee bends SLIGHTLY — the
+     body dips only a few pixels, it does not crouch
+  3  pass: right leg straightens under the body, left knee drives forward past
+     it, body rising
+  4  up: right foot pushes off the toe, body at its highest point, no more than
+     11 pixels above the down frame
+  5  airborne: both feet off the ground, left leg swinging forward, right leg
+     trailing back
+  6  reach: left leg extends forward preparing to land, right leg fully behind
+  7  pre-contact: left foot almost down, torso leaning further forward
+  8  transition: left foot about to strike — this pose leads into frame 9
+Frames 9-16 are the SECOND STRIDE of the same run, still facing RIGHT. Pose 9
+is pose 1, pose 10 is pose 2, and so on through pose 16 which is pose 8 — with
+ONLY the two legs exchanging roles (the leg that led in frames 1-8 now trails,
+the trailing one now leads) and the two arms exchanging with them. The body is
+NOT mirrored and the character does NOT turn around: it keeps running to the
+RIGHT for all 16 frames.
+Frame 16 must lead back into frame 1 with no jump.
+
+MOTION DETAIL
+- Arms swing opposite the legs, elbows bent.
+- The sword STAYS SHEATHED at the left hip in every frame. It never changes
+  side, never leaves the sash, and never swings freely — it rides the hip,
+  tilting a few degrees. Its tip never swings behind the heel of the trailing
+  foot.
+- Trailing cloth and hanging ornaments lag BEHIND the motion by about one frame:
+  they are still catching up when the body has already moved. They never fly
+  forward.
+- The eyes stay open and identical in every frame.
+
+STYLE
+Side-view pixel art. 1px black outline, flat cel shading, no gradients, no
+drop shadow on the background. Keep the palette tight and readable at small
+size — this is a game sprite, not an illustration.
