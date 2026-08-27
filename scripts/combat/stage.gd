@@ -383,6 +383,9 @@ func _stage_ready_field() -> void:
 	_hud.active_pressed.connect(_on_active_pressed)
 	# N9-3e: the pause overlay pulls the live build on every open.
 	_hud.build_provider = _pause_build_summary
+	# B0-1: draw the row once at spawn so the starting weapon and the three
+	# empty slots are visible before the first level-up.
+	_refresh_belongings()
 	# N6-4 floating joystick: HUD buttons keep tap priority over the stick.
 	# The level-up popup needs no entry here — it only ever opens while the
 	# tree is paused, which stops the joystick's _input entirely; a future
@@ -1205,6 +1208,7 @@ func _on_choice_picked(payload: Dictionary) -> void:
 			_evolutions += 1
 		_:
 			push_error("stage: unknown popup payload " + str(payload))
+	_refresh_belongings()
 	# N5-5: a chest reward screen consumes no pending level-up.
 	if _chest_showing:
 		_chest_showing = false
@@ -1274,6 +1278,7 @@ func _apply_weapon_mod(mod: Dictionary) -> void:
 		_run_state.inventory, _loot_data, _mods_data, _owned_levels, _replaced_weapons
 	)
 	_run_state.inventory = sweep["inventory"]
+	_refresh_belongings()
 	if int(sweep["gold"]) > 0:
 		_add_gold(int(sweep["gold"]))
 
@@ -1402,6 +1407,28 @@ func _pause_build_summary() -> Dictionary:
 		"stats": _pause_stat_lines(),
 		"evolutions": _evolution_lines(),
 	}
+
+
+## B0-1: push the HUD belongings row. Called from the places the build actually
+## moves — a level-up pick, a loot pickup, a field passive — rather than every
+## frame, because redrawing eight unchanged cells sixty times a second is work
+## for nothing. Reuses `_pause_build_summary` so the row and the pause screen
+## can never disagree about what is held.
+func _refresh_belongings() -> void:
+	if _hud == null:
+		return
+	var summary: Dictionary = _pause_build_summary()
+	var materials: Array[Dictionary] = []
+	for loot_id: String in _run_state.inventory:
+		var count: int = int(_run_state.inventory[loot_id])
+		if count <= 0:
+			continue
+		materials.append({"id": loot_id, "count": count})
+	_hud.set_belongings(
+		summary.get("weapons", []) as Array,
+		summary.get("passives", []) as Array,
+		materials,
+	)
 
 
 ## N9-25: the character sheet the pause screen shows. Every line is read from
@@ -1658,6 +1685,7 @@ func _on_loot_collected(orb: XpOrb) -> void:
 	var stats: Dictionary = _loot_data.get(loot_id, {})
 	if Loot.is_material_useful(loot_id, _mods_data, _owned_levels, _replaced_weapons):
 		_run_state.inventory = Loot.add(_run_state.inventory, loot_id)
+		_refresh_belongings()
 		if bool(stats.get("special", false)):
 			# N9-18 (owner report: "도깨비불을 얻었는데 진화가 안 나온다"):
 			# a special material is banked long before its recipe unlocks —
@@ -1928,6 +1956,7 @@ func _collect_field_passive(passive_id: String) -> void:
 	_passive_stacks[passive_id] = int(_passive_stacks.get(passive_id, 0)) + 1
 	_refresh_run_scalars()
 	_refresh_weapon_scales()
+	_refresh_belongings()
 	_float_label("%s +1" % UiLocale.data_name(entry, passive_id))
 
 

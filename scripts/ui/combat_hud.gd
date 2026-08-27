@@ -42,6 +42,29 @@ const HP_BAR_HEIGHT := 14.0
 const HP_BAR_BOTTOM := BAR_TOP + BAR_HEIGHT + HP_BAR_GAP + HP_BAR_HEIGHT
 const COUNTER_ROW_HEIGHT := 36.0
 const COUNTER_STACK_WIDTH := 144.0
+
+## B0-1 belongings row (owner: 전리품도 뭘 먹었는지 보이지도 않고). What you are
+## carrying used to exist only on the pause screen, so the answer to "what do I
+## have" cost a pause. This is the always-on version: weapon slots, passive
+## slots, and the materials picked up this run.
+##
+## It sits on the LEFT under the level label rather than on a line of its own.
+## In landscape the viewport is 540 tall and the counter stack already reaches
+## y=202 — a new full-width band below that would land near mid-screen. The gap
+## beside the counters costs no extra depth, so the row is width-clamped to stop
+## short of them instead (see `_layout_belongings`).
+const BELONGINGS_LEVEL_ROW := 22.0
+const BELONGINGS_TOP := HP_BAR_BOTTOM + UiPalette.SPACE_XS + BELONGINGS_LEVEL_ROW
+const BELONGINGS_SLOT := 22.0
+const BELONGINGS_ICON := 18.0
+const BELONGINGS_GAP := 3
+## Weapons and passives answer different questions; without a wider gap between
+## the two runs the eight cells read as one row of eight.
+const BELONGINGS_GROUP_GAP := 12
+const BELONGINGS_COUNT_FONT := 12
+## Materials are unbounded in principle and the row has a hard right edge. Past
+## this many the rest collapse into a "+N" so the slots are never pushed out.
+const BELONGINGS_MATERIAL_MAX := 4
 # 2x of the 16px logical HUD icon (asset/ui/README.md) — the capture's
 # counter icons read ~30 logical px, and 2x NEAREST stays pixel-crisp.
 const ICON_SIZE := 32.0
@@ -122,6 +145,7 @@ var _settings_popup: SettingsPopup
 ## the live build (no push-sync to drift). Returns
 ## {"weapons": [{"id", "name", "level"}], "passives": [{"name", "stacks", "max"}]}.
 var build_provider: Callable
+var _belongings: HBoxContainer
 var _boss_bar: ProgressBar
 var _vignette: DamageVignette
 var _screen_flash: ScreenFlash
@@ -132,6 +156,7 @@ func _ready() -> void:
 	build_ui()
 	# N9-152: rotation changes the width the bands center inside.
 	resized.connect(_layout_bar_bands)
+	resized.connect(_layout_belongings)
 	# Owner (모든 UI/UX는 반응형으로): the pause paper measured its band and
 	# height when the tab was picked, so a rotation while paused left the
 	# sheet sized for the old screen.
@@ -211,6 +236,7 @@ func build_ui() -> void:
 	_build_hp_bar()
 	_build_level_label()
 	_build_counters()
+	_build_belongings()
 	_build_boss_bar()
 	_build_pause_overlay()
 
@@ -458,6 +484,174 @@ func _counter_row(stack: VBoxContainer, row_name: String, icon: Control) -> Labe
 	row.add_child(value)
 	stack.add_child(row)
 	return value
+
+
+func _build_belongings() -> void:
+	_belongings = HBoxContainer.new()
+	_belongings.name = "Belongings"
+	_belongings.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_belongings.add_theme_constant_override("separation", BELONGINGS_GROUP_GAP)
+	# An HBoxContainer lays children out at their minimum size and happily
+	# overflows its own box. The width clamp below is the intent; this is what
+	# makes it true for build sizes nobody predicted — N9-55 passives past the
+	# budget, a run banking every loot type.
+	_belongings.clip_contents = true
+	_belongings.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_belongings.offset_top = BELONGINGS_TOP
+	_belongings.offset_bottom = BELONGINGS_TOP + BELONGINGS_SLOT
+	add_child(_belongings)
+	_layout_belongings()
+
+
+## Stops the row short of the counter stack so the two never overlap on a narrow
+## viewport. Re-run on resize because rotation changes what "short of" means.
+func _layout_belongings() -> void:
+	if _belongings == null:
+		return
+	_belongings.offset_left = UiPalette.SPACE_MD
+	_belongings.offset_right = -(COUNTER_STACK_WIDTH + UiPalette.SPACE_SM)
+
+
+## Always-on answer to "what am I carrying" (B0-1). `weapons` and `passives` use
+## the same entry shape the pause summary already produces, and `materials` is
+## [{"id", "count"}]. Pushed on change rather than pulled per frame — the build
+## only moves on a level-up pick or a pickup, and walking the build every frame
+## to redraw the same eight cells is work for nothing.
+func set_belongings(
+	weapons: Array, passives: Array, materials: Array
+) -> void:
+	if _belongings == null:
+		return
+	for child: Node in _belongings.get_children():
+		child.queue_free()
+	_belongings.add_child(
+		_belongings_slots(weapons, LevelUp.WEAPON_SLOTS, true)
+	)
+	_belongings.add_child(
+		_belongings_slots(passives, LevelUp.PASSIVE_SLOTS, false)
+	)
+	var carried: Control = _belongings_materials(materials)
+	if carried != null:
+		_belongings.add_child(carried)
+
+
+## One run of cells: what is held, then empty cells for what is not. The empties
+## are the point — "three of four" is the fact the pause screen used to hold, and
+## without them a full build and a half-full one look the same.
+##
+## N9-55 lets field passives exceed the slot budget on purpose, so the run is as
+## long as the entries when there are more of them than slots. Clamping there
+## would hide something the player earned by walking for it.
+func _belongings_slots(entries: Array, slots: int, is_weapon: bool) -> Control:
+	var run := HBoxContainer.new()
+	run.name = "Weapons" if is_weapon else "Passives"
+	run.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	run.add_theme_constant_override("separation", BELONGINGS_GAP)
+	var cells: int = maxi(slots, entries.size())
+	for i: int in range(cells):
+		if i < entries.size():
+			run.add_child(_belongings_cell(entries[i] as Dictionary, is_weapon))
+		else:
+			run.add_child(_belongings_cell({}, is_weapon))
+	return run
+
+
+func _belongings_cell(entry: Dictionary, is_weapon: bool) -> Control:
+	var cell := PanelContainer.new()
+	cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cell.custom_minimum_size = Vector2(BELONGINGS_SLOT, BELONGINGS_SLOT)
+	var id: String = String(entry.get("id", ""))
+	# Same grade signal the pause screen carries (N9-27/N10-15) — an empty cell
+	# takes no tint so it reads as a hole rather than a common-grade item.
+	var tint: Color = Color(1.0, 1.0, 1.0, 0.35)
+	if not id.is_empty():
+		var grade: String = String(entry.get("grade", ""))
+		tint = UiPalette.grade_color(grade) if not grade.is_empty() else Color.WHITE
+	cell.add_theme_stylebox_override("panel", _belongings_slot_style(tint))
+	if id.is_empty():
+		return cell
+	var texture: Texture2D = (
+		UiIcons.weapon_icon(id) if is_weapon else UiIcons.passive_icon(id)
+	)
+	if texture != null:
+		# badge_rect, not icon_rect: these are the 512px exports and this cell is
+		# 22px, which point sampling turns into a solid block (N9-55).
+		var rect: TextureRect = UiIcons.badge_rect(texture, BELONGINGS_ICON)
+		rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		cell.add_child(rect)
+	var stacks: int = int(entry.get("stacks", 0))
+	if stacks > 1:
+		cell.add_child(_belongings_count(stacks))
+	return cell
+
+
+func _belongings_slot_style(tint: Color) -> StyleBox:
+	var slot: StyleBox = UiIcons.slot_panel(tint)
+	if slot != null:
+		# The kit frame is a 9-slice, and a StyleBoxTexture pads its content by
+		# the texture margin unless told otherwise. Left alone, every cell comes
+		# out ~2x the declared size and the run reaches under the counter stack
+		# (caught in captures/b0-1). The frame is decoration here, not padding —
+		# custom_minimum_size is what must govern.
+		slot.set_content_margin_all(0.0)
+		return slot
+	var flat := StyleBoxFlat.new()
+	flat.bg_color = UiPalette.NIGHT_BROWN
+	flat.set_corner_radius_all(4)
+	flat.border_color = tint
+	flat.set_border_width_all(1)
+	return flat
+
+
+## Bottom-right count, drawn over the icon rather than beside it so a stacked
+## cell stays the same width as an unstacked one and the run never reflows.
+func _belongings_count(value: int) -> Label:
+	var label: Label = _label(
+		str(value), BELONGINGS_COUNT_FONT, UiPalette.TEXT_ON_DARK
+	)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	return label
+
+
+## The loot half of the row. Returns null when nothing has dropped yet — an
+## empty container would still claim the group separation and push the slots.
+func _belongings_materials(materials: Array) -> Control:
+	if materials.is_empty():
+		return null
+	var run := HBoxContainer.new()
+	run.name = "Materials"
+	run.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	run.add_theme_constant_override("separation", BELONGINGS_GAP)
+	var shown: int = mini(materials.size(), BELONGINGS_MATERIAL_MAX)
+	for i: int in range(shown):
+		var entry: Dictionary = materials[i] as Dictionary
+		var cell := PanelContainer.new()
+		cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cell.custom_minimum_size = Vector2(BELONGINGS_SLOT, BELONGINGS_SLOT)
+		cell.add_theme_stylebox_override(
+			"panel", _belongings_slot_style(Color.WHITE)
+		)
+		var texture: Texture2D = UiIcons.loot_icon(String(entry.get("id", "")))
+		if texture != null:
+			var rect: TextureRect = UiIcons.badge_rect(texture, BELONGINGS_ICON)
+			rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			cell.add_child(rect)
+		var count: int = int(entry.get("count", 0))
+		if count > 1:
+			cell.add_child(_belongings_count(count))
+		run.add_child(cell)
+	var hidden: int = materials.size() - shown
+	if hidden > 0:
+		run.add_child(
+			_label(
+				"+%d" % hidden, BELONGINGS_COUNT_FONT, UiPalette.TEXT_MUTED_ON_DARK
+			)
+		)
+	return run
 
 
 func _build_boss_bar() -> void:

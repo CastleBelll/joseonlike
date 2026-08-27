@@ -82,6 +82,48 @@ static func icon_rect(texture: Texture2D, display_size: float) -> TextureRect:
 	return rect
 
 
+## Icons ship as 512px art. Drawn small through `icon_rect` they are NEAREST
+## point-sampled, which throws away nineteen pixels in twenty and leaves a solid
+## block where the drawing was — the white squares N9-55 hit on the pickup
+## badges. This resizes ONCE per (icon, size) and keeps the result: the resize
+## averages the source instead of sampling it, so the shape survives.
+##
+## At or above the source size there is nothing to fix, so the texture is handed
+## back untouched rather than round-tripped through an Image.
+static var _badges: Dictionary = {}
+
+
+static func badge(source: Texture2D, px: int) -> Texture2D:
+	if source == null or px <= 0:
+		return source
+	if source.get_width() <= px:
+		return source
+	# Generated textures have no path to key a cache on, and they are not the
+	# 512px exports this exists for, so they pass straight through.
+	var path: String = source.resource_path
+	if path.is_empty():
+		return source
+	var key: String = "%s@%d" % [path, px]
+	if _badges.has(key):
+		return _badges[key]
+	var image: Image = source.get_image()
+	var scaled: Texture2D = source
+	if image != null:
+		image.resize(px, px, Image.INTERPOLATE_LANCZOS)
+		scaled = ImageTexture.create_from_image(image)
+	_badges[key] = scaled
+	return scaled
+
+
+## `icon_rect` for art that has to be drawn small — see `badge`.
+static func badge_rect(source: Texture2D, display_size: float) -> TextureRect:
+	var rect: TextureRect = icon_rect(badge(source, int(display_size)), display_size)
+	# The badge already sits at its display size, so smoothing beats snapping it
+	# back onto a pixel grid it no longer lines up with.
+	rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	return rect
+
+
 ## Wood button plate for one state ("normal" / "hover" / "pressed").
 ## N10-14: the kit has no per-state button art, so the three states come from
 ## one plaque tinted — normal as drawn, hover lifted, pressed sunk. Tinting one

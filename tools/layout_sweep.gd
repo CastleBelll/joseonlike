@@ -164,6 +164,7 @@ func _check_overlay(key: String, window: Vector2i, canvas: Vector2) -> void:
 			host.add_child(hud)
 			hud.set_anchors_preset(Control.PRESET_TOP_LEFT)
 			hud.size = canvas
+			_fill_belongings(hud)
 			if key == "pause":
 				# The pause paper rides its own CanvasLayer, which anchors to the
 				# real viewport — size its root to the device canvas like the
@@ -310,3 +311,21 @@ func _walk(node: Node, viewport: Rect2, label: String, list_screen: bool, inside
 					% [label, scroll.name, bar.page, bar.max_value]
 				)
 		_walk(child, viewport, label, list_screen, inside_scroll or child is ScrollContainer)
+
+
+## B0-1: the belongings row only takes width once it holds something, so an
+## unpopulated HUD passes this sweep saying nothing. Fill it with the widest
+## build the game can produce — every weapon slot taken, passives past the
+## budget (N9-55 lets a walked-to pickup exceed it), and enough loot types to
+## trip the material cap — so the overlap check is actually about this row.
+func _fill_belongings(hud: CombatHud) -> void:
+	var weapons: Array = []
+	for i: int in range(LevelUp.WEAPON_SLOTS):
+		weapons.append({"id": "sword", "grade": "epic", "level": 8})
+	var passives: Array = []
+	for i: int in range(LevelUp.PASSIVE_SLOTS + 2):
+		passives.append({"id": "attack_damage", "stacks": 9})
+	var materials: Array = []
+	for i: int in range(CombatHud.BELONGINGS_MATERIAL_MAX + 2):
+		materials.append({"id": "whetstone", "count": 9})
+	hud.set_belongings(weapons, passives, materials)

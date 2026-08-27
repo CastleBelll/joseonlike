@@ -118,3 +118,128 @@ func test_counter_and_corner_icons_use_real_textures() -> bool:
 	if not passed:
 		push_error("test_combat_hud: HUD icons are not the asset/ui textures")
 	return passed
+
+
+## B0-1 belongings row (owner: 전리품도 뭘 먹었는지 보이지도 않고). Asserts the
+## contracts, not the pixel sizes — the row has been retuned twice already and
+## pinning literals here only breaks the suite on legitimate layout work.
+func _belongings_hud(
+	weapons: Array, passives: Array, materials: Array
+) -> CombatHud:
+	var hud := CombatHud.new()
+	hud.build_ui()
+	hud.set_belongings(weapons, passives, materials)
+	return hud
+
+
+func test_empty_slots_are_drawn_so_the_budget_is_visible() -> bool:
+	# One weapon of four held: the other three must still occupy cells, because
+	# "what is left" is exactly the fact the pause screen used to hold alone.
+	var hud: CombatHud = _belongings_hud([{"id": "sword"}], [], [])
+	var run: Control = hud.get_node_or_null("Belongings/Weapons")
+	var passed: bool = run != null
+	passed = passed and run.get_child_count() == LevelUp.WEAPON_SLOTS
+	var passives: Control = hud.get_node_or_null("Belongings/Passives")
+	passed = passed and passives != null
+	passed = passed and passives.get_child_count() == LevelUp.PASSIVE_SLOTS
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: belongings row hides the empty slots")
+	return passed
+
+
+func test_field_passives_past_the_budget_are_still_drawn() -> bool:
+	# N9-55 lets a walked-to passive exceed the slot budget on purpose. Clamping
+	# the row to four would hide something the player crossed the map for.
+	var over: Array = []
+	for i: int in range(LevelUp.PASSIVE_SLOTS + 2):
+		over.append({"id": "attack_damage", "stacks": 1})
+	var hud: CombatHud = _belongings_hud([], over, [])
+	var run: Control = hud.get_node_or_null("Belongings/Passives")
+	var passed: bool = run != null and run.get_child_count() == over.size()
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: belongings row clamps overflowing passives")
+	return passed
+
+
+func test_materials_appear_and_overflow_collapses() -> bool:
+	var few: Array = [{"id": "whetstone", "count": 2}]
+	var hud: CombatHud = _belongings_hud([], [], few)
+	var run: Control = hud.get_node_or_null("Belongings/Materials")
+	var passed: bool = run != null and run.get_child_count() == 1
+	hud.free()
+	var many: Array = []
+	for i: int in range(CombatHud.BELONGINGS_MATERIAL_MAX + 3):
+		many.append({"id": "whetstone", "count": 1})
+	var over_hud: CombatHud = _belongings_hud([], [], many)
+	var over_run: Control = over_hud.get_node_or_null("Belongings/Materials")
+	# Capped cells plus exactly one "+N" label, so the slots are never pushed
+	# off the right edge no matter how many loot types a run banks.
+	passed = passed and over_run != null
+	passed = passed and over_run.get_child_count() == CombatHud.BELONGINGS_MATERIAL_MAX + 1
+	over_hud.free()
+	if not passed:
+		push_error("test_combat_hud: material cells or the +N overflow are wrong")
+	return passed
+
+
+func test_no_materials_means_no_material_node() -> bool:
+	# An empty container still claims the group separation and shifts the slots.
+	var hud: CombatHud = _belongings_hud([{"id": "sword"}], [], [])
+	var passed: bool = hud.get_node_or_null("Belongings/Materials") == null
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: empty material run should not be built")
+	return passed
+
+
+func test_row_never_reaches_under_the_counter_stack() -> bool:
+	# The counters are right-anchored; the row is left-anchored and must stop
+	# short of them at every width, which is what keeps portrait from colliding.
+	var hud: CombatHud = _belongings_hud([{"id": "sword"}], [], [])
+	var row: Control = hud.get_node("Belongings")
+	var passed: bool = row.mouse_filter == Control.MOUSE_FILTER_IGNORE
+	for width: float in [360.0, 540.0, 960.0, 1280.0]:
+		hud.size = Vector2(width, 640.0)
+		hud._layout_belongings()
+		var right: float = width + row.offset_right
+		passed = passed and right <= width - CombatHud.COUNTER_STACK_WIDTH
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: belongings row runs under the counters")
+	return passed
+
+
+func test_badge_downscales_large_art_once() -> bool:
+	# N9-55's trap: a 512px export drawn at 22px through NEAREST becomes a solid
+	# block. badge() must hand back something at the requested size, and hand
+	# back the SAME object next time rather than resizing per frame.
+	var icon: Texture2D = UiIcons.weapon_icon("sword")
+	if icon == null:
+		return true  # no art installed in this checkout; nothing to guard
+	var small: Texture2D = UiIcons.badge(icon, 22)
+	var passed: bool = small != null and small.get_width() == 22
+	passed = passed and UiIcons.badge(icon, 22) == small
+	# At or above the source size there is nothing to fix.
+	passed = passed and UiIcons.badge(icon, icon.get_width() + 8) == icon
+	if not passed:
+		push_error("test_combat_hud: badge downscale or its cache is broken")
+	return passed
+
+
+func test_cells_are_the_size_they_declare() -> bool:
+	# The kit slot frame is a 9-slice, and a StyleBoxTexture pads its content by
+	# the texture margin unless that is cleared — which silently doubled every
+	# cell and pushed the run under the counter stack (captures/b0-1). The frame
+	# is decoration, so the declared size has to be the real size.
+	var hud: CombatHud = _belongings_hud([{"id": "sword"}], [], [])
+	var cell: Control = hud.get_node("Belongings/Weapons").get_child(0)
+	var passed: bool = cell.get_combined_minimum_size().x <= CombatHud.BELONGINGS_SLOT
+	passed = passed and cell.get_combined_minimum_size().y <= CombatHud.BELONGINGS_SLOT
+	# And the row clips, so no build size can ever draw past the clamp.
+	passed = passed and (hud.get_node("Belongings") as Control).clip_contents
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: belongings cells exceed their declared size")
+	return passed
