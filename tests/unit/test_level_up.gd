@@ -846,3 +846,38 @@ func test_a_maxed_full_build_reopens_the_slots_instead_of_going_blank() -> bool:
 		SLOT_WEAPONS, SLOT_PASSIVES, owned, stacks
 	)
 	return not pool.is_empty()
+
+
+## B2-2 검륜: the warrior's second workable root. QA (play) measured the three
+## it had at 270 / 27-59 / 13-17 dps, so a run was decided by whether 월도 showed
+## up — 5 wins from 6 runs holding it, 0 from 4 without.
+func test_geomryun_belongs_to_the_melee_pool_only() -> bool:
+	var weapons: Dictionary = JSON.parse_string(
+		FileAccess.get_file_as_string("res://data/weapons.json")
+	)
+	var characters: Dictionary = JSON.parse_string(
+		FileAccess.get_file_as_string("res://data/characters.json")
+	)
+	if not weapons.has("geomryun"):
+		push_error("test_level_up: geomryun is missing from weapons.json")
+		return false
+	var entry: Dictionary = weapons["geomryun"]
+	var passed: bool = String(entry.get("category", "")) == "melee"
+	# It has to be a ROOT, not an evolution — the point is a second thing the
+	# warrior can be offered from the start.
+	passed = passed and not bool(entry.get("evolution_only", false))
+	# And the runtime has to be able to fire it, or it never enters the pool.
+	passed = passed and LevelUp.runtime_can_fire(entry)
+	# Reachable by the warrior, and by nobody whose categories exclude melee.
+	for character_id: String in characters:
+		var categories: Array = (characters[character_id] as Dictionary).get(
+			"weapon_categories", []
+		)
+		var reachable: bool = categories.has("melee")
+		if character_id == "warrior":
+			passed = passed and reachable
+		else:
+			passed = passed and not reachable
+	if not passed:
+		push_error("test_level_up: geomryun is not a warrior-only melee root")
+	return passed

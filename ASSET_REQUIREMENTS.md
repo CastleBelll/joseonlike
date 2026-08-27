@@ -135,6 +135,18 @@ is not the subject. No shadow, no ground, no text, no border.
 
 ---
 
+## 새 무기 아이콘 대기 (B2 로스터 작업 중 계속 늘어남)
+
+`validate_data`가 무기마다 `asset/ui/weapon_icons/<id>.png`를 **필수**로 요구하므로,
+새 뿌리가 들어올 때마다 임시 아이콘을 같이 만든다. 전부 32 논리px · x16 NEAREST 계약.
+
+| 무기 | 임시 아이콘 | 생성기 | 원하는 그림 |
+|---|---|---|---|
+| **검륜** 劍輪 (무사, orbit) | ○ 있음 | `asset/ui/build_geomryun_icon.py` | 검기 세 자락이 몸 주위를 도는 것. 지금은 링에 날 셋이 물린 도식이라 "돈다"는 읽히지만 검기 느낌은 없다 |
+
+앞으로 들어올 것: 당파(thrust) · 등패(bulwark) · 철퇴(returning) · 돌격창(charge) ·
+화전 · 철질려 · 비격진천뢰 · 노포 · 비도. 각각 같은 방식으로 임시본을 먼저 넣는다.
+
 ## QA가 잡은 애셋 결함 (2026-08-27, 오너: 애셋은 내가 생성중이니 체크만)
 
 자동 검사 QA · 시각 QA가 독립 worktree에서 찾은 것. 코드 쪽은 임시 가드까지 넣어뒀고
