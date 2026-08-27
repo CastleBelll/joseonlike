@@ -194,3 +194,35 @@ func test_real_stage_opening_invariants_hold() -> bool:
 	return RunFlow.opening_issues(
 		stage, monsters, float(curve["base_xp"]), float(curve["growth"])
 	).is_empty()
+
+
+## QA (play, b735bc0 BLOCKER-1): the clock alone used to grant a clear, so a
+## build that never touched the boss "won" by outlasting it — measured at 27.5
+## dps with the boss at 2400/2400 on four seeds.
+func test_timeout_over_a_living_boss_is_a_defeat() -> bool:
+	var passed: bool = RunFlow.resolve_outcome(false, false, true, true) \
+		== RunFlow.OUTCOME_DEFEAT
+	# Killing it still wins, whenever that happens.
+	passed = passed and RunFlow.resolve_outcome(false, true, true, true) \
+		== RunFlow.OUTCOME_VICTORY
+	# Dying still wins the tie.
+	passed = passed and RunFlow.resolve_outcome(true, false, true, true) \
+		== RunFlow.OUTCOME_DEFEAT
+	if not passed:
+		push_error("test_run_flow: the clock still clears a stage over a live boss")
+	return passed
+
+
+func test_a_stage_with_no_boss_is_still_won_by_outlasting_it() -> bool:
+	# Not every stage has to end in a fight; where nothing is owed, surviving
+	# the duration is the win exactly as before.
+	var passed: bool = RunFlow.resolve_outcome(false, false, true, false) \
+		== RunFlow.OUTCOME_VICTORY
+	passed = passed and RunFlow.resolve_outcome(false, false, true) \
+		== RunFlow.OUTCOME_VICTORY
+	# And an unfinished run is still unfinished.
+	passed = passed and RunFlow.resolve_outcome(false, false, false, true) \
+		== RunFlow.OUTCOME_NONE
+	if not passed:
+		push_error("test_run_flow: a bossless stage lost its timeout victory")
+	return passed

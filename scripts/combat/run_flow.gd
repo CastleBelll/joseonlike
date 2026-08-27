@@ -28,15 +28,31 @@ static func boss_spawn_time(stage: Dictionary) -> float:
 	return duration if duration > 0.0 else NO_BOSS
 
 
-## Arbiter over the three run-end conditions. Player death wins ties (dying
-## to the boss's final hit in the same frame it dies is still a defeat);
-## timeout counts as victory — the GDD's post-15:00 phase is post-clear
-## lingering, not a fail state.
-static func resolve_outcome(player_dead: bool, boss_dead: bool, time_up: bool) -> String:
+## Arbiter over the three run-end conditions. Player death wins ties (dying to
+## the boss's final hit in the same frame it dies is still a defeat).
+##
+## `boss_unfinished` says the stage HAS a boss and it is still alive. Without it
+## the clock alone granted victory, and QA (play, b735bc0 BLOCKER-1) measured a
+## 27.5 dps build clearing the stage having never landed a hit on the boss —
+## four seeds, boss at 2400/2400 every time. That rule was written when the boss
+## was the finish line and the clock ran on past it; GDD §34 describes exactly
+## that shape ("15:00 보스 이후: 소프트 인레이지 — 클리어 후 잔류 플레이"). The
+## bamboo forest spawns its boss at 340s and ends at 420s, so there is no
+## post-clear phase to linger in — the clock arrives while the boss is still
+## standing, and calling that a clear made the win rate measure survival rather
+## than whether a build could finish anything.
+##
+## A stage with no boss keeps the old behaviour: outlasting it is the win.
+static func resolve_outcome(
+	player_dead: bool, boss_dead: bool, time_up: bool,
+	boss_unfinished: bool = false
+) -> String:
 	if player_dead:
 		return OUTCOME_DEFEAT
-	if boss_dead or time_up:
+	if boss_dead:
 		return OUTCOME_VICTORY
+	if time_up:
+		return OUTCOME_DEFEAT if boss_unfinished else OUTCOME_VICTORY
 	return OUTCOME_NONE
 
 

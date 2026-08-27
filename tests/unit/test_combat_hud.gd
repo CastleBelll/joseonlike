@@ -449,3 +449,24 @@ func test_ready_and_waiting_are_told_apart() -> bool:
 	if not passed:
 		push_error("test_combat_hud: ready and waiting evolution marks look the same")
 	return passed
+
+
+func test_bar_caps_never_hang_off_the_left_edge() -> bool:
+	# QA (auto H3 / visual H5): the cap overhangs the bar by half its width, and
+	# in portrait the band is inset by less than that — so it hung off the SCREEN.
+	var hud := CombatHud.new()
+	hud.build_ui()
+	var passed: bool = true
+	for width: float in [540.0, 720.0, 960.0, 1280.0]:
+		hud.size = Vector2(width, 960.0)
+		hud._layout_bar_bands()
+		for bar_name: String in ["XpBar", "HpBar"]:
+			var bar: Control = hud.get_node(bar_name)
+			var cap: Control = bar.get_node_or_null("Cap")
+			if cap == null:
+				continue  # kit art absent in this checkout
+			passed = passed and bar.offset_left + cap.position.x >= 0.0
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: a bar cap hangs off the left edge")
+	return passed

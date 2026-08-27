@@ -486,7 +486,9 @@ func _physics_process(delta: float) -> void:
 	_stream_field_chunks()
 	_tick_boss_return(delta)
 	if _duration_sec > 0.0 and not _spawner.is_endless_run() 			and _run_elapsed >= _duration_sec:
-		_end_run(RunFlow.resolve_outcome(false, false, true))
+		_end_run(RunFlow.resolve_outcome(
+			false, false, true, _spawner.boss_unfinished(_boss)
+		))
 	if _boss != null and not CombatMath.is_dead(_boss.hp):
 		_hud.set_boss_hp(_boss.hp, _boss_hp_max)
 	for active: Dictionary in _actives:

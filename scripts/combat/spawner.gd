@@ -306,6 +306,18 @@ func _run_waves() -> void:
 
 ## The boss ignores the live cap on purpose: its arrival is a timed event,
 ## not a wave, and it must never be starved out by a full field.
+## True while this stage still owes the player a boss fight: it declares one and
+## nothing has killed it yet. The stage arbiter reads this at timeout so the
+## clock cannot hand out a clear over a boss that is still standing (QA play
+## BLOCKER-1).
+func boss_unfinished(boss: Enemy) -> bool:
+	if _boss_id.is_empty() or _boss_at_sec == RunFlow.NO_BOSS:
+		return false
+	if not _boss_spawn_done:
+		return true
+	return boss != null and not CombatMath.is_dead(boss.hp)
+
+
 func _start_boss_if_due() -> void:
 	if _boss_spawn_done or _boss_at_sec < 0.0 or _elapsed < _boss_at_sec:
 		return

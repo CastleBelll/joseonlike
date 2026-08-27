@@ -225,6 +225,7 @@ func _apply_bar_art(bar: ProgressBar, flat_fill: Color, cap_piece: String = "") 
 	if not cap_piece.is_empty():
 		var cap: TextureRect = UiIcons.kit_icon_button(cap_piece, BAR_CAP_SIZE)
 		if cap != null:
+			cap.name = "Cap"
 			cap.set_anchors_preset(Control.PRESET_CENTER_LEFT)
 			cap.position = Vector2(-BAR_CAP_SIZE * 0.5, -BAR_CAP_SIZE * 0.5)
 			bar.add_child(cap)
@@ -234,6 +235,14 @@ func _apply_bar_band(bar: Control) -> void:
 	var inset: float = maxf(BAR_MARGIN_X, (size.x - BAR_MAX_WIDTH) / 2.0)
 	bar.offset_left = inset
 	bar.offset_right = -inset
+	# QA (auto H3 / visual H5, both independently): the cap hangs half its width
+	# off the bar's left end, which is fine on a wide viewport where the band is
+	# inset by 120 — and five pixels off the SCREEN in portrait, where the inset
+	# is 8 against a 13px overhang. Pulling it in costs a little of the overhang
+	# and nothing else; letting it sit at -5 costs the left edge of the glyph.
+	var cap: Control = bar.get_node_or_null("Cap")
+	if cap != null:
+		cap.position.x = maxf(-BAR_CAP_SIZE * 0.5, -inset)
 
 
 func _layout_bar_bands() -> void:
