@@ -83,6 +83,16 @@ const BELONGINGS_MATERIAL_MAX := 4
 ## at 11 covered the weapon it was pointing at. It carries an outline instead
 ## of size so it stays readable over a bright icon or a dark one.
 const BELONGINGS_MARK_FONT := 7
+## QA (visual, b735bc0 H1/H6) reported the world drawing over the HUD. It does
+## not — a goblin passes BEHIND the pause disc, the coin draws over the slash
+## quad, and the gold digits stay whole where a spear crosses them. What is
+## true is the consequence they also named: the row sits bare on the field, so
+## whether an empty slot reads at all depends on what happens to be under it.
+## A scrim is the fix, not a layer change — dark enough to seat the cells,
+## light enough that it is not a second panel competing with the paper ones.
+const BELONGINGS_SCRIM := Color(0.05, 0.04, 0.03, 0.42)
+const BELONGINGS_SCRIM_PAD := 4.0
+const BELONGINGS_SCRIM_CORNER := 3
 ## Owner (가로모드일때 무기 가로배치하고 그 밑으로 패시브 배치): landscape
 ## splits the row in two — weapons on one line, passives and materials on
 ## the next. Portrait keeps one line, where the height matters more than
@@ -174,6 +184,7 @@ var _settings_popup: SettingsPopup
 var build_provider: Callable
 var _belongings: Control
 var _belongings_lines_box: VBoxContainer
+var _belongings_scrim: Panel
 var _belongings_held: Dictionary = {}
 var _belongings_lines: int = 1
 var _boss_bar: ProgressBar
@@ -549,6 +560,16 @@ func _build_belongings() -> void:
 	_belongings_lines_box.add_theme_constant_override(
 		"separation", BELONGINGS_LINE_GAP
 	)
+	# Behind the lines, sized to what they actually take rather than to the
+	# clamp: a scrim spanning the whole clamp would be a bar across the screen.
+	_belongings_scrim = Panel.new()
+	_belongings_scrim.name = "Scrim"
+	_belongings_scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var scrim := StyleBoxFlat.new()
+	scrim.bg_color = BELONGINGS_SCRIM
+	scrim.set_corner_radius_all(BELONGINGS_SCRIM_CORNER)
+	_belongings_scrim.add_theme_stylebox_override("panel", scrim)
+	_belongings.add_child(_belongings_scrim)
 	_belongings.add_child(_belongings_lines_box)
 	_layout_belongings()
 
@@ -564,6 +585,20 @@ func _layout_belongings() -> void:
 	if wanted != _belongings_lines and not _belongings_held.is_empty():
 		_rebuild_belongings()
 	_belongings.offset_bottom = _belongings.offset_top + _belongings_height()
+	_fit_belongings_scrim()
+
+
+## The scrim tracks the content, so it disappears with an empty run instead of
+## leaving a floating rectangle where nothing is held yet.
+func _fit_belongings_scrim() -> void:
+	if _belongings_scrim == null or _belongings_lines_box == null:
+		return
+	var demand: Vector2 = _belongings_lines_box.get_combined_minimum_size()
+	_belongings_scrim.visible = demand.x > 0.0
+	_belongings_scrim.position = Vector2(-BELONGINGS_SCRIM_PAD, -BELONGINGS_SCRIM_PAD)
+	_belongings_scrim.size = demand + Vector2(
+		BELONGINGS_SCRIM_PAD * 2.0, BELONGINGS_SCRIM_PAD * 2.0
+	)
 
 
 func _belongings_height() -> float:
@@ -655,6 +690,7 @@ func _rebuild_belongings() -> void:
 	)
 	if carried != null:
 		second.add_child(carried)
+	_fit_belongings_scrim()
 
 
 ## The run of cells with this name, wherever the current orientation put it.
