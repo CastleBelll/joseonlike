@@ -58,12 +58,20 @@ class Sheet:
     read off the contract the tests already pin, not chosen here.
     """
 
-    def __init__(self, source, out, grid, logical_h, note="", share_scale=True):
+    def __init__(self, source, out, grid, logical_h, note="", share_scale=True,
+                 keep_frames=0):
         self.source = ROOT / source
         # `out` is a bare filename: it always lands in the source's own build/
         # folder, so no call site can aim an output at a drop by accident.
         self.out = self.source.parent / BUILD_DIR / out
         self.grid = grid          # (rows, cols); None for a single-frame image
+        # 0 means every frame. A positive number keeps an evenly spaced subset,
+        # which exists for one reason: GLES3 refuses a texture wider than
+        # MAX_STRIP_PX, and a tall enough subject cannot fit its whole cycle in
+        # one row. The boss is 84 logical px, so its frames bake at 1505 and
+        # sixteen of them come to 24080 — half again over the ceiling. Dropping
+        # to eight keeps the size the hierarchy needs and still reads as a walk.
+        self.keep_frames = keep_frames
         self.logical_h = logical_h
         self.note = note
         # Share the actor's factor when this sheet was drawn at the same scale
@@ -95,19 +103,49 @@ ACTORS = [
               (4, 4), 38.0, "breath becomes the idle animation"),
         Sheet("asset/characters/archer/walk.png", "walk_strip.png", (4, 4), 38.0),
     ]),
-    ("cursed_hound", 30.0, [
-        Sheet("asset/monsters/cursed_hound/idle.png", "idle_strip.png", (4, 4), 30.0),
-        Sheet("asset/monsters/cursed_hound/walk.png", "walk_strip.png",
-              (4, 4), 30.0, "drawn at its own scale, not the idle's",
-              share_scale=False),
-    ]),
-    ("ash_wraith", 33.0, [
-        Sheet("asset/monsters/ash_wraith/idle.png", "idle_strip.png", (4, 4), 33.0),
-        Sheet("asset/monsters/ash_wraith/walk.png", "walk_strip.png",
-              (4, 4), 33.0, "drawn at its own scale, not the idle's",
-              share_scale=False),
-    ]),
 ]
+
+## The 2026-08-27 monster drop arrives in the same shape the characters do: a
+## single-frame idle and a 4x4 walk sheet. `grid=None` is what marks the idle as
+## one drawing rather than a sheet — declaring a grid it does not have is how
+## every earlier bake cut a subject in half.
+##
+## The heights are the size hierarchy the tests hold the game to: the small
+## trash below the player at 38, the heavies above it, the boss well clear of
+## everything. Both animations of one monster share a height on purpose, or the
+## thing changes size the moment it starts walking (powder_dokkaebi did exactly
+## that at 37.5%).
+##
+## attack.png ships for the boss and the general wraith and is NOT baked: no
+## animation in the engine plays it yet, and a built strip nothing reads is a
+## file that goes stale without anyone noticing.
+## Only the boss needs thinning; see Sheet.keep_frames for why.
+_KEEP = {"dudueori": 8}
+
+MONSTER_HEIGHTS = [
+    ("forest_goblin", 30.0),
+    ("cursed_hound", 30.0),
+    ("forest_spirit", 32.0),
+    ("powder_dokkaebi", 32.0),
+    ("ash_wraith", 33.0),
+    ("rusted_armor", 36.0),
+    ("geuseundae", 40.0),
+    ("bamboo_brute", 44.0),
+    ("general_wraith", 46.0),
+    ("dudueori", 84.0),
+]
+
+for _name, _h in MONSTER_HEIGHTS:
+    ACTORS.append((_name, _h, [
+        Sheet(f"asset/monsters/{_name}/idle.png", "idle_strip.png", None, _h),
+        # NOT share_scale: the idle is one big drawing and the walk is a grid of
+        # small cells, so the subject sits at a different scale in each source.
+        # Reusing the idle's scale shrank every walk cycle to a sixth of its
+        # height. Each sheet normalises to the same LOGICAL height instead,
+        # which is the thing that has to match.
+        Sheet(f"asset/monsters/{_name}/walk.png", "walk_strip.png", (4, 4), _h,
+              share_scale=False, keep_frames=_KEEP.get(_name, 0)),
+    ]))
 
 
 def bands(mask, gap=0, min_len=8):
@@ -152,6 +190,20 @@ def uniform_cuts(profile, count):
             for i in range(count)]
 
 
+## Widest texture GLES3 will accept — the same ceiling SpriteSheet.MAX_STRIP_PX
+## guards at load time, restated here so a bake cannot produce a file the engine
+## will refuse.
+MAX_STRIP_PX = 16384
+
+
+def thin_frames(frames, keep):
+    """An evenly spaced subset, first frame always included."""
+    if keep <= 0 or keep >= len(frames):
+        return frames
+    step = len(frames) / float(keep)
+    return [frames[min(int(i * step), len(frames) - 1)] for i in range(keep)]
+
+
 def cut_frames(image, grid):
     arr = np.array(image)
     alpha = arr[:, :, 3] > 16
@@ -185,12 +237,19 @@ def cut_frames(image, grid):
 
 def bake(sheet, factor, side, dry_run=False):
     image = Image.open(sheet.source).convert("RGBA")
-    frames = cut_frames(image, sheet.grid)
+    frames = thin_frames(cut_frames(image, sheet.grid), sheet.keep_frames)
     if not frames:
         print(f"  {sheet.out.name}: nothing cut")
         return None
 
-    strip = Image.new("RGBA", (side * len(frames), side), (0, 0, 0, 0))
+    width = side * len(frames)
+    if width > MAX_STRIP_PX:
+        raise SystemExit(
+            f"{sheet.out.name}: {len(frames)} frames of {side}px come to "
+            f"{width}px, past the {MAX_STRIP_PX}px texture limit. Lower "
+            f"logical_h or set keep_frames on this sheet."
+        )
+    strip = Image.new("RGBA", (width, side), (0, 0, 0, 0))
     for i, frame in enumerate(frames):
         scaled = frame.resize(
             (max(1, round(frame.width * factor)), max(1, round(frame.height * factor))),
@@ -222,7 +281,7 @@ def bake(sheet, factor, side, dry_run=False):
 def reference_scale(sheet, logical_h):
     """Scale that puts this sheet's tallest frame at `logical_h` on screen."""
     image = Image.open(sheet.source).convert("RGBA")
-    frames = cut_frames(image, sheet.grid)
+    frames = thin_frames(cut_frames(image, sheet.grid), sheet.keep_frames)
     if not frames:
         return None, None
     target_h = logical_h * EXPORT_SCALE

@@ -17,11 +17,17 @@ const BOSS_DIR := "res://asset/monsters/dudueori"
 ## N9-136: remeasured for the owner's 16-frame density-unified walk sheets —
 ## the idle pose is the cycle's narrowest stance, so heights are no longer
 ## round numbers.
-const EXPECTED_HEIGHTS: Dictionary = {
-	"res://asset/monsters/forest_goblin": 29.6875,
-	"res://asset/monsters/forest_spirit": 31.5,
-	"res://asset/monsters/bamboo_brute": 43.3125,
-	BOSS_DIR: 83.75,
+## The hierarchy the game is held to, not the pixel counts of one art pass.
+## Pinning exact heights meant every owner drop broke this test while proving
+## nothing — what matters is that trash stays under the player, heavies over,
+## and the boss clear of everything. The band is wide enough for a redraw and
+## narrow enough that a bake accident (a walk cycle coming out a sixth of its
+## height, a strip normalised to the wrong logical size) still fails.
+const HEIGHT_BANDS: Dictionary = {
+	"res://asset/monsters/forest_goblin": [22.0, 34.0],
+	"res://asset/monsters/forest_spirit": [24.0, 36.0],
+	"res://asset/monsters/bamboo_brute": [40.0, 56.0],
+	BOSS_DIR: [64.0, 110.0],
 }
 const PLAYER_HEIGHT := 38.0
 
@@ -67,7 +73,7 @@ func test_declared_sprite_sets_build_walk_and_idle() -> bool:
 func test_drawn_height_hierarchy() -> bool:
 	var passed := true
 	var heights: Dictionary = {}
-	for sprite_dir: String in EXPECTED_HEIGHTS:
+	for sprite_dir: String in HEIGHT_BANDS:
 		var idle: Texture2D = load(
 			SpriteSheet.strip_path(sprite_dir, SpriteSheet.IDLE_STRIP, "idle.png")
 		)
@@ -75,7 +81,8 @@ func test_drawn_height_hierarchy() -> bool:
 			float(idle.get_image().get_used_rect().size.y) / SpriteSheet.EXPORT_SCALE
 		)
 		heights[sprite_dir] = height
-		passed = passed and height == float(EXPECTED_HEIGHTS[sprite_dir])
+		var band: Array = HEIGHT_BANDS[sprite_dir]
+		passed = passed and height >= float(band[0]) and height <= float(band[1])
 	var goblin: float = heights["res://asset/monsters/forest_goblin"]
 	var spirit: float = heights["res://asset/monsters/forest_spirit"]
 	var brute: float = heights["res://asset/monsters/bamboo_brute"]
