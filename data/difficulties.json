@@ -6,7 +6,8 @@
     "first_run_duration_scale": 0.15,
     "first_run_spawn_scale": 0.4,
     "first_run_enemy_hp_scale": 0.6,
-    "first_run_enemy_damage_scale": 0.5
+    "first_run_enemy_damage_scale": 0.5,
+    "first_run_boss_hp_scale": 0.15
   },
   "difficulties": [
     {

@@ -96,6 +96,17 @@ static func _first_run_softened(config: Dictionary, tier: Dictionary) -> Diction
 	softened["enemy_damage_mult"] = float(tier.get("enemy_damage_mult", 1.0)) * float(
 		settings.get("first_run_enemy_damage_scale", 1.0)
 	)
+	# QA (play, cd57970 BLOCKER-1): the first run scales the CLOCK to 15% — 420s
+	# becomes 63 and the boss arrives at 51 — but the boss's hp came from
+	# boss_hp_mult, which this never touched. That left twelve seconds to remove
+	# 2400hp, needing 200 single-target dps on a starting build, and every run
+	# ended in defeat: 18 of 18 across three classes and six seeds, the best of
+	# them leaving the boss at 1854. Nobody noticed while the clock alone granted
+	# victory; the moment the boss had to actually die, the tutorial became
+	# unwinnable. The boss shrinks with the clock it has to be killed inside.
+	softened["boss_hp_mult"] = float(tier.get("boss_hp_mult", 1.0)) * float(
+		settings.get("first_run_boss_hp_scale", 1.0)
+	)
 	return softened
 
 
@@ -219,8 +230,21 @@ static func scale_monster(stats: Dictionary, tier: Dictionary, is_boss: bool) ->
 		tier.get("boss_hp_mult", 1.0) if is_boss else tier.get("enemy_hp_mult", 1.0)
 	)
 	scaled["hp"] = float(stats.get("hp", 0.0)) * hp_mult
-	scaled["damage"] = float(stats.get("damage", 0.0)) * float(tier.get("enemy_damage_mult", 1.0))
+	var damage_mult: float = float(tier.get("enemy_damage_mult", 1.0))
+	scaled["damage"] = float(stats.get("damage", 0.0)) * damage_mult
 	scaled["speed"] = float(stats.get("speed", 0.0)) * float(tier.get("enemy_speed_mult", 1.0))
+	# QA (play, cd57970 BLOCKER-1) traced the first run dying to 뿌리 솟구침, not
+	# to the clock: only the CONTACT damage above was ever scaled, and a boss
+	# does most of its killing through its patterns. 24 and 30 per hit went out
+	# unsoftened at a 105hp tutorial character, so the difficulty dial the first
+	# run turns was missing the numbers that actually kill.
+	var attacks: Array = scaled.get("attacks", []) as Array
+	for i: int in range(attacks.size()):
+		if attacks[i] is not Dictionary:
+			continue
+		var attack: Dictionary = (attacks[i] as Dictionary).duplicate()
+		attack["damage"] = float(attack.get("damage", 0.0)) * damage_mult
+		attacks[i] = attack
 	return scaled
 
 

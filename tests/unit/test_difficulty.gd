@@ -106,3 +106,57 @@ func test_reward_mult_combines_tier_and_length() -> bool:
 	return absf(
 		Difficulty.reward_mult({"gold_mult": 2.0}, {"gold_mult": 1.4}, "gold_mult") - 2.8
 	) < EPSILON
+
+
+## QA (play, cd57970 BLOCKER-1): once the boss actually had to die, the first
+## run became unwinnable — 18 defeats from 18 runs. Two of its numbers were
+## never being softened at all.
+const FIRST_RUN_TIER := {
+	"enemy_hp_mult": 1.0, "enemy_damage_mult": 0.5,
+	"boss_hp_mult": 1.0, "enemy_speed_mult": 1.0,
+}
+
+
+func test_boss_pattern_damage_is_softened_like_contact_damage() -> bool:
+	# A boss does most of its killing through patterns, and only the contact
+	# number was ever scaled — 24 and 30 per hit went out at full strength
+	# against a 105hp tutorial character.
+	var boss: Dictionary = {
+		"hp": 2400.0, "damage": 35.0, "speed": 40.0,
+		"attacks": [
+			{"id": "root_surge", "damage": 24.0},
+			{"id": "grove_wrath", "damage": 30.0},
+		],
+	}
+	var scaled: Dictionary = Difficulty.scale_monster(boss, FIRST_RUN_TIER, true)
+	var attacks: Array = scaled["attacks"]
+	var passed: bool = is_equal_approx(float(scaled["damage"]), 17.5)
+	passed = passed and is_equal_approx(float((attacks[0] as Dictionary)["damage"]), 12.0)
+	passed = passed and is_equal_approx(float((attacks[1] as Dictionary)["damage"]), 15.0)
+	# The source dictionary must not be mutated — monsters.json is shared.
+	passed = passed and is_equal_approx(
+		float((((boss["attacks"] as Array)[0]) as Dictionary)["damage"]), 24.0
+	)
+	if not passed:
+		push_error("test_difficulty: boss pattern damage is not softened")
+	return passed
+
+
+func test_the_first_run_boss_shrinks_with_the_clock_it_lives_in() -> bool:
+	# The first run scales the clock to 15%, which scales the boss WINDOW too.
+	# A boss that keeps full hp inside a sixth of the time is not a fight.
+	var config: Dictionary = Difficulty.load_config()
+	var settings: Dictionary = config.get("_config", {})
+	var duration: float = float(settings.get("first_run_duration_scale", 1.0))
+	var boss_hp: float = float(settings.get("first_run_boss_hp_scale", 1.0))
+	var passed: bool = duration < 1.0
+	# It has to shrink, and not by more than the clock did — past that the
+	# tutorial stops teaching that the boss is worth anything.
+	passed = passed and boss_hp < 1.0
+	passed = passed and boss_hp >= duration
+	if not passed:
+		push_error(
+			"test_difficulty: first-run boss hp scale %.2f does not match its %.2f clock"
+			% [boss_hp, duration]
+		)
+	return passed
