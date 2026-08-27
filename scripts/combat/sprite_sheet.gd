@@ -10,6 +10,16 @@ const ANIM_WALK := "walk"
 ## blocks of the logical frames, downscaled back in-engine via sprite scale.
 const EXPORT_SCALE := 16.0
 
+## The widest texture the renderer will accept. project.godot runs
+## gl_compatibility on desktop AND mobile, and GLES3 refuses anything past this
+## with a driver-level "Condition p_width > 16384 is true" and a backtrace that
+## names load(), not the sheet. QA (auto, b735bc0 B1) traced one that way:
+## dudueori/walk.png at 24320x1520, sixteen 1520px frames in a row.
+##
+## The guard does not repair the sheet — it names the file, the number and the
+## fix, so the next person reads a sentence instead of a driver assertion.
+const MAX_STRIP_PX := 16384
+
 ## N10-13 (owner: 산출물을 같은 이름으로 저장하지마 ... 너 때매 덮어씌워져서 다시
 ## 받아왔잖아). Built strips live in their own folder under their own names. The
 ## owner's drops keep `idle.png` / `walk.png` / `breath.png` in the sprite
@@ -86,6 +96,15 @@ static func _add_strip_frames(frames: SpriteFrames, anim: String, path: String) 
 		return
 	var side: float = strip.get_size().y
 	var count: int = int(strip.get_size().x / side)
+	if strip.get_size().x > float(MAX_STRIP_PX):
+		# Only the frames inside the limit are addressable; the rest of the
+		# texture never reached the GPU. A short cycle beats no character.
+		var fits: int = maxi(int(float(MAX_STRIP_PX) / side), 1)
+		push_warning(
+			"sprite_sheet: %s is %dpx wide, past the %dpx texture limit — using %d of %d frames. Re-export at %d frames or smaller cells."
+			% [path, int(strip.get_size().x), MAX_STRIP_PX, fits, count, fits]
+		)
+		count = fits
 	if count <= 1:
 		frames.add_frame(anim, strip)
 		return

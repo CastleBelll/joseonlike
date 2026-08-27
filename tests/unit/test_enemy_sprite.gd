@@ -121,3 +121,17 @@ func _declared_sprite_dirs() -> Array[String]:
 func _load_monsters() -> Dictionary:
 	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(MONSTERS_PATH))
 	return data if data is Dictionary else {}
+
+
+func test_the_texture_limit_is_the_one_the_renderer_enforces() -> bool:
+	# QA (auto, b735bc0 B1): a 24320px walk strip failed at the driver, and the
+	# error named load() rather than the sheet. The guard turns that into a
+	# sentence naming the file and the fix; this pins the number it guards.
+	var passed: bool = SpriteSheet.MAX_STRIP_PX == 16384
+	# And it has to be a real ceiling for the export contract: a 16-frame cycle
+	# of 1024px cells is exactly at it, one of 1520px cells is past it.
+	passed = passed and 16 * 1024 <= SpriteSheet.MAX_STRIP_PX
+	passed = passed and 16 * 1520 > SpriteSheet.MAX_STRIP_PX
+	if not passed:
+		push_error("test_enemy_sprite: the strip width ceiling moved")
+	return passed
