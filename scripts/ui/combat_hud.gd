@@ -68,6 +68,15 @@ const BELONGINGS_COUNT_FONT := 12
 ## Materials are unbounded in principle and the row has a hard right edge. Past
 ## this many the rest collapse into a "+N" so the slots are never pushed out.
 const BELONGINGS_MATERIAL_MAX := 4
+## B0-2 evolution mark, drawn in a slot's top-left so it never collides
+## with the stack count in the bottom-right. Gold when the evolution can be
+## taken right now, muted when the level gate is met but the material is
+## still out there — two states because "go find 숫돌" and "pick the card"
+## are different instructions.
+## Small on purpose: the cell is 22px around an 18px icon, and the first pass
+## at 11 covered the weapon it was pointing at. It carries an outline instead
+## of size so it stays readable over a bright icon or a dark one.
+const BELONGINGS_MARK_FONT := 7
 ## Owner (가로모드일때 무기 가로배치하고 그 밑으로 패시브 배치): landscape
 ## splits the row in two — weapons on one line, passives and materials on
 ## the next. Portrait keeps one line, where the height matters more than
@@ -682,7 +691,28 @@ func _belongings_cell(entry: Dictionary, is_weapon: bool) -> Control:
 	var stacks: int = int(entry.get("stacks", 0))
 	if stacks > 1:
 		cell.add_child(_belongings_count(stacks))
+	var mark: int = int(entry.get("evolution", LevelUp.EVOLUTION_NONE))
+	if mark != LevelUp.EVOLUTION_NONE:
+		cell.add_child(_belongings_evolution_mark(mark))
 	return cell
+
+
+## The always-on half of B0-2. A dot, not a glyph: at 22px a glyph is a smudge,
+## and what has to carry is "something is possible here", which a dot does.
+func _belongings_evolution_mark(mark: int) -> Label:
+	var label: Label = _label(
+		"●",
+		BELONGINGS_MARK_FONT,
+		UiPalette.GOLD if mark == LevelUp.EVOLUTION_READY
+			else UiPalette.TEXT_MUTED_ON_DARK
+	)
+	label.name = "EvolutionMark"
+	label.add_theme_color_override("font_outline_color", UiPalette.INK)
+	label.add_theme_constant_override("outline_size", 3)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	return label
 
 
 func _belongings_slot_style(tint: Color) -> StyleBox:

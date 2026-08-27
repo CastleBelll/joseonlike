@@ -271,6 +271,45 @@ static func _taken_passives(passive_stacks: Dictionary) -> int:
 ## recipe without staging the levels. It is NOT used in play any more: the FTUE
 ## once waived the gate on the first run, which taught a rule the second run
 ## contradicts (N9-31).
+## B0-2 evolution mark: what a HUD slot can show without a pause.
+##
+## The gate is two facts — the weapon is at its required level AND the material
+## is in the bag — and until now NEITHER was visible outside the pause screen.
+## Someone holding 숫돌 with 환도 at Lv.4 had no way to know a card was one
+## level away, and someone at Lv.5 without the material had no way to know what
+## to go looking for.
+##
+## READY beats WAITING when a weapon has several paths: "you can do something
+## right now" is the more useful of the two, and a slot has room for one mark.
+const EVOLUTION_NONE := 0
+const EVOLUTION_WAITING := 1
+const EVOLUTION_READY := 2
+
+
+static func evolution_mark(
+	weapon_id: String,
+	mods: Dictionary,
+	inventory: Dictionary,
+	owned_levels: Dictionary,
+	replaced: Array = []
+) -> int:
+	var mark: int = EVOLUTION_NONE
+	for mod_id: String in mods:
+		var mod: Dictionary = mods[mod_id]
+		if String(mod.get("weapon_id", "")) != weapon_id:
+			continue
+		var result_id: String = String(mod.get("result_weapon", ""))
+		# Already taken, or traded away earlier this run — not a path any more.
+		if owned_levels.has(result_id) or replaced.has(result_id):
+			continue
+		if int(owned_levels.get(weapon_id, 0)) < int(mod.get("level_required", 1)):
+			continue
+		if int(inventory.get(String(mod.get("loot_id", "")), 0)) > 0:
+			return EVOLUTION_READY
+		mark = EVOLUTION_WAITING
+	return mark
+
+
 static func mod_candidates(
 	mods: Dictionary,
 	inventory: Dictionary,

@@ -1389,6 +1389,12 @@ func _pause_build_summary() -> Dictionary:
 			"grade_ko": UiLocale.t(
 				String(LevelUp.GRADE_KO.get(grade, LevelUp.DEFAULT_GRADE_KO))
 			),
+			# B0-2: the HUD slot draws this, so "an evolution is possible here"
+			# and "you can do it right now" stop costing a pause.
+			"evolution": LevelUp.evolution_mark(
+				weapon_id, _mods_data, _run_state.inventory,
+				_owned_levels, _replaced_weapons
+			),
 		})
 	var passives: Array[Dictionary] = []
 	for passive_id: String in _passive_stacks:
@@ -1483,6 +1489,9 @@ func _stat_line(stat_name: String, value: String, modified: bool) -> Dictionary:
 ## the material's name and whether it is in the run inventory right now.
 func _evolution_lines() -> Array[String]:
 	var lines: Array[String] = []
+	var known_weapons: Array = Bestiary.normalized_record(
+		_profile().get("bestiary")
+	)[Bestiary.KIND_WEAPONS]
 	for mod_id: String in _mods_data:
 		var mod: Dictionary = _mods_data[mod_id]
 		var base_id: String = String(mod.get("weapon_id", ""))
@@ -1499,9 +1508,19 @@ func _evolution_lines() -> Array[String]:
 		var need: int = int(mod.get("level_required", 1))
 		var level: int = int(_owned_levels[base_id])
 		var gate: String = "" if level >= need else UiLocale.t("  Lv.%d 필요") % need
+		# B0-2 (owner: 필요 재료는 공개, 결과는 ???). This line used to name the
+		# result outright while the level-up card masked it — the same recipe
+		# read as a secret on one screen and as plain text on the other. The
+		# material and the level gate are what a player can act on, so those stay
+		# visible; the result is still earned by performing it once (N4-9).
+		var result_name: String = LevelUp.UNKNOWN_RESULT
+		if known_weapons.has(result_id):
+			result_name = UiLocale.data_name(
+				_weapons_data.get(result_id, {}) as Dictionary, result_id
+			)
 		lines.append("%s → %s · %s%s%s" % [
 			UiLocale.data_name(_weapons_data.get(base_id, {}) as Dictionary, base_id),
-			UiLocale.data_name(_weapons_data.get(result_id, {}) as Dictionary, result_id),
+			result_name,
 			UiLocale.data_name(_loot_data.get(loot_id, {}) as Dictionary, loot_id),
 			" √" if held else UiLocale.t(" 필요"),
 			gate,

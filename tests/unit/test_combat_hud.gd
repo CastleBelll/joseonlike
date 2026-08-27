@@ -302,3 +302,106 @@ func test_pause_uses_the_new_hud_sheet() -> bool:
 	if not passed:
 		push_error("test_combat_hud: pause icon is not the owner's new sheet")
 	return passed
+
+
+## B0-2: the evolution signal. The gate is two facts (level reached, material
+## held) and neither used to be visible without pausing.
+const MODS: Dictionary = {
+	"sharp_sword_mod": {
+		"weapon_id": "sword", "loot_id": "whetstone",
+		"result_weapon": "sharp_sword", "level_required": 5,
+	},
+	"ghost_sword_mod": {
+		"weapon_id": "sword", "loot_id": "ghost_iron",
+		"result_weapon": "ghost_sword", "level_required": 5,
+	},
+}
+
+
+func test_evolution_mark_needs_both_the_level_and_the_material() -> bool:
+	# Level short: nothing, however much material is in the bag.
+	var passed: bool = LevelUp.evolution_mark(
+		"sword", MODS, {"whetstone": 3}, {"sword": 4}
+	) == LevelUp.EVOLUTION_NONE
+	# Level met, material missing: say so, so the player knows what to hunt.
+	passed = passed and LevelUp.evolution_mark(
+		"sword", MODS, {}, {"sword": 5}
+	) == LevelUp.EVOLUTION_WAITING
+	# Both: it can be taken right now.
+	passed = passed and LevelUp.evolution_mark(
+		"sword", MODS, {"whetstone": 1}, {"sword": 5}
+	) == LevelUp.EVOLUTION_READY
+	# A weapon with no recipe at all never marks.
+	passed = passed and LevelUp.evolution_mark(
+		"bow", MODS, {"whetstone": 1}, {"bow": 8}
+	) == LevelUp.EVOLUTION_NONE
+	if not passed:
+		push_error("test_combat_hud: evolution_mark gate is wrong")
+	return passed
+
+
+func test_ready_wins_over_waiting_and_taken_paths_stop_counting() -> bool:
+	# Two paths, one ready: the slot has room for one mark and "you can act now"
+	# is the more useful of the two.
+	var passed: bool = LevelUp.evolution_mark(
+		"sword", MODS, {"ghost_iron": 1}, {"sword": 5}
+	) == LevelUp.EVOLUTION_READY
+	# Owning a result retires that path; the other one still counts.
+	passed = passed and LevelUp.evolution_mark(
+		"sword", MODS, {"ghost_iron": 1}, {"sword": 5, "sharp_sword": 1}
+	) == LevelUp.EVOLUTION_READY
+	# ...and holding the material for a path already taken must NOT light up:
+	# the whetstone is spent knowledge here, not an available card.
+	passed = passed and LevelUp.evolution_mark(
+		"sword", MODS, {"whetstone": 1}, {"sword": 5, "sharp_sword": 1}
+	) == LevelUp.EVOLUTION_WAITING
+	# Every path retired: no mark, even holding the materials.
+	passed = passed and LevelUp.evolution_mark(
+		"sword", MODS, {"whetstone": 1, "ghost_iron": 1},
+		{"sword": 5, "sharp_sword": 1, "ghost_sword": 1}
+	) == LevelUp.EVOLUTION_NONE
+	# Replaced counts as retired too.
+	passed = passed and LevelUp.evolution_mark(
+		"sword", MODS, {"whetstone": 1}, {"sword": 5}, ["sharp_sword"]
+	) == LevelUp.EVOLUTION_WAITING
+	if not passed:
+		push_error("test_combat_hud: evolution_mark path bookkeeping is wrong")
+	return passed
+
+
+func test_the_slot_draws_the_mark_only_when_there_is_one() -> bool:
+	var hud: CombatHud = _belongings_hud([
+		{"id": "sword", "evolution": LevelUp.EVOLUTION_READY},
+		{"id": "wolto", "evolution": LevelUp.EVOLUTION_NONE},
+	], [], [])
+	var run: Control = hud.belongings_run("Weapons")
+	var passed: bool = run.get_child(0).get_node_or_null("EvolutionMark") != null
+	passed = passed and run.get_child(1).get_node_or_null("EvolutionMark") == null
+	# An empty slot must never sprout one either.
+	passed = passed and run.get_child(3).get_node_or_null("EvolutionMark") == null
+	# The mark must not grow the cell past the size the row is clamped around.
+	var cell: Control = run.get_child(0)
+	passed = passed and cell.get_combined_minimum_size().x <= CombatHud.BELONGINGS_SLOT
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: evolution mark is drawn on the wrong slots")
+	return passed
+
+
+func test_ready_and_waiting_are_told_apart() -> bool:
+	# Two states because "go find the material" and "pick the card" are
+	# different instructions; one colour for both would say neither.
+	var ready: CombatHud = _belongings_hud(
+		[{"id": "sword", "evolution": LevelUp.EVOLUTION_READY}], [], []
+	)
+	var waiting: CombatHud = _belongings_hud(
+		[{"id": "sword", "evolution": LevelUp.EVOLUTION_WAITING}], [], []
+	)
+	var a: Label = ready.belongings_run("Weapons").get_child(0).get_node("EvolutionMark")
+	var b: Label = waiting.belongings_run("Weapons").get_child(0).get_node("EvolutionMark")
+	var passed: bool = a.get_theme_color("font_color") != b.get_theme_color("font_color")
+	ready.free()
+	waiting.free()
+	if not passed:
+		push_error("test_combat_hud: ready and waiting evolution marks look the same")
+	return passed
