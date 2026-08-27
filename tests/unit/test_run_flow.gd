@@ -226,3 +226,20 @@ func test_a_stage_with_no_boss_is_still_won_by_outlasting_it() -> bool:
 	if not passed:
 		push_error("test_run_flow: a bossless stage lost its timeout victory")
 	return passed
+
+
+## QA (play, BLOCKER-2): a timeout defeat printed "알 수 없는 존재에게 당했다"
+## with the player standing at full health.
+func test_a_living_defeat_names_the_boss_not_a_killer() -> bool:
+	var survived: String = RunFlow.death_cause_text(RunFlow.CAUSE_BOSS_SURVIVED)
+	# It has to say something, and not the unknown-killer fallback.
+	var passed: bool = not survived.is_empty()
+	passed = passed and survived != UiLocale.t(RunFlow.DEATH_CAUSE_UNKNOWN)
+	# A real killer still passes through untouched...
+	passed = passed and RunFlow.death_cause_text("숲 도깨비") == "숲 도깨비"
+	# ...and a genuinely unattributed death keeps its fallback.
+	passed = passed and RunFlow.death_cause_text("") \
+		== UiLocale.t(RunFlow.DEATH_CAUSE_UNKNOWN)
+	if not passed:
+		push_error("test_run_flow: the living defeat still invents a killer")
+	return passed

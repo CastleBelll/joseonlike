@@ -206,7 +206,9 @@ func _make_body() -> Control:
 	_rows = rows
 	scroll.add_child(rows)
 	body.add_child(scroll)
-	_death_value = _add_row(rows, UiLocale.t("죽음"))
+	# "패인", not "죽음": the row also carries the timeout defeat, where nobody
+	# died — "죽음: 보스를 처치하지 못했다" would read as nonsense.
+	_death_value = _add_row(rows, UiLocale.t("패인"))
 	_death_row = _death_value.get_parent() as Control
 	_death_row.visible = false
 	_time_value = _add_row(rows, UiLocale.t("생존 시간"))

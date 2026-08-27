@@ -856,8 +856,16 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 		_hitstop_until_msec = 0
 		Engine.time_scale = _hitstop_base_scale
 	get_tree().paused = true
+	# QA (play, BLOCKER-2): only a dead player has a killer. A defeat with the
+	# player still standing is the clock arriving over a live boss, and saying
+	# so is also the first place the new defeat rule is stated on screen.
+	var cause: String = ""
+	if CombatMath.is_dead(_player.hp):
+		cause = _player.last_hit_source
+	elif outcome == RunFlow.OUTCOME_DEFEAT:
+		cause = RunFlow.CAUSE_BOSS_SURVIVED
 	var summary: Dictionary = RunFlow.build_summary(
-		_run_elapsed, _kills, _gold, _player.last_hit_source
+		_run_elapsed, _kills, _gold, cause
 	)
 	summary["total_gold"] = SaveService.instance.bank_run(
 		_run_elapsed, _kills, _gold, boss_killed,

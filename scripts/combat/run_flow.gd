@@ -16,6 +16,12 @@ const DEATH_CAUSE_UNKNOWN := "알 수 없는 존재"
 ## boss_spawn_time returns this when the stage defines no boss timing at all.
 const NO_BOSS := -1.0
 
+## QA (play, BLOCKER-2): a timeout defeat printed "알 수 없는 존재에게 당했다"
+## with the player standing at full health — the summary passed the last hit
+## source without asking whether anyone died. A defeat with a living player has
+## exactly one cause under the current rules, and this names it.
+const CAUSE_BOSS_SURVIVED := "__boss_survived"
+
 
 ## Boss spawn second for a stage dict (data/stages.json entry): boss_at_sec
 ## when set, else the stage end, never past duration_sec. NO_BOSS when the
@@ -75,6 +81,8 @@ static func build_summary(
 ## boss pass through as their own localized names (Enemy.setup stores the
 ## already-resolved name_ko, elite derivation included).
 static func death_cause_text(raw_name: String) -> String:
+	if raw_name == CAUSE_BOSS_SURVIVED:
+		return UiLocale.t("보스를 처치하지 못했다")
 	var trimmed: String = raw_name.strip_edges()
 	return trimmed if not trimmed.is_empty() else UiLocale.t(DEATH_CAUSE_UNKNOWN)
 
