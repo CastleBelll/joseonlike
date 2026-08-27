@@ -156,7 +156,9 @@ func test_field_passives_past_the_budget_are_still_drawn() -> bool:
 		over.append({"id": "attack_damage", "stacks": 1})
 	var hud: CombatHud = _belongings_hud([], over, [])
 	var run: Control = hud.belongings_run("Passives")
-	var passed: bool = run != null and run.get_child_count() == over.size()
+	# The budget draws as cells; anything past it is counted, never dropped.
+	var expected: int = LevelUp.PASSIVE_SLOTS + (1 if over.size() > LevelUp.PASSIVE_SLOTS else 0)
+	var passed: bool = run != null and run.get_child_count() == expected
 	hud.free()
 	if not passed:
 		push_error("test_combat_hud: belongings row clamps overflowing passives")
@@ -195,19 +197,61 @@ func test_no_materials_means_no_material_node() -> bool:
 
 
 func test_row_never_reaches_under_the_counter_stack() -> bool:
-	# The counters are right-anchored; the row is left-anchored and must stop
-	# short of them at every width, which is what keeps portrait from colliding.
-	var hud: CombatHud = _belongings_hud([{"id": "sword"}], [], [])
+	# QA (auto, b735bc0 H2): the first version read offset_right — the INTENT —
+	# on an EMPTY row, so it could not see a container widening past its own
+	# offsets, which is exactly how the row got under the counters from seven
+	# passives on. Two contracts now, because they hold for different reasons.
+	var hud := CombatHud.new()
+	hud.build_ui()
 	var row: Control = hud.get_node("Belongings")
-	var passed: bool = row.mouse_filter == Control.MOUSE_FILTER_IGNORE
-	for width: float in [360.0, 540.0, 960.0, 1280.0]:
-		hud.size = Vector2(width, 640.0)
-		hud._layout_belongings()
-		var right: float = width + row.offset_right
-		passed = passed and right <= width - CombatHud.COUNTER_STACK_WIDTH
+	# 1. Structural, true at ANY width: the row is not a Container, so nothing
+	#    inside can widen it, and what overflows is clipped rather than drawn.
+	var passed: bool = not (row is Container)
+	passed = passed and row.clip_contents
+	passed = passed and row.mouse_filter == Control.MOUSE_FILTER_IGNORE
+	var materials: Array = []
+	for i: int in range(CombatHud.BELONGINGS_MATERIAL_MAX + 2):
+		materials.append({"id": "whetstone", "count": 9})
+	var weapons: Array = []
+	for i: int in range(LevelUp.WEAPON_SLOTS):
+		weapons.append({"id": "sword", "grade": "epic"})
+	# 2. Numeric, on the widths a device actually resolves to: the worst build
+	#    fits inside the clamp, so the clip above never has to save it.
+	for width: float in [540.0, 720.0, 960.0, 1280.0]:
+		for count: int in [0, 4, 7, 17]:
+			var passives: Array = []
+			for i: int in range(count):
+				passives.append({"id": "attack_damage", "stacks": 9})
+			hud.size = Vector2(width, 960.0)
+			hud._layout_belongings()
+			hud.set_belongings(weapons, passives, materials)
+			passed = passed and row.offset_right 				<= -(CombatHud.COUNTER_STACK_WIDTH)
+			# Outside a SceneTree nothing lays out, so the meaningful number is
+			# the width the content DEMANDS — the very thing that widened the
+			# container past its offsets before.
+			var demand: float = hud._belongings_lines_box.get_combined_minimum_size().x
+			passed = passed and row.offset_left + demand 				<= width - CombatHud.COUNTER_STACK_WIDTH
 	hud.free()
 	if not passed:
 		push_error("test_combat_hud: belongings row runs under the counters")
+	return passed
+
+
+func test_passives_past_the_cap_collapse_instead_of_being_clipped() -> bool:
+	# The clip is the hard boundary, but on its own it would swallow pickups the
+	# player walked across the map for. The run collapses into a counted "+N".
+	var many: Array = []
+	for i: int in range(LevelUp.PASSIVE_SLOTS + 3):
+		many.append({"id": "attack_damage", "stacks": 1})
+	var hud: CombatHud = _belongings_hud([], many, [])
+	var run: Control = hud.belongings_run("Passives")
+	var passed: bool = run.get_child_count() == LevelUp.PASSIVE_SLOTS + 1
+	var tail: Node = run.get_child(run.get_child_count() - 1)
+	passed = passed and tail.name == "Overflow"
+	passed = passed and (tail as Label).text == "+3"
+	hud.free()
+	if not passed:
+		push_error("test_combat_hud: passive overflow is not collapsed into +N")
 	return passed
 
 
@@ -254,13 +298,13 @@ func test_landscape_splits_the_row_and_portrait_does_not() -> bool:
 	hud.size = Vector2(960.0, 540.0)
 	hud._layout_belongings()
 	hud.set_belongings([{"id": "sword"}], [{"id": "attack_damage", "stacks": 2}], [])
-	var passed: bool = hud.get_node_or_null("Belongings/Line1") != null
+	var passed: bool = hud.get_node_or_null("Belongings/Lines/Line1") != null
 	passed = passed and hud.belongings_run("Weapons").get_parent().name == "Line0"
 	passed = passed and hud.belongings_run("Passives").get_parent().name == "Line1"
 	# Rotating must re-split without the stage pushing the build again.
 	hud.size = Vector2(540.0, 960.0)
 	hud._layout_belongings()
-	passed = passed and hud.get_node_or_null("Belongings/Line1") == null
+	passed = passed and hud.get_node_or_null("Belongings/Lines/Line1") == null
 	passed = passed and hud.belongings_run("Weapons") != null
 	passed = passed and hud.belongings_run("Passives") != null
 	hud.free()

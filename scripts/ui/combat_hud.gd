@@ -68,6 +68,12 @@ const BELONGINGS_COUNT_FONT := 12
 ## Materials are unbounded in principle and the row has a hard right edge. Past
 ## this many the rest collapse into a "+N" so the slots are never pushed out.
 const BELONGINGS_MATERIAL_MAX := 4
+## A run draws exactly its slot budget and collapses the rest into "+N".
+## N9-55 lets field pickups push passives past the budget with no ceiling, and
+## QA measured the row reaching under the kill/gold counters from seven on. A
+## budget-sized run is bounded by construction, and it is also the honest
+## picture: four slots is the rule the player knows, and the extras are a
+## count on top of it rather than cells pretending to be more slots.
 ## B0-2 evolution mark, drawn in a slot's top-left so it never collides
 ## with the stack count in the bottom-right. Gold when the evolution can be
 ## taken right now, muted when the level gate is met but the material is
@@ -166,7 +172,8 @@ var _settings_popup: SettingsPopup
 ## the live build (no push-sync to drift). Returns
 ## {"weapons": [{"id", "name", "level"}], "passives": [{"name", "stacks", "max"}]}.
 var build_provider: Callable
-var _belongings: VBoxContainer
+var _belongings: Control
+var _belongings_lines_box: VBoxContainer
 var _belongings_held: Dictionary = {}
 var _belongings_lines: int = 1
 var _boss_bar: ProgressBar
@@ -512,19 +519,28 @@ func _counter_row(stack: VBoxContainer, row_name: String, icon: Control) -> Labe
 
 
 func _build_belongings() -> void:
-	_belongings = VBoxContainer.new()
+	# QA (auto, b735bc0 H1) found the first version reaching under the kill/gold
+	# counters from seven passives on. A container takes its size from its
+	# children's combined minimum, which OVERRIDES offset_right — so the clamp
+	# was intent, not guarantee, and clip_contents did nothing because the box it
+	# clips to grew along with the content. A plain Control is not a container:
+	# its size comes from its anchors and nothing inside can widen it, so the
+	# clip is finally a real boundary.
+	_belongings = Control.new()
 	_belongings.name = "Belongings"
 	_belongings.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_belongings.add_theme_constant_override("separation", BELONGINGS_LINE_GAP)
-	# An HBoxContainer lays children out at their minimum size and happily
-	# overflows its own box. The width clamp below is the intent; this is what
-	# makes it true for build sizes nobody predicted — N9-55 passives past the
-	# budget, a run banking every loot type.
 	_belongings.clip_contents = true
 	_belongings.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_belongings.offset_top = BELONGINGS_TOP
 	_belongings.offset_bottom = BELONGINGS_TOP + BELONGINGS_SLOT
 	add_child(_belongings)
+	_belongings_lines_box = VBoxContainer.new()
+	_belongings_lines_box.name = "Lines"
+	_belongings_lines_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_belongings_lines_box.add_theme_constant_override(
+		"separation", BELONGINGS_LINE_GAP
+	)
+	_belongings.add_child(_belongings_lines_box)
 	_layout_belongings()
 
 
@@ -603,22 +619,22 @@ func set_belongings(
 ## One line in portrait, two in landscape. The runs keep their names either way
 ## so callers ask for them by name (`belongings_run`) rather than by position.
 func _rebuild_belongings() -> void:
-	for child: Node in _belongings.get_children():
-		_belongings.remove_child(child)
+	for child: Node in _belongings_lines_box.get_children():
+		_belongings_lines_box.remove_child(child)
 		child.queue_free()
 	_belongings_lines = 2 if _is_landscape() else 1
 	var first := HBoxContainer.new()
 	first.name = "Line0"
 	first.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	first.add_theme_constant_override("separation", BELONGINGS_GROUP_GAP)
-	_belongings.add_child(first)
+	_belongings_lines_box.add_child(first)
 	var second: HBoxContainer = first
 	if _belongings_lines == 2:
 		second = HBoxContainer.new()
 		second.name = "Line1"
 		second.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		second.add_theme_constant_override("separation", BELONGINGS_GROUP_GAP)
-		_belongings.add_child(second)
+		_belongings_lines_box.add_child(second)
 	first.add_child(_belongings_slots(
 		_belongings_held.get("weapons", []) as Array, LevelUp.WEAPON_SLOTS, true
 	))
@@ -655,13 +671,26 @@ func _belongings_slots(entries: Array, slots: int, is_weapon: bool) -> Control:
 	run.name = "Weapons" if is_weapon else "Passives"
 	run.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	run.add_theme_constant_override("separation", BELONGINGS_GAP)
-	var cells: int = maxi(slots, entries.size())
-	for i: int in range(cells):
+	for i: int in range(slots):
 		if i < entries.size():
 			run.add_child(_belongings_cell(entries[i] as Dictionary, is_weapon))
 		else:
 			run.add_child(_belongings_cell({}, is_weapon))
+	var hidden: int = entries.size() - slots
+	if hidden > 0:
+		run.add_child(_belongings_overflow(hidden))
 	return run
+
+
+## "+3" for the cells a run could not fit. Shared by the passive and material
+## runs so the two overflows read as the same thing.
+func _belongings_overflow(hidden: int) -> Label:
+	var label: Label = _label(
+		"+%d" % hidden, BELONGINGS_COUNT_FONT, UiPalette.TEXT_MUTED_ON_DARK
+	)
+	label.name = "Overflow"
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return label
 
 
 func _belongings_cell(entry: Dictionary, is_weapon: bool) -> Control:
@@ -775,11 +804,7 @@ func _belongings_materials(materials: Array) -> Control:
 		run.add_child(cell)
 	var hidden: int = materials.size() - shown
 	if hidden > 0:
-		run.add_child(
-			_label(
-				"+%d" % hidden, BELONGINGS_COUNT_FONT, UiPalette.TEXT_MUTED_ON_DARK
-			)
-		)
+		run.add_child(_belongings_overflow(hidden))
 	return run
 
 

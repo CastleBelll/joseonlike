@@ -31,6 +31,12 @@ ROWS = 2
 ALPHA_FLOOR = 24
 ## Match the existing hud icons so display sizes and call sites are unchanged.
 EXPORT_PX = 256
+## Fraction of the canvas the drawing itself occupies. A tight crop fills the
+## square edge to edge, and the HUD draws these at 32px inside a 44px disc — QA
+## caught the pause bars biting into the plate's ring because the glyph had no
+## margin of its own. The sheet's cells have that breathing room; the crop threw
+## it away, so it is put back here.
+CONTENT_SCALE = 0.82
 ## Reading order, left to right then top to bottom.
 NAMES = [
     "coin", "skull", "timer",
@@ -49,13 +55,14 @@ def cell_bbox(alpha):
 
 
 def square(image):
-    """Centre the drawing on a transparent square so nothing is stretched.
+    """Centre the drawing on a transparent square with a margin around it.
 
     Icons sit beside each other in the HUD, and a glyph resized from a
     non-square crop comes out wider or taller than its neighbours even though
-    every file is the same size.
+    every file is the same size. The margin keeps the drawing off the edge so a
+    plate or a ring behind it has somewhere to show.
     """
-    side = max(image.width, image.height)
+    side = int(round(max(image.width, image.height) / CONTENT_SCALE))
     canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
     canvas.paste(image, ((side - image.width) // 2, (side - image.height) // 2))
     return canvas
