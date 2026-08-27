@@ -40,6 +40,43 @@ wasn't. That pass narrowed the spread (`phoenix_talisman` damage/cooldown/
 `projectile_count` cut) and re-sized `bamboo_spirit_lord.hp` to 3150 for
 the projected middle.
 
+## 실측 dps 표 (2026-08-27, 플레이 QA 59런)
+
+**`weapons.json`의 `damage` 열은 실제 강함을 예측하지 못한다.** 밸런스를 만질 때
+그 숫자를 보고 판단하면 틀린다 — 사거리·발사 패턴·쿨다운이 실제 값을 지배한다.
+
+측정: `--weapon=<W> --level=8 --nopick`, 시드 3001~3003.
+`--nopick`이라 봇 노이즈가 작다(wolto 3시드 dps 편차 1.3%)。
+
+| 직업 | 무기 | json damage | 실측 dps | 승 | 배율(damage 대비) |
+|---|---|---|---|---|---|
+| 무사 | 월도 wolto | 30 | **266–274** | 2/3 | 9.0x |
+| 궁수 | 쇠뇌 soenoe | 26 | 163–190 | 0/3 | 6.8x |
+| 도사 | 진언 jineon | 10 | 164–173 | 0/3 | 16.8x |
+| 도사 | 낡은 부적 old_talisman | 11 | 156–179 | 0/3 | **15.2x** |
+| 도사 | 법검 beopgeom | 8.5 | 124–163 | 0/3 | 16.9x |
+| 도사 | 석장 seokjang | 10 | 144–152 | 0/3 | 14.8x |
+| 궁수 | 편전 pyeonjeon | 7 | 65–108 | 0/3 | 12.4x |
+| 도사 | 혼불 honbul | 10.2 | 53–96 | 0/3 | 7.3x |
+| 도사 | 결계 gyeolgye | 2.6 | 62–84 | 0/3 | **28.1x** |
+| 궁수 | 활 bow | 10 | 52–54 | 0/3 | 5.3x |
+| 무사 | 환도 sword | 16 | 27–59 | 0/3 | 2.7x |
+| 도사 | 신장 sinjang | 12 | 40–42 | 0/3 | **3.4x** |
+| 무사 | 편곤 pyeongon | 11 | 13–17 | 0/3 | **1.4x** |
+
+읽는 법:
+
+- 같은 damage **11.0**인 낡은 부적(156–179)과 편곤(13–17)이 **10배** 차이 난다.
+- damage **2.6**인 결계가 damage **12.0**인 신장의 **2배**다.
+- 무사의 시작 가능 무기 3종이 **270 / 27–59 / 13–17** 로 20배 갈린다 —
+  그래서 무사 런은 "월도 계열이 나왔는가"로 결정된다(보유 6런 5승 / 미보유 4런 **0승**).
+  궁수도 같은 형태(divine_bow 보유 5런 4승 / 미보유 **0승**).
+  도사만 7종 중 5종이 124–179 밴드에 몰려 죽은 빌드가 안 나온다.
+
+**새 무기를 만들 때는 이 표의 dps 대역에 맞춘다. `damage` 값끼리 비교하지 않는다.**
+
+---
+
 **Correction that changes how much to trust every number above this
 line.** combat found its measurement instrument itself was broken: the
 sweep seed only drove level-up choice, while crit rolls, spawn placement,
