@@ -94,24 +94,46 @@ func _input(event: InputEvent) -> void:
 ## The content scale base for one window size: the orientation's design base,
 ## grown proportionally once the window would upscale it past MAX_UI_SCALE.
 ## Static so the unit test can prove the cap without a window.
-static func base_for(window_size: Vector2i) -> Vector2i:
+##
+## `pixel_ratio` is the display's device-pixel ratio. The cap exists to bound
+## the APPARENT size of the UI, and the window size on web arrives in DEVICE
+## pixels — a 3x phone reports 1170x2532, scale 2.6 tripped the 1.5 cap, the
+## base grew, and every button shrank to ~22 CSS px (owner: ui/ux들이 많이
+## 작아). Multiplying the cap by the ratio makes it a CSS-pixel rule again:
+## the phone keeps the 540 base and a native-app-sized UI, while the desktop
+## monitor that motivated the cap (전체화면에서 요소들이 너무 크다) still
+## triggers it at ratio 1.
+static func base_for(window_size: Vector2i, pixel_ratio: float = 1.0) -> Vector2i:
 	var wide: bool = window_size.x > window_size.y
 	var base: Vector2i = LANDSCAPE_BASE if wide else PORTRAIT_BASE
 	if window_size.y <= 0:
 		return base
+	var max_scale: float = MAX_UI_SCALE * maxf(pixel_ratio, 1.0)
 	var scale: float = float(window_size.y) / float(base.y)
-	if scale <= MAX_UI_SCALE:
+	if scale <= max_scale:
 		return base
 	# Keep the window's own aspect so nothing is cropped or letterboxed; the
 	# design bands stay centered and the extra width shows more background.
 	return Vector2i(
-		maxi(int(round(float(window_size.x) / MAX_UI_SCALE)), base.x),
-		maxi(int(round(float(window_size.y) / MAX_UI_SCALE)), base.y)
+		maxi(int(round(float(window_size.x) / max_scale)), base.x),
+		maxi(int(round(float(window_size.y) / max_scale)), base.y)
 	)
+
+
+## The display's device-pixel ratio. On web this is the browser's own number;
+## natively screen_get_scale answers where the platform supports it and 1.0
+## everywhere else, which leaves desktop behaviour exactly as it was.
+func _pixel_ratio() -> float:
+	if OS.has_feature("web"):
+		var ratio: Variant = JavaScriptBridge.eval("window.devicePixelRatio || 1", true)
+		if ratio is float or ratio is int:
+			return maxf(float(ratio), 1.0)
+		return 1.0
+	return maxf(DisplayServer.screen_get_scale(), 1.0)
 
 
 func _apply_orientation_base() -> void:
 	var window: Window = get_tree().root
-	var wanted: Vector2i = base_for(window.size)
+	var wanted: Vector2i = base_for(window.size, _pixel_ratio())
 	if window.content_scale_size != wanted:
 		window.content_scale_size = wanted

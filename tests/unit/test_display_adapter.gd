@@ -47,3 +47,35 @@ func test_capped_base_keeps_the_window_aspect() -> bool:
 			% [base_ratio, window_ratio]
 		)
 	return passed
+
+
+## Owner (모바일 웹: ui/ux들이 많이 작아): the window arrives in DEVICE pixels
+## on web, so a 3x phone tripped the apparent-size cap and every button shrank
+## to ~22 CSS px. The cap is a CSS-pixel rule, so the ratio scales it.
+func test_a_retina_phone_keeps_the_design_base() -> bool:
+	# iPhone-class portrait at 3x: scale 2.64 device px, 0.88 CSS px — the UI
+	# must fill the screen like a native app, not shrink behind the density.
+	var phone := Vector2i(1170, 2532)
+	var passed: bool = DisplayAdapterService.base_for(phone, 3.0) \
+		== DisplayAdapterService.PORTRAIT_BASE
+	# 2x Android-class portrait likewise.
+	passed = passed and DisplayAdapterService.base_for(Vector2i(1080, 1920), 2.0) \
+		== DisplayAdapterService.PORTRAIT_BASE
+	if not passed:
+		push_error("test_display_adapter: a dense phone still shrinks the UI")
+	return passed
+
+
+func test_the_desktop_cap_that_motivated_this_still_bites() -> bool:
+	# The cap exists because a 1080-tall fullscreen at ratio 1 rendered a
+	# phone-sized UI across a monitor (전체화면에서 요소들이 너무 크다). The
+	# ratio-aware cap must not have un-fixed that.
+	var monitor := Vector2i(1920, 1080)
+	var base: Vector2i = DisplayAdapterService.base_for(monitor, 1.0)
+	var passed: bool = base != DisplayAdapterService.LANDSCAPE_BASE
+	passed = passed and base.y > DisplayAdapterService.LANDSCAPE_BASE.y
+	# And the ratio never shrinks the cap below its ratio-1 meaning.
+	passed = passed and DisplayAdapterService.base_for(monitor, 0.5) == base
+	if not passed:
+		push_error("test_display_adapter: the desktop fullscreen cap regressed")
+	return passed
