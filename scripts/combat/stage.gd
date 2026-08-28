@@ -116,9 +116,12 @@ var _minimap_wait: float = 0.0
 ## thumb lives at the bottom — this is the only corner a map does not fight
 ## something for.
 const MINIMAP_MARGIN := 16.0
-## QA B3: the fatter 26px XP rail pushed the Lv label down to y141 and the
-## map's old 132 top shaved its last 9px. Sits below the label row now.
+## QA B3 + Q27: the fatter XP rail pushed the Lv label to y141, and portrait
+## stacks the belongings strip right under it (y144..166) — the map sits
+## below whichever band its orientation actually has. Landscape's strip
+## starts right of the map (x144), so only the label row matters there.
 const MINIMAP_TOP := 148.0
+const MINIMAP_TOP_PORTRAIT := 176.0
 const MINIMAP_REFRESH_SEC := 0.2
 var _replaced_weapons: Array[String] = []
 # N4-9 rarity evidence: the run second each SPECIAL material dropped at —
@@ -2015,7 +2018,11 @@ func _tick_minimap(delta: float) -> void:
 	if _minimap == null:
 		_minimap = Minimap.new()
 		_minimap.name = "Minimap"
-		_minimap.position = Vector2(MINIMAP_MARGIN, MINIMAP_TOP)
+		var viewport: Vector2 = get_viewport_rect().size
+		var map_top: float = (
+			MINIMAP_TOP if viewport.x > viewport.y else MINIMAP_TOP_PORTRAIT
+		)
+		_minimap.position = Vector2(MINIMAP_MARGIN, map_top)
 		$Hud.add_child(_minimap)
 	_minimap.show_blips(_player.global_position, _minimap_blips())
 
