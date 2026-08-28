@@ -176,6 +176,37 @@ static func wood_button(state: String) -> StyleBox:
 	return _nine_slice(texture, WOOD_MARGIN_LOGICAL * CHROME_SCALE)
 
 
+## The hanging scroll (족자) for the power-up popup — wooden rollers top and
+## bottom, ink-wash mountains above the lower roller. Texture margins keep the
+## rollers and the mountains as caps so only plain paper stretches; content
+## margins push text inside the rollers and the side rails, and they are wider
+## than the paper panel's on purpose — the rollers are part of the drawing, not
+## padding, and a title printed across a roller reads as a mistake.
+const KIT_SCROLL_TEXTURE_TOP := 38
+const KIT_SCROLL_TEXTURE_BOTTOM := 68
+const KIT_SCROLL_TEXTURE_SIDE := 22
+const KIT_SCROLL_CONTENT_TOP := 44.0
+const KIT_SCROLL_CONTENT_BOTTOM := 74.0
+const KIT_SCROLL_CONTENT_SIDE := 26.0
+
+
+static func scroll_panel() -> StyleBox:
+	var texture: Texture2D = kit_texture("scroll")
+	if texture == null:
+		return null
+	var style := StyleBoxTexture.new()
+	style.texture = texture
+	style.texture_margin_top = float(KIT_SCROLL_TEXTURE_TOP)
+	style.texture_margin_bottom = float(KIT_SCROLL_TEXTURE_BOTTOM)
+	style.texture_margin_left = float(KIT_SCROLL_TEXTURE_SIDE)
+	style.texture_margin_right = float(KIT_SCROLL_TEXTURE_SIDE)
+	style.content_margin_top = KIT_SCROLL_CONTENT_TOP
+	style.content_margin_bottom = KIT_SCROLL_CONTENT_BOTTOM
+	style.content_margin_left = KIT_SCROLL_CONTENT_SIDE
+	style.content_margin_right = KIT_SCROLL_CONTENT_SIDE
+	return style
+
+
 static func paper_panel() -> StyleBox:
 	var kit: StyleBox = kit_panel("paper_panel", KIT_PAPER_MARGIN)
 	if kit != null:

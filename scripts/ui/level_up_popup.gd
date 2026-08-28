@@ -148,6 +148,8 @@ var _last_cards: Array[Dictionary] = []
 var _last_owned: Dictionary = {}
 var _last_weapons: Dictionary = {}
 var _built_landscape: bool = false
+## The panel's whole content, faded in by the unroll.
+var _layout: Control
 
 
 func _init() -> void:
@@ -164,16 +166,23 @@ func _ready() -> void:
 	add_child(_root)
 	_panel = PanelContainer.new()
 	_panel.name = "PaperPanel"
-	_panel.add_theme_stylebox_override("panel", UiIcons.paper_panel())
+	# Owner (파워 업 시에 저 두루마리가 펼쳐지면서 내용이 나왔으면): the popup
+	# wears the kit's hanging scroll and unrolls open (see _unroll). The paper
+	# panel stays as the fallback for a checkout without the kit art.
+	var scroll_style: StyleBox = UiIcons.scroll_panel()
+	_panel.add_theme_stylebox_override(
+		"panel", scroll_style if scroll_style != null else UiIcons.paper_panel()
+	)
 	_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_apply_panel_band()
 	_panel.offset_top = PANEL_TOP
 	# The bottom edge is recomputed per open() from the card stack (N3-17).
 	_panel.offset_bottom = PANEL_TOP + CARD_HEIGHT_MIN
 	_root.add_child(_panel)
-	var layout := Control.new()
-	layout.name = "Layout"
-	_panel.add_child(layout)
+	_layout = Control.new()
+	_layout.name = "Layout"
+	_panel.add_child(_layout)
+	var layout: Control = _layout
 	layout.add_child(_make_header())
 	_body = Panel.new()
 	_body.name = "Body"
@@ -342,6 +351,13 @@ func open(
 	_owned_row.clip_contents = true
 	_owned_row.position = Vector2(_panel_inset(), strip_top)
 	_owned_row.size = Vector2(strip_width, strip_height)
+	# The scroll unrolls only when the popup APPEARS. A queue of level-ups swaps
+	# content on an already-open scroll — re-rolling dozens of times a run would
+	# turn the flourish into a wait.
+	# Tree-less callers (the headless layout tests build this popup bare) get
+	# the finished state — a tween needs a SceneTree to drive it.
+	if not visible and is_inside_tree():
+		_unroll(top, top + panel_height)
 	visible = true
 	var first: Control = cards.get_child(0)
 	first.call_deferred("grab_focus")
@@ -582,6 +598,42 @@ func _card_width() -> float:
 		- style.get_margin(SIDE_LEFT) - style.get_margin(SIDE_RIGHT)
 		- BODY_MARGIN * 4.0
 	)
+
+
+## Owner (파워 업 시에 저 두루마리가 펼쳐지면서 내용이 나왔으면). The top
+## roller holds still and the paper pays out downward — the bottom cap of the
+## 9-slice rides the moving bottom edge, which IS the unroll, no extra art.
+## Content fades in over the second half so text never sits on half-open paper.
+## The tween binds to this popup, which processes while the tree is paused —
+## that is the only time this screen exists.
+const UNROLL_SEC := 0.35
+var _unroll_target: float = 0.0
+var _unroll_tween: Tween
+
+
+func _unroll(top: float, bottom: float) -> void:
+	_unroll_target = bottom
+	if _unroll_tween != null:
+		_unroll_tween.kill()
+	var style: StyleBox = _panel.get_theme_stylebox("panel")
+	var rolled: float = minf(
+		style.get_margin(SIDE_TOP) + style.get_margin(SIDE_BOTTOM), bottom - top
+	)
+	_panel.clip_contents = true
+	_panel.offset_bottom = top + rolled
+	_layout.modulate.a = 0.0
+	_unroll_tween = create_tween()
+	_unroll_tween.tween_property(
+		_panel, "offset_bottom", bottom, UNROLL_SEC
+	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_unroll_tween.parallel().tween_property(
+		_layout, "modulate:a", 1.0, UNROLL_SEC * 0.5
+	).set_delay(UNROLL_SEC * 0.5)
+	_unroll_tween.finished.connect(_end_unroll, CONNECT_ONE_SHOT)
+
+
+func _end_unroll() -> void:
+	_panel.clip_contents = false
 
 
 func _panel_style_margins_y() -> float:
