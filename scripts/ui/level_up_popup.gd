@@ -352,10 +352,21 @@ func open(
 	# corner, visually detached from the centred handscroll above it. Centred
 	# wells read as belonging to the paper in either orientation.
 	_owned_row.alignment = FlowContainer.ALIGNMENT_CENTER
-	_build_owned_row(owned_levels, weapons)
+	# QA F5: the flow container's own minimum overrides the analytic height —
+	# 27 harness weapons wrapped to four real rows, the clip box stayed at
+	# two, and the strip walked off the screen. The rows never exceed the
+	# budget now: wells past it collapse into one "+N" cell, so the analytic
+	# height and the real height are the same number.
+	var short_canvas: bool = not landscape and _root_size().y < DESIGN_HEIGHT
+	var per_row: int = maxi(
+		int((strip_width + OWNED_ROW_GAP) / (OWNED_WELL_SIZE + OWNED_ROW_GAP)), 1
+	)
+	var row_budget: int = owned_strip_rows(
+		owned_levels.size(), strip_width, landscape, short_canvas
+	) * per_row
+	_build_owned_row(owned_levels, weapons, row_budget)
 	var strip_height: float = owned_strip_height(
-		owned_levels.size(), strip_width, landscape,
-		not landscape and _root_size().y < DESIGN_HEIGHT
+		owned_levels.size(), strip_width, landscape, short_canvas
 	)
 	# The strip is pinned to the bottom of the SCREEN and the panel is cut to
 	# what is left above it. Deriving the strip's y from the panel's height
@@ -819,8 +830,16 @@ func _make_close_button() -> Button:
 	WoodButton.apply(button)
 	button.pressed.connect(func() -> void: dismissed.emit())
 	return button
-func _build_owned_row(owned_levels: Dictionary, weapons: Dictionary) -> void:
+func _build_owned_row(
+	owned_levels: Dictionary, weapons: Dictionary, budget: int = 0
+) -> void:
+	var shown: int = 0
+	var hidden: int = 0
 	for weapon_id: String in owned_levels:
+		if budget > 0 and shown >= budget - (1 if owned_levels.size() > budget else 0):
+			hidden += 1
+			continue
+		shown += 1
 		var well := Panel.new()
 		well.custom_minimum_size = Vector2(OWNED_WELL_SIZE, OWNED_WELL_SIZE)
 		var style := StyleBoxFlat.new()
@@ -861,6 +880,14 @@ func _build_owned_row(owned_levels: Dictionary, weapons: Dictionary) -> void:
 		level_label.add_theme_constant_override("outline_size", OWNED_BADGE_OUTLINE)
 		well.add_child(level_label)
 		_owned_row.add_child(well)
+	if hidden > 0:
+		var more := _label(
+			"+%d" % hidden, UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_ON_DARK
+		)
+		more.custom_minimum_size = Vector2(OWNED_WELL_SIZE, OWNED_WELL_SIZE)
+		more.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		more.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_owned_row.add_child(more)
 
 
 func _make_header() -> Control:
