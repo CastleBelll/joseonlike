@@ -121,8 +121,12 @@ func build_ui() -> void:
 	margin.add_theme_constant_override("margin_left", int(side))
 	margin.add_theme_constant_override("margin_right", int(side))
 	# Landscape spends its short height on content, not on chrome margins.
-	var top_margin: int = MARGIN_TOP_LANDSCAPE if _is_landscape() else MARGIN_TOP
-	var bottom_margin: int = MARGIN_BOTTOM_LANDSCAPE if _is_landscape() else MARGIN_BOTTOM
+	var top_margin: int = (
+		MARGIN_TOP_LANDSCAPE if _is_landscape() else int(MARGIN_TOP * _squeeze())
+	)
+	var bottom_margin: int = (
+		MARGIN_BOTTOM_LANDSCAPE if _is_landscape() else int(MARGIN_BOTTOM * _squeeze())
+	)
 	margin.add_theme_constant_override("margin_top", top_margin)
 	margin.add_theme_constant_override("margin_bottom", bottom_margin)
 	add_child(margin)
@@ -138,7 +142,7 @@ func build_ui() -> void:
 	column.name = "Column"
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_theme_constant_override("separation", UiPalette.SPACE_LG)
+	column.add_theme_constant_override("separation", int(UiPalette.SPACE_LG * _squeeze()))
 	scroll.add_child(column)
 
 	var summary: Dictionary = Camp.summary(_profile())
@@ -295,6 +299,16 @@ func _build_stats(summary: Dictionary) -> Control:
 
 ## GDD building spots: labelled places that answer 준비 중 when touched —
 ## present and tappable, never a greyed-out button (DESIGN.md §6).
+## Chrome-first shrink for canvases under the 960 design height (owner:
+## 스크롤이 제일 싫다 — QA F4: the phone base left the camp 36px long).
+## Margins, gaps and plate heights pay; nothing drops below the 44px touch
+## floor and text sizes never change.
+func _squeeze() -> float:
+	if _is_landscape():
+		return 1.0
+	return clampf(size.y / 960.0, 0.85, 1.0)
+
+
 func _is_landscape() -> bool:
 	return size.x > size.y
 
@@ -345,7 +359,9 @@ func _build_buildings() -> Control:
 		spot_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		spot.add_child(spot_label)
 		spot.custom_minimum_size = Vector2(
-			0.0, SPOT_HEIGHT_LANDSCAPE if _is_landscape() else SPOT_HEIGHT
+			0.0,
+			SPOT_HEIGHT_LANDSCAPE if _is_landscape()
+			else maxf(SPOT_HEIGHT * _squeeze(), UTILITY_BUTTON_SIZE)
 		)
 		spot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		spot.add_theme_stylebox_override("normal", _spot_plate(UiPalette.CARD_BG))
@@ -534,7 +550,8 @@ func _build_menu() -> Control:
 	select.name = "SelectButton"
 	select.text = UiLocale.t("수행자 선택")
 	select.custom_minimum_size = Vector2(0.0, float(
-		SELECT_BUTTON_HEIGHT_LANDSCAPE if _is_landscape() else SELECT_BUTTON_HEIGHT
+		SELECT_BUTTON_HEIGHT_LANDSCAPE if _is_landscape()
+		else int(maxf(SELECT_BUTTON_HEIGHT * _squeeze(), UTILITY_BUTTON_SIZE))
 	))
 	WoodButton.apply(select)
 	select.pressed.connect(_on_select_pressed)
@@ -544,7 +561,8 @@ func _build_menu() -> Control:
 	depart.name = "DepartButton"
 	depart.text = UiLocale.t("출정")
 	depart.custom_minimum_size = Vector2(0.0, float(
-		BUTTON_HEIGHT_LANDSCAPE if _is_landscape() else BUTTON_HEIGHT
+		BUTTON_HEIGHT_LANDSCAPE if _is_landscape()
+		else int(maxf(BUTTON_HEIGHT * _squeeze(), UTILITY_BUTTON_SIZE))
 	))
 	WoodButton.apply(depart)
 	depart.pressed.connect(_on_depart_pressed)
@@ -615,7 +633,7 @@ func _profile() -> Dictionary:
 func _add_stat_row(rows: VBoxContainer, row_name: String, value_text: String) -> void:
 	var row := HBoxContainer.new()
 	row.name = row_name
-	row.custom_minimum_size = Vector2(0.0, STAT_ROW_HEIGHT)
+	row.custom_minimum_size = Vector2(0.0, STAT_ROW_HEIGHT * _squeeze())
 	var name_label := _label(row_name, UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(name_label)
