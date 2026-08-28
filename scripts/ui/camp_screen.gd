@@ -476,8 +476,10 @@ func _refresh_departure_labels() -> void:
 
 
 ## Escalation ladder: calm cream to plague red.
+## F12: plaque_indigo measured plum (75,49,61) — a twin of purple. The box
+## plaque's brighter bronze keeps five distinguishable rungs.
 const DIFFICULTY_PLAQUES := {
-	0: "plaque_cream", 1: "plaque_brown", 2: "plaque_indigo",
+	0: "plaque_cream", 1: "plaque_box", 2: "plaque_brown",
 	3: "plaque_purple", 4: "plaque_red",
 }
 const LENGTH_PLAQUES := {

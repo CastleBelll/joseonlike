@@ -94,6 +94,7 @@ const BELONGINGS_MATERIAL_MAX := 4
 ## at 11 covered the weapon it was pointing at. It carries an outline instead
 ## of size so it stays readable over a bright icon or a dark one.
 const BELONGINGS_MARK_FONT := 7
+const OWNED_COUNT_OUTLINE := 3
 ## QA (visual, b735bc0 H1/H6) reported the world drawing over the HUD. It does
 ## not — a goblin passes BEHIND the pause disc, the coin draws over the slash
 ## quad, and the gold digits stay whole where a spear crosses them. What is
@@ -795,9 +796,16 @@ func _belongings_slots(entries: Array, slots: int, is_weapon: bool) -> Control:
 ## runs so the two overflows read as the same thing.
 func _belongings_overflow(hidden: int) -> Label:
 	var label: Label = _label(
-		"+%d" % hidden, BELONGINGS_COUNT_FONT, UiPalette.TEXT_MUTED_ON_DARK
+		"+%d" % hidden, BELONGINGS_COUNT_FONT + 3, UiPalette.TEXT_ON_DARK
 	)
 	label.name = "Overflow"
+	# F17: seven white pixels floating frameless were unreadable — the badge
+	# reads at count size with the same ink outline as the digits.
+	label.custom_minimum_size = Vector2(BELONGINGS_SLOT, BELONGINGS_SLOT)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_color_override("font_outline_color", UiPalette.INK)
+	label.add_theme_constant_override("outline_size", OWNED_COUNT_OUTLINE)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
 
@@ -880,6 +888,13 @@ func _belongings_count(value: int) -> Label:
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	# F17: the digits sat ON the cell's frame and two-digit counts bled past
+	# it. Inset inside the frame, ink-outlined so they read on any icon.
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	label.offset_right = -3.0
+	label.offset_bottom = -2.0
+	label.add_theme_color_override("font_outline_color", UiPalette.INK)
+	label.add_theme_constant_override("outline_size", OWNED_COUNT_OUTLINE)
 	return label
 
 

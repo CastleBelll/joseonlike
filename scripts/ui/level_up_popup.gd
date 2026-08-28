@@ -94,7 +94,9 @@ const WELL_MARGIN := 12.0
 ## this gap, and taking all fourteen the 540 canvas needed put the label on top
 ## of the name. The rest comes from the name-to-description gap below, which
 ## holds nothing.
-const COLUMN_NAME_TOP := WELL_MARGIN + WELL_SIZE + 20.0
+## F31: room for the relocated well badge (which now starts at +8 and runs
+## 20 tall) before the name line begins.
+const COLUMN_NAME_TOP := WELL_MARGIN + WELL_SIZE + 27.0
 ## The name line's own height. Trimming this is not free space — at 18 the
 ## description rendered on top of the name.
 const COLUMN_DESC_TOP := COLUMN_NAME_TOP + 28.0
@@ -393,12 +395,18 @@ func open(
 	# orientations — screen-bottom pinning left a gulf between them once the
 	# paper stopped taking the whole band. Landscape centres scroll + strip
 	# as one block; portrait keeps its top anchor and the strip follows.
+	var block: float = panel_height + strip_gap + strip_height
 	if landscape:
-		var block: float = panel_height + strip_gap + strip_height
 		top = maxf(
 			PANEL_TOP_LANDSCAPE,
 			(_root_size().y - block) / 2.0
 		)
+	else:
+		# F15: one short card left the sheet pinned high with 500px of night
+		# under it — portrait centres the scroll+strip block too, but never
+		# ABOVE its designed top inset, so a full three-card sheet sits
+		# exactly where it always did.
+		top = maxf(top, (_root_size().y - block) / 2.0)
 	strip_top = top + panel_height + strip_gap
 	_apply_panel_band()
 	_panel.offset_top = top
@@ -473,7 +481,10 @@ func _make_card(
 		if label_text in [UiLocale.t(NEW_LABEL), UiLocale.t(TRANSFORM_LABEL)]
 		else UiPalette.INK
 	)
-	well_label.position = Vector2(WELL_MARGIN, WELL_MARGIN + WELL_SIZE + 4.0)
+	# F31: +4 sat the badge on the well's border. Clear of it now — and the
+	# name line starts right where the badge row ends (27 = 7 + 20), because
+	# the landscape 540 budget is counted to the pixel.
+	well_label.position = Vector2(WELL_MARGIN, WELL_MARGIN + WELL_SIZE + 7.0)
 	well_label.size = Vector2(WELL_SIZE, 20.0)
 	well_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card.add_child(well_label)

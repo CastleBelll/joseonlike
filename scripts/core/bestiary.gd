@@ -406,8 +406,8 @@ static func _recipe_line(
 		masked_name(weapons.get(base_id, {}), discovered.has(base_id), locale),
 		result_name,
 	]
-	if omit_base and not discovered.has(base_id):
-		line = "→ %s" % result_name
+	# F25: the bare "→ ???" read as a broken line, not a design choice — a
+	# masked base is still a subject, and two masks beat a dangling arrow.
 	var loot_id: String = String(mod.get("loot_id", ""))
 	if not loot_id.is_empty() and loot.has(loot_id):
 		line += " · %s" % UiLocale.data_name(loot[loot_id] as Dictionary, loot_id)

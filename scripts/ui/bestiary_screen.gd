@@ -300,12 +300,23 @@ func _build_row(row: Dictionary) -> Control:
 	var name_label := _label(String(row["name"]), UiPalette.FONT_SIZE_BODY, name_color)
 	name_label.name = "Name"
 	texts.add_child(name_label)
+	var line_count: int = 0
 	for line: String in row["lines"] as Array[String]:
 		if line.is_empty():
 			continue
 		var line_label := _label(line, UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER)
 		line_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		texts.add_child(line_label)
+		line_count += 1
+	# F24: an undiscovered card with no recipe lines was ninety percent bare
+	# paper — one muted hint keeps the card a card and says how to fill it.
+	if not discovered and line_count == 0:
+		var hint := _label(
+			UiLocale.t("아직 기록되지 않았다 — 밤에서 마주치면 새겨진다"),
+			UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
+		)
+		hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		texts.add_child(hint)
 	content.add_child(texts)
 
 	# N9-11: a freshly discovered entry wears a SUCCESS-green NEW pill until

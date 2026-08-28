@@ -456,7 +456,7 @@ func test_recipe_survives_a_caller_with_no_loot_table() -> bool:
 	return passed
 
 
-func test_only_the_weapons_tab_drops_the_redundant_base_name() -> bool:
+func test_masked_recipes_keep_their_subjects() -> bool:
 	# The weapons row heading IS the weapon, so a masked base there would be a
 	# third "???" saying nothing. The loot row heading is the MATERIAL, so the
 	# base has to stay or the recipe loses where it starts.
@@ -466,8 +466,9 @@ func test_only_the_weapons_tab_drops_the_redundant_base_name() -> bool:
 		["sword"], B03_WEAPONS, B03_MODS, record, "ko", B03_LOOT
 	):
 		weapon_line = "\n".join(PackedStringArray(row.get("lines", []) as Array))
-	var passed: bool = weapon_line.contains("→ ???")
-	passed = passed and not weapon_line.contains("??? → ???")
+	# F25: the dangling "→ ???" read as a broken line, so the masked base
+	# stays even on the weapons tab — two masks beat an empty subject.
+	var passed: bool = weapon_line.contains("??? → ???")
 	# The loot tab still gates its recipes behind finding the material, which is
 	# right: a material you have never seen is not something you can act on.
 	var found_loot: Dictionary = Bestiary.record_discovery(

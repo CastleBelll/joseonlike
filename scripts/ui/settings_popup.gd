@@ -113,10 +113,32 @@ func _layout_panel() -> void:
 	if _panel == null:
 		return
 	var root_size: Vector2 = _root.size if _root.size.y > 0.0 else Vector2(540, 960)
-	var half_h: float = minf(PANEL_HEIGHT_MAX, root_size.y - 32.0) / 2.0
 	var landscape: bool = root_size.x > root_size.y
 	var band: float = PANEL_WIDTH_LANDSCAPE if landscape else PANEL_WIDTH
 	var half_w: float = minf(band, root_size.x - PANEL_MARGIN_X * 2.0) / 2.0
+	# F14: the audio tab inherited the game tab's height and sat on 200px of
+	# empty paper. Same honest two-step as the pause sheet: zero the pages
+	# scroll's minimum, the panel minimum is the chrome, and the active page
+	# takes the smaller of its content and the room.
+	var available: float = root_size.y - 32.0
+	var half_h: float = minf(PANEL_HEIGHT_MAX, available) / 2.0
+	var page: Control = _tab_pages.get(_active_tab) as Control
+	if page != null:
+		# Unlike the pause sheet this layout is anchor-based, so the panel's
+		# own minimum knows nothing about the header or the CTA — the chrome
+		# is summed from the same constants that place those parts.
+		var style: StyleBox = _panel.get_theme_stylebox("panel")
+		var style_y: float = (
+			style.get_margin(SIDE_TOP) + style.get_margin(SIDE_BOTTOM)
+			if style != null else 46.0
+		)
+		var chrome: float = (
+			style_y + HEADER_HEIGHT + BODY_MARGIN + TAB_HEIGHT + CTA_HEIGHT
+			+ float(UiPalette.SPACE_MD) * 2.0
+		)
+		var room: float = maxf(available - chrome, 60.0)
+		var content: float = page.get_combined_minimum_size().y
+		half_h = clampf(chrome + minf(content, room), 320.0, available) / 2.0
 	_panel.offset_top = -half_h
 	_panel.offset_bottom = half_h
 	_panel.offset_left = -half_w
@@ -326,6 +348,7 @@ func _select_tab(tab: String) -> void:
 		(_tab_pages[key] as Control).visible = key == tab
 	for key: String in _tab_buttons.keys():
 		style_tab(_tab_buttons[key], key == tab)
+	_layout_panel()
 
 
 ## Static so the pause popup's tabs (N9-112) share the exact same look.
@@ -337,7 +360,13 @@ static func style_tab(button: Button, selected: bool) -> void:
 	var style: StyleBoxFlat = tab_box(selected)
 	for state: String in ["normal", "hover", "pressed", "focus"]:
 		button.add_theme_stylebox_override(state, style)
-	var font_color: Color = UiPalette.TEXT_ON_DARK if selected else UiPalette.INK
+	# F13: light-on-orange read WEAKER than the unselected tab's ink-on-paper,
+	# so the highlight looked like the disabled state. Selected is ink on the
+	# orange plate now (7.2:1), unselected the muted ink — emphasis points at
+	# the choice again.
+	var font_color: Color = (
+		UiPalette.INK if selected else UiPalette.TEXT_MUTED_ON_PAPER
+	)
 	for color_name: String in [
 		"font_color", "font_hover_color", "font_pressed_color", "font_focus_color"
 	]:
