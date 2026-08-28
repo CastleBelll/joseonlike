@@ -22,7 +22,10 @@ const PANEL_WIDTH_LANDSCAPE := 760.0
 const PANEL_HEIGHT := 480.0
 ## Owner (모든 UI/UX는 반응형으로): the paper takes the height the screen can
 ## spare up to this, so the summary never scrolls where it does not have to.
-const PANEL_HEIGHT_MAX := 560.0
+## QA F1: four earned achievements need ~570 of paper in portrait; at 560 the
+## sheet scrolled and the fourth line hid under the CTA. The tall canvases
+## this cap serves have the room.
+const PANEL_HEIGHT_MAX := 600.0
 const HEADER_HEIGHT := 72.0
 const ROW_HEIGHT := 44.0
 const BODY_MARGIN := 24.0
@@ -62,6 +65,14 @@ func _layout_panel() -> void:
 	# a real run: 처치 and 보유 엽전 both cut mid-number.
 	var band: float = PANEL_WIDTH_LANDSCAPE if root_w > root_h else PANEL_WIDTH
 	var half_w: float = minf(root_w - PANEL_MARGIN_X * 2.0, band) / 2.0
+	# QA F2: the EN stat rows force a minimum width past the band, and a
+	# PanelContainer pinned by offsets grows RIGHT only — the paper walked
+	# 43px off the canvas and took the numbers with it. Symmetric growth,
+	# clamped to the canvas, keeps every column on screen (same cure as the
+	# pause paper's Q20).
+	if _panel != null:
+		var needed: float = _panel.get_combined_minimum_size().x
+		half_w = clampf(needed / 2.0, half_w, root_w / 2.0 - 4.0)
 	# Q17: on a 540-tall landscape canvas the portrait 48px vertical margin
 	# left a 444px paper, 6px short of the victory sheet with four earned
 	# achievements — the last line rendered half-cut behind a scrollbar.
