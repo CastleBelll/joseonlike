@@ -31,9 +31,9 @@ static func apply(button: Button) -> void:
 	# already does everywhere a dark surface carries type.
 	for state: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
 		button.add_theme_color_override(state, UiPalette.TEXT_ON_DARK)
-	# The plank art is busy, so an outline keeps the glyph edges off the grain.
-	button.add_theme_color_override("font_outline_color", UiPalette.INK)
-	button.add_theme_constant_override("outline_size", 4)
+	# No outline: neodgm is a pixel font, and outlining it rounds every corner
+	# into lumps — the "broken text" the owner saw on itch. The light-on-plank
+	# contrast is 6.37:1 measured without it, so the outline bought nothing.
 	# QA-3: dark WOOD_TEXT was illegible on the darkened disabled plate — the
 	# "엽전 부족" CTA reads only with a light muted tone.
 	button.add_theme_color_override(

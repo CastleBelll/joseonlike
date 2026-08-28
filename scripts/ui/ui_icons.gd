@@ -143,6 +143,14 @@ static func badge_rect(source: Texture2D, display_size: float) -> TextureRect:
 ## drawing keeps the states unmistakably the same object, which three separate
 ## drawings never quite manage.
 const KIT_BUTTON_PIECE := "plate_brown"
+## The plate's carved 회문 corner brackets span ~35px in the source — ~17 after
+## the /2 downscale. The plaque margin (11) sliced straight through them, so
+## half of each bracket landed in the 9-slice EDGE strips and stretched along
+## the button into mush (owner, itch: 버튼 각 모서리에 무늬가 깨졌어 — and the
+## native build renders identically, so it was never a web bug). The margin has
+## to clear the whole ornament; past it the plate is plain wood and stretches
+## cleanly.
+const KIT_PLATE_MARGIN := 17
 const KIT_BUTTON_TINTS: Dictionary = {
 	"normal": Color(1.0, 1.0, 1.0),
 	"hover": Color(1.16, 1.13, 1.06),
@@ -151,8 +159,13 @@ const KIT_BUTTON_TINTS: Dictionary = {
 
 
 static func wood_button(state: String) -> StyleBox:
-	var kit: StyleBox = kit_panel(KIT_BUTTON_PIECE, KIT_PLAQUE_MARGIN)
+	var kit: StyleBox = kit_panel(KIT_BUTTON_PIECE, KIT_PLATE_MARGIN)
 	if kit != null:
+		# The 17px is a SLICING margin — where the ornament ends — not padding.
+		# Left to default it, every wood button grew and the guide's next button
+		# walked off the sweep. Content keeps the spacing the layouts were built
+		# around; only the texture cut moves.
+		kit.set_content_margin_all(float(KIT_PLAQUE_MARGIN))
 		(kit as StyleBoxTexture).modulate_color = KIT_BUTTON_TINTS.get(
 			state, Color.WHITE
 		)
