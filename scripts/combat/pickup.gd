@@ -50,7 +50,11 @@ func launch_pickup(
 	queue_redraw()
 
 
-## Centered sprite draw; gold downscales to its logical 16px, the rest are 1:1.
+## Centered sprite draw at a FIXED logical size per kind. 1:1 was right when
+## the art was native pixel art; the owner's HD replacements arrive at 1254px
+## and drew as screen-filling monoliths (owner: 보물상자나 hp 회복 이런 애셋이
+## 너무 크게 나와). The texture is LANCZOS-cached to its draw size via
+## UiIcons.badge so the downscale reads clean instead of point-sampled mush.
 ## Loaded once per path for the whole run. Owner report: 엽전 and 폭탄 sometimes
 ## came out as plain white squares. The cause was loading inside _draw — when
 ## load() hands back null (which ResourceLoader.exists cannot rule out, and
@@ -72,11 +76,16 @@ static func kind_texture(path: String) -> Texture2D:
 	return texture
 
 
+const PICKUP_DRAW_PX := 26.0
+
+
 func _draw_kind_texture(texture: Texture2D) -> void:
-	var size: Vector2 = texture.get_size()
-	if kind == Pickups.KIND_GOLD:
-		size = Vector2(GOLD_DRAW_PX, GOLD_DRAW_PX)
-	draw_texture_rect(texture, Rect2(-size / 2.0, size), false)
+	var draw_px: float = (
+		GOLD_DRAW_PX if kind == Pickups.KIND_GOLD else PICKUP_DRAW_PX
+	)
+	var sized: Texture2D = UiIcons.badge(texture, int(draw_px))
+	var size := Vector2(draw_px, draw_px)
+	draw_texture_rect(sized, Rect2(-size / 2.0, size), false)
 
 
 func _draw() -> void:

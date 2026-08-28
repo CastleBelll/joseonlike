@@ -20,13 +20,17 @@ var _phase: float = 0.0
 ## One-shot latch: opened must fire exactly once per placement, even if the
 ## handler ever stops releasing this node synchronously.
 var _opened: bool = false
+const CHEST_DRAW_PX := 40.0
 var _sprite: Sprite2D
 
 
 func _ready() -> void:
 	_sprite = Sprite2D.new()
 	_sprite.name = "ChestSprite"
-	_sprite.texture = load(CHEST_TEXTURE)
+	# HD art draws at a fixed logical size — the owner's 1254px chest rendered
+	# 1:1 as a building (owner: 보물상자 애셋이 너무 크게 나와). LANCZOS-cached
+	# to size so the downscale stays clean.
+	_sprite.texture = UiIcons.badge(load(CHEST_TEXTURE), int(CHEST_DRAW_PX))
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	# Feet on the drop point: shift up by half the sprite height.
 	_sprite.position = Vector2(0.0, -_sprite.texture.get_height() / 2.0)
