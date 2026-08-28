@@ -467,20 +467,28 @@ func _refresh_departure_labels() -> void:
 	# Owner (난이도, 길이 등급에따라 다른 이미지 배너로): the plaque ladder
 	# darkens as the pick escalates, so the choice reads at a glance before
 	# the words do.
-	_style_cycle(_difficulty_button, DIFFICULTY_PLAQUES.get(
-		int(tier.get("rank", 0)), "plaque_cream"
-	))
+	var rank: int = int(tier.get("rank", 0))
+	_style_cycle(
+		_difficulty_button,
+		DIFFICULTY_PLAQUES.get(rank, "plaque_cream"),
+		DIFFICULTY_TINTS.get(rank, Color.WHITE)
+	)
 	_style_cycle(_run_length_button, LENGTH_PLAQUES.get(
 		String(length.get("id", "")), "plaque_cream"
 	))
 
 
 ## Escalation ladder: calm cream to plague red.
-## F12: plaque_indigo measured plum (75,49,61) — a twin of purple. The box
-## plaque's brighter bronze keeps five distinguishable rungs.
+## F12/M5: plaque_indigo measured plum (a twin of purple), and plaque_box
+## turned out to carry a wooden crate drawing — a picture, not a colour.
+## Rung 1 is the brown plaque tinted toward green instead: five rungs, five
+## unmistakable hues, one art family.
 const DIFFICULTY_PLAQUES := {
-	0: "plaque_cream", 1: "plaque_box", 2: "plaque_brown",
+	0: "plaque_cream", 1: "plaque_brown", 2: "plaque_brown",
 	3: "plaque_purple", 4: "plaque_red",
+}
+const DIFFICULTY_TINTS := {
+	1: Color(0.62, 0.86, 0.62),
 }
 const LENGTH_PLAQUES := {
 	"short": "plaque_cream", "standard": "plaque_brown",
@@ -490,7 +498,7 @@ const LENGTH_PLAQUES := {
 const LIGHT_PLAQUES: Array[String] = ["plaque_cream"]
 
 
-func _style_cycle(button: Button, piece: String) -> void:
+func _style_cycle(button: Button, piece: String, tint: Color = Color.WHITE) -> void:
 	var plate: StyleBox = UiIcons.kit_panel(piece, UiIcons.KIT_PLAQUE_MARGIN)
 	if plate == null:
 		return
@@ -498,7 +506,7 @@ func _style_cycle(button: Button, piece: String) -> void:
 		var styled: StyleBox = plate.duplicate()
 		if styled is StyleBoxTexture:
 			(styled as StyleBoxTexture).modulate_color = (
-				UiIcons.KIT_BUTTON_TINTS.get(state, Color.WHITE)
+				UiIcons.KIT_BUTTON_TINTS.get(state, Color.WHITE) as Color * tint
 			)
 		button.add_theme_stylebox_override(state, styled)
 	var on_light: bool = LIGHT_PLAQUES.has(piece)

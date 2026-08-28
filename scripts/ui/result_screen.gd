@@ -89,7 +89,19 @@ func _layout_panel() -> void:
 	var half_h: float = minf(PANEL_HEIGHT_MAX, available) / 2.0
 	if _row_scroll != null:
 		_row_scroll.custom_minimum_size = Vector2.ZERO
-		var chrome: float = _panel.get_combined_minimum_size().y
+		# M10: this layout is anchor-based like the settings paper, so the
+		# panel's own minimum is just the stylebox — asking it for chrome
+		# shorted the sheet by header+CTA and pushed To Camp off the canvas.
+		# Summed from the same constants that place the parts instead.
+		var style: StyleBox = _panel.get_theme_stylebox("panel")
+		var style_y: float = (
+			style.get_margin(SIDE_TOP) + style.get_margin(SIDE_BOTTOM)
+			if style != null else 46.0
+		)
+		var chrome: float = (
+			style_y + HEADER_HEIGHT + CTA_HEIGHT + BODY_MARGIN * 2.0
+			+ float(UiPalette.SPACE_MD)
+		)
 		var room: float = maxf(available - chrome, 60.0)
 		var content: float = 0.0
 		if _rows != null:
@@ -183,7 +195,13 @@ func _show_earned(earned: Variant) -> void:
 		var line: String = UiLocale.t("업적 달성") + " — " + name_text
 		if reward > 0:
 			line += "  (+%d)" % reward
-		var label := _label(line, UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
+		# The narrow phone base wraps every EN line in two, and eight gold
+		# rows outgrow the sheet by 18px — the label size keeps them whole.
+		var earned_font: int = (
+			UiPalette.FONT_SIZE_LABEL if _root != null and _root.size.x < 520.0
+			else UiPalette.FONT_SIZE_BODY
+		)
+		var label := _label(line, earned_font, UiPalette.GOLD)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		# V1 (EN portrait): a one-line label's minimum width IS the whole
 		# sentence, and the EN lines forced the paper past the canvas — the
