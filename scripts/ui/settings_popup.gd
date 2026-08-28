@@ -259,26 +259,26 @@ func _make_body() -> Control:
 	var game_page: Container = _make_page("GamePage")
 	# N6-5: joystick opacity slider — floored so the stick can never be
 	# dragged fully invisible by accident.
-	game_page.add_child(_make_slider_row(
+	game_page.add_child(_adapt_row(_make_slider_row(
 		SaveProfile.JOYSTICK_OPACITY_KEY, SaveProfile.JOYSTICK_OPACITY_MIN
-	))
-	game_page.add_child(_make_language_row())
-	game_page.add_child(_make_damage_row())
+	)))
+	game_page.add_child(_adapt_row(_make_language_row()))
+	game_page.add_child(_adapt_row(_make_damage_row()))
 	# The browser and a phone own their window; the preset row is desktop-only.
 	if not OS.has_feature("web") and not OS.has_feature("mobile"):
-		game_page.add_child(_make_resolution_row())
+		game_page.add_child(_adapt_row(_make_resolution_row()))
 	# N9-159 (owner: itch 풀스크린이 세로 박스만 늘린다): the embed keeps its
 	# portrait ratio, so the page's own fullscreen never hands us a wide
 	# canvas. The browser fullscreen API does — this button asks for it
 	# directly (DisplayServer maps to requestFullscreen on web).
 	if OS.has_feature("web"):
-		game_page.add_child(_make_fullscreen_row())
+		game_page.add_child(_adapt_row(_make_fullscreen_row()))
 	pages.add_child(game_page)
 	_tab_pages[TAB_GAME] = game_page
 
 	var audio_page: Container = _make_page("AudioPage")
 	for key: String in SaveProfile.VOLUME_KEYS:
-		audio_page.add_child(_make_slider_row(key))
+		audio_page.add_child(_adapt_row(_make_slider_row(key)))
 	pages.add_child(audio_page)
 	_tab_pages[TAB_AUDIO] = audio_page
 
@@ -359,6 +359,41 @@ static func tab_box(selected: bool) -> StyleBoxFlat:
 ## grid they sat at a different height from the row beside them and the page
 ## read as misaligned. Same shape as the rest now — the track takes the control
 ## side, which is also where the eye already looks for something to touch.
+## One row, three shapes (QA F6). Wide portrait keeps label-left/control-right.
+## The landscape two-column grid gives each cell about half the paper, so the
+## label drops to the label size. A narrow phone base cannot fit both on one
+## line at any font — the label takes the whole line and the control tucks
+## under it on the right, and nothing ever ellipsizes into gibberish.
+func _adapt_row(row: Container) -> Container:
+	var narrow: bool = not _is_landscape() and _root != null and _root.size.x < 520.0
+	var name_label: Label = row.get_child(0) as Label
+	if _landscape_pages and name_label != null:
+		name_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
+	if not narrow:
+		return row
+	var stack := VBoxContainer.new()
+	stack.name = String(row.name) + "Stack"
+	stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stack.add_theme_constant_override("separation", UiPalette.SPACE_XS)
+	var controls := HBoxContainer.new()
+	controls.name = "Controls"
+	controls.alignment = BoxContainer.ALIGNMENT_END
+	controls.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+	var children: Array[Node] = []
+	for child: Node in row.get_children():
+		children.append(child)
+	for child: Node in children:
+		row.remove_child(child)
+		if child == name_label:
+			name_label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+			stack.add_child(name_label)
+		else:
+			controls.add_child(child)
+	stack.add_child(controls)
+	row.queue_free()
+	return stack
+
+
 func _make_slider_row(key: String, min_value: float = 0.0) -> Control:
 	var row := HBoxContainer.new()
 	row.name = key.to_pascal_case()
