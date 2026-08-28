@@ -132,6 +132,8 @@ const OVERLAY_PANEL_MIN_HEIGHT := 200.0
 ## beyond it scrolls inside instead of pushing the buttons off the paper.
 const OVERLAY_PANEL_TOP := 72.0
 const OVERLAY_PANEL_BOTTOM_MARGIN := 48.0
+## Landscape spends its short height on content (QA F3/F30).
+const OVERLAY_PANEL_BOTTOM_MARGIN_LANDSCAPE := 24.0
 ## The pause paper caps at the portrait design band on wide screens, like
 ## every other modal (N9-152).
 const OVERLAY_PANEL_MAX_WIDTH := 476.0
@@ -1088,35 +1090,30 @@ func _select_pause_tab(tab: String) -> void:
 	# can never leave the sheet (N9-163). Content beyond the clamp scrolls.
 	_orient_pause_buttons()
 	_apply_pause_spacing()
-	var wanted: float = _pause_paper_height(tab)
-	var available: float = size.y - OVERLAY_PANEL_TOP - OVERLAY_PANEL_BOTTOM_MARGIN
-	_pause_panel.offset_top = OVERLAY_PANEL_TOP
-	_pause_panel.offset_bottom = OVERLAY_PANEL_TOP + minf(wanted, available)
-	_layout_pause_panel_width(_pause_panel)
-	# QA B4: the chrome estimate runs ~46px short of what the layout actually
-	# spends, so the paper clamped early and scrolled while the screen had
-	# room (스크롤이 제일 싫다). Second pass after layout: measure the real
-	# shortfall and grow the paper by exactly that, capped at the band.
-	_fit_pause_paper.call_deferred(tab)
-
-
-func _fit_pause_paper(tab: String) -> void:
-	if _pause_panel == null or not _pause_overlay.visible:
-		return
+	# QA F3 (and B4 before it): every estimate of the paper's chrome has run
+	# short somewhere, and a deferred correction fought the next tab switch.
+	# Measured synchronously instead, in two honest steps: with the scroll's
+	# minimum zeroed the panel's own minimum IS the chrome, the leftover is
+	# the room the content may take, and the scroll's minimum becomes the
+	# smaller of content and room. No estimate, no second pass — the scroll
+	# only engages when the content genuinely outgrows the screen.
 	var section: Control = (
 		_evolution_section if tab == PAUSE_TAB_EVOLUTIONS else _build_section
 	)
-	var scroll: ScrollContainer = _pause_scroll
-	if section == null or scroll == null:
-		return
-	var shortfall: float = section.get_combined_minimum_size().y - scroll.size.y
-	if shortfall <= 0.0:
-		return
-	var available: float = size.y - OVERLAY_PANEL_TOP - OVERLAY_PANEL_BOTTOM_MARGIN
-	var grown: float = minf(
-		_pause_panel.offset_bottom - _pause_panel.offset_top + shortfall, available
+	var bottom_margin: float = (
+		OVERLAY_PANEL_BOTTOM_MARGIN_LANDSCAPE if size.x > size.y
+		else OVERLAY_PANEL_BOTTOM_MARGIN
 	)
-	_pause_panel.offset_bottom = OVERLAY_PANEL_TOP + grown
+	var available: float = size.y - OVERLAY_PANEL_TOP - bottom_margin
+	_pause_scroll.custom_minimum_size = Vector2.ZERO
+	var chrome: float = _pause_panel.get_combined_minimum_size().y
+	var room: float = maxf(available - chrome, 60.0)
+	var content: float = section.get_combined_minimum_size().y
+	_pause_scroll.custom_minimum_size = Vector2(0.0, minf(content, room))
+	var wanted: float = chrome + _pause_scroll.custom_minimum_size.y
+	_pause_panel.offset_top = OVERLAY_PANEL_TOP
+	_pause_panel.offset_bottom = OVERLAY_PANEL_TOP + minf(wanted, available)
+	_layout_pause_panel_width(_pause_panel)
 
 
 ## A short screen spends its height on the summary, not on the paper's margins.
@@ -1227,10 +1224,22 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 	var weapons: Array = summary.get("weapons", [])
 	var passives: Array = summary.get("passives", [])
 
+	# QA F3/F30: landscape's short band cannot stack the two well groups, and
+	# its unused width can carry them side by side — each group is a column
+	# (header + grid) and landscape lays the columns in a row.
+	var landscape_build: bool = size.x > size.y
+	var groups := (HBoxContainer.new() if landscape_build else VBoxContainer.new()) as BoxContainer
+	groups.name = "WellGroups"
+	groups.add_theme_constant_override("separation", UiPalette.SPACE_LG)
+	_build_section.add_child(groups)
+
 	if not weapons.is_empty():
+		var group := VBoxContainer.new()
+		group.name = "WeaponGroup"
+		group.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		# N9-23: the build has slots now, so the pause screen says how many are
 		# spent — otherwise "no new weapons are being offered" reads as a bug.
-		_build_section.add_child(_slot_header(UiLocale.t("무기"), weapons.size(), LevelUp.WEAPON_SLOTS))
+		group.add_child(_slot_header(UiLocale.t("무기"), weapons.size(), LevelUp.WEAPON_SLOTS))
 		var grid := GridContainer.new()
 		grid.name = "WeaponGrid"
 		grid.columns = BUILD_WEAPON_COLUMNS
@@ -1238,11 +1247,14 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		grid.add_theme_constant_override("v_separation", UiPalette.SPACE_XS)
 		for entry: Dictionary in weapons:
 			grid.add_child(_build_weapon_cell(entry))
-		_build_section.add_child(grid)
-		var weapon_rows: int = ceili(float(weapons.size()) / float(BUILD_WEAPON_COLUMNS))
+		group.add_child(grid)
+		groups.add_child(group)
 
 	if not passives.is_empty():
-		_build_section.add_child(
+		var group := VBoxContainer.new()
+		group.name = "PassiveGroup"
+		group.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		group.add_child(
 			_slot_header(UiLocale.t("패시브"), passives.size(), LevelUp.PASSIVE_SLOTS)
 		)
 		# N9-160 (owner: 빌드를 글 말고 이미지로): the passive list mirrors the
@@ -1255,8 +1267,8 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		for entry: Dictionary in passives:
 			var line: Control = _build_passive_cell(entry)
 			grid.add_child(line)
-		_build_section.add_child(grid)
-		var passive_rows: int = ceili(float(passives.size()) / float(BUILD_WEAPON_COLUMNS))
+		group.add_child(grid)
+		groups.add_child(group)
 
 	# N9-25: the character sheet. Two columns of name/value pairs; a line the
 	# run has actually moved off its base reads in ink, an untouched one stays
@@ -1273,7 +1285,7 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		# so it reads them in more columns — which is what finally lets the
 		# summary fit without a scrollbar.
 		grid.columns = (
-			BUILD_PASSIVE_COLUMNS * 2 if size.x > size.y else BUILD_PASSIVE_COLUMNS
+			BUILD_PASSIVE_COLUMNS * 3 if size.x > size.y else BUILD_PASSIVE_COLUMNS
 		)
 		grid.add_theme_constant_override("h_separation", UiPalette.SPACE_MD)
 		for entry: Dictionary in stats:
