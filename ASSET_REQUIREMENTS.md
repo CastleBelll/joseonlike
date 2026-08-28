@@ -163,8 +163,9 @@ is not the subject. No shadow, no ground, no text, no border.
 
 ### 아직 막힌 것 — 프롭 4종 (내가 만들 수 없다)
 
-`props.json`이 참조하는데 파일이 없고, **HEAD에도 작업 트리에도 한 번도 존재한 적이 없다.**
-`validate_data`가 이것 때문에 계속 4건 FAIL이다.
+~~해결됨 아님 — **제거됨 (오너 지시 2026-08-28)**: "anvil, stone_marker, prop_flame,
+water_puddle 빼버려". 네 프롭은 props.json에서 삭제됐고(석등은 불꽃 없이 광원만),
+임시본 PNG와 생성기(build_placeholder_props.py)도 함께 갔다. 아래 표는 기록용.~~
 
 | 프롭 | 참조 경로 | 상태 |
 |---|---|---|

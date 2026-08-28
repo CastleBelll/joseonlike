@@ -33,7 +33,6 @@
     "props": {
      "stone_lantern": 2.0,
      "shrine_post": 1.5,
-     "stone_marker": 2.0,
      "rock_small": 1.0,
      "pebbles": 4.0,
      "grass_tuft": 3.0,
@@ -46,7 +45,6 @@
     "weight": 1.5,
     "props": {
      "campfire": 2.0,
-     "anvil": 1.0,
      "fallen_log": 2.0,
      "rock_small": 2.0,
      "rock_large": 1.5,
@@ -63,7 +61,6 @@
      "rock_large": 2.0,
      "rock_small": 2.0,
      "bamboo_clump_small": 1.5,
-     "water_puddle": 4.0,
      "fern": 3.0,
      "fog_wisp": 2.0,
      "grass_tuft": 2.0
@@ -146,17 +143,6 @@
    "texture": "res://asset/stages/bamboo_forest/props/rock_large.png",
    "placeholder": "rock"
   },
-  "water_puddle": {
-   "size": [
-    40.0,
-    28.0
-   ],
-   "solid": false,
-   "weight": 1.5,
-   "shape": "round",
-   "texture": "res://asset/stages/bamboo_forest/props/water_puddle.png",
-   "placeholder": "water"
-  },
   "fallen_log": {
    "size": [
     48.0,
@@ -193,16 +179,7 @@
    "shape": "rect",
    "texture": "res://asset/stages/bamboo_forest/props/stone_lantern.png",
    "placeholder": "lantern",
-   "light_radius_px": 170.0,
-   "flame": {
-    "sprite": "res://asset/stages/bamboo_forest/props/prop_flame.png",
-    "height_px": 8.0,
-    "offset": [
-     0.0,
-     -22.0
-    ],
-    "fps": 10.0
-   }
+   "light_radius_px": 170.0
   },
   "shrine_post": {
    "size": [
@@ -285,46 +262,6 @@
     "hp": 1.0
    },
    "light_radius_px": 200.0
-  },
-  "anvil": {
-   "size": [
-    36.0,
-    36.0
-   ],
-   "collision": [
-    -12.0,
-    -12.0,
-    24.0,
-    12.0
-   ],
-   "solid": true,
-   "weight": 1.5,
-   "shape": "rect",
-   "texture": "res://asset/stages/bamboo_forest/props/anvil.png",
-   "placeholder": "rock",
-   "breakable": {
-    "hp": 1.0
-   }
-  },
-  "stone_marker": {
-   "size": [
-    44.0,
-    44.0
-   ],
-   "collision": [
-    -10.0,
-    -14.0,
-    20.0,
-    14.0
-   ],
-   "solid": true,
-   "weight": 2.0,
-   "shape": "rect",
-   "texture": "res://asset/stages/bamboo_forest/props/stone_marker.png",
-   "placeholder": "rock",
-   "breakable": {
-    "hp": 1.0
-   }
   },
   "hung_sieve": {
    "size": [
