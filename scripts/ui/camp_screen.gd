@@ -353,6 +353,9 @@ func _build_buildings() -> Control:
 		)
 		spot_label.name = "SpotLabel"
 		spot_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+		# F33: EN labels touched the carved plate edge — a small side inset.
+		spot_label.offset_left = 8.0
+		spot_label.offset_right = -8.0
 		spot_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		spot_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		spot_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -407,10 +410,14 @@ func _build_settings_button() -> Control:
 	settings.flat = true
 	settings.tooltip_text = UiLocale.text("title.settings")
 	settings.custom_minimum_size = Vector2(UTILITY_BUTTON_SIZE, UTILITY_BUTTON_SIZE)
+	# F40: the HD gear carries its own rim — at 0.6 it read as a pale 24px
+	# dot next to the HUD's full-size dial. The rim IS the plate; it fills
+	# the whole 44px target, matching the combat corner exactly.
 	var icon: TextureRect = UiIcons.icon_rect(
-		UiIcons.hud_icon("settings"), UTILITY_BUTTON_SIZE * 0.6
+		UiIcons.hud_icon("settings"), UTILITY_BUTTON_SIZE
 	)
 	icon.set_anchors_preset(Control.PRESET_CENTER)
+	icon.position = -icon.custom_minimum_size / 2.0
 	settings.add_child(icon)
 	settings.pressed.connect(func() -> void:
 		if _settings_popup != null:

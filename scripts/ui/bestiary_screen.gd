@@ -161,7 +161,8 @@ func _build_header() -> Control:
 	# Overall progress pill: at-a-glance completion across every section.
 	var pill := PanelContainer.new()
 	pill.name = "ProgressPill"
-	pill.add_theme_stylebox_override("panel", _pill_box(UiPalette.CARD_BG, false))
+	# F34: CARD_BG's cold navy sat outside the gold/wood palette up here.
+	pill.add_theme_stylebox_override("panel", _pill_box(UiPalette.WOOD_PRESSED, false))
 	_progress_label = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_ON_DARK)
 	_progress_label.name = "ProgressValue"
 	pill.add_child(_progress_label)
@@ -319,14 +320,16 @@ func _build_row(row: Dictionary) -> Control:
 		texts.add_child(hint)
 	content.add_child(texts)
 
-	# N9-11: a freshly discovered entry wears a SUCCESS-green NEW pill until
+	# N9-11 / F35: a freshly discovered entry wears a NEW pill until
 	# its first render; sits left of the tier/boss pill when both exist.
 	if bool(row.get("is_new", false)):
 		var new_pill := PanelContainer.new()
 		new_pill.name = "NewPill"
 		new_pill.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		var new_box := StyleBoxFlat.new()
-		new_box.bg_color = UiPalette.SUCCESS
+		# F35: SUCCESS green was the one neon in the whole palette — the fresh
+		# mark speaks vermilion like every other "new" in the game (신규!).
+		new_box.bg_color = UiPalette.VERMILION
 		new_box.set_corner_radius_all(TIER_PILL_CORNER_RADIUS)
 		new_box.content_margin_left = TIER_PILL_PADDING_X
 		new_box.content_margin_right = TIER_PILL_PADDING_X

@@ -455,9 +455,22 @@ func _make_slider_row(key: String, min_value: float = 0.0) -> Control:
 	slider.add_theme_stylebox_override("slider", _track_style(UiPalette.WOOD_BORDER))
 	slider.add_theme_stylebox_override("grabber_area", _track_style(UiPalette.WOOD))
 	slider.add_theme_stylebox_override("grabber_area_highlight", _track_style(UiPalette.WOOD_HOVER))
-	slider.value_changed.connect(func(value: float) -> void: _on_slider_changed(key, value))
-	slider.drag_ended.connect(_on_slider_drag_ended)
 	row.add_child(slider)
+	# F38: every other row shows its value on a button; the sliders showed
+	# nothing. A live percent keeps them honest.
+	var value_label := _label(
+		"%d%%" % int(round(slider.value * 100.0)),
+		UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
+	)
+	value_label.name = "Value"
+	value_label.custom_minimum_size = Vector2(44.0, 0.0)
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(value_label)
+	slider.value_changed.connect(func(value: float) -> void:
+		value_label.text = "%d%%" % int(round(value * 100.0))
+		_on_slider_changed(key, value))
+	slider.drag_ended.connect(_on_slider_drag_ended)
 	return row
 
 

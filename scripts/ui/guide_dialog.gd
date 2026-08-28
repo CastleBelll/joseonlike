@@ -104,10 +104,16 @@ func _ready() -> void:
 	well.name = "PortraitWell"
 	well.custom_minimum_size = Vector2(PORTRAIT_SIZE, PORTRAIT_SIZE)
 	well.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var well_style := StyleBoxFlat.new()
-	well_style.bg_color = UiPalette.NIGHT
-	well_style.set_corner_radius_all(PORTRAIT_CORNER)
-	well.add_theme_stylebox_override("panel", well_style)
+	# F36: the bare night square sat on the paper like a hole — the kit's
+	# slot frame gives the portrait the same framing every other well has.
+	var kit_frame: StyleBox = UiIcons.kit_panel("slot_0", 8)
+	if kit_frame != null:
+		well.add_theme_stylebox_override("panel", kit_frame)
+	else:
+		var well_style := StyleBoxFlat.new()
+		well_style.bg_color = UiPalette.NIGHT
+		well_style.set_corner_radius_all(PORTRAIT_CORNER)
+		well.add_theme_stylebox_override("panel", well_style)
 	if ResourceLoader.exists(PORTRAIT_PATH, "Texture2D"):
 		var portrait := TextureRect.new()
 		portrait.texture = load(PORTRAIT_PATH)

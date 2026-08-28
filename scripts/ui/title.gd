@@ -221,8 +221,10 @@ func _build_utilities() -> void:
 	settings.flat = true
 	settings.tooltip_text = UiLocale.text("title.settings")
 	settings.custom_minimum_size = Vector2(UTILITY_BUTTON_SIZE, UTILITY_BUTTON_SIZE)
-	var icon: TextureRect = UiIcons.icon_rect(UiIcons.hud_icon("settings"), UTILITY_BUTTON_SIZE * 0.6)
+	# F40: the HD gear's rim IS the plate — full 44px, same as the HUD dial.
+	var icon: TextureRect = UiIcons.icon_rect(UiIcons.hud_icon("settings"), UTILITY_BUTTON_SIZE)
 	icon.set_anchors_preset(Control.PRESET_CENTER)
+	icon.position = -icon.custom_minimum_size / 2.0
 	settings.add_child(icon)
 	settings.pressed.connect(func() -> void: menu_selected.emit("settings"))
 	row.add_child(settings)

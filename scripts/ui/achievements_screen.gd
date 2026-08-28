@@ -126,7 +126,8 @@ func _build_header() -> Control:
 
 	var pill := PanelContainer.new()
 	pill.name = "CountPill"
-	pill.add_theme_stylebox_override("panel", _pill_box(UiPalette.CARD_BG))
+	# F34: same wood as the bestiary's counter — one palette up top.
+	pill.add_theme_stylebox_override("panel", _pill_box(UiPalette.WOOD_PRESSED))
 	_count_label = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
 	_count_label.name = "CountValue"
 	pill.add_child(_count_label)

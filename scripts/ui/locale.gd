@@ -59,6 +59,7 @@ const STRINGS := {
 	"bestiary.branch_fmt": {"ko": "개조: %s", "en": "Mod: %s"},
 	"bestiary.recipe_level_fmt": {"ko": "Lv.%d", "en": "Lv.%d"},
 	"bestiary.camp_hint_fmt": {"ko": "괴이록에 새 기록 %d건", "en": "%d new records in the archive"},
+	"bestiary.camp_hint_one": {"ko": "괴이록에 새 기록 1건", "en": "1 new record in the archive"},
 }
 
 static var current_locale: String = DEFAULT_LOCALE

@@ -148,6 +148,9 @@ static func camp_hint(profile: Dictionary) -> String:
 	var unseen: int = unseen_count(profile)
 	if unseen == 0:
 		return ""
+	# F32: English needs its singular ("1 new record", not records).
+	if unseen == 1:
+		return UiLocale.text("bestiary.camp_hint_one")
 	return UiLocale.text("bestiary.camp_hint_fmt") % unseen
 
 
