@@ -99,11 +99,16 @@ const LOOT_CORE := Color("#ffffff")
 
 # QA-3 grade pill tints (words stay the primary signal, DESIGN.md §2):
 # dark enough for the white PILL_TEXT, hue-separated per ladder rung.
-const GRADE_COMMON := VERMILION
+## QA F16 + owner call (2026-08-28): the ladder ran BACKWARDS — the most
+## common grade wore the loudest red while mythic sat in dull ochre, so a
+## starter build screamed and a crowning one whispered (and red is the
+## danger colour everywhere else on screen). Rarity now climbs in intensity:
+## quiet grey-brown, green, blue, violet, and mythic alone gets the hot gold.
+const GRADE_COMMON := Color("#8a7f6a")
 const GRADE_UNCOMMON := Color("#3e7a2e")
 const GRADE_RARE := Color("#35619e")
 const GRADE_EPIC := Color("#6a4399")
-const GRADE_MYTHIC := Color("#8a6a12")
+const GRADE_MYTHIC := Color("#e0a32e")
 
 ## N9-27: grade id → colour, shared by the level-up pill and the pause build
 ## summary. It lived only in level_up_popup until the pause screen needed to
