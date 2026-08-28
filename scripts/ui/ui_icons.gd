@@ -214,6 +214,53 @@ static func scroll_panel() -> StyleBox:
 	return style
 
 
+## The landscape variant: a handscroll (횡권), built from the same kit piece at
+## load time. The vertical art cannot simply rotate — its ink-wash mountains
+## are painted over the bottom roller's rows and rotate into a smear down one
+## side (three crop attempts confirmed it) — so the construction keeps the top
+## roller and the plain paper, then mirrors that clean roller as the second
+## cap. Two matching rollers, no contamination, and the seal watermark reads
+## fine on its side.
+const _HSCROLL_PAPER_END := 280
+const _HSCROLL_ROLLER := 74
+const KIT_HSCROLL_TEXTURE_SIDE := 37
+const KIT_HSCROLL_TEXTURE_EDGE := 8
+
+static var _hscroll_texture: Texture2D = null
+
+
+static func scroll_panel_landscape() -> StyleBox:
+	if _hscroll_texture == null:
+		var source: Texture2D = kit_texture("scroll")
+		if source == null:
+			return null
+		# kit_texture already downscaled /2, so the construction row numbers
+		# are halved from the source art's.
+		var image: Image = source.get_image()
+		var width: int = image.get_width()
+		var paper_end: int = _HSCROLL_PAPER_END / KIT_DOWNSCALE
+		var roller: int = _HSCROLL_ROLLER / KIT_DOWNSCALE
+		var built := Image.create(
+			width, paper_end + roller, false, image.get_format()
+		)
+		built.blit_rect(image, Rect2i(0, 0, width, paper_end), Vector2i.ZERO)
+		var cap: Image = image.get_region(Rect2i(0, 0, width, roller))
+		cap.flip_y()
+		built.blit_rect(cap, Rect2i(0, 0, width, roller), Vector2i(0, paper_end))
+		built.rotate_90(COUNTERCLOCKWISE)
+		_hscroll_texture = ImageTexture.create_from_image(built)
+	var style := StyleBoxTexture.new()
+	style.texture = _hscroll_texture
+	style.texture_margin_left = float(KIT_HSCROLL_TEXTURE_SIDE)
+	style.texture_margin_right = float(KIT_HSCROLL_TEXTURE_SIDE)
+	style.texture_margin_top = float(KIT_HSCROLL_TEXTURE_EDGE)
+	style.texture_margin_bottom = float(KIT_HSCROLL_TEXTURE_EDGE)
+	# Paper-parity content margins: the level-up height estimate was tuned
+	# against the paper panel's geometry, and landscape has no room to spare.
+	style.set_content_margin_all(23.0)
+	return style
+
+
 static func paper_panel() -> StyleBox:
 	var kit: StyleBox = kit_panel("paper_panel", KIT_PAPER_MARGIN)
 	if kit != null:

@@ -239,11 +239,12 @@ func open(
 	_last_owned = owned_levels
 	_last_weapons = weapons
 	_built_landscape = landscape
-	# The scroll is a hanging format — stretched across the 768 landscape band
-	# its rollers read as bent pipes, and the 540-tall canvases cannot spare the
-	# top margin that keeps the title off the roller. Landscape keeps the paper;
-	# portrait, where the format belongs, wears the scroll.
-	var wanted_style: StyleBox = null if landscape else UiIcons.scroll_panel()
+	# Owner (가로 모드에서는 당연히 가로로 펼쳐져야겠지): portrait hangs the
+	# 족자, landscape opens a 횡권 — the same kit piece rebuilt with the rollers
+	# on the sides, unrolling from the middle outward the way two hands open one.
+	var wanted_style: StyleBox = (
+		UiIcons.scroll_panel_landscape() if landscape else UiIcons.scroll_panel()
+	)
 	if wanted_style == null:
 		wanted_style = UiIcons.paper_panel()
 	_panel.add_theme_stylebox_override("panel", wanted_style)
@@ -368,8 +369,11 @@ func open(
 	# while layout_sweep and the harnesses open it unpaused to MEASURE it — and
 	# measuring mid-unroll read a half-rolled scroll as an overflow on every
 	# device at once.
-	if not visible and is_inside_tree() and get_tree().paused and not landscape:
-		_unroll(top, top + panel_height)
+	if not visible and is_inside_tree() and get_tree().paused:
+		if landscape:
+			_unroll_wide()
+		else:
+			_unroll(top, top + panel_height)
 	visible = true
 	var first: Control = cards.get_child(0)
 	first.call_deferred("grab_focus")
@@ -637,6 +641,35 @@ func _unroll(top: float, bottom: float) -> void:
 	_unroll_tween = create_tween()
 	_unroll_tween.tween_property(
 		_panel, "offset_bottom", bottom, UNROLL_SEC
+	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_unroll_tween.parallel().tween_property(
+		_layout, "modulate:a", 1.0, UNROLL_SEC * 0.5
+	).set_delay(UNROLL_SEC * 0.5)
+	_unroll_tween.finished.connect(_end_unroll, CONNECT_ONE_SHOT)
+
+
+## The landscape unroll: both rollers travel outward from the middle, like a
+## handscroll opened with two hands. The final offsets are whatever
+## _apply_panel_band just set, so this animates toward them rather than
+## re-deriving the band.
+func _unroll_wide() -> void:
+	if _unroll_tween != null:
+		_unroll_tween.kill()
+	var final_left: float = _panel.offset_left
+	var final_right: float = _panel.offset_right
+	var style: StyleBox = _panel.get_theme_stylebox("panel")
+	var rolled: float = style.get_margin(SIDE_LEFT) + style.get_margin(SIDE_RIGHT)
+	var center: float = (_root_size().x + final_left + final_right) / 2.0
+	_panel.clip_contents = true
+	_panel.offset_left = center - rolled * 0.5
+	_panel.offset_right = center + rolled * 0.5 - _root_size().x
+	_layout.modulate.a = 0.0
+	_unroll_tween = create_tween()
+	_unroll_tween.tween_property(
+		_panel, "offset_left", final_left, UNROLL_SEC
+	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_unroll_tween.parallel().tween_property(
+		_panel, "offset_right", final_right, UNROLL_SEC
 	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_unroll_tween.parallel().tween_property(
 		_layout, "modulate:a", 1.0, UNROLL_SEC * 0.5
