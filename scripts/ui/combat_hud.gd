@@ -64,6 +64,13 @@ const BELONGINGS_GAP := 3
 ## Weapons and passives answer different questions; without a wider gap between
 ## the two runs the eight cells read as one row of eight.
 const BELONGINGS_GROUP_GAP := 12
+## Q21: in landscape the two-line strip lands exactly on the minimap's rows
+## (the stage pins it at x=16, y=132, 112px square) and the map is added later,
+## so it covered the slots. The strip starts clear of the map's right edge —
+## 16 margin + Minimap.SIZE — plus a gap. Reserved unconditionally: the map
+## only appears once unlocked, but a strip that jumps left when it is absent
+## would read as a layout bug of its own.
+const BELONGINGS_LEFT_LANDSCAPE := 16.0 + Minimap.SIZE + float(UiPalette.SPACE_MD)
 const BELONGINGS_COUNT_FONT := 12
 ## Materials are unbounded in principle and the row has a hard right edge. Past
 ## this many the rest collapse into a "+N" so the slots are never pushed out.
@@ -618,7 +625,9 @@ func _build_belongings() -> void:
 func _layout_belongings() -> void:
 	if _belongings == null:
 		return
-	_belongings.offset_left = UiPalette.SPACE_MD
+	_belongings.offset_left = (
+		BELONGINGS_LEFT_LANDSCAPE if _is_landscape() else float(UiPalette.SPACE_MD)
+	)
 	_belongings.offset_right = -(COUNTER_STACK_WIDTH + UiPalette.SPACE_SM)
 	var wanted: int = 2 if _is_landscape() else 1
 	if wanted != _belongings_lines and not _belongings_held.is_empty():
@@ -737,6 +746,10 @@ func _rebuild_belongings() -> void:
 	)
 	if carried != null:
 		second.add_child(carried)
+	# The clip box must follow the line count immediately: the first landscape
+	# fill arrives before any resize event, and a stale one-line box clipped
+	# the whole second line until the window next moved (found by the Q21 probe).
+	_belongings.offset_bottom = _belongings.offset_top + _belongings_height()
 	_fit_belongings_scrim()
 
 
