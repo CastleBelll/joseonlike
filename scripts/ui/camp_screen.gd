@@ -93,8 +93,11 @@ func build_ui() -> void:
 		var art := TextureRect.new()
 		art.name = "BackdropArt"
 		art.texture = load(backdrop_path)
-		resized.connect(func() -> void:
-			art.texture = load(_backdrop_path()))
+		# No resized hook here (Q19): the path only changes on an orientation
+		# flip, and a flip rebuilds this whole UI — art included — through
+		# _on_resized. The old per-art lambda outlived its freed capture and
+		# piled one dead connection (and one SCRIPT ERROR per resize) onto
+		# every flip.
 		art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		# N9-153: cover, never distort — landscape crops the portrait art.
