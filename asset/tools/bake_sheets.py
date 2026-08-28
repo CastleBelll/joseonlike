@@ -93,7 +93,8 @@ class Sheet:
 ## each strip to what fits (see fits_the_row), because 25 frames only survive a
 ## row while the subject stays under ~36 logical px.
 GRID = (5, 5)
-CHAR_H = 38.0
+# Owner (2026-08-28): 캐릭터랑 몬스터 크기 조금만 더 — one step up from 38.
+CHAR_H = 42.0
 
 ACTORS = []
 for _name in ("taoist", "warrior", "archer"):
@@ -109,16 +110,16 @@ for _name in ("taoist", "warrior", "archer"):
 ## Both animations of one monster share a height on purpose, or the thing
 ## changes size the moment it starts walking.
 MONSTER_HEIGHTS = [
-    ("forest_goblin", 30.0),
-    ("cursed_hound", 30.0),
-    ("forest_spirit", 32.0),
-    ("powder_dokkaebi", 32.0),
-    ("ash_wraith", 33.0),
-    ("rusted_armor", 36.0),
-    ("geuseundae", 40.0),
-    ("bamboo_brute", 44.0),
-    ("general_wraith", 46.0),
-    ("dudueori", 84.0),
+    ("forest_goblin", 33.0),
+    ("cursed_hound", 33.0),
+    ("forest_spirit", 35.0),
+    ("powder_dokkaebi", 35.0),
+    ("ash_wraith", 36.0),
+    ("rusted_armor", 40.0),
+    ("geuseundae", 44.0),
+    ("bamboo_brute", 48.0),
+    ("general_wraith", 51.0),
+    ("dudueori", 92.0),
 ]
 
 ## Extra one-shot cycles, by the file that carries them. The stage plays attack
