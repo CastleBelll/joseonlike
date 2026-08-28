@@ -319,6 +319,14 @@ func open(
 		stack_heights = [tallest]
 	# The tight landscape reserve pairs with the tighter SM gap.
 	var strip_gap: float = float(UiPalette.SPACE_SM if landscape else UiPalette.SPACE_MD)
+	# Owner (모바일에서 전체적으로 너무 작아): the adaptive base hands short
+	# phones a canvas under the 960 design height, and the popup's fixed top
+	# inset plus gaps then cost 13px the cards no longer have. Chrome scales
+	# with the canvas — the cards themselves never shrink.
+	if not landscape:
+		var squeeze: float = clampf(_root_size().y / DESIGN_HEIGHT, 0.85, 1.0)
+		top *= squeeze
+		strip_gap *= squeeze
 	# The strip is built and MEASURED before the panel is sized, because how
 	# tall it is depends on how many weapons are owned and how many rows they
 	# wrap into. The reserve used to be a constant guess — 120px for a strip

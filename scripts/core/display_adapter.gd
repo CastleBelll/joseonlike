@@ -14,6 +14,13 @@ const LANDSCAPE_BASE := Vector2i(960, 540)
 ## factor the base grows with the window instead — buttons and text keep a
 ## sane physical size and the wide screen shows more of the field.
 const MAX_UI_SCALE := 1.5
+## How far the base may shrink toward a narrow phone's CSS viewport before
+## the layouts give out — measured by the layout sweep's DPR-aware phone
+## entries, not chosen. Portrait holds at 0.9 (a 393-CSS phone reads at ~0.81x
+## instead of 0.73x); the landscape screens are built to exactly 540 of height
+## (the camp overflows 27px at 0.9), so landscape does not shrink at all.
+const MIN_BASE_FACTOR_PORTRAIT := 0.9
+const MIN_BASE_FACTOR_LANDSCAPE := 1.0
 
 
 ## Owner (폰을 가로로 돌리니 세로 버전이 늘어난다): itch serves the game in a
@@ -108,16 +115,38 @@ static func base_for(window_size: Vector2i, pixel_ratio: float = 1.0) -> Vector2
 	var base: Vector2i = LANDSCAPE_BASE if wide else PORTRAIT_BASE
 	if window_size.y <= 0:
 		return base
-	var max_scale: float = MAX_UI_SCALE * maxf(pixel_ratio, 1.0)
+	var ratio: float = maxf(pixel_ratio, 1.0)
+	var max_scale: float = MAX_UI_SCALE * ratio
 	var scale: float = float(window_size.y) / float(base.y)
-	if scale <= max_scale:
-		return base
-	# Keep the window's own aspect so nothing is cropped or letterboxed; the
-	# design bands stay centered and the extra width shows more background.
-	return Vector2i(
-		maxi(int(round(float(window_size.x) / max_scale)), base.x),
-		maxi(int(round(float(window_size.y) / max_scale)), base.y)
+	if scale > max_scale:
+		# Keep the window's own aspect so nothing is cropped or letterboxed;
+		# the design bands stay centered and the extra width shows more
+		# background.
+		return Vector2i(
+			maxi(int(round(float(window_size.x) / max_scale)), base.x),
+			maxi(int(round(float(window_size.y) / max_scale)), base.y)
+		)
+	# Owner (모바일에서 전체적으로 너무 작아): a phone's CSS viewport is
+	# narrower than the 540 design base, so the whole UI rendered at ~0.73x
+	# CSS scale — the first-run guide included. When the window would
+	# DOWNSCALE the base, the base shrinks toward the CSS size instead, so
+	# logical pixels approach CSS pixels and everything draws bigger. The
+	# floor is what the layout sweep proves the screens can still hold —
+	# below it the paper panels overflow before the text gets any bigger.
+	var css_scale: float = minf(
+		float(window_size.x) / ratio / float(base.x),
+		float(window_size.y) / ratio / float(base.y)
 	)
+	if css_scale < 1.0:
+		var floor_factor: float = (
+			MIN_BASE_FACTOR_LANDSCAPE if wide else MIN_BASE_FACTOR_PORTRAIT
+		)
+		var factor: float = maxf(css_scale, floor_factor)
+		return Vector2i(
+			int(round(float(base.x) * factor)),
+			int(round(float(base.y) * factor))
+		)
+	return base
 
 
 ## The display's device-pixel ratio. On web this is the browser's own number;

@@ -363,6 +363,10 @@ func _make_slider_row(key: String, min_value: float = 0.0) -> Control:
 	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# The English row names ("Joystick Opacity") set the row's minimum width
+	# and pushed every control off the paper on a shrunken phone base — the
+	# label yields with an ellipsis instead of shoving the slider out.
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_row_labels[key] = name_label
 	row.add_child(name_label)
 	var slider := HSlider.new()
@@ -391,6 +395,10 @@ func _make_damage_row() -> Control:
 	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# The English row names ("Joystick Opacity") set the row's minimum width
+	# and pushed every control off the paper on a shrunken phone base — the
+	# label yields with an ellipsis instead of shoving the slider out.
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_row_labels["damage_numbers"] = name_label
 	row.add_child(name_label)
 	_damage_button = Button.new()
@@ -415,6 +423,10 @@ func _make_resolution_row() -> Control:
 	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# The English row names ("Joystick Opacity") set the row's minimum width
+	# and pushed every control off the paper on a shrunken phone base — the
+	# label yields with an ellipsis instead of shoving the slider out.
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_row_labels["resolution"] = name_label
 	row.add_child(name_label)
 	_resolution_button = Button.new()
@@ -442,6 +454,10 @@ func _make_fullscreen_row() -> Control:
 	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# The English row names ("Joystick Opacity") set the row's minimum width
+	# and pushed every control off the paper on a shrunken phone base — the
+	# label yields with an ellipsis instead of shoving the slider out.
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_row_labels["fullscreen"] = name_label
 	row.add_child(name_label)
 	var button := Button.new()
@@ -469,6 +485,10 @@ func _make_language_row() -> Control:
 	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# The English row names ("Joystick Opacity") set the row's minimum width
+	# and pushed every control off the paper on a shrunken phone base — the
+	# label yields with an ellipsis instead of shoving the slider out.
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_row_labels["language"] = name_label
 	row.add_child(name_label)
 	_language_button = Button.new()

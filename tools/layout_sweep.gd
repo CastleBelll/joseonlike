@@ -17,6 +17,15 @@ const WINDOWS: Array[Vector2i] = [
 	Vector2i(1080, 1920), Vector2i(720, 1440), Vector2i(1179, 2556), Vector2i(800, 1280),
 	Vector2i(2556, 1179), Vector2i(2340, 1080), Vector2i(1440, 720),
 ]
+## Real-phone device-pixel ratios for the windows that ARE phones. base_for
+## shrinks the base toward the CSS viewport on these (owner: 모바일에서
+## 전체적으로 너무 작아), so the sweep must prove the shrunken bases too —
+## a window absent here sweeps at ratio 1 exactly as before.
+const WINDOW_RATIOS := {
+	Vector2i(1080, 1920): 2.625, Vector2i(720, 1440): 2.0,
+	Vector2i(1179, 2556): 3.0, Vector2i(2556, 1179): 3.0,
+	Vector2i(2340, 1080): 2.75, Vector2i(1440, 720): 2.0,
+}
 ## Screens whose content is a LIST that grows with data — the 명부수 tree, the
 ## bestiary and the achievement ledger are meant to scroll, so only their
 ## chrome (anything outside the scroll) is held to the fit rule.
@@ -72,7 +81,8 @@ func _seed_profile() -> void:
 ## The logical canvas a device actually gets: the orientation base, expanded
 ## on the axis the window has room for (project stretch aspect = "expand").
 static func canvas_for(window: Vector2i) -> Vector2:
-	var base: Vector2 = Vector2(DisplayAdapterService.base_for(window))
+	var ratio: float = float(WINDOW_RATIOS.get(window, 1.0))
+	var base: Vector2 = Vector2(DisplayAdapterService.base_for(window, ratio))
 	var window_ratio: float = float(window.x) / float(window.y)
 	var base_ratio: float = base.x / base.y
 	if window_ratio > base_ratio:

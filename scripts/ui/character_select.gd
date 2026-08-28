@@ -63,6 +63,8 @@ const LOCKED_TEXT_DARKEN := 0.25
 
 var _characters: Dictionary = {}
 var _was_landscape: bool = false
+var _built_width: float = 0.0
+const REBUILD_WIDTH_STEP := 24.0
 var _selected_id: String = ""
 ## Whose detail panel is on screen. Follows the selection unless the player
 ## taps a locked tile to read its unlock condition.
@@ -163,9 +165,15 @@ func _live_profile() -> Dictionary:
 ## plain resize keeps focus and the viewed pick.
 func _on_resized() -> void:
 	var now: bool = _is_landscape()
-	if now == _was_landscape:
+	# A width step also rebuilds (owner: 모바일에서 전체적으로 너무 작아): the
+	# adaptive base can hand this screen a 486-wide canvas where the last build
+	# assumed 540, and every fixed-width band then hangs past the edge. The
+	# threshold keeps a desktop drag from rebuilding per pixel.
+	var width_moved: bool = absf(size.x - _built_width) > REBUILD_WIDTH_STEP
+	if now == _was_landscape and not width_moved:
 		return
 	_was_landscape = now
+	_built_width = size.x
 	for child: Node in get_children():
 		child.queue_free()
 	build_ui()
@@ -173,6 +181,7 @@ func _on_resized() -> void:
 
 func _ready() -> void:
 	build_ui()
+	_built_width = size.x
 	_was_landscape = _is_landscape()
 	resized.connect(_on_resized)
 	_focus_viewed_tile()

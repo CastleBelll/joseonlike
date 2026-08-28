@@ -49,6 +49,8 @@ const UTILITY_BUTTON_SIZE := 44.0  # UiPalette.TOUCH_TARGET_MIN
 var _notice_label: Label
 var _notice_tween: Tween
 var _was_landscape: bool = false
+var _built_width: float = 0.0
+const REBUILD_WIDTH_STEP := 24.0
 # N9-22 departure settings: the ladder/length data plus the two cycle buttons
 # that show the current pick — one tap steps to the next option, so departing
 # still costs one tap for anyone who never touches them.
@@ -60,6 +62,7 @@ var _run_length_button: Button
 
 func _ready() -> void:
 	build_ui()
+	_built_width = size.x
 	# Owner (전체화면 가로로 바꿔도 세로 배치 그대로다): the two-half landscape
 	# layout is decided at build time, so a rotation or a fullscreen toggle has
 	# to rebuild it — only when the orientation actually flips.
@@ -300,9 +303,15 @@ func _is_landscape() -> bool:
 ## so focus, tweens and the open settings popup survive a plain window drag.
 func _on_resized() -> void:
 	var now: bool = _is_landscape()
-	if now == _was_landscape:
+	# A width step also rebuilds (owner: 모바일에서 전체적으로 너무 작아): the
+	# adaptive base can hand this screen a 486-wide canvas where the last build
+	# assumed 540, and every fixed-width band then hangs past the edge. The
+	# threshold keeps a desktop drag from rebuilding per pixel.
+	var width_moved: bool = absf(size.x - _built_width) > REBUILD_WIDTH_STEP
+	if now == _was_landscape and not width_moved:
 		return
 	_was_landscape = now
+	_built_width = size.x
 	for child: Node in get_children():
 		if child != _settings_popup:
 			child.queue_free()
@@ -321,6 +330,9 @@ func _build_buildings() -> Control:
 		var spot := Button.new()
 		spot.name = "Spot_" + String(building["id"])
 		spot.text = String(building["label"])
+		# English labels ("Region Select") outgrow a shrunken phone base's grid
+		# cell and drag the whole column past the screen edge — trim instead.
+		spot.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		spot.custom_minimum_size = Vector2(
 			0.0, SPOT_HEIGHT_LANDSCAPE if _is_landscape() else SPOT_HEIGHT
 		)
@@ -401,6 +413,11 @@ func _cycle_button(node_name: String, handler: Callable) -> Button:
 	button.name = node_name
 	button.custom_minimum_size = Vector2(0.0, CYCLE_BUTTON_HEIGHT)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# The English labels ("Length ‹Standard Night›") demand more width than a
+	# shrunken phone base can give the pair side by side — the row then forced
+	# the whole column wide and 출정 walked off the screen edge. Ellipsis over
+	# overflow: the ‹value› is still readable and a tap cycles it anyway.
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	WoodButton.apply(button)
 	button.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 	button.pressed.connect(handler)

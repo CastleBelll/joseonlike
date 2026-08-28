@@ -49,20 +49,32 @@ func test_capped_base_keeps_the_window_aspect() -> bool:
 	return passed
 
 
-## Owner (모바일 웹: ui/ux들이 많이 작아): the window arrives in DEVICE pixels
-## on web, so a 3x phone tripped the apparent-size cap and every button shrank
-## to ~22 CSS px. The cap is a CSS-pixel rule, so the ratio scales it.
-func test_a_retina_phone_keeps_the_design_base() -> bool:
-	# iPhone-class portrait at 3x: scale 2.64 device px, 0.88 CSS px — the UI
-	# must fill the screen like a native app, not shrink behind the density.
-	var phone := Vector2i(1170, 2532)
-	var passed: bool = DisplayAdapterService.base_for(phone, 3.0) \
+## Owner (모바일에서 전체적으로 너무 작아, 2026-08-28): a phone whose CSS
+## viewport is narrower than the 540 design base gets a SHRUNKEN base now, so
+## logical pixels approach CSS pixels and the whole UI draws bigger. Portrait
+## floors at MIN_BASE_FACTOR_PORTRAIT; landscape screens are built to exactly
+## 540 of height and do not shrink at all.
+func test_a_narrow_phone_gets_a_bigger_ui() -> bool:
+	# iPhone-class portrait at 3x (390 CSS wide): css_scale 0.72 -> floored at
+	# 0.9, so the base shrinks to 486x864 and the apparent scale rises.
+	var floor_base := Vector2i(486, 864)
+	var passed: bool = (
+		DisplayAdapterService.base_for(Vector2i(1170, 2532), 3.0) == floor_base
+	)
+	# 2x Android-class portrait (540 CSS wide) is exactly the design base — no
+	# shrink, no growth.
+	passed = passed and (
+		DisplayAdapterService.base_for(Vector2i(1080, 1920), 2.0)
 		== DisplayAdapterService.PORTRAIT_BASE
-	# 2x Android-class portrait likewise.
-	passed = passed and DisplayAdapterService.base_for(Vector2i(1080, 1920), 2.0) \
-		== DisplayAdapterService.PORTRAIT_BASE
+	)
+	# A landscape phone keeps the full landscape base: the camp measured a
+	# 27px overflow at 0.9, so landscape holds its ground.
+	passed = passed and (
+		DisplayAdapterService.base_for(Vector2i(2532, 1170), 3.0)
+		== DisplayAdapterService.LANDSCAPE_BASE
+	)
 	if not passed:
-		push_error("test_display_adapter: a dense phone still shrinks the UI")
+		push_error("test_display_adapter: the narrow-phone base shrink is wrong")
 	return passed
 
 
