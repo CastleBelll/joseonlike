@@ -166,6 +166,15 @@ func build_ui() -> void:
 		left.name = "LeftHalf"
 		left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		left.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+		# Q22: the record card is ~230px on a 540 canvas; pinned to the top it
+		# left the lower half of its column bare backdrop while the right column
+		# ran full height. Equal slack above and below floats the card at the
+		# column's centre, so the two halves carry the same visual weight. The
+		# notice keeps the bottom edge.
+		var left_top_slack := Control.new()
+		left_top_slack.name = "LeftTopSlack"
+		left_top_slack.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		left.add_child(left_top_slack)
 		left.add_child(_build_stats(summary))
 		if hint_label != null:
 			left.add_child(hint_label)
