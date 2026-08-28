@@ -329,10 +329,21 @@ func _build_buildings() -> Control:
 	for building: Dictionary in Camp.buildings():
 		var spot := Button.new()
 		spot.name = "Spot_" + String(building["id"])
-		spot.text = String(building["label"])
-		# English labels ("Region Select") outgrow a shrunken phone base's grid
-		# cell and drag the whole column past the screen edge — trim instead.
-		spot.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		# The label is a child Label, not button text: English names ("Region
+		# Select") set a hard minimum width as text and dragged the grid past
+		# the screen on a shrunken base, and trimming them made 훈련장 and
+		# 수련 both read "Training …" (mobile-scale QA M3). A wrapping label
+		# keeps the whole word on two lines and costs the cell nothing.
+		var spot_label := _label(
+			String(building["label"]), UiPalette.FONT_SIZE_BODY, UiPalette.INK
+		)
+		spot_label.name = "SpotLabel"
+		spot_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+		spot_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		spot_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		spot_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		spot_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		spot.add_child(spot_label)
 		spot.custom_minimum_size = Vector2(
 			0.0, SPOT_HEIGHT_LANDSCAPE if _is_landscape() else SPOT_HEIGHT
 		)

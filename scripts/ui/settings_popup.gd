@@ -29,11 +29,15 @@ const PANEL_WIDTH_LANDSCAPE := 760.0
 const HEADER_HEIGHT := 72.0
 const BODY_MARGIN := 32.0
 const ROW_HEIGHT := 56.0
-## The control side of a slider row, matched to TOGGLE_WIDTH.
-const SLIDER_WIDTH := 176.0
+## The control side of a slider row. 176 left the label side too narrow once
+## the labels learned to yield (mobile-scale QA M7: KO trimmed at the plain
+## 540 base) — 140 is still a comfortable drag and gives the words back.
+const SLIDER_WIDTH := 140.0
 const SLIDER_STEP := 0.01
 const CTA_HEIGHT := 64.0
-const TOGGLE_WIDTH := 160.0
+## Trimmed with SLIDER_WIDTH for the same M7 reason — the label side owns
+## the leftover width and the words come first.
+const TOGGLE_WIDTH := 150.0
 const TRACK_RADIUS := 4
 const TRACK_MARGIN := 4.0
 const TAB_HEIGHT := 48.0
