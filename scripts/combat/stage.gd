@@ -1504,8 +1504,12 @@ func _stat_line(stat_name: String, value: String, modified: bool) -> Dictionary:
 
 ## One line per recipe an OWNED weapon can still take: base → result with
 ## the material's name and whether it is in the run inventory right now.
-func _evolution_lines() -> Array[String]:
-	var lines: Array[String] = []
+func _evolution_lines() -> Array[Dictionary]:
+	# Structured rows, not strings (owner: 개조경로도 최대한 글 줄이고 이미지로
+	# 대체해): the HUD draws base icon -> result icon with a material badge,
+	# and the only words left are the level gate. B0-2 masking holds — an
+	# unperformed result ships result_known=false and draws as "?".
+	var rows: Array[Dictionary] = []
 	var known_weapons: Array = Bestiary.normalized_record(
 		_profile().get("bestiary")
 	)[Bestiary.KIND_WEAPONS]
@@ -1518,31 +1522,17 @@ func _evolution_lines() -> Array[String]:
 		if _owned_levels.has(result_id) or _replaced_weapons.has(result_id):
 			continue
 		var loot_id: String = String(mod.get("loot_id", ""))
-		var held: bool = int(_run_state.inventory.get(loot_id, 0)) > 0
-		# N9-23: the gate moved to Lv.5, so the line has to say what is still
-		# missing — holding the material with the level unmet used to read as a
-		# ✓ that never produced a card.
 		var need: int = int(mod.get("level_required", 1))
-		var level: int = int(_owned_levels[base_id])
-		var gate: String = "" if level >= need else UiLocale.t("  Lv.%d 필요") % need
-		# B0-2 (owner: 필요 재료는 공개, 결과는 ???). This line used to name the
-		# result outright while the level-up card masked it — the same recipe
-		# read as a secret on one screen and as plain text on the other. The
-		# material and the level gate are what a player can act on, so those stay
-		# visible; the result is still earned by performing it once (N4-9).
-		var result_name: String = LevelUp.UNKNOWN_RESULT
-		if known_weapons.has(result_id):
-			result_name = UiLocale.data_name(
-				_weapons_data.get(result_id, {}) as Dictionary, result_id
-			)
-		lines.append("%s → %s · %s%s%s" % [
-			UiLocale.data_name(_weapons_data.get(base_id, {}) as Dictionary, base_id),
-			result_name,
-			UiLocale.data_name(_loot_data.get(loot_id, {}) as Dictionary, loot_id),
-			" √" if held else UiLocale.t(" 필요"),
-			gate,
-		])
-	return lines
+		rows.append({
+			"base_id": base_id,
+			"result_id": result_id,
+			"result_known": known_weapons.has(result_id),
+			"loot_id": loot_id,
+			"held": int(_run_state.inventory.get(loot_id, 0)) > 0,
+			"need": need,
+			"met": int(_owned_levels[base_id]) >= need,
+		})
+	return rows
 
 
 func _meta_bonus(stat: String) -> float:

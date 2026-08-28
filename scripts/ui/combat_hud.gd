@@ -22,7 +22,10 @@ const BAR_TOP := 92.0
 ## kit draws its bars with a gilt rail top and bottom, and at 8 those two rails
 ## meet in the middle — the bar becomes a gold line with no room for a value.
 ## 18 is the first height that shows rail, fill and rail as three things.
-const BAR_HEIGHT := 18.0
+## Owner (EXP가 조금 눌려있는 느낌): the HD rail is 62px art on a 625 track —
+## at 18 tall the Lv. diamond squashed. 26 keeps the plate's proportions
+## readable; the room comes free from the removed top HP strip.
+const BAR_HEIGHT := 26.0
 const BAR_MARGIN_X := 8.0
 ## 9-slice margin for the kit bar art, in post-downscale pixels: the gilt rail
 ## is about four, and the ends must not eat a short bar's middle.
@@ -1256,19 +1259,73 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		)
 		none.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_evolution_section.add_child(none)
-	for line_text: Variant in evolutions:
-		var row_label: Label = _label(
-			String(line_text), UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
-		)
-		# N9-106 (owner: the panel drifted right): an unwrapped long recipe
-		# line inflates the panel's minimum width past the band, and with
-		# offset_left fixed the excess spills right only.
-		row_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		row_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_evolution_section.add_child(row_label)
+	# Owner (개조경로도 최대한 글 줄이고 이미지로 대체해): each recipe is one
+	# fixed-height icon row — base -> result, material badge, and the level
+	# gate as the only words left. Fixed rows also make the tab's height
+	# estimate exact, which is what un-sticks the landscape scroll the wrapped
+	# text lines kept summoning (their minimum height counted one line).
+	for entry: Variant in evolutions:
+		_evolution_section.add_child(_evolution_row(entry as Dictionary))
 
 	# Every open lands on the build tab — the one the player checks most.
 	_select_pause_tab(PAUSE_TAB_BUILD)
+
+
+## One recipe as pictures (owner: 글 줄이고 이미지로): [base] -> [result|?]
+## [material +check], plus "Lv.N" only while the gate is unmet.
+const EVO_ROW_HEIGHT := 44.0
+const EVO_ICON_PX := 32.0
+const EVO_BADGE_PX := 22.0
+
+
+func _evolution_row(entry: Dictionary) -> Control:
+	var row := HBoxContainer.new()
+	row.custom_minimum_size = Vector2(0.0, EVO_ROW_HEIGHT)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	row.add_child(_evo_icon(UiIcons.weapon_icon(String(entry.get("base_id", "")))))
+	row.add_child(_label("→", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER))
+	if bool(entry.get("result_known", false)):
+		row.add_child(_evo_icon(UiIcons.weapon_icon(String(entry.get("result_id", "")))))
+	else:
+		# B0-2: an unperformed result stays a mystery — a "?" well, no name.
+		var unknown := _label("?", UiPalette.FONT_SIZE_TITLE, UiPalette.GOLD)
+		unknown.custom_minimum_size = Vector2(EVO_ICON_PX, EVO_ICON_PX)
+		unknown.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		unknown.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		row.add_child(unknown)
+	var dot := _label("·", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
+	row.add_child(dot)
+	row.add_child(_evo_badge(UiIcons.loot_icon(String(entry.get("loot_id", "")))))
+	var held: bool = bool(entry.get("held", false))
+	var mark := _label(
+		"√" if held else "×",
+		UiPalette.FONT_SIZE_BODY,
+		UiPalette.SUCCESS if held else UiPalette.VERMILION
+	)
+	row.add_child(mark)
+	if not bool(entry.get("met", true)):
+		row.add_child(_label(
+			UiLocale.t("Lv.%d") % int(entry.get("need", 1)),
+			UiPalette.FONT_SIZE_LABEL, UiPalette.VERMILION
+		))
+	return row
+
+
+func _evo_icon(texture: Texture2D) -> Control:
+	if texture == null:
+		var blank := _label("?", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
+		blank.custom_minimum_size = Vector2(EVO_ICON_PX, EVO_ICON_PX)
+		blank.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		blank.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		return blank
+	return UiIcons.badge_rect(texture, EVO_ICON_PX)
+
+
+func _evo_badge(texture: Texture2D) -> Control:
+	if texture == null:
+		return _label("재", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER)
+	return UiIcons.badge_rect(texture, EVO_BADGE_PX)
 
 
 ## "무기 3/4" — reads GOLD while a slot is open and muted once the build is

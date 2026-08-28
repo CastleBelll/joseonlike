@@ -314,6 +314,9 @@ static func scroll_panel_landscape() -> StyleBox:
 	# Paper-parity content margins: the level-up height estimate was tuned
 	# against the paper panel's geometry, and landscape has no room to spare.
 	style.set_content_margin_all(23.0)
+	# Owner (가로모드 파워업 시 두루마리랑 파워업 글자가 겹치고): the title band
+	# needs a little more air under the handscroll's top edge curl.
+	style.content_margin_top = 30.0
 	return style
 
 

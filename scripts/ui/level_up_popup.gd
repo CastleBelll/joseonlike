@@ -252,6 +252,20 @@ func open(
 	if wanted_style == null:
 		wanted_style = UiIcons.paper_panel()
 	_panel.add_theme_stylebox_override("panel", wanted_style)
+	# The body and card scroll were placed ONCE at _ready, against whatever
+	# orientation the real window had then — a landscape popup then carried
+	# portrait chrome (64px header slot, 20px margins) and its scroll ran 64px
+	# short. Latent for as long as the landscape panel took its whole band;
+	# the content-fitted panel exposed it. Re-place them per build.
+	var chrome_margin: float = _body_margin()
+	_body.offset_left = chrome_margin
+	_body.offset_right = -chrome_margin
+	_body.offset_top = _header_height() + chrome_margin
+	_body.offset_bottom = -chrome_margin * 2.0
+	_scroll.offset_left = chrome_margin
+	_scroll.offset_right = -chrome_margin
+	_scroll.offset_top = chrome_margin
+	_scroll.offset_bottom = -chrome_margin
 	# Owner (2026-08-24): landscape rows scroll horizontally if they ever
 	# outgrow the band; the portrait stack keeps its vertical-only scroll.
 	_scroll.horizontal_scroll_mode = (
@@ -324,9 +338,8 @@ func open(
 	# inset plus gaps then cost 13px the cards no longer have. Chrome scales
 	# with the canvas — the cards themselves never shrink.
 	if not landscape:
-		var squeeze: float = clampf(_root_size().y / DESIGN_HEIGHT, 0.85, 1.0)
-		top *= squeeze
-		strip_gap *= squeeze
+		top *= _portrait_squeeze()
+		strip_gap *= _portrait_squeeze()
 	# The strip is built and MEASURED before the panel is sized, because how
 	# tall it is depends on how many weapons are owned and how many rows they
 	# wrap into. The reserve used to be a constant guess — 120px for a strip
@@ -341,7 +354,8 @@ func open(
 	_owned_row.alignment = FlowContainer.ALIGNMENT_CENTER
 	_build_owned_row(owned_levels, weapons)
 	var strip_height: float = owned_strip_height(
-		owned_levels.size(), strip_width, landscape
+		owned_levels.size(), strip_width, landscape,
+		not landscape and _root_size().y < DESIGN_HEIGHT
 	)
 	# The strip is pinned to the bottom of the SCREEN and the panel is cut to
 	# what is left above it. Deriving the strip's y from the panel's height
@@ -363,13 +377,18 @@ func open(
 	# no-scroll assertion across all 22 combinations is the guard that put it
 	# back, and what re-opens this if the estimate ever lies again.
 	var panel_height: float = minf(estimated, available)
-	# Owner (2026-08-24): a short landscape panel floats centred instead of
-	# hugging the top, so the field stays visible above and below the paper.
+	# Owner (아래 무기 종류 레벨 보여주는게 너무 떨어져있어 두루마리 아래로,
+	# 세로 모드 일때도): the strip rides right under the scroll in BOTH
+	# orientations — screen-bottom pinning left a gulf between them once the
+	# paper stopped taking the whole band. Landscape centres scroll + strip
+	# as one block; portrait keeps its top anchor and the strip follows.
 	if landscape:
+		var block: float = panel_height + strip_gap + strip_height
 		top = maxf(
 			PANEL_TOP_LANDSCAPE,
-			(_root_size().y - reserve - panel_height) / 2.0
+			(_root_size().y - block) / 2.0
 		)
+	strip_top = top + panel_height + strip_gap
 	_apply_panel_band()
 	_panel.offset_top = top
 	_panel.offset_bottom = top + panel_height
@@ -537,20 +556,37 @@ static func panel_height_for(
 ## Chrome sizes for the orientation on screen: a short screen spends less of
 ## itself on the frame around the cards.
 func _header_height() -> float:
-	return HEADER_HEIGHT_LANDSCAPE if _is_landscape() else HEADER_HEIGHT
+	if _is_landscape():
+		return HEADER_HEIGHT_LANDSCAPE
+	return HEADER_HEIGHT * _portrait_squeeze()
 
 
 func _body_margin() -> float:
-	return BODY_MARGIN_LANDSCAPE if _is_landscape() else BODY_MARGIN
+	if _is_landscape():
+		return BODY_MARGIN_LANDSCAPE
+	return BODY_MARGIN * _portrait_squeeze()
+
+
+## Chrome-only shrink factor for canvases under the 960 design height (owner:
+## 스크롤이 제일 싫어) — the frame pays, the cards never do. Shared by the
+## height estimate and the placement code, which is what keeps them honest.
+func _portrait_squeeze() -> float:
+	return clampf(_root_size().y / DESIGN_HEIGHT, 0.85, 1.0)
 
 
 static func owned_strip_rows(
-	count: int, strip_width: float, landscape: bool = false
+	count: int, strip_width: float, landscape: bool = false, short_canvas: bool = false
 ) -> int:
 	var per_row: int = maxi(
 		int((strip_width + OWNED_ROW_GAP) / (OWNED_WELL_SIZE + OWNED_ROW_GAP)), 1
 	)
 	var cap: int = OWNED_MAX_ROWS_LANDSCAPE if landscape else OWNED_MAX_ROWS
+	# A squeezed phone canvas (under the 960 design height) cannot pay for a
+	# second strip row without the cards scrolling — and 스크롤이 제일 싫다.
+	# One row plus the +N overflow badge; a real run's four weapons never
+	# wrap anyway, only the own-everything harness does.
+	if short_canvas:
+		cap = 1
 	# Two rows is the ceiling. A run holds four weapons, so real play never
 	# reaches it; the popup harness owns all twenty-seven at once, and letting
 	# that reserve four rows would push the card being chosen off the paper.
@@ -559,9 +595,9 @@ static func owned_strip_rows(
 
 
 static func owned_strip_height(
-	count: int, strip_width: float, landscape: bool = false
+	count: int, strip_width: float, landscape: bool = false, short_canvas: bool = false
 ) -> float:
-	var rows: int = owned_strip_rows(count, strip_width, landscape)
+	var rows: int = owned_strip_rows(count, strip_width, landscape, short_canvas)
 	return float(rows) * OWNED_WELL_SIZE + float(maxi(rows - 1, 0)) * OWNED_WRAP_GAP
 
 
