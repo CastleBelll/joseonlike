@@ -1,0 +1,24 @@
+# Godot script/scene/data sources must stay LF on every checkout. A CRLF
+# working copy turns the newline inside a GDScript multiline string literal
+# into \r\n; Label renders the \r as an extra line break the height math
+# never counted, and card text walks out of its card (2026-08-28 landscape
+# QA false-positive — both QA worktrees were autocrlf checkouts).
+*.gd text eol=lf
+*.tscn text eol=lf
+*.tres text eol=lf
+*.godot text eol=lf
+*.json text eol=lf
+*.cfg text eol=lf
+*.import text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+
+# Binary art and audio never get eol treatment.
+*.png binary
+*.jpg binary
+*.webp binary
+*.wav binary
+*.ogg binary
+*.ttf binary

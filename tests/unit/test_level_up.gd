@@ -851,6 +851,21 @@ func test_a_maxed_full_build_reopens_the_slots_instead_of_going_blank() -> bool:
 ## B2-2 검륜: the warrior's second workable root. QA (play) measured the three
 ## it had at 270 / 27-59 / 13-17 dps, so a run was decided by whether 월도 showed
 ## up — 5 wins from 6 runs holding it, 0 from 4 without.
+func test_card_lines_survive_a_crlf_checkout() -> bool:
+	# Arrange: what a multiline string literal becomes on an autocrlf checkout —
+	# \r\n inside one part, a stray trailing \r on another.
+	var parts: Array = ["피해 1→2\r\n쿨다운 3초", "★관통 +1\r", "\r", ""]
+	# Act
+	var joined: String = LevelUp._lines(parts)
+	# Assert: no \r anywhere (Label would render it as an uncounted extra
+	# break and push the last line out of the card), blanks dropped.
+	var passed: bool = not joined.contains("\r")
+	passed = passed and joined == "피해 1→2\n쿨다운 3초\n★관통 +1"
+	if not passed:
+		push_error("test_level_up: _lines let a \\r through: %s" % joined.c_escape())
+	return passed
+
+
 func test_geomryun_belongs_to_the_melee_pool_only() -> bool:
 	var weapons: Dictionary = JSON.parse_string(
 		FileAccess.get_file_as_string("res://data/weapons.json")

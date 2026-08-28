@@ -713,11 +713,18 @@ static func well_label(
 static func _lines(parts: Array) -> String:
 	var kept: Array[String] = []
 	for part: Variant in parts:
-		var text: String = String(part).strip_edges()
+		# \r guard: on a CRLF checkout the newline inside a multiline string
+		# literal becomes \r\n, and Label renders the \r as an extra break the
+		# card-height measurement never counts — the last line then draws
+		# outside the card (2026-08-28 landscape QA). .gitattributes pins .gd
+		# to LF; this keeps the cards right even on a checkout that predates it.
+		var text: String = String(part).replace("\r", "").strip_edges()
 		if not text.is_empty():
 			kept.append(text)
-	return "
-".join(kept)
+	# Escaped \n on purpose: a literal newline here IS the file's own line
+	# ending, so a CRLF checkout would make the joiner re-inject the \r the
+	# loop just stripped.
+	return "\n".join(kept)
 
 
 static func describe(
