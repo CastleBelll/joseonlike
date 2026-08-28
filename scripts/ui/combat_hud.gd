@@ -159,6 +159,9 @@ const ACTIVE_CLUSTER_MARGIN := 32.0
 var _elapsed: float = 0.0
 var _timer_label: Label
 var _xp_bar: ProgressBar
+## True when the HD Lv/EXP plate pair is on the XP rail — the Lv. word is
+## baked into the track's diamond then, same as when the old hex cap is up.
+var _xp_bar_hd: bool = false
 var _hp_bar: ProgressBar
 ## The hp fill's own stylebox, kept so the low-health colour can be swapped on
 ## it. Kit or flat — both are a StyleBox, and only the tint differs.
@@ -339,7 +342,9 @@ func set_level(level: int) -> void:
 
 
 func _has_level_cap() -> bool:
-	return _xp_bar != null and _xp_bar.get_node_or_null("Cap") != null
+	if _xp_bar == null:
+		return false
+	return _xp_bar_hd or _xp_bar.get_node_or_null("Cap") != null
 
 
 func set_xp(current: int, needed: int) -> void:
@@ -521,7 +526,17 @@ func _build_xp_bar() -> void:
 	_xp_bar.name = "XpBar"
 	_xp_bar.show_percentage = false
 	_xp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_apply_bar_art(_xp_bar, UiPalette.WOOD, "bar_level_cap")
+	# Owner (2026-08-28): the HD Lv/EXP plate pair takes the XP rail — the Lv.
+	# diamond is baked into the track, so the old hexagon cap piece retires
+	# with it. The kit path stays as the fallback for a missing piece.
+	var track_hd: StyleBox = UiIcons.xp_track_hd()
+	var fill_hd: StyleBox = UiIcons.xp_fill_hd()
+	if track_hd != null and fill_hd != null:
+		_xp_bar.add_theme_stylebox_override("background", track_hd)
+		_xp_bar.add_theme_stylebox_override("fill", fill_hd)
+		_xp_bar_hd = true
+	else:
+		_apply_bar_art(_xp_bar, UiPalette.WOOD, "bar_level_cap")
 	_xp_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_apply_bar_band(_xp_bar)
 	_xp_bar.offset_top = BAR_TOP
@@ -564,7 +579,7 @@ func _build_counters() -> void:
 	stack.offset_right = -UiPalette.SPACE_MD
 	stack.offset_top = HP_BAR_BOTTOM + UiPalette.SPACE_XS
 	_kill_label = _counter_row(stack, "Kills", UiIcons.icon_rect(UiIcons.hud_icon("skull"), ICON_SIZE))
-	_gold_label = _counter_row(stack, "Gold", UiIcons.icon_rect(UiIcons.hud_icon("coin"), ICON_SIZE))
+	_gold_label = _counter_row(stack, "Gold", UiIcons.icon_rect(UiIcons.hud_icon("loot"), ICON_SIZE))
 	add_child(stack)
 
 

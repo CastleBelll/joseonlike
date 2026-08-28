@@ -58,6 +58,11 @@ static func passive_icon(passive_id: String) -> Texture2D:
 const KIT_HUD_PIECES: Dictionary = {
 	"settings": "icon_gear",
 	"info": "icon_info",
+	# Owner (2026-08-28): 해골은 괴이 처치 수, 펼친 두루마리는 전리품 획득 수.
+	# "loot" is the run counter's own name — the camp/meta gold pills keep the
+	# plain coin glyph, so the currency icon and the run-loot icon can differ.
+	"skull": "icon_skull",
+	"loot": "icon_scroll_open",
 }
 
 
@@ -158,6 +163,50 @@ const KIT_BUTTON_TINTS: Dictionary = {
 }
 
 
+## Owner (2026-08-28): bar_exp/bar_level_hd는 출정 경험치 칸에. The two HD bar
+## plates are a pair — the Lv.-diamond one is the EMPTY track, the EXP-diamond
+## one is the same rail FULL of gold. The track renders whole (diamond and end
+## ornament as fixed caps), and its content margins confine the ProgressBar's
+## fill to the rail; the fill is the gold inner strip cut from the EXP plate by
+## region_rect, stretched as a 3-patch. Measured on the 625x62 build pieces
+## (halved by kit_texture): diamond ends at 33, ornament holds the last 18,
+## rail rows 5..25.
+const _XP_TRACK_MARGIN_LEFT := 33.0
+const _XP_TRACK_MARGIN_RIGHT := 18.0
+const _XP_TRACK_MARGIN_Y := 5.0
+const _XP_FILL_REGION := Rect2(36.0, 6.0, 250.0, 19.0)
+const _XP_FILL_MARGIN := 4.0
+
+
+static func xp_track_hd() -> StyleBox:
+	var texture: Texture2D = kit_texture("bar_level_hd")
+	if texture == null:
+		return null
+	var style := StyleBoxTexture.new()
+	style.texture = texture
+	style.texture_margin_left = _XP_TRACK_MARGIN_LEFT
+	style.texture_margin_right = _XP_TRACK_MARGIN_RIGHT
+	style.texture_margin_top = _XP_TRACK_MARGIN_Y
+	style.texture_margin_bottom = _XP_TRACK_MARGIN_Y
+	style.content_margin_left = _XP_TRACK_MARGIN_LEFT + 1.0
+	style.content_margin_right = _XP_TRACK_MARGIN_RIGHT + 1.0
+	style.content_margin_top = _XP_TRACK_MARGIN_Y - 1.0
+	style.content_margin_bottom = _XP_TRACK_MARGIN_Y - 1.0
+	return style
+
+
+static func xp_fill_hd() -> StyleBox:
+	var texture: Texture2D = kit_texture("bar_exp_hd")
+	if texture == null:
+		return null
+	var style := StyleBoxTexture.new()
+	style.texture = texture
+	style.region_rect = _XP_FILL_REGION
+	style.texture_margin_left = _XP_FILL_MARGIN
+	style.texture_margin_right = _XP_FILL_MARGIN
+	return style
+
+
 static func wood_button(state: String) -> StyleBox:
 	var kit: StyleBox = kit_panel(KIT_BUTTON_PIECE, KIT_PLATE_MARGIN)
 	if kit != null:
@@ -170,10 +219,10 @@ static func wood_button(state: String) -> StyleBox:
 			state, Color.WHITE
 		)
 		return kit
-	var texture: Texture2D = _chrome_texture("wood_button_%s.png" % state)
-	if texture == null:
-		return _flat_fallback(UiPalette.WOOD)
-	return _nine_slice(texture, WOOD_MARGIN_LOGICAL * CHROME_SCALE)
+	# Owner (2026-08-28): 기존 wood_button들은 지워버려 — the legacy
+	# wood_button_*.png files are gone, so a missing kit piece falls straight
+	# to the flat colour.
+	return _flat_fallback(UiPalette.WOOD)
 
 
 ## The hanging scroll (족자) for the power-up popup — wooden rollers top and
@@ -182,9 +231,12 @@ static func wood_button(state: String) -> StyleBox:
 ## margins push text inside the rollers and the side rails, and they are wider
 ## than the paper panel's on purpose — the rollers are part of the drawing, not
 ## padding, and a title printed across a roller reads as a mistake.
-const KIT_SCROLL_TEXTURE_TOP := 38
+# QA chrome gate (2026-08-28): the HD scroll draws wider side rails and a
+# corner fret the old margins cut through — side 22->30 and top 38->26 stop
+# the vertical banding and the smear under the top rod.
+const KIT_SCROLL_TEXTURE_TOP := 26
 const KIT_SCROLL_TEXTURE_BOTTOM := 68
-const KIT_SCROLL_TEXTURE_SIDE := 22
+const KIT_SCROLL_TEXTURE_SIDE := 30
 ## Top clears the roller so the title sits on paper. Bottom stays at the paper
 ## panel's own margin: also clearing the mountains cost 51 more vertical px and
 ## the sweep measured nine level-up canvases overflowing — the body's inset
@@ -226,7 +278,7 @@ const _HSCROLL_PAPER_END := 280
 ## one ends at row ~31 where the old kit's was 74 thick. Measured, not styled:
 ## a 74-row mirror cap would carry 40 rows of paper into the "roller".
 const _HSCROLL_ROLLER := 32
-const KIT_HSCROLL_TEXTURE_SIDE := 16
+const KIT_HSCROLL_TEXTURE_SIDE := 24
 const KIT_HSCROLL_TEXTURE_EDGE := 8
 
 static var _hscroll_texture: Texture2D = null
@@ -268,10 +320,9 @@ static func paper_panel() -> StyleBox:
 	var kit: StyleBox = kit_panel("paper_panel", KIT_PAPER_MARGIN)
 	if kit != null:
 		return kit
-	var texture: Texture2D = _chrome_texture("paper_panel.png")
-	if texture == null:
-		return _flat_fallback(UiPalette.PAPER)
-	return _nine_slice(texture, PAPER_MARGIN_LOGICAL * CHROME_SCALE)
+	# The loose chrome/paper_panel.png fallback moved to new_asset/owner/ui_hd
+	# as the HD source (2026-08-28); the build piece above IS that art now.
+	return _flat_fallback(UiPalette.PAPER)
 
 
 ## One piece of the owner's kit, at its own resolution. Null when the piece is
