@@ -1139,10 +1139,15 @@ func _pause_paper_height(tab: String) -> float:
 
 ## Centered band width shared by build and resize (N9-163).
 func _layout_pause_panel_width(panel: Control) -> void:
-	var half_width: float = minf(
+	var band: float = minf(
 		OVERLAY_PANEL_MAX_WIDTH,
 		maxf(size.x - OVERLAY_PANEL_MARGIN_X * 2.0, 200.0)
-	) / 2.0
+	)
+	# Q20: the landscape stat sheet's minimum width can exceed the band, and a
+	# PanelContainer forced past fixed offsets grows to the RIGHT only — the
+	# paper sat 77px off centre and covered the skill button. Widening the
+	# band to the real minimum keeps the growth symmetric around the anchor.
+	var half_width: float = maxf(band, panel.get_combined_minimum_size().x) / 2.0
 	panel.offset_left = -half_width
 	panel.offset_right = half_width
 
@@ -1162,6 +1167,9 @@ func _on_pause_pressed() -> void:
 	if build_provider.is_valid():
 		_refresh_build_summary(build_provider.call())
 	_pause_overlay.visible = true
+	# Deferred because the refresh queue_frees the old rows — the panel's
+	# minimum width is only honest after this frame's tree flush (Q20).
+	_layout_pause_panel_width.call_deferred(_pause_panel)
 	_resume_button.grab_focus()
 
 
