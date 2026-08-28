@@ -35,7 +35,8 @@ const MENU_MAX_WIDTH := 460.0
 const MENU_BUTTON_HEIGHT := 72
 const MENU_BUTTON_FONT_SIZE := 26
 const MENU_BOTTOM_MARGIN := 48
-const UTILITY_BUTTON_SIZE := 48
+## Final-verify note: 48 here vs 44 everywhere else — one size for one dial.
+const UTILITY_BUTTON_SIZE := 44
 
 var _settings_popup: SettingsPopup
 
