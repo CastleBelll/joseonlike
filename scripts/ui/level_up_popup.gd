@@ -53,6 +53,10 @@ const DESIGN_HEIGHT_LANDSCAPE := 540.0
 ## against the narrowed landscape band clamped three columns wider than the band
 ## and summoned the very sideways scroll this floor exists to avoid.
 const CARD_COLUMN_MIN_WIDTH := 206.0
+## Q24: one choice on the wide handscroll used to take the whole body — an
+## 850px card whose content hugged the left third and read as a stretched
+## banner. A card is a card; past this width the paper shows around it.
+const CARD_COLUMN_MAX_WIDTH := 420.0
 ## Owner (2026-08-24): the landscape popup covered the whole screen — the
 ## floor only guarantees a two-line card, so short screens stay short.
 ## N10-16: shorter copy means the floor, not the text, was setting the height,
@@ -257,6 +261,11 @@ func open(
 	var cards: BoxContainer = HBoxContainer.new() if landscape else VBoxContainer.new()
 	cards.name = "Cards"
 	cards.add_theme_constant_override("separation", int(CARD_GAP))
+	if landscape:
+		# With the per-card width capped, one or two cards no longer fill the
+		# row — centre them on the paper instead of leaning left (Q24).
+		cards.alignment = BoxContainer.ALIGNMENT_CENTER
+		cards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll.add_child(cards)
 	# Cards are sized to their wrapped description up front (N3-17): the width
 	# is derived from the fixed layout, so the wrap measurement in
@@ -318,6 +327,10 @@ func open(
 	var strip_width: float = _root_size().x - _panel_inset() * 2.0
 	_owned_row.position = Vector2(_panel_inset(), 0.0)
 	_owned_row.size = Vector2(strip_width, 0.0)
+	# Q24: pinned to the span's left edge the strip sat in the bottom-left
+	# corner, visually detached from the centred handscroll above it. Centred
+	# wells read as belonging to the paper in either orientation.
+	_owned_row.alignment = FlowContainer.ALIGNMENT_CENTER
 	_build_owned_row(owned_levels, weapons)
 	var strip_height: float = owned_strip_height(
 		owned_levels.size(), strip_width, landscape
@@ -583,9 +596,9 @@ static func column_width_for(avail_width: float, count: int) -> float:
 	var n: int = maxi(count, 1)
 	# Floored: a fractional split makes the row 1-2px wider than the scroll
 	# area and summons a pointless horizontal scrollbar.
-	return maxf(
+	return clampf(
 		floorf((avail_width - CARD_GAP * float(n - 1)) / float(n)),
-		CARD_COLUMN_MIN_WIDTH
+		CARD_COLUMN_MIN_WIDTH, CARD_COLUMN_MAX_WIDTH
 	)
 
 
