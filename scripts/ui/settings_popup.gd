@@ -321,13 +321,25 @@ func _select_tab(tab: String) -> void:
 	for key: String in _tab_pages.keys():
 		(_tab_pages[key] as Control).visible = key == tab
 	for key: String in _tab_buttons.keys():
-		var button: Button = _tab_buttons[key]
-		var style := tab_box(key == tab)
-		for state: String in ["normal", "hover", "pressed", "focus"]:
-			button.add_theme_stylebox_override(state, style)
+		style_tab(_tab_buttons[key], key == tab)
 
 
 ## Static so the pause popup's tabs (N9-112) share the exact same look.
+## One call styles a tab for its state — box AND font together. The font used
+## to stay TEXT_ON_DARK in every state, which on the unselected tab's paper
+## pill measured 1.07:1 (QA, twice): white on white. Ink on paper, light on
+## wood; static so the pause tabs keep the exact same look.
+static func style_tab(button: Button, selected: bool) -> void:
+	var style: StyleBoxFlat = tab_box(selected)
+	for state: String in ["normal", "hover", "pressed", "focus"]:
+		button.add_theme_stylebox_override(state, style)
+	var font_color: Color = UiPalette.TEXT_ON_DARK if selected else UiPalette.INK
+	for color_name: String in [
+		"font_color", "font_hover_color", "font_pressed_color", "font_focus_color"
+	]:
+		button.add_theme_color_override(color_name, font_color)
+
+
 static func tab_box(selected: bool) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = UiPalette.WOOD if selected else UiPalette.PAPER_CARD

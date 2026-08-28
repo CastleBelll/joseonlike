@@ -1073,10 +1073,7 @@ func _select_pause_tab(tab: String) -> void:
 	_build_section.visible = tab == PAUSE_TAB_BUILD
 	_evolution_section.visible = tab == PAUSE_TAB_EVOLUTIONS
 	for key: String in _pause_tab_buttons:
-		var button: Button = _pause_tab_buttons[key]
-		var style: StyleBoxFlat = SettingsPopup.tab_box(key == tab)
-		for state: String in ["normal", "hover", "pressed", "focus"]:
-			button.add_theme_stylebox_override(state, style)
+		SettingsPopup.style_tab(_pause_tab_buttons[key], key == tab)
 	# Each tab carries its own content height; the top stays put and the
 	# paper grows downward, clamped above the bottom margin so the buttons
 	# can never leave the sheet (N9-163). Content beyond the clamp scrolls.
