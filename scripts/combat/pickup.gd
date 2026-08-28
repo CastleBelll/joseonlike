@@ -31,7 +31,9 @@ const KIND_TEXTURES: Dictionary = {
 	Pickups.KIND_NUKE: "res://asset/pickups/nuke.png",
 	Pickups.KIND_MAGNET: "res://asset/pickups/magnet.png",
 }
-const GOLD_DRAW_PX := 16.0
+## F18: the most common pickup was the smallest thing on the field — one
+## step up keeps the hierarchy (chest 40 > pickups 26 > gold 20).
+const GOLD_DRAW_PX := 20.0
 
 var kind: String = Pickups.KIND_GOLD
 ## N9-55: which passive a KIND_PASSIVE pickup grants. Empty for every other
@@ -79,10 +81,19 @@ static func kind_texture(path: String) -> Texture2D:
 const PICKUP_DRAW_PX := 26.0
 
 
+const GLOW_COLOR := Color(1.0, 0.92, 0.7, 0.28)
+const GLOW_SCALE := 0.9
+
+
 func _draw_kind_texture(texture: Texture2D) -> void:
 	var draw_px: float = (
 		GOLD_DRAW_PX if kind == Pickups.KIND_GOLD else PICKUP_DRAW_PX
 	)
+	# F19: the magnet and the bomb matched the forest floor's darkness and
+	# vanished. A soft warm halo behind every field pickup says "walk here"
+	# regardless of the sprite's own palette.
+	if kind != Pickups.KIND_GOLD:
+		draw_circle(Vector2.ZERO, draw_px * GLOW_SCALE, GLOW_COLOR)
 	var sized: Texture2D = UiIcons.badge(texture, int(draw_px))
 	var size := Vector2(draw_px, draw_px)
 	draw_texture_rect(sized, Rect2(-size / 2.0, size), false)

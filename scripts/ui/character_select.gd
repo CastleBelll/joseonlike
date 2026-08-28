@@ -59,7 +59,9 @@ const TILE_STRIP_BOTTOM_MARGIN := 136
 const BACK_WIDTH_RATIO := 0.5
 const BACK_BUTTON_HEIGHT := 64
 const BACK_BOTTOM_MARGIN := 48
-const LOCKED_TEXT_DARKEN := 0.25
+## F29: 0.25 still read as an open colour next to a silhouette — the tile
+## looked selectable. Locked names go properly grey now.
+const LOCKED_TEXT_DARKEN := 0.6
 
 var _characters: Dictionary = {}
 var _was_landscape: bool = false
@@ -470,6 +472,10 @@ func _build_tile(model: Dictionary) -> Button:
 	name_label.add_theme_color_override(
 		"font_color", accent.darkened(LOCKED_TEXT_DARKEN) if model["locked"] else accent
 	)
+	if model["locked"]:
+		# F29: say it, do not just tint it — the silhouette plus a coloured
+		# name kept reading as an open character.
+		name_label.text = "%s · %s" % [String(model["name"]), UiLocale.text("select.locked")]
 	column.add_child(name_label)
 	margin.add_child(column)
 	tile.add_child(margin)

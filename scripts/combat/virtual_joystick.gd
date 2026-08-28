@@ -123,7 +123,18 @@ func _draw() -> void:
 		center, BASE_RADIUS - RING_WIDTH / 2.0, 0.0, TAU, RING_POINT_COUNT,
 		Color(UiPalette.JOYSTICK_RING, RING_ALPHA * opacity), RING_WIDTH
 	)
-	draw_circle(
-		center + _knob_offset, KNOB_RADIUS,
-		Color(UiPalette.JOYSTICK_KNOB, KNOB_ALPHA * opacity)
-	)
+	# F21: the grey disc was the last un-chromed control on screen. The kit's
+	# ceramic disc is the knob now — still quiet next to the wood buttons,
+	# but of the same material world. The flat circle stays as the fallback.
+	var knob: Texture2D = UiIcons.kit_texture("disc_0")
+	if knob != null:
+		var knob_size := Vector2.ONE * KNOB_RADIUS * 2.0
+		draw_texture_rect(
+			knob, Rect2(center + _knob_offset - knob_size / 2.0, knob_size),
+			false, Color(1.0, 1.0, 1.0, KNOB_ALPHA * opacity)
+		)
+	else:
+		draw_circle(
+			center + _knob_offset, KNOB_RADIUS,
+			Color(UiPalette.JOYSTICK_KNOB, KNOB_ALPHA * opacity)
+		)

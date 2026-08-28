@@ -258,6 +258,26 @@ def cut_frames(image, grid):
     return out
 
 
+## F20: the ash wraith ships with no outline at all — on screen it is the one
+## white mass in the night and reads as a particle error, not a monster. The
+## art contract says 1 logical px of ink outline; at EXPORT_SCALE 4 that is a
+## 4px dilate of the alpha, filled with ink where the sprite is not.
+OUTLINED = {"ash_wraith"}
+OUTLINE_PX = 4
+OUTLINE_INK = (14, 12, 15, 255)
+
+
+def add_outline(strip):
+    from PIL import ImageFilter
+    alpha = strip.getchannel("A")
+    dilated = alpha.filter(ImageFilter.MaxFilter(OUTLINE_PX * 2 + 1))
+    ring = Image.new("RGBA", strip.size, (0, 0, 0, 0))
+    ink = Image.new("RGBA", strip.size, OUTLINE_INK)
+    ring.paste(ink, mask=dilated)
+    ring.alpha_composite(strip)
+    return ring
+
+
 def bake(sheet, factor, side, dry_run=False):
     image = Image.open(sheet.source).convert("RGBA")
     frames = thin_frames(cut_frames(image, sheet.grid), sheet.keep_frames)
@@ -284,6 +304,9 @@ def bake(sheet, factor, side, dry_run=False):
         x = i * side + (side - scaled.width) // 2
         y = side - round(side * FRAME_PAD) - scaled.height   # one foot baseline
         strip.alpha_composite(scaled, (x, max(0, y)))
+
+    if sheet.source.parent.name in OUTLINED:
+        strip = add_outline(strip)
 
     lit = np.nonzero(np.array(strip.getchannel("A")) > 16)[0]
     drawn = (lit.max() - lit.min() + 1) / EXPORT_SCALE

@@ -1706,11 +1706,24 @@ class ActiveButton:
 		var center: Vector2 = size / 2.0
 		var radius: float = minf(size.x, size.y) / 2.0 - RING_WIDTH
 		var cooling: bool = _fraction > 0.0
-		var fill: Color = UiPalette.WOOD_PRESSED if cooling else UiPalette.WOOD
-		if cooling:
-			fill = Color(fill, COOLING_ALPHA)
-		draw_circle(center, radius, fill)
-		draw_arc(center, radius, 0.0, TAU, RING_POINTS, UiPalette.WOOD_BORDER, RING_WIDTH)
+		# F22: the two actives read as different controls because each icon's
+		# own art carried (or lacked) a frame. The kit disc is the shared base
+		# now — one frame for every active, whatever its glyph brings along.
+		var plate: Texture2D = UiIcons.kit_texture("disc_1")
+		if plate != null:
+			var plate_tint := Color(1, 1, 1, COOLING_ALPHA) if cooling else Color.WHITE
+			var side_px: float = radius * 2.0 + RING_WIDTH * 2.0
+			draw_texture_rect(
+				plate,
+				Rect2(center - Vector2.ONE * side_px / 2.0, Vector2.ONE * side_px),
+				false, plate_tint
+			)
+		else:
+			var fill: Color = UiPalette.WOOD_PRESSED if cooling else UiPalette.WOOD
+			if cooling:
+				fill = Color(fill, COOLING_ALPHA)
+			draw_circle(center, radius, fill)
+			draw_arc(center, radius, 0.0, TAU, RING_POINTS, UiPalette.WOOD_BORDER, RING_WIDTH)
 		if cooling:
 			# Sweep from 12 o'clock: the lit arc is the remaining wait.
 			draw_arc(

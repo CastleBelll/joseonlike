@@ -33,6 +33,7 @@ const CANVAS_BOTTOM_PAD_LANDSCAPE := 40.0
 const NODE_BORDER_WIDTH := 3
 const EDGE_WIDTH := 3.0
 const TRUNK_WIDTH := 10.0
+const CAPTION_TRUNK_PAD := 4.0
 const PILL_CORNER_RADIUS := 18
 const PILL_PADDING_X := 14
 const PILL_PADDING_Y := 6
@@ -687,6 +688,12 @@ func _place_side() -> void:
 	_side_in_row = wants_row
 	if _side_slack != null:
 		_side_slack.visible = wants_row
+	# F10: with EXPAND in portrait the side pane split the leftover height
+	# with the tree and parked 300px of night under its own CTA. Portrait
+	# takes its natural height; the tree scroll gets everything else.
+	_side.size_flags_vertical = (
+		Control.SIZE_EXPAND_FILL if wants_row else Control.SIZE_SHRINK_BEGIN
+	)
 	if _side.get_parent() != null:
 		_side.get_parent().remove_child(_side)
 	# The tree takes whatever the panel does not: without this the panel's own
@@ -722,10 +729,32 @@ func _node_center(entry: Dictionary, width: float) -> Vector2:
 func _draw_graph() -> void:
 	var width: float = _canvas.size.x
 	var height: float = _canvas.custom_minimum_size.y
-	_canvas.draw_line(
-		Vector2(width / 2.0, 0.0), Vector2(width / 2.0, height),
-		UiPalette.WOOD_BORDER, TRUNK_WIDTH
-	)
+	# F11: the trunk ran straight through the node captions ("부적│연마").
+	# It is drawn as segments now, skipping every caption's rect band.
+	var gaps: Array[Vector2] = []
+	for caption: Label in _node_labels.values():
+		if caption == null:
+			continue
+		var rect: Rect2 = caption.get_rect()
+		var trunk_x: float = width / 2.0
+		if rect.position.x - CAPTION_TRUNK_PAD <= trunk_x 				and trunk_x <= rect.end.x + CAPTION_TRUNK_PAD:
+			gaps.append(Vector2(
+				rect.position.y - CAPTION_TRUNK_PAD, rect.end.y + CAPTION_TRUNK_PAD
+			))
+	gaps.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+	var cursor: float = 0.0
+	for gap: Vector2 in gaps:
+		if gap.x > cursor:
+			_canvas.draw_line(
+				Vector2(width / 2.0, cursor), Vector2(width / 2.0, gap.x),
+				UiPalette.WOOD_BORDER, TRUNK_WIDTH
+			)
+		cursor = maxf(cursor, gap.y)
+	if cursor < height:
+		_canvas.draw_line(
+			Vector2(width / 2.0, cursor), Vector2(width / 2.0, height),
+			UiPalette.WOOD_BORDER, TRUNK_WIDTH
+		)
 	var state: Dictionary = _profile.get("meta_tree", {})
 	for entry: Dictionary in _tab_nodes():
 		var to_center: Vector2 = _node_center(entry, width)
