@@ -922,14 +922,11 @@ func _build_boss_bar() -> void:
 	_boss_bar.name = "BossBar"
 	_boss_bar.show_percentage = false
 	_boss_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var track := StyleBoxFlat.new()
-	track.bg_color = UiPalette.NIGHT_BROWN
-	track.border_color = UiPalette.WOOD_BORDER
-	track.set_border_width_all(1)
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = UiPalette.BOSS
-	_boss_bar.add_theme_stylebox_override("background", track)
-	_boss_bar.add_theme_stylebox_override("fill", fill)
+	# QA F9: this was the band's last raw slab — a flat purple rectangle over
+	# an HD wooden rail. It wears the same kit track as everything else now,
+	# with the boss colour as its fill, and shares the band inset so the two
+	# bars end on the same x.
+	_apply_bar_art(_boss_bar, UiPalette.BOSS)
 	_boss_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_apply_bar_band(_boss_bar)
 	_boss_bar.offset_top = BOSS_BAR_TOP
