@@ -16,8 +16,14 @@
 ### 1.1 아이콘 — 정사각 512
 
 `scripts/ui/ui_icons.gd`가 정사각 rect를 `STRETCH_SCALE`로 채운다. **세로가 긴 아이콘은
-화면에서 눌린다.** 표시 크기가 24~64px이므로 512면 충분하고 1024는 이득이 없다 — 오히려
-작은 크기로 줄일 때 디테일이 뭉개져 구판보다 못해진다.
+화면에서 눌린다.** 게임에 넣는 파일은 512다 — 표시 크기가 24~64px이라 그 이상은 용량만 는다.
+
+**단, 만들 때는 1024로 뽑아서 512로 줄인다 (오너 지적 2026-08-27).** 이전 판에는
+"1024는 이득이 없다"고 적혀 있었는데 그건 틀렸다. 실측하면 축소가 손해가 아니라 이득이다:
+무사 정지를 512 높이로 LANCZOS 축소했을 때 색 수가 78,925 → 34,602로 절반이 되면서
+실루엣과 윤곽은 그대로였다. 축소가 곧 안티앨리어싱이라 512로 직접 뽑은 것보다 가장자리가
+깨끗하다. **시트에는 이 방법을 못 쓴다** — 시트는 이미 1536×1024가 상한이라 2배로 뽑을
+여지가 없다(§2).
 
 ### 1.2 스프라이트 시트 — 지금은 격자, 엔진은 아직 스트립만 안다
 
@@ -26,8 +32,23 @@
 격자 읽기는 미구현(TASKS.md 큐). 그때까지 시트는 잘라서 넣는다.
 
 크기 계약: 한 변 = 논리 크기 × 16 (`SpriteSheet.EXPORT_SCALE`)이었으나, 지금 들어오는
-그림은 **1:1 네이티브 픽셀아트**(런 길이의 98~99%가 1px)라 이 계약과 해상도 클래스가 다르다.
-화면 표시 배율은 미결(A/B/C, 아래 §6).
+그림은 해상도 클래스가 다르다. 화면 표시 배율은 미결(A/B/C, 아래 §6).
+
+**"네이티브 픽셀아트"라는 판정은 틀렸다 (2026-08-27 재측정).** 이전 판은 1px 런 비율만 보고
+98~99%면 네이티브라고 적었는데, 색 수를 같이 보면 이야기가 반대다:
+
+| 샘플 | 1px 런 | 색 수 | 실제 성격 |
+|---|---|---|---|
+| 무사 정지 | 86.6% | **78,927** | 부드러운 렌더 |
+| 궁수 정지 | 90.8% | **173,925** | 부드러운 렌더 |
+| 뇌정부 아이콘 | 96.6% | **67,450** | 부드러운 렌더 |
+| 장군 원혼 정지 | 0.0% | 236 | 진짜 블록 픽셀아트 |
+| 환도 아이콘 | 60.9% | 97 | 진짜 클린 픽셀아트 |
+
+픽셀마다 색이 미세하게 달라서 1px 런이 높게 나온 것뿐이다. **수만 색짜리 그림은 픽셀아트가
+아니라 일러스트**이고, 그런 그림은 축소해도 잃을 "1px 윤곽"이 애초에 없다 — 그래서 §1.1의
+1024→512 축소가 통한다. 반대로 색이 수백 개인 진짜 픽셀아트(장군 원혼 정지·환도 아이콘)는
+정수배가 아닌 축소를 하면 블록이 깨진다. **판정은 1px 런이 아니라 색 수로 한다.**
 
 ---
 
@@ -35,12 +56,30 @@
 
 | 항목 | 값 |
 |---|---|
-| 시트 크기 | **2048 × 2048** |
+| 시트 크기 | **1536 × 1024, 한 장** |
 | 격자 | **4 × 4 = 16프레임** |
-| 셀 | **512 × 512 정사각** |
+| 셀 | **384 × 256** |
+| 인물 최대 | **높이 200px · 폭 320px** |
+| 최소 여백 | 위 30 · 아래 20 · 좌우 30 |
 | 읽는 순서 | 왼쪽→오른쪽, 윗줄 먼저 |
 | 배경 | 투명, 아니면 순수 마젠타 `#FF00FF` |
 | 금지 | 프레임 번호·격자선·워터마크·글자 |
+
+**이 숫자가 나온 경위 (2026-08-27).** 원래 계약은 2048×2048 한 장에 셀 512였는데, 그림을
+만드는 ChatGPT 이미지 모델이 내주는 크기는 **1024×1024 · 1536×1024 · 1024×1536** 셋뿐이라
+2048은 애초에 나올 수 없었다. 그 사이 들어온 시트는 1536×1024 한 장에 16프레임이었고 셀이
+384×256이 되어 인물이 세로로 꽉 차 머리·발이 잘렸다(두두리 공격·장군 원혼 공격은 네 변 모두
+여백 0).
+
+중간에 "8프레임씩 두 장으로 나눠 셀을 384×512로 키우자"고 적었다가 되물렸다. 두 장으로
+나누면 장 사이에 크기·색·자세가 어긋나는 새 실패 모드가 생기는데, 지금 생성기는 한 장 안에서도
+프레임 편차가 30~46px씩 나기 때문이다. 그리고 **디테일은 애초에 문제가 아니었다** —
+`asset/tools/bake_sheets.py`가 캐릭터를 화면 38px, 괴이를 30~33px로 그린다. 셀 256 안의
+200px 인물도 화면 크기의 5배가 넘는다. 잘림만 막으면 되고, 잘림은 셀을 키워서가 아니라
+**인물을 작게 그리게 해서** 막는다.
+
+전체 재생성용 프롬프트 19장은 [new_asset/REGEN_PROMPTS.md](../new_asset/REGEN_PROMPTS.md)에
+있고, 하나의 템플릿에서 생성해 규격 문장이 시트마다 어긋나지 않는다.
 
 행이 캔버스에 조금씩 다른 높이로 얹혀도 된다 — **자를 때 발 기준으로 정렬한다**(오너 결정
 2026-08-26). 그 규칙은 프롬프트에 넣지 않는다.
@@ -56,34 +95,50 @@ HOW TO BUILD IT — this is the important part
 {조립 지시: 숨쉬기는 "복사", 달리기·공격은 "재포즈" — §4 참조}
 
 LAYOUT
-- One image, 2048 x 2048 pixels.
-- An exact 4 x 4 grid: 16 cells, each exactly 512 x 512 pixels.
+- One image, 1536 x 1024 pixels. Do not produce any other size.
+- An exact 4 x 4 grid: 16 cells, each exactly 384 x 256 pixels.
 - Reading order is left to right, top row first.
+- ONE FACING FOR THE WHOLE SHEET. Every cell shows the character facing the
+  SAME way. Never mirror, flip or turn the character in any frame. Do NOT split
+  the sheet into a right-facing half and a left-facing half — the game flips the
+  sprite in engine, so a left-facing frame is a wasted frame and it makes the
+  animation snap back and forth.
 - One frame per cell. No frame numbers, no labels, no grid lines, no borders,
   no captions anywhere on the image.
 - Fully transparent background. If transparency is not possible, a solid
   #FF00FF magenta and no magenta anywhere on the character.
 
-HARD CONSTRAINTS — measured, not approximate
-- The character must occupy no more than 80% of the cell height. There must be
-  visible empty space above the head and below the feet in EVERY cell.
-- Leave at least 60 pixels of empty space ABOVE the {머리 장식} and 40 pixels on
-  the left and right in EVERY cell. Nothing — not the {소품 나열} — may touch
-  or cross a cell edge.
-- The character's total HEIGHT stays within {숨쉬기 2 / 움직임 16} pixels across
+LAYING THE FRAMES OUT — read this, the last two sheets failed here
+This sheet is cut by software. It finds each figure by the transparent space
+around it, crops it, then rescales and re-aligns every frame on one baseline.
+So the size you draw at, the margins and the exact centring DO NOT MATTER and
+you should not fuss over them. Only these three things matter:
+- LEAVE A CLEAR TRANSPARENT GAP around every figure — between neighbours, and
+  between the figures and the outer edge of the image. Roughly a fifth of a cell
+  on every side. Two figures that touch cannot be told apart, and the cut then
+  slices through both of them.
+- NOTHING REACHES THE OUTER EDGE of the image, not {소품 나열}. A limb cut off by
+  the edge cannot be recovered; everything else can.
+- THE CHARACTER IS THE SAME SIZE IN EVERY ONE OF THE 16 FRAMES. This is the one
+  thing the cutter cannot repair: a single scale is applied to the whole sheet,
+  so a frame drawn smaller stays smaller and the character visibly shrinks and
+  grows while it animates. Same head, same body, same limbs, same proportions,
+  every frame. Draw all 16 at one comfortable size with room to spare — there
+  is nothing to gain from drawing big.
+
+HARD CONSTRAINTS — the cutter cannot fix these
+- The character's total HEIGHT stays within {숨쉬기 2 / 움직임 11} pixels across
   all 16 frames. The silhouette must NOT shrink and grow.
 - The vertical travel of the HEAD across the whole cycle is at most
-  {숨쉬기 5 / 움직임 16} pixels.
-- The character's total WIDTH stays within {숨쉬기 4 / 움직임 12} pixels across
+  {숨쉬기 4 / 움직임 11} pixels.
+- The character's total WIDTH stays within {숨쉬기 3 / 움직임 8} pixels across
   all 16 frames.
-- The horizontal CENTRE of the body stays at the same x in all 16 frames,
-  within {숨쉬기 2 / 움직임 4} pixels. It must not drift sideways.
 - {발 규칙: §4 참조}
 
 STYLE
-{Side-view }pixel art at native resolution — 1 pixel is 1 pixel, no upscaled
-blocks. 1px black outline, flat cel shading, no gradients, no anti-aliasing,
-no drop shadow on the background.
+{Side-view }pixel art. 1px black outline, flat cel shading, no gradients, no
+drop shadow on the background. Keep the palette tight and readable at small
+size — this is a game sprite, not an illustration.
 ```
 
 **이 블록이 실제로 산 것** (무사 숨쉬기 전후 실측):
@@ -112,8 +167,8 @@ identical drawing, pixel for pixel, in the identical position. This is not
 
 발 규칙 · 자세 · 사이클:
 ```
-- The soles of both feet sit on the same baseline in all 16 frames, within
-  1 pixel.
+- The soles of both feet sit on one ground line, at the same height in all 16
+  frames.
 
 POSE — the reference pose, held
 - Keep exactly the standing pose and the exact facing of the reference image.
@@ -157,9 +212,10 @@ drawings.
 
 발 규칙 · 사이클:
 ```
-- The GROUND LINE is the same in every frame: whenever a foot is planted, its
-  sole lands on that one line, within 2 pixels. Only the airborne frames sit
-  above it, and by no more than 12 pixels.
+- The GROUND LINE is at the same height in every frame. Whenever a foot is
+  planted, its sole lands on that line. Only the airborne frames sit above it,
+  and only slightly.
+
 - Strict side view, facing RIGHT in all 16 frames.
 
 THE CYCLE — two full strides, eight frames each, and it must LOOP
@@ -177,7 +233,12 @@ Frames 1-8, right leg leading:
   6  reach: left leg extends forward preparing to land, right leg fully behind
   7  pre-contact: left foot almost down, torso leaning further forward
   8  transition: left foot about to strike — this pose leads into frame 9
-Frames 9-16 repeat 1-8 with the legs and arms swapped (left leg leading).
+Frames 9-16 are the SECOND STRIDE of the same run, still facing RIGHT. Pose 9
+is pose 1, pose 10 is pose 2, and so on through pose 16 which is pose 8 — with
+ONLY the two legs exchanging roles (the leg that led in frames 1-8 now trails,
+the trailing one now leads) and the two arms exchanging with them. The body is
+NOT mirrored and the character does NOT turn around: it keeps running to the
+RIGHT for all 16 frames.
 Frame 16 must lead back into frame 1 with no jump.
 
 MOTION DETAIL
@@ -196,8 +257,7 @@ MOTION DETAIL
 
 조립 지시는 달리기와 같다. 사이클만 바꾼다:
 ```
-- The GROUND LINE is the same in every frame: both feet stay planted on that
-  one line, within 2 pixels. The character may lunge, but it does not leave
+- The GROUND LINE is at the same height in every frame, and both feet stay planted on it. The character may lunge, but it does not leave
   the ground and does not travel forward across the frames.
 
 THE CYCLE — one swing, and it must return to the start
@@ -233,7 +293,11 @@ shoes, same colour palette.
 the head, never changes side — it rides the shoulders, tipping a few degrees.`
 지팡이는 **없다.**
 
-### 무사 — `asset/characters/warrior/idle.png`
+### 무사 — `asset/characters/warrior/idle_reference.png`
+
+`warrior/idle.png`를 쓰지 마라 — 그건 이제 16프레임 인게임 스트립(10896×681)이다.
+`idle_reference.png`는 `breath.png` 1번 프레임을 잘라낸 것(인물 220×305, 리터칭 0)이고,
+지금 남아 있는 그 자세의 최고 해상도 사본이다.
 
 ```
 same face, same brown topknot with the navy headband and the two red ribbons,
@@ -267,11 +331,20 @@ hip, tilting a few degrees as the hips rotate.`
 
 ## 7. 받은 뒤 이쪽에서 하는 일
 
+0. **백업 — 받는 즉시 `new_asset/source/sheets/<name>-<action>.png` 로 사본을 뜬다.**
+   실측보다 먼저 한다.
 1. 실측 — 폭·높이·발바닥·중심 x 편차, 셀 경계 접촉
 2. 컷 — 격자대로 자르고 **발 기준 정렬**(행 어긋남은 여기서 없어진다), 리터칭 0
 3. 확인 — 아티팩트에 32프레임 애니메이션으로 올려 눈으로 본다
 4. 검증 — `godot --headless --path . --script tools/validate_data.gd`
    그리고 `godot --headless --path . --script tests/run_tests.gd`
+
+**0번이 왜 0번인가 (2026-08-26).** 오너가 준 무사 HD idle이 `asset/characters/warrior/idle.png`
+에만 있고 커밋되지 않은 상태였는데, 다른 세션의 굽기 작업(`asset/tools/bake_sheets.py`,
+커밋 `7fafdd8`)이 스트립 출력 파일명으로 같은 `idle.png`를 써서 덮어썼다. 그 작업은 4×4 시트는
+`new_asset/source/sheets/`에 백업했지만 단독 idle은 백업 대상이 아니었다. git에도 없고 디스크에도
+없고 Godot import 캐시(경로 해시가 같아 함께 덮어써짐)에도 없어 복구가 불가능했고, 오너가 다시
+넣어야 했다. **오너가 준 파일은 이 저장소에서 유일본으로 취급한다.**
 
 **리터칭은 하지 않는다.** 한때 프레임 번호를 지우려고 셀 좌상단의 흰 픽셀을 지웠는데,
 눈 하이라이트가 같은 조건에 걸려 캐릭터들의 눈이 날아갔다. 번호 없는 시트를 받는 것으로

@@ -15,6 +15,8 @@ Every asset under `asset/` must have a row here before it ships. No row, no comm
 | `asset/pickups/health.png` | Owner-dropped pack `new_asset/owner/Pixel UI pack 3` (00.png red heart; night-tinted via asset/pickups/build_assets.py) | Free to use — owner confirmed 2026-08-20 that every pack he dropped states free licensing. No licence file ships inside the pack itself | None stated | 2026-08-18 (N6-5) |
 | `asset/pickups/nuke.png` | Owner-dropped pack `new_asset/owner/Trap and Weapon` (Bomb.png frame 0; night-tinted via asset/pickups/build_assets.py) | Free to use — owner confirmed 2026-08-20 that every pack he dropped states free licensing. No licence file ships inside the pack itself | None stated | 2026-08-18 (N6-5) |
 | `asset/bgm/{title,camp,bamboo_forest}.mp3` | Owner-dropped `new_asset/owner/bgm/{Joseonlike,본거지,대나무숲}.mp3`, copied byte-for-byte and renamed to ascii ids | Free to use — owner confirmed 2026-08-20 that every pack he dropped states free licensing. No licence file ships inside the pack itself | None stated | 2026-08-19 (N9-1a) |
+| `new_asset/archive/{Effect Asset, Effects, Environment, Pixel Holy Spell Effect 32x32 Pack 3, Retro Impact Effect Pack 5}` | Owner-dropped third-party effect/environment packs, ARCHIVED ONLY — nothing from them ships yet (new_asset/* is excluded from every export) | Owner states his drops are free-licensed (2026-08-20 rule). No licence file ships inside the packs; before any sprite ENTERS asset/, pin the pack's origin URL + licence here first | None stated | 2026-08-28 (archive) |
+| `new_asset/owner/ui_hd/*` (42 HD UI singles) | Owner-supplied 2026-08-28; downscaled into `asset/ui/chrome/build/` by `asset/ui/build_chrome_hd.py` | Owner-supplied | - | 2026-08-28 |
 
 ## Rules
 

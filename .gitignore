@@ -45,6 +45,10 @@ export_credentials.cfg
 # careful. The handful of owner files already tracked stay tracked: a gitignore
 # rule does not apply to files git already knows about.
 new_asset/owner/
+# Same policy for the third-party pack archive and duplicate source drops:
+# large source material the game never loads; build outputs are what ships.
+new_asset/archive/
+new_asset/source/bgm/
 
 # itch.io hand-upload artifacts, built locally on demand
 joseonlike_web.zip

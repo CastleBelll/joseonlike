@@ -222,8 +222,11 @@ static func scroll_panel() -> StyleBox:
 ## cap. Two matching rollers, no contamination, and the seal watermark reads
 ## fine on its side.
 const _HSCROLL_PAPER_END := 280
-const _HSCROLL_ROLLER := 74
-const KIT_HSCROLL_TEXTURE_SIDE := 37
+## HD scroll (2026-08-28): the owner's remake has slim rod rollers — the top
+## one ends at row ~31 where the old kit's was 74 thick. Measured, not styled:
+## a 74-row mirror cap would carry 40 rows of paper into the "roller".
+const _HSCROLL_ROLLER := 32
+const KIT_HSCROLL_TEXTURE_SIDE := 16
 const KIT_HSCROLL_TEXTURE_EDGE := 8
 
 static var _hscroll_texture: Texture2D = null
