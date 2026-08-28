@@ -13,6 +13,9 @@ const CAMP_SCENE := "res://scenes/camp.tscn"
 
 const LAYER_ABOVE_POPUP := 12
 const PANEL_MARGIN_X := 48.0
+## Landscape vertical breathing room — the 540 canvas cannot spare the
+## portrait 48 above and below (Q17).
+const PANEL_MARGIN_Y_LANDSCAPE := 24.0
 const PANEL_WIDTH := 492.0
 ## Wide enough for the landscape two-column rows to keep their values.
 const PANEL_WIDTH_LANDSCAPE := 760.0
@@ -59,7 +62,12 @@ func _layout_panel() -> void:
 	# a real run: 처치 and 보유 엽전 both cut mid-number.
 	var band: float = PANEL_WIDTH_LANDSCAPE if root_w > root_h else PANEL_WIDTH
 	var half_w: float = minf(root_w - PANEL_MARGIN_X * 2.0, band) / 2.0
-	var half_h: float = minf(PANEL_HEIGHT_MAX, root_h - PANEL_MARGIN_X * 2.0) / 2.0
+	# Q17: on a 540-tall landscape canvas the portrait 48px vertical margin
+	# left a 444px paper, 6px short of the victory sheet with four earned
+	# achievements — the last line rendered half-cut behind a scrollbar.
+	# Landscape has no height to donate to margins.
+	var margin_y: float = PANEL_MARGIN_Y_LANDSCAPE if root_w > root_h else PANEL_MARGIN_X
+	var half_h: float = minf(PANEL_HEIGHT_MAX, root_h - margin_y * 2.0) / 2.0
 	_panel.offset_left = -half_w
 	_panel.offset_right = half_w
 	_panel.offset_top = -half_h
@@ -198,13 +206,23 @@ func _make_body() -> Control:
 	# every row and re-filling its value, and the first attempt did not rebuild
 	# at all: a paper built portrait kept its single column in landscape, and the
 	# five rows went straight back to scrolling (layout_sweep, 960x540).
+	# Q17: the earned-achievement lines live OUTSIDE the stat grid. As a grid
+	# cell they landed in the left column of the landscape two-column layout —
+	# centered 168px left of the panel's centre — and four of them made that
+	# one grid row tall enough to scroll and clip. A full-width sibling under
+	# the rows centres across the paper and costs the grid no height.
+	var scroll_content := VBoxContainer.new()
+	scroll_content.name = "ScrollContent"
+	scroll_content.add_theme_constant_override("separation", UiPalette.SPACE_MD)
+	scroll_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(scroll_content)
 	var rows := GridContainer.new()
 	rows.name = "Rows"
 	rows.add_theme_constant_override("h_separation", UiPalette.SPACE_LG)
 	rows.add_theme_constant_override("v_separation", UiPalette.SPACE_MD)
 	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_rows = rows
-	scroll.add_child(rows)
+	scroll_content.add_child(rows)
 	body.add_child(scroll)
 	# "패인", not "죽음": the row also carries the timeout defeat, where nobody
 	# died — "죽음: 보스를 처치하지 못했다" would read as nonsense.
@@ -218,7 +236,8 @@ func _make_body() -> Control:
 	_earned_box = VBoxContainer.new()
 	_earned_box.name = "EarnedAchievements"
 	_earned_box.add_theme_constant_override("separation", UiPalette.SPACE_XS)
-	rows.add_child(_earned_box)
+	_earned_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_content.add_child(_earned_box)
 	var cta := Button.new()
 	cta.name = "TitleButton"
 	cta.text = UiLocale.t("본거지로")
