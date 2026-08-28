@@ -4,7 +4,7 @@
     "name_ko": "죽림 답파",
     "name_en": "Bamboo Pathfinder",
     "desc_ko": "도사로 대나무숲의 밤을 끝까지 넘긴다. 길을 한 번 걸어본 자만이 그 길을 그릴 수 있다.",
-    "desc_en": "Survive the bamboo night as the 도사. Only someone who has walked it can draw it.",
+    "desc_en": "Survive the bamboo night as Uchi. Only someone who has walked it can draw it.",
     "character": "taoist",
     "counter": "victories",
     "target": 1,
@@ -33,7 +33,7 @@
     "name_ko": "도깨비 사냥꾼",
     "name_en": "Goblin Hunter",
     "desc_ko": "괴이 백을 벤다.",
-    "desc_en": "Cut down a hundred 괴이.",
+    "desc_en": "Cut down a hundred creatures.",
     "counter": "kills",
     "target": 100,
     "reward_gold": 50
@@ -42,7 +42,7 @@
     "name_ko": "괴이 수집가",
     "name_en": "Monster Collector",
     "desc_ko": "괴이 천을 벤다.",
-    "desc_en": "Cut down a thousand 괴이.",
+    "desc_en": "Cut down a thousand creatures.",
     "counter": "kills",
     "target": 1000,
     "reward_gold": 300

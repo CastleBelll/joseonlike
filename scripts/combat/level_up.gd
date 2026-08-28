@@ -462,7 +462,11 @@ static func runtime_can_fire(stats: Dictionary) -> bool:
 ## report: level-up cards were pure numbers, no reminder of what a weapon
 ## you already own actually does once your build has several of them).
 static func _weapon_mechanic_line(stats: Dictionary) -> String:
-	return Bestiary.mechanic_line(String(stats.get("mechanic", "straight")), "ko")
+	# QA F8: the EN table has existed all along — this call just never asked
+	# for it, so every card explained itself in Korean to English players.
+	return Bestiary.mechanic_line(
+		String(stats.get("mechanic", "straight")), UiLocale.current_locale
+	)
 
 
 ## Mechanic fragment for cards (N4-4a), real numbers from data — how this
