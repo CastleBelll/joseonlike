@@ -448,6 +448,48 @@ func _refresh_departure_labels() -> void:
 	# only the value, which read as a stray chip next to a labelled one.
 	_run_length_button.text = UiLocale.t("길이 ‹%s›") % UiLocale.data_name(length)
 	_run_length_button.tooltip_text = String(length.get("desc_ko", ""))
+	# Owner (난이도, 길이 등급에따라 다른 이미지 배너로): the plaque ladder
+	# darkens as the pick escalates, so the choice reads at a glance before
+	# the words do.
+	_style_cycle(_difficulty_button, DIFFICULTY_PLAQUES.get(
+		int(tier.get("rank", 0)), "plaque_cream"
+	))
+	_style_cycle(_run_length_button, LENGTH_PLAQUES.get(
+		String(length.get("id", "")), "plaque_cream"
+	))
+
+
+## Escalation ladder: calm cream to plague red.
+const DIFFICULTY_PLAQUES := {
+	0: "plaque_cream", 1: "plaque_brown", 2: "plaque_indigo",
+	3: "plaque_purple", 4: "plaque_red",
+}
+const LENGTH_PLAQUES := {
+	"short": "plaque_cream", "standard": "plaque_brown",
+	"long": "plaque_purple", "endless": "plaque_red",
+}
+## Light plaques carry ink, dark ones carry the light text.
+const LIGHT_PLAQUES: Array[String] = ["plaque_cream"]
+
+
+func _style_cycle(button: Button, piece: String) -> void:
+	var plate: StyleBox = UiIcons.kit_panel(piece, UiIcons.KIT_PLAQUE_MARGIN)
+	if plate == null:
+		return
+	for state: String in ["normal", "hover", "pressed"]:
+		var styled: StyleBox = plate.duplicate()
+		if styled is StyleBoxTexture:
+			(styled as StyleBoxTexture).modulate_color = (
+				UiIcons.KIT_BUTTON_TINTS.get(state, Color.WHITE)
+			)
+		button.add_theme_stylebox_override(state, styled)
+	var on_light: bool = LIGHT_PLAQUES.has(piece)
+	for color_name: String in [
+		"font_color", "font_hover_color", "font_pressed_color", "font_focus_color"
+	]:
+		button.add_theme_color_override(
+			color_name, UiPalette.INK if on_light else UiPalette.TEXT_ON_DARK
+		)
 
 
 func _on_difficulty_pressed() -> void:
