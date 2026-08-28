@@ -163,51 +163,6 @@ const KIT_BUTTON_TINTS: Dictionary = {
 }
 
 
-## Owner (2026-08-28): bar_exp/bar_level_hd는 출정 경험치 칸에. The two HD bar
-## plates are a pair — the Lv.-diamond one is the EMPTY track, the EXP-diamond
-## one is the same rail FULL of gold. The track renders whole (diamond and end
-## ornament as fixed caps), and its content margins confine the ProgressBar's
-## fill to the rail; the fill is the gold inner strip cut from the EXP plate by
-## region_rect, stretched as a 3-patch. Measured on the 625x62 build pieces
-## (halved by kit_texture): diamond ends at 33, ornament holds the last 18,
-## rail rows 5..25.
-const _XP_TRACK_MARGIN_LEFT := 33.0
-const _XP_TRACK_MARGIN_RIGHT := 18.0
-const _XP_TRACK_MARGIN_Y := 5.0
-const _XP_FILL_MARGIN := 4.0
-
-
-static func xp_track_hd() -> StyleBox:
-	var texture: Texture2D = kit_texture("bar_level_hd")
-	if texture == null:
-		return null
-	var style := StyleBoxTexture.new()
-	style.texture = texture
-	style.texture_margin_left = _XP_TRACK_MARGIN_LEFT
-	style.texture_margin_right = _XP_TRACK_MARGIN_RIGHT
-	style.texture_margin_top = _XP_TRACK_MARGIN_Y
-	style.texture_margin_bottom = _XP_TRACK_MARGIN_Y
-	style.content_margin_left = _XP_TRACK_MARGIN_LEFT + 1.0
-	style.content_margin_right = _XP_TRACK_MARGIN_RIGHT + 1.0
-	style.content_margin_top = _XP_TRACK_MARGIN_Y - 1.0
-	style.content_margin_bottom = _XP_TRACK_MARGIN_Y - 1.0
-	return style
-
-
-static func xp_fill_hd() -> StyleBox:
-	# Owner (경험치 먹어도 게이지가 안 차네): region_rect on a StyleBoxTexture
-	# rendered nothing at runtime, so the gold strip is cropped into its own
-	# build piece (bar_exp_fill) by build_chrome_hd.py and drawn plain.
-	var texture: Texture2D = kit_texture("bar_exp_fill")
-	if texture == null:
-		return null
-	var style := StyleBoxTexture.new()
-	style.texture = texture
-	style.texture_margin_left = _XP_FILL_MARGIN
-	style.texture_margin_right = _XP_FILL_MARGIN
-	return style
-
-
 static func wood_button(state: String) -> StyleBox:
 	var kit: StyleBox = kit_panel(KIT_BUTTON_PIECE, KIT_PLATE_MARGIN)
 	if kit != null:

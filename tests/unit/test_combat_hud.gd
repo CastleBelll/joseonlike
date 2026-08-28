@@ -522,9 +522,9 @@ func test_the_level_is_stated_once() -> bool:
 	hud.set_level(12)
 	var label: Label = hud.get_node("LevelLabel")
 	var passed: bool = label.text.contains("12")
-	if hud.get_node("XpBar").get_node_or_null("Cap") != null or hud._xp_bar_hd:
-		# The cap (or the HD track's baked Lv. diamond) says the word, so the
-		# label must not say it again.
+	if hud.get_node("XpBar").get_node_or_null("Cap") != null:
+		# The cap says the word, so the label must not say it again. (The EXP
+		# reveal plate says EXP, not Lv — it does not count.)
 		passed = passed and not label.text.contains("Lv")
 	else:
 		# No art, no word anywhere else — the label has to carry it.

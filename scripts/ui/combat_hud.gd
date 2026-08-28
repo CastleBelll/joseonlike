@@ -163,9 +163,7 @@ const ACTIVE_CLUSTER_MARGIN := 32.0
 var _elapsed: float = 0.0
 var _timer_label: Label
 var _xp_bar: ProgressBar
-## True when the HD Lv/EXP plate pair is on the XP rail — the Lv. word is
-## baked into the track's diamond then, same as when the old hex cap is up.
-var _xp_bar_hd: bool = false
+var _xp_art: Control
 ## The hp fill's own stylebox, kept so the low-health colour can be swapped on
 ## it. Kit or flat — both are a StyleBox, and only the tint differs.
 var _level_label: Label
@@ -341,14 +339,16 @@ func set_level(level: int) -> void:
 
 
 func _has_level_cap() -> bool:
-	if _xp_bar == null:
-		return false
-	return _xp_bar_hd or _xp_bar.get_node_or_null("Cap") != null
+	# The EXP plate says EXP, not Lv — so unlike the old hex cap, the reveal
+	# art does NOT carry the word and the label keeps saying it.
+	return _xp_bar != null and _xp_bar.get_node_or_null("Cap") != null
 
 
 func set_xp(current: int, needed: int) -> void:
 	_xp_bar.max_value = maxi(needed, 1)
 	_xp_bar.value = current
+	if _xp_art != null:
+		_xp_art.queue_redraw()
 
 
 ## N6-2 pure HUD HP view-model, node-free for the headless suite: bar range,
@@ -521,15 +521,24 @@ func _build_xp_bar() -> void:
 	_xp_bar.name = "XpBar"
 	_xp_bar.show_percentage = false
 	_xp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Owner (2026-08-28): the HD Lv/EXP plate pair takes the XP rail — the Lv.
-	# diamond is baked into the track, so the old hexagon cap piece retires
-	# with it. The kit path stays as the fallback for a missing piece.
-	var track_hd: StyleBox = UiIcons.xp_track_hd()
-	var fill_hd: StyleBox = UiIcons.xp_fill_hd()
-	if track_hd != null and fill_hd != null:
-		_xp_bar.add_theme_stylebox_override("background", track_hd)
-		_xp_bar.add_theme_stylebox_override("fill", fill_hd)
-		_xp_bar_hd = true
+	# Owner (LV 게이지 바가 exp_bar이거여야지 / 경험치를 얻으면 LV 문구가
+	# 없어지는거야): the ProgressBar fill stylebox painted from x0 and buried
+	# the plate's diamond the moment any XP landed. The rail is a REVEAL now —
+	# one child draws the EXP plate dark, then bright up to the progress
+	# fraction, so the EXP diamond is always lit and the gold advances along
+	# the same drawing. The Lv number stays on its own label.
+	var plate: Texture2D = UiIcons.kit_texture("bar_exp_hd")
+	if plate != null:
+		var empty := StyleBoxEmpty.new()
+		_xp_bar.add_theme_stylebox_override("background", empty)
+		_xp_bar.add_theme_stylebox_override("fill", empty)
+		var art := XpBarArt.new()
+		art.name = "XpArt"
+		art.plate = plate
+		art.set_anchors_preset(Control.PRESET_FULL_RECT)
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_xp_bar.add_child(art)
+		_xp_art = art
 	else:
 		_apply_bar_art(_xp_bar, UiPalette.WOOD, "bar_level_cap")
 	_xp_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
@@ -1670,4 +1679,29 @@ class ActiveButton:
 			font, center + Vector2(-text_size.x / 2.0, text_size.y * 0.35),
 			skill_name, HORIZONTAL_ALIGNMENT_CENTER, -1.0, FONT_SIZE,
 			UiPalette.TEXT_ON_DARK
+		)
+
+
+## The XP rail as a reveal of the owner's EXP plate (2026-08-28): the whole
+## plate drawn dark, then the same drawing bright up to the progress fraction.
+## The diamond stays inside the always-revealed floor so the EXP mark never
+## disappears — the bug that killed the stylebox approach.
+class XpBarArt:
+	extends Control
+	const DIAMOND_FRAC := 0.106  # measured: diamond ends at 66 of 625
+	const DIM := Color(0.45, 0.42, 0.40, 1.0)
+	var plate: Texture2D
+
+	func _draw() -> void:
+		if plate == null:
+			return
+		var bar := get_parent() as ProgressBar
+		var ratio: float = bar.ratio if bar != null else 0.0
+		draw_texture_rect(plate, Rect2(Vector2.ZERO, size), false, DIM)
+		var revealed: float = DIAMOND_FRAC + (1.0 - DIAMOND_FRAC) * clampf(ratio, 0.0, 1.0)
+		var src := Rect2(
+			Vector2.ZERO, Vector2(plate.get_width() * revealed, plate.get_height())
+		)
+		draw_texture_rect_region(
+			plate, Rect2(Vector2.ZERO, Vector2(size.x * revealed, size.y)), src
 		)
