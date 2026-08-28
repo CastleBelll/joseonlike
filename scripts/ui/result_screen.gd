@@ -44,6 +44,7 @@ var _death_row: Control
 ## N9-155 (owner: 업적 달성 알림이 표시가 안 된다): the stage has handed the
 ## run's completed achievements over since N9-65 — this is where they show.
 var _earned_box: VBoxContainer
+var _row_scroll: ScrollContainer
 var _death_value: Label
 
 
@@ -78,7 +79,28 @@ func _layout_panel() -> void:
 	# achievements — the last line rendered half-cut behind a scrollbar.
 	# Landscape has no height to donate to margins.
 	var margin_y: float = PANEL_MARGIN_Y_LANDSCAPE if root_w > root_h else PANEL_MARGIN_X
-	var half_h: float = minf(PANEL_HEIGHT_MAX, root_h - margin_y * 2.0) / 2.0
+	# V1 follow-up: the fixed height cap could not know how tall the wrapped
+	# EN lines run, so the sheet scrolled under it. Same honest two-step as
+	# the pause paper: zero the scroll's minimum, the panel's own minimum is
+	# the chrome, the leftover is the room, and the scroll asks for the
+	# smaller of content and room — the cap only floors the LOOK, never cuts
+	# content that still fits the screen.
+	var available: float = root_h - margin_y * 2.0
+	var half_h: float = minf(PANEL_HEIGHT_MAX, available) / 2.0
+	if _row_scroll != null:
+		_row_scroll.custom_minimum_size = Vector2.ZERO
+		var chrome: float = _panel.get_combined_minimum_size().y
+		var room: float = maxf(available - chrome, 60.0)
+		var content: float = 0.0
+		if _rows != null:
+			var holder: Control = _rows.get_parent() as Control
+			content = (
+				holder.get_combined_minimum_size().y if holder != null
+				else _rows.get_combined_minimum_size().y
+			)
+		_row_scroll.custom_minimum_size = Vector2(0.0, minf(content, room))
+		var wanted: float = chrome + _row_scroll.custom_minimum_size.y
+		half_h = clampf(wanted, minf(PANEL_HEIGHT, available), available) / 2.0
 	_panel.offset_left = -half_w
 	_panel.offset_right = half_w
 	_panel.offset_top = -half_h
@@ -141,6 +163,8 @@ func open(outcome: String, summary: Dictionary) -> void:
 	# N5-2: permanent gold after banking this run (SaveManager.bank_run).
 	_total_gold_value.text = str(int(summary.get("total_gold", 0)))
 	_show_earned(summary.get("earned", []))
+	# The paper can only measure content that exists — earned lines included.
+	_layout_panel()
 	visible = true
 
 
@@ -161,6 +185,13 @@ func _show_earned(earned: Variant) -> void:
 			line += "  (+%d)" % reward
 		var label := _label(line, UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		# V1 (EN portrait): a one-line label's minimum width IS the whole
+		# sentence, and the EN lines forced the paper past the canvas — the
+		# symmetric clamp can bound offsets but not a child's minimum. Wrap
+		# lets the minimum collapse; a long EN line takes two rows instead of
+		# taking the numbers off screen.
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_earned_box.add_child(label)
 
 
@@ -207,6 +238,7 @@ func _make_body() -> Control:
 	# same shape the settings paper uses (N9-163).
 	var scroll := ScrollContainer.new()
 	scroll.name = "RowScroll"
+	_row_scroll = scroll
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	# Responsive: a short landscape canvas cannot stack five rows, so it spends
