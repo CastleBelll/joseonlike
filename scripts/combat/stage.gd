@@ -121,7 +121,8 @@ const MINIMAP_MARGIN := 16.0
 ## below whichever band its orientation actually has. Landscape's strip
 ## starts right of the map (x144), so only the label row matters there.
 const MINIMAP_TOP := 148.0
-const MINIMAP_TOP_PORTRAIT := 176.0
+## F7: two belongings lines end at y192 — one line was all 176 cleared.
+const MINIMAP_TOP_PORTRAIT := 200.0
 const MINIMAP_REFRESH_SEC := 0.2
 var _replaced_weapons: Array[String] = []
 # N4-9 rarity evidence: the run second each SPECIAL material dropped at —
