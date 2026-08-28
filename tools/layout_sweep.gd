@@ -172,6 +172,12 @@ func _check_overlay(key: String, window: Vector2i, canvas: Vector2) -> void:
 				hud._pause_overlay.set_anchors_preset(Control.PRESET_TOP_LEFT)
 				hud._pause_overlay.size = canvas
 				hud._on_pause_pressed()
+				# _on_pause_pressed pauses the TREE, and this sweep never used to
+				# undo it — so every screen measured after the first window's
+				# pause check ran in a paused tree. That leaked state was invisible
+				# until the level-up popup started animating only when paused: ten
+				# windows measured a half-unrolled scroll and reported overflow.
+				get_tree().paused = false
 			node = hud
 	await get_tree().process_frame
 	await get_tree().process_frame

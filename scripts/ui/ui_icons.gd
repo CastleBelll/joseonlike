@@ -185,9 +185,16 @@ static func wood_button(state: String) -> StyleBox:
 const KIT_SCROLL_TEXTURE_TOP := 38
 const KIT_SCROLL_TEXTURE_BOTTOM := 68
 const KIT_SCROLL_TEXTURE_SIDE := 22
+## Top clears the roller so the title sits on paper. Bottom stays at the paper
+## panel's own margin: also clearing the mountains cost 51 more vertical px and
+## the sweep measured nine level-up canvases overflowing — the body's inset
+## panel covers the mountains where they overlap, and what stays visible of
+## them is the band under the content. (Diagnosing this took a detour: the
+## sweep was leaking a paused tree between cases and measuring the popup
+## mid-unroll, which made every margin look guilty until the leak was fixed.)
 const KIT_SCROLL_CONTENT_TOP := 44.0
-const KIT_SCROLL_CONTENT_BOTTOM := 74.0
-const KIT_SCROLL_CONTENT_SIDE := 26.0
+const KIT_SCROLL_CONTENT_BOTTOM := 23.0
+const KIT_SCROLL_CONTENT_SIDE := 23.0
 
 
 static func scroll_panel() -> StyleBox:

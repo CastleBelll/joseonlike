@@ -239,6 +239,14 @@ func open(
 	_last_owned = owned_levels
 	_last_weapons = weapons
 	_built_landscape = landscape
+	# The scroll is a hanging format — stretched across the 768 landscape band
+	# its rollers read as bent pipes, and the 540-tall canvases cannot spare the
+	# top margin that keeps the title off the roller. Landscape keeps the paper;
+	# portrait, where the format belongs, wears the scroll.
+	var wanted_style: StyleBox = null if landscape else UiIcons.scroll_panel()
+	if wanted_style == null:
+		wanted_style = UiIcons.paper_panel()
+	_panel.add_theme_stylebox_override("panel", wanted_style)
 	# Owner (2026-08-24): landscape rows scroll horizontally if they ever
 	# outgrow the band; the portrait stack keeps its vertical-only scroll.
 	_scroll.horizontal_scroll_mode = (
@@ -355,8 +363,12 @@ func open(
 	# content on an already-open scroll — re-rolling dozens of times a run would
 	# turn the flourish into a wait.
 	# Tree-less callers (the headless layout tests build this popup bare) get
-	# the finished state — a tween needs a SceneTree to drive it.
-	if not visible and is_inside_tree():
+	# the finished state — a tween needs a SceneTree to drive it. And the tree
+	# must be PAUSED: in play this screen only ever opens over a paused run,
+	# while layout_sweep and the harnesses open it unpaused to MEASURE it — and
+	# measuring mid-unroll read a half-rolled scroll as an overflow on every
+	# device at once.
+	if not visible and is_inside_tree() and get_tree().paused and not landscape:
 		_unroll(top, top + panel_height)
 	visible = true
 	var first: Control = cards.get_child(0)
