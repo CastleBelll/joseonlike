@@ -116,7 +116,9 @@ var _minimap_wait: float = 0.0
 ## thumb lives at the bottom — this is the only corner a map does not fight
 ## something for.
 const MINIMAP_MARGIN := 16.0
-const MINIMAP_TOP := 132.0
+## QA B3: the fatter 26px XP rail pushed the Lv label down to y141 and the
+## map's old 132 top shaved its last 9px. Sits below the label row now.
+const MINIMAP_TOP := 148.0
 const MINIMAP_REFRESH_SEC := 0.2
 var _replaced_weapons: Array[String] = []
 # N4-9 rarity evidence: the run second each SPECIAL material dropped at —

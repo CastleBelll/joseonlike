@@ -172,7 +172,7 @@ var _gold_label: Label
 var _pause_overlay: Control
 var _overlay_layer: CanvasLayer
 ## N9-112 pause tabs: 빌드 (weapons/passives/stats) and 개조 경로.
-var _evolution_section: VBoxContainer
+var _evolution_section: GridContainer
 var _pause_tab_buttons: Dictionary = {}
 ## The tab the paper is showing, so a rotation can re-lay the same one.
 var _pause_tab: String = PAUSE_TAB_BUILD  # tab id -> Button
@@ -182,6 +182,7 @@ var _pause_tab: String = PAUSE_TAB_BUILD  # tab id -> Button
 var _pause_layout: VBoxContainer
 ## Resume and quit: stacked in portrait, side by side in landscape.
 var _pause_buttons: BoxContainer
+var _pause_scroll: ScrollContainer
 ## The paper's inner margin. Landscape spends less of a short screen on it.
 var _pause_pad: MarginContainer
 var _pause_panel: PanelContainer
@@ -1006,6 +1007,7 @@ func _build_pause_overlay() -> void:
 	# and the buttons below never leave the sheet.
 	var content_scroll := ScrollContainer.new()
 	content_scroll.name = "TabScroll"
+	_pause_scroll = content_scroll
 	content_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	content_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	layout.add_child(content_scroll)
@@ -1017,9 +1019,14 @@ func _build_pause_overlay() -> void:
 	_build_section.name = "BuildSummary"
 	_build_section.add_theme_constant_override("separation", UiPalette.SPACE_SM)
 	content.add_child(_build_section)
-	_evolution_section = VBoxContainer.new()
+	# A grid, not a stack: landscape's 420px band cannot hold six recipe rows
+	# in one column (chrome alone costs 189), so the short axis buys columns —
+	# same trade the stat sheet already makes. Portrait keeps one column.
+	_evolution_section = GridContainer.new()
 	_evolution_section.name = "EvolutionSummary"
-	_evolution_section.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	_evolution_section.columns = 1
+	_evolution_section.add_theme_constant_override("v_separation", UiPalette.SPACE_SM)
+	_evolution_section.add_theme_constant_override("h_separation", UiPalette.SPACE_LG)
 	_evolution_section.visible = false
 	content.add_child(_evolution_section)
 	_resume_button = _overlay_button("ResumeButton", UiLocale.t("계속하기"), _on_resume_pressed)
@@ -1073,6 +1080,7 @@ func _select_pause_tab(tab: String) -> void:
 	_pause_tab = tab
 	_build_section.visible = tab == PAUSE_TAB_BUILD
 	_evolution_section.visible = tab == PAUSE_TAB_EVOLUTIONS
+	_evolution_section.columns = 2 if size.x > size.y else 1
 	for key: String in _pause_tab_buttons:
 		SettingsPopup.style_tab(_pause_tab_buttons[key], key == tab)
 	# Each tab carries its own content height; the top stays put and the
@@ -1085,6 +1093,30 @@ func _select_pause_tab(tab: String) -> void:
 	_pause_panel.offset_top = OVERLAY_PANEL_TOP
 	_pause_panel.offset_bottom = OVERLAY_PANEL_TOP + minf(wanted, available)
 	_layout_pause_panel_width(_pause_panel)
+	# QA B4: the chrome estimate runs ~46px short of what the layout actually
+	# spends, so the paper clamped early and scrolled while the screen had
+	# room (스크롤이 제일 싫다). Second pass after layout: measure the real
+	# shortfall and grow the paper by exactly that, capped at the band.
+	_fit_pause_paper.call_deferred(tab)
+
+
+func _fit_pause_paper(tab: String) -> void:
+	if _pause_panel == null or not _pause_overlay.visible:
+		return
+	var section: Control = (
+		_evolution_section if tab == PAUSE_TAB_EVOLUTIONS else _build_section
+	)
+	var scroll: ScrollContainer = _pause_scroll
+	if section == null or scroll == null:
+		return
+	var shortfall: float = section.get_combined_minimum_size().y - scroll.size.y
+	if shortfall <= 0.0:
+		return
+	var available: float = size.y - OVERLAY_PANEL_TOP - OVERLAY_PANEL_BOTTOM_MARGIN
+	var grown: float = minf(
+		_pause_panel.offset_bottom - _pause_panel.offset_top + shortfall, available
+	)
+	_pause_panel.offset_bottom = OVERLAY_PANEL_TOP + grown
 
 
 ## A short screen spends its height on the summary, not on the paper's margins.

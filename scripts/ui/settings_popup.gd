@@ -363,6 +363,11 @@ func _make_slider_row(key: String, min_value: float = 0.0) -> Control:
 	var row := HBoxContainer.new()
 	row.name = key.to_pascal_case()
 	row.custom_minimum_size = Vector2(0.0, ROW_HEIGHT)
+	# QA B1: in the landscape two-column grid a cell only gets its child's
+	# minimum width — and with the labels yielding by ellipsis the minimum is
+	# nearly zero, so the words vanished outright. Expanding rows make the
+	# columns split the paper and the labels get their width back.
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_theme_constant_override("separation", UiPalette.SPACE_MD)
 	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -396,6 +401,11 @@ func _make_damage_row() -> Control:
 	var row := HBoxContainer.new()
 	row.name = "DamageRow"
 	row.custom_minimum_size = Vector2(0.0, ROW_HEIGHT)
+	# QA B1: in the landscape two-column grid a cell only gets its child's
+	# minimum width — and with the labels yielding by ellipsis the minimum is
+	# nearly zero, so the words vanished outright. Expanding rows make the
+	# columns split the paper and the labels get their width back.
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -424,6 +434,11 @@ func _make_resolution_row() -> Control:
 	var row := HBoxContainer.new()
 	row.name = "ResolutionRow"
 	row.custom_minimum_size = Vector2(0.0, ROW_HEIGHT)
+	# QA B1: in the landscape two-column grid a cell only gets its child's
+	# minimum width — and with the labels yielding by ellipsis the minimum is
+	# nearly zero, so the words vanished outright. Expanding rows make the
+	# columns split the paper and the labels get their width back.
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -455,6 +470,11 @@ func _make_fullscreen_row() -> Control:
 	var row := HBoxContainer.new()
 	row.name = "FullscreenRow"
 	row.custom_minimum_size = Vector2(0.0, ROW_HEIGHT)
+	# QA B1: in the landscape two-column grid a cell only gets its child's
+	# minimum width — and with the labels yielding by ellipsis the minimum is
+	# nearly zero, so the words vanished outright. Expanding rows make the
+	# columns split the paper and the labels get their width back.
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -486,6 +506,11 @@ func _make_language_row() -> Control:
 	var row := HBoxContainer.new()
 	row.name = "LanguageRow"
 	row.custom_minimum_size = Vector2(0.0, ROW_HEIGHT)
+	# QA B1: in the landscape two-column grid a cell only gets its child's
+	# minimum width — and with the labels yielding by ellipsis the minimum is
+	# nearly zero, so the words vanished outright. Expanding rows make the
+	# columns split the paper and the labels get their width back.
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var name_label := _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER

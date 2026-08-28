@@ -133,6 +133,7 @@ const INLINE_EN := {
 	"신화": "Mythic",
 	"등급↑": "Grade Up",
 	"등급 상승": "Grade Up",
+	"자동": "Auto",
 	"신규!": "New!",
 	"변신!": "Evolved!",
 	"개조": "Remake",
