@@ -149,6 +149,16 @@ func build_ui() -> void:
 	_notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_side.add_child(_notice_label)
 
+	# Q23: in landscape the side pane runs the body's full height with the
+	# card, notice and CTA huddled at the top — ~300px of dead panel under
+	# them. The slack pins the CTA to the bottom edge instead, where the
+	# thumb already is. Portrait gives the pane its natural height, so the
+	# spacer collapses to zero there and changes nothing.
+	var side_slack := Control.new()
+	side_slack.name = "SideSlack"
+	side_slack.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_side.add_child(side_slack)
+
 	_cta = Button.new()
 	_cta.name = "CtaButton"
 	_cta.custom_minimum_size = Vector2(0.0, CTA_HEIGHT)
