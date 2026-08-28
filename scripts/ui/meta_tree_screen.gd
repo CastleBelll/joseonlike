@@ -70,6 +70,7 @@ var _cta: Button
 ## The tree row and the panel beside (landscape) or below (portrait) it.
 var _body: HBoxContainer
 var _side: VBoxContainer
+var _side_slack: Control
 var _side_in_row: bool = false
 var _notice_label: Label
 var _notice_tween: Tween
@@ -152,12 +153,13 @@ func build_ui() -> void:
 	# Q23: in landscape the side pane runs the body's full height with the
 	# card, notice and CTA huddled at the top — ~300px of dead panel under
 	# them. The slack pins the CTA to the bottom edge instead, where the
-	# thumb already is. Portrait gives the pane its natural height, so the
-	# spacer collapses to zero there and changes nothing.
-	var side_slack := Control.new()
-	side_slack.name = "SideSlack"
-	side_slack.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_side.add_child(side_slack)
+	# thumb already is. Landscape-only: _place_side toggles it, because the
+	# portrait pane ALSO stretches (verify-QA caught a 230px card-to-CTA gap
+	# there — the "portrait collapses it to zero" assumption was wrong).
+	_side_slack = Control.new()
+	_side_slack.name = "SideSlack"
+	_side_slack.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_side.add_child(_side_slack)
 
 	_cta = Button.new()
 	_cta.name = "CtaButton"
@@ -683,6 +685,8 @@ func _place_side() -> void:
 	if wants_row == _side_in_row and _side.get_parent() != null:
 		return
 	_side_in_row = wants_row
+	if _side_slack != null:
+		_side_slack.visible = wants_row
 	if _side.get_parent() != null:
 		_side.get_parent().remove_child(_side)
 	# The tree takes whatever the panel does not: without this the panel's own
