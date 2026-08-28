@@ -66,26 +66,19 @@ func test_hp_view_ranges_and_low_flag() -> bool:
 
 
 func test_hud_hp_bar_tracks_and_warns() -> bool:
-	# N6-2: the bar sits under the XP bar, tracks set_hp, turns vermilion and
-	# starts the looping vignette when low, and clears both on recovery.
+	# Owner (2026-08-28): the top HP strip is gone — the character carries its
+	# own bar. set_hp keeps only the screen-level low-health vignette signal.
 	var hud := CombatHud.new()
 	hud.build_ui()
-	var bar: ProgressBar = hud.get_node("HpBar")
-	var xp_bar: ProgressBar = hud.get_node("XpBar")
-	var passed: bool = bar.offset_top > xp_bar.offset_bottom
-	hud.set_hp(80.0, 100.0, 0.25, 0.9)
-	passed = passed and bar.max_value == 100.0 and bar.value == 80.0
-	var fill: StyleBoxFlat = bar.get_theme_stylebox("fill") as StyleBoxFlat
-	passed = passed and fill.bg_color == UiPalette.SUCCESS
+	var passed: bool = hud.get_node_or_null("HpBar") == null
 	var vignette: Control = hud.get_node("DamageVignette")
-	passed = passed and not vignette.visible
 	hud.set_hp(20.0, 100.0, 0.25, 0.9)
-	passed = passed and fill.bg_color == UiPalette.VERMILION and vignette.visible
-	hud.set_hp(60.0, 100.0, 0.25, 0.9)
-	passed = passed and fill.bg_color == UiPalette.SUCCESS and not vignette.visible
+	passed = passed and vignette.visible
+	hud.set_hp(80.0, 100.0, 0.25, 0.9)
+	passed = passed and not vignette.visible
 	hud.free()
 	if not passed:
-		push_error("test_combat_hud: HP bar or low-HP warning broken")
+		push_error("test_combat_hud: hp removal broke the vignette signal")
 	return passed
 
 
@@ -322,17 +315,14 @@ func test_landscape_puts_the_bars_above_the_clock() -> bool:
 	hud.size = Vector2(960.0, 540.0)
 	hud._layout_top_band()
 	var xp: Control = hud.get_node("XpBar")
-	var hp: Control = hud.get_node("HpBar")
 	var clock: Control = hud.get_node("TimerLabel")
 	var passed: bool = xp.offset_top < clock.offset_top
-	passed = passed and hp.offset_top < clock.offset_top
-	passed = passed and xp.offset_bottom <= hp.offset_top
 	hud.size = Vector2(540.0, 960.0)
 	hud._layout_top_band()
 	passed = passed and clock.offset_top < xp.offset_top
-	# Whatever the order, nothing below may start above the bars.
-	passed = passed and (hud.get_node("Counters") as Control).offset_top > hp.offset_bottom
-	passed = passed and hud._belongings.offset_top > hp.offset_bottom
+	# Whatever the order, nothing below may start above the bar.
+	passed = passed and (hud.get_node("Counters") as Control).offset_top > xp.offset_bottom
+	passed = passed and hud._belongings.offset_top > xp.offset_bottom
 	hud.free()
 	if not passed:
 		push_error("test_combat_hud: top band order is wrong for the orientation")
@@ -462,7 +452,7 @@ func test_bar_caps_never_hang_off_the_left_edge() -> bool:
 	for width: float in [540.0, 720.0, 960.0, 1280.0]:
 		hud.size = Vector2(width, 960.0)
 		hud._layout_bar_bands()
-		for bar_name: String in ["XpBar", "HpBar"]:
+		for bar_name: String in ["XpBar"]:
 			var bar: Control = hud.get_node(bar_name)
 			var cap: Control = bar.get_node_or_null("Cap")
 			if cap == null:

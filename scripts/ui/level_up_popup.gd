@@ -347,16 +347,14 @@ func open(
 	var estimated: float = panel_height_for(
 		stack_heights, _panel_style_margins_y(), _header_height(), _body_margin()
 	)
-	# Landscape takes the whole band rather than the estimate. The estimate is a
-	# text measurement and it runs short — N10-16 tried three times to close the
-	# gap with slack and layout_sweep found the cards still scrolling at 1280x720
-	# every time. Growing to what is there cannot be wrong the way a guess can.
-	#
-	# The owner's "너무 커" is answered by making the band itself narrower (768
-	# from 872) and the copy shorter, not by trusting a measurement that has
-	# already been wrong four times. Trimming the leftover paper under the cards
-	# needs the scroll's real height after layout, which is its own change.
-	var panel_height: float = available if landscape else minf(estimated, available)
+	# Owner (가로모드에서 파워업 시 밑에 빈공간이 너무 많은데): landscape used to
+	# take the WHOLE band because the height estimate kept running short — but
+	# both of that era's silent line-eaters are gone now (the column line-count
+	# off-by-one has its headroom, and the CRLF phantom breaks are fixed at the
+	# source), so the estimate is trusted again in both orientations. The sweep's
+	# no-scroll assertion across all 22 combinations is the guard that put it
+	# back, and what re-opens this if the estimate ever lies again.
+	var panel_height: float = minf(estimated, available)
 	# Owner (2026-08-24): a short landscape panel floats centred instead of
 	# hugging the top, so the field stays visible above and below the paper.
 	if landscape:

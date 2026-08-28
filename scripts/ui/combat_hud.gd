@@ -38,11 +38,12 @@ const BAR_CAP_SIZE := 26.0
 const BAR_MAX_WIDTH := 720.0
 # N6-2 HUD HP bar: a second thin strip right under the XP bar — same minimal
 # grammar (token colours, no chip background, no numbers).
-const HP_BAR_GAP := 2.0
+const HP_BAR_GAP := 2.0  # kept: boss-bar stack spacing uses it
 ## Deliberately shorter than the xp bar above it: two identical rails stacked
 ## read as one control, and these are different numbers.
-const HP_BAR_HEIGHT := 14.0
-const HP_BAR_BOTTOM := BAR_TOP + BAR_HEIGHT + HP_BAR_GAP + HP_BAR_HEIGHT
+## Owner (2026-08-28): the top HP bar is gone — the character already carries
+## its own bar. The band now ends at the XP rail.
+const BAND_BOTTOM := BAR_TOP + BAR_HEIGHT
 const COUNTER_ROW_HEIGHT := 36.0
 const COUNTER_STACK_WIDTH := 144.0
 
@@ -57,7 +58,7 @@ const COUNTER_STACK_WIDTH := 144.0
 ## beside the counters costs no extra depth, so the row is width-clamped to stop
 ## short of them instead (see `_layout_belongings`).
 const BELONGINGS_LEVEL_ROW := 22.0
-const BELONGINGS_TOP := HP_BAR_BOTTOM + UiPalette.SPACE_XS + BELONGINGS_LEVEL_ROW
+const BELONGINGS_TOP := BAND_BOTTOM + UiPalette.SPACE_XS + BELONGINGS_LEVEL_ROW
 const BELONGINGS_SLOT := 22.0
 const BELONGINGS_ICON := 18.0
 const BELONGINGS_GAP := 3
@@ -162,10 +163,8 @@ var _xp_bar: ProgressBar
 ## True when the HD Lv/EXP plate pair is on the XP rail — the Lv. word is
 ## baked into the track's diamond then, same as when the old hex cap is up.
 var _xp_bar_hd: bool = false
-var _hp_bar: ProgressBar
 ## The hp fill's own stylebox, kept so the low-health colour can be swapped on
 ## it. Kit or flat — both are a StyleBox, and only the tint differs.
-var _hp_fill: StyleBox
 var _level_label: Label
 var _kill_label: Label
 var _gold_label: Label
@@ -237,8 +236,6 @@ func _apply_bar_art(bar: ProgressBar, flat_fill: Color, cap_piece: String = "") 
 	fill.set_content_margin_all(0.0)
 	bar.add_theme_stylebox_override("background", track)
 	bar.add_theme_stylebox_override("fill", fill)
-	if bar == _hp_bar:
-		_hp_fill = fill
 	# N10-24: the kit's hexagonal cap sits on the bar's left end — a heart for
 	# health, Lv for the level track. It is what tells the two strips apart at a
 	# glance now that they are the same rail; before N10-22 raised them there was
@@ -267,7 +264,7 @@ func _apply_bar_band(bar: Control) -> void:
 
 
 func _layout_bar_bands() -> void:
-	for bar_name: String in ["XpBar", "HpBar", "BossBar"]:
+	for bar_name: String in ["XpBar", "BossBar"]:
 		var bar: Control = get_node_or_null(bar_name)
 		if bar != null:
 			_apply_bar_band(bar)
@@ -294,7 +291,6 @@ func build_ui() -> void:
 	_build_corner_buttons()
 	_build_timer()
 	_build_xp_bar()
-	_build_hp_bar()
 	_build_level_label()
 	_build_counters()
 	_build_belongings()
@@ -395,17 +391,10 @@ static func hp_fill_color(ratio: float, low: bool) -> Color:
 ## reads data files itself. While low, the fill turns vermilion AND the edge
 ## vignette pulses continuously (never colour alone).
 func set_hp(hp: float, hp_max: float, threshold: float, pulse_sec: float) -> void:
+	# Owner (2026-08-28): the top HP strip is gone — the character carries its
+	# own bar — but the low-health vignette is a SCREEN signal and stays.
 	var view: Dictionary = hp_view(hp, hp_max, threshold)
-	_hp_bar.max_value = float(view["max"])
-	_hp_bar.value = float(view["value"])
-	var low: bool = bool(view["low"])
-	# N10-22: the kit fill carries its colour as a modulate, the flat one as a
-	# background. The low-health signal has to land either way.
-	if _hp_fill is StyleBoxFlat:
-		(_hp_fill as StyleBoxFlat).bg_color = hp_fill_color(
-			float(view["ratio"]), low
-		)
-	_vignette.set_looping(low, pulse_sec)
+	_vignette.set_looping(bool(view["low"]), pulse_sec)
 
 
 func set_kills(count: int) -> void:
@@ -505,7 +494,10 @@ func _build_corner_buttons() -> void:
 	settings.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	settings.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	settings.position = Vector2(-BUTTON_SIZE - UiPalette.SPACE_MD, TOP_MARGIN)
-	settings.add_child(_corner_icon("settings"))
+	# Owner (2026-08-28): 일시정지 버튼과 크기 맞춰 — the HD gear carries its own
+	# round rim, so drawn at the glyph size it read smaller than the pause disc.
+	# The rim IS the plate; it fills the whole touch target like the disc does.
+	settings.add_child(_corner_icon("settings", BUTTON_SIZE))
 	settings.pressed.connect(_on_settings_pressed)
 	add_child(settings)
 
@@ -547,26 +539,11 @@ func _build_xp_bar() -> void:
 
 ## Same strip styling as the XP bar, one gap below it; green fill matches the
 ## under-sprite bar so both readouts are unambiguously "the same number".
-func _build_hp_bar() -> void:
-	_hp_bar = ProgressBar.new()
-	_hp_bar.name = "HpBar"
-	_hp_bar.show_percentage = false
-	_hp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_apply_bar_art(_hp_bar, UiPalette.SUCCESS, "bar_hp_cap")
-	_hp_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_apply_bar_band(_hp_bar)
-	_hp_bar.offset_top = BAR_TOP + BAR_HEIGHT + HP_BAR_GAP
-	_hp_bar.offset_bottom = HP_BAR_BOTTOM
-	_hp_bar.max_value = 1.0
-	_hp_bar.value = 1.0
-	add_child(_hp_bar)
-
-
 func _build_level_label() -> void:
 	_level_label = _label("Lv.1", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_ON_DARK)
 	_level_label.name = "LevelLabel"
 	_level_label.position = Vector2(
-		UiPalette.SPACE_MD, HP_BAR_BOTTOM + UiPalette.SPACE_XS
+		UiPalette.SPACE_MD, BAND_BOTTOM + UiPalette.SPACE_XS
 	)
 	add_child(_level_label)
 
@@ -577,7 +554,7 @@ func _build_counters() -> void:
 	stack.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	stack.offset_left = -COUNTER_STACK_WIDTH
 	stack.offset_right = -UiPalette.SPACE_MD
-	stack.offset_top = HP_BAR_BOTTOM + UiPalette.SPACE_XS
+	stack.offset_top = BAND_BOTTOM + UiPalette.SPACE_XS
 	_kill_label = _counter_row(stack, "Kills", UiIcons.icon_rect(UiIcons.hud_icon("skull"), ICON_SIZE))
 	_gold_label = _counter_row(stack, "Gold", UiIcons.icon_rect(UiIcons.hud_icon("loot"), ICON_SIZE))
 	add_child(stack)
@@ -678,7 +655,7 @@ func _belongings_height() -> float:
 ## clock on top, where the wide empty strip above the bars is already its own and
 ## nothing is gained by shuffling it.
 func _layout_top_band() -> void:
-	if _xp_bar == null or _hp_bar == null or _timer_label == null:
+	if _xp_bar == null or _timer_label == null:
 		return
 	var landscape: bool = _is_landscape()
 	var cursor: float = LANDSCAPE_BAR_TOP if landscape else BAR_TOP
@@ -694,10 +671,7 @@ func _layout_top_band() -> void:
 		cursor += BOSS_BAR_HEIGHT + HP_BAR_GAP * 2.0
 	_xp_bar.offset_top = cursor
 	_xp_bar.offset_bottom = cursor + BAR_HEIGHT
-	cursor += BAR_HEIGHT + HP_BAR_GAP
-	_hp_bar.offset_top = cursor
-	_hp_bar.offset_bottom = cursor + HP_BAR_HEIGHT
-	cursor += HP_BAR_HEIGHT
+	cursor += BAR_HEIGHT
 	if landscape:
 		cursor += UiPalette.SPACE_XS
 		_timer_label.offset_top = cursor
@@ -1454,8 +1428,8 @@ func _flat_button(button_name: String, plated: bool = true) -> Button:
 
 
 ## 2x HUD icon centered inside the 44px flat corner button.
-func _corner_icon(icon_name: String) -> Control:
-	var rect: TextureRect = UiIcons.icon_rect(UiIcons.hud_icon(icon_name), CORNER_ICON_SIZE)
+func _corner_icon(icon_name: String, icon_size: float = CORNER_ICON_SIZE) -> Control:
+	var rect: TextureRect = UiIcons.icon_rect(UiIcons.hud_icon(icon_name), icon_size)
 	# N10-23: PRESET_CENTER anchors the rect's TOP-LEFT to the middle, which hung
 	# the pause glyph off the edge of its new plate. A centre container holds it
 	# in the middle without touching icon_rect's fixed display size — reaching
