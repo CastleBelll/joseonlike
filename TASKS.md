@@ -280,7 +280,7 @@ QA 워커가 독립 worktree에서 검증하고 1 BLOCKER · 3 HIGH · 7 MEDIUM 
 
 | # | 큐 추가 | 메모 |
 |---|---|---|
-| Q16 | 레벨업 카드 스탯 줄 클리핑 | `CARD_HEIGHT_MIN 136`이 desc 2줄+스탯 2줄을 못 담음. QA 1순위 |
+| Q16 | ~~레벨업 카드 스탯 줄 클리핑~~ | **2026-08-28 재현 불가로 종결.** N10-16 desc 축약 + landscape 여유 줄 보정이 이미 해소. 게임이 생성 가능한 실제 desc 327건 전수 측정 over 0px, 최악 카드(화령부 L7 마일스톤 5~6줄)를 양 방향 픽셀 캡처로 확인 — `captures/b0-1/q16_worstcase_{portrait,landscape}.png` |
 | Q17 | 결과 화면 업적 줄 잘림 | layout_sweep이 업적 없는 프로필로 돌아 못 잡는 사각지대 포함 |
 | Q18 | **폰 CSS 폭 대응 — 오너 결정** | (a) 베이스 CSS 정합 vs (b) 터치 타깃 66 논리px 상향 |
 
