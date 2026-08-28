@@ -174,7 +174,6 @@ const KIT_BUTTON_TINTS: Dictionary = {
 const _XP_TRACK_MARGIN_LEFT := 33.0
 const _XP_TRACK_MARGIN_RIGHT := 18.0
 const _XP_TRACK_MARGIN_Y := 5.0
-const _XP_FILL_REGION := Rect2(36.0, 6.0, 250.0, 19.0)
 const _XP_FILL_MARGIN := 4.0
 
 
@@ -196,12 +195,14 @@ static func xp_track_hd() -> StyleBox:
 
 
 static func xp_fill_hd() -> StyleBox:
-	var texture: Texture2D = kit_texture("bar_exp_hd")
+	# Owner (경험치 먹어도 게이지가 안 차네): region_rect on a StyleBoxTexture
+	# rendered nothing at runtime, so the gold strip is cropped into its own
+	# build piece (bar_exp_fill) by build_chrome_hd.py and drawn plain.
+	var texture: Texture2D = kit_texture("bar_exp_fill")
 	if texture == null:
 		return null
 	var style := StyleBoxTexture.new()
 	style.texture = texture
-	style.region_rect = _XP_FILL_REGION
 	style.texture_margin_left = _XP_FILL_MARGIN
 	style.texture_margin_right = _XP_FILL_MARGIN
 	return style

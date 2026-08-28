@@ -110,6 +110,14 @@ def main():
         mirrored = Image.open(left).transpose(Image.FLIP_LEFT_RIGHT)
         mirrored.save(OUT / "btn_right.png")
         print("  btn_right        <- btn_left (mirrored)")
+    # The XP fill is the EXP plate's gold inner strip as its OWN piece: a
+    # StyleBoxTexture region_rect turned out to draw nothing at runtime, so
+    # the crop happens here instead, once, where it can be verified.
+    exp = OUT / "bar_exp_hd.png"
+    if exp.exists():
+        strip = Image.open(exp).crop((72, 12, 585, 50))
+        strip.save(OUT / "bar_exp_fill.png")
+        print(f"  bar_exp_fill     <- bar_exp_hd crop -> {strip.width}x{strip.height}")
     if missing:
         raise SystemExit(f"missing sources: {missing}")
     print(f"{len(MAPPING) + 1} pieces -> {OUT.relative_to(ROOT)}")
