@@ -1,27 +1,27 @@
 {
  "config": {
   "stat_caps": {
-   "max_hp": 0.65,
-   "move_speed": 0.37,
-   "attack_damage": 0.5,
-   "attack_speed": 0.56,
-   "magnet_radius": 1.05,
+   "max_hp": 0.83,
+   "move_speed": 0.45,
+   "attack_damage": 0.6,
+   "attack_speed": 0.62,
+   "magnet_radius": 1.25,
    "gold_gain": 0.3,
    "xp_gain": 0.82,
-   "damage_reduction": 0.14,
-   "hit_invuln": 0.3,
-   "luck": 0.75,
+   "damage_reduction": 0.2,
+   "hit_invuln": 0.36,
+   "luck": 0.91,
    "burn_duration": 0.5,
    "ward_radius": 0.24,
-   "crit_chance": 0.4,
-   "crit_damage": 1.4,
-   "projectile_speed": 0.66,
+   "crit_chance": 0.48,
+   "crit_damage": 1.7,
+   "projectile_speed": 0.72,
    "burn_dps": 0.3,
    "area_radius": 0.16,
-   "skill_power": 0.5,
+   "skill_power": 0.74,
    "projectile_count": 2.0,
-   "area_scale": 0.4,
-   "defense": 0.2,
+   "area_scale": 0.52,
+   "defense": 0.28,
    "burn_power": 0.6,
    "chain_amount": 2.0,
    "seal_haste": 2.0
@@ -33,7 +33,8 @@
   "first_find": {
    "at_sec": 45.0
   },
-  "_refine_note": "N11-8 (오너: 패시브를 아예 아이들러쪽 업그레이드로 넘기고): 구 인런 패시브 17종이 refine_* 영구 노드가 됐다. per_rank·랭크 수는 passives.json의 per_stack·max_stacks 그대로, stat_caps는 기존 캡 + 패시브 총량으로 상향. 비용 곡선은 초안 — N11-6 경제 패스에서 재측정한다."
+  "_refine_note": "N11-8 (오너: 패시브를 아예 아이들러쪽 업그레이드로 넘기고): 구 인런 패시브 17종이 refine_* 영구 노드가 됐다. per_rank·랭크 수는 passives.json의 per_stack·max_stacks 그대로, stat_caps는 기존 캡 + 패시브 총량으로 상향. 비용 곡선은 초안 — N11-6 경제 패스에서 재측정한다.",
+  "_caps_note": "N11-9: stat_caps는 '한 캐릭터가 트렁크+연마+자기 가지로 도달 가능한 최대치'로 자동 산출(캡 낭비 0). 가지를 추가하면 같은 규칙으로 재산출한다."
  },
  "nodes": [
   {
@@ -1336,6 +1337,502 @@
     0.28,
     17
    ]
+  },
+  {
+   "id": "stone_pillar",
+   "name_ko": "석주 기세",
+   "name_en": "Pillar Stance",
+   "icon": "tough_fiber",
+   "effect": {
+    "stat": "max_hp",
+    "per_rank": 0.06
+   },
+   "desc_ko": "돌기둥처럼 버틴다 — 최대 체력 +6%/단",
+   "desc_en": "Stand like the stone pillar — max HP +6% per rank",
+   "costs": [
+    250,
+    520,
+    950
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    2
+   ],
+   "character": "warrior",
+   "materials": {
+    "tough_fiber": [
+     2,
+     4,
+     6
+    ]
+   }
+  },
+  {
+   "id": "bulwark",
+   "name_ko": "철벽 태세",
+   "name_en": "Bulwark",
+   "icon": "ghost_iron",
+   "effect": {
+    "stat": "defense",
+    "per_rank": 0.04
+   },
+   "desc_ko": "받는 피해가 줄어든다 +4%/단",
+   "desc_en": "Take less damage, +4% per rank",
+   "costs": [
+    400,
+    800
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    2
+   ],
+   "character": "warrior",
+   "materials": {
+    "cast_iron": [
+     1,
+     2
+    ]
+   }
+  },
+  {
+   "id": "grip_iron",
+   "name_ko": "굳은 손아귀",
+   "name_en": "Iron Grip",
+   "icon": "whetstone",
+   "effect": {
+    "stat": "attack_damage",
+    "per_rank": 0.05
+   },
+   "desc_ko": "공격력 +5%/단",
+   "desc_en": "Attack damage +5% per rank",
+   "costs": [
+    600,
+    1100
+   ],
+   "requires": [
+    "hwando_hone"
+   ],
+   "pos": [
+    0.28,
+    3
+   ],
+   "character": "warrior",
+   "materials": {
+    "whetstone": [
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "id": "war_cry",
+   "name_ko": "사자후",
+   "name_en": "War Cry",
+   "icon": "beast_fang",
+   "effect": {
+    "stat": "attack_speed",
+    "per_rank": 0.05
+   },
+   "desc_ko": "공격 속도 +5%/단",
+   "desc_en": "Attack speed +5% per rank",
+   "costs": [
+    500,
+    950
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    3
+   ],
+   "character": "warrior",
+   "materials": {
+    "beast_fang": [
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "id": "heavy_blood",
+   "name_ko": "무골",
+   "name_en": "Warborn",
+   "icon": "ghost_iron",
+   "effect": {
+    "stat": "damage_reduction",
+    "per_rank": 0.03
+   },
+   "desc_ko": "피해 감소 +3%/단",
+   "desc_en": "Damage reduction +3% per rank",
+   "costs": [
+    900,
+    1500
+   ],
+   "requires": [
+    "iron_stance"
+   ],
+   "pos": [
+    0.28,
+    4
+   ],
+   "character": "warrior",
+   "materials": {
+    "ghost_iron": [
+     2,
+     3
+    ]
+   }
+  },
+  {
+   "id": "unbending",
+   "name_ko": "불굴",
+   "name_en": "Unbending",
+   "icon": "tough_fiber",
+   "effect": {
+    "stat": "hit_invuln",
+    "per_rank": 0.08
+   },
+   "desc_ko": "피격 무적이 길어진다 +8%/단",
+   "desc_en": "Longer invulnerability after a hit, +8% per rank",
+   "costs": [
+    700,
+    1250
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    4
+   ],
+   "character": "warrior",
+   "materials": {
+    "tough_fiber": [
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "crush_step",
+   "name_ko": "진각",
+   "name_en": "Crushing Step",
+   "icon": "cast_iron",
+   "effect": {
+    "stat": "crit_damage",
+    "per_rank": 0.12
+   },
+   "desc_ko": "치명타 피해 +12%/단",
+   "desc_en": "Critical damage +12% per rank",
+   "costs": [
+    800,
+    1400
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    5
+   ],
+   "character": "warrior",
+   "materials": {
+    "cast_iron": [
+     1,
+     2
+    ]
+   }
+  },
+  {
+   "id": "slow_march",
+   "name_ko": "태산 걸음",
+   "name_en": "Mountain March",
+   "icon": "bamboo",
+   "effect": {
+    "stat": "move_speed",
+    "per_rank": 0.04
+   },
+   "desc_ko": "이동 속도 +4%/단",
+   "desc_en": "Move speed +4% per rank",
+   "costs": [
+    350,
+    700
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    5
+   ],
+   "character": "warrior"
+  },
+  {
+   "id": "moon_step",
+   "name_ko": "월영 보법",
+   "name_en": "Moonshadow Step",
+   "icon": "willow_branch",
+   "effect": {
+    "stat": "move_speed",
+    "per_rank": 0.04
+   },
+   "desc_ko": "달그림자처럼 걷는다 — 이동 속도 +4%/단",
+   "desc_en": "Walk like a moon shadow — move speed +4% per rank",
+   "costs": [
+    350,
+    700
+   ],
+   "requires": [
+    "wind_read"
+   ],
+   "pos": [
+    0.28,
+    2
+   ],
+   "character": "archer"
+  },
+  {
+   "id": "keen_eye",
+   "name_ko": "형안",
+   "name_en": "Keen Eye",
+   "icon": "beast_fang",
+   "effect": {
+    "stat": "crit_chance",
+    "per_rank": 0.04
+   },
+   "desc_ko": "치명타 확률 +4%/단",
+   "desc_en": "Critical chance +4% per rank",
+   "costs": [
+    450,
+    850,
+    1500
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    2
+   ],
+   "character": "archer",
+   "materials": {
+    "beast_fang": [
+     1,
+     2,
+     3
+    ]
+   }
+  },
+  {
+   "id": "pierce_shot",
+   "name_ko": "관통 시위",
+   "name_en": "Piercing Draw",
+   "icon": "bamboo",
+   "effect": {
+    "stat": "projectile_speed",
+    "per_rank": 0.06
+   },
+   "desc_ko": "투사체 속도 +6%/단",
+   "desc_en": "Projectile speed +6% per rank",
+   "costs": [
+    400,
+    800
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    3
+   ],
+   "character": "archer",
+   "materials": {
+    "bamboo": [
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "split_nock",
+   "name_ko": "갈래 시위",
+   "name_en": "Split Nock",
+   "icon": "thunder_stone",
+   "effect": {
+    "stat": "projectile_count",
+    "per_rank": 1.0
+   },
+   "desc_ko": "투사체 +1",
+   "desc_en": "One more projectile",
+   "costs": [
+    1800
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    3
+   ],
+   "character": "archer",
+   "materials": {
+    "thunder_stone": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "deep_wound",
+   "name_ko": "급소 가르기",
+   "name_en": "Deep Wound",
+   "icon": "cinnabar",
+   "effect": {
+    "stat": "crit_damage",
+    "per_rank": 0.15
+   },
+   "desc_ko": "치명타 피해 +15%/단",
+   "desc_en": "Critical damage +15% per rank",
+   "costs": [
+    900,
+    1600
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    4
+   ],
+   "character": "archer",
+   "materials": {
+    "cinnabar": [
+     1,
+     2
+    ]
+   }
+  },
+  {
+   "id": "light_feet",
+   "name_ko": "그림자 걸음",
+   "name_en": "Shadow Feet",
+   "icon": "willow_branch",
+   "effect": {
+    "stat": "hit_invuln",
+    "per_rank": 0.08
+   },
+   "desc_ko": "피격 무적이 길어진다 +8%/단",
+   "desc_en": "Longer invulnerability after a hit, +8% per rank",
+   "costs": [
+    650,
+    1200
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    4
+   ],
+   "character": "archer",
+   "materials": {
+    "willow_branch": [
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "id": "fortune_wind",
+   "name_ko": "바람의 가호",
+   "name_en": "Fortune Wind",
+   "icon": "raw_egg",
+   "effect": {
+    "stat": "luck",
+    "per_rank": 0.08
+   },
+   "desc_ko": "행운 +8%/단",
+   "desc_en": "Luck +8% per rank",
+   "costs": [
+    700,
+    1300
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    5
+   ],
+   "character": "archer",
+   "materials": {
+    "raw_egg": [
+     1,
+     2
+    ]
+   }
+  },
+  {
+   "id": "far_scent",
+   "name_ko": "사냥꾼의 감",
+   "name_en": "Hunter's Sense",
+   "icon": "wonhon_shard",
+   "effect": {
+    "stat": "magnet_radius",
+    "per_rank": 0.1
+   },
+   "desc_ko": "끌어당김 반경 +10%/단",
+   "desc_en": "Pickup pull radius +10% per rank",
+   "costs": [
+    300,
+    600
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    5
+   ],
+   "character": "archer"
+  },
+  {
+   "id": "five_ways",
+   "name_ko": "오행 조화",
+   "name_en": "Five Ways in Accord",
+   "icon": "fire_spirit_stone",
+   "effect": {
+    "stat": "skill_power",
+    "per_rank": 0.08
+   },
+   "desc_ko": "도력 +8%/단 — 오행이 서로를 낳는다",
+   "desc_en": "Arts +8% per rank — the five ways feed one another",
+   "costs": [
+    800,
+    1500,
+    2600
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    6
+   ],
+   "character": "taoist",
+   "materials": {
+    "fire_spirit_stone": [
+     1,
+     1,
+     2
+    ]
+   }
+  },
+  {
+   "id": "vast_rites",
+   "name_ko": "광대한 법식",
+   "name_en": "Vast Rites",
+   "icon": "talisman_paper",
+   "effect": {
+    "stat": "area_scale",
+    "per_rank": 0.06
+   },
+   "desc_ko": "모든 기술의 범위 +6%/단",
+   "desc_en": "Every art reaches further, +6% per rank",
+   "costs": [
+    1000,
+    1800
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    6
+   ],
+   "character": "taoist",
+   "materials": {
+    "talisman_paper": [
+     6,
+     10
+    ]
+   }
   }
  ]
 }
