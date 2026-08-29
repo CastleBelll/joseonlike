@@ -51,6 +51,8 @@ var _orb_pool: NodePool
 var _number_pool: NodePool
 var _orb_config: Dictionary = {}
 var _orb_config_base: Dictionary = {}
+## Live (uncollected) XP orbs, for the N11 live_cap merge. Erased on collect.
+var _live_orbs: Array[XpOrb] = []
 ## N10-5: how much of one level-up screen is weapon cards, from progression.json.
 var _weapon_card_share: float = LevelUp.DEFAULT_WEAPON_CARD_SHARE
 ## N10-12: the selected character's permanent trait, empty when it declares none.
@@ -676,8 +678,7 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 		enemy.contact_radius * float(_feedback.get("death_puff_radius_scale", 1.0)),
 		float(_feedback.get("death_puff_sec", 0.0))
 	)
-	var orb: XpOrb = _orb_pool.acquire()
-	orb.launch(enemy.global_position, enemy.xp_drop, _player, _orb_config)
+	_spawn_xp_orb(enemy.global_position, enemy.xp_drop)
 	_drop_stolen_passive(enemy)
 	_spawn_loot(enemy)
 	# N5-5: an elite death leaves a reward chest where it fell (walk to open).
@@ -1086,6 +1087,7 @@ func _on_orb_collected(orb: XpOrb) -> void:
 		* Difficulty.reward_mult(_tier, _run_length, "xp_mult")
 	)))
 	_refresh_progress_hud()
+	_live_orbs.erase(orb)
 	_orb_pool.release(orb)
 
 
@@ -2318,6 +2320,31 @@ func _create_orb() -> XpOrb:
 	var orb := XpOrb.new()
 	orb.collected.connect(_on_orb_collected)
 	return orb
+
+
+## N11 (오너: 끝없는 밤은 렉이 너무 심해): orbs never expire (N9-100 — every
+## orb stays collectable), so an endless night grew thousands of live nodes,
+## the run's only unbounded per-frame cost. At the data cap the XP merges
+## into the nearest live orb instead of becoming a new node — zero XP lost,
+## bounded node count. The cap sits above the measured finite-run peak (678),
+## so a normal run never merges. Nearest-scan runs only on the capped spawn
+## path, never per frame.
+func _spawn_xp_orb(at: Vector2, xp: int) -> void:
+	var cap: int = int(_orb_config.get("live_cap", 0))
+	if cap > 0 and _live_orbs.size() >= cap:
+		var nearest: XpOrb = null
+		var best: float = INF
+		for live: XpOrb in _live_orbs:
+			var distance: float = live.global_position.distance_squared_to(at)
+			if distance < best:
+				best = distance
+				nearest = live
+		if nearest != null:
+			nearest.xp_value += xp
+			return
+	var orb: XpOrb = _orb_pool.acquire()
+	orb.launch(at, xp, _player, _orb_config)
+	_live_orbs.append(orb)
 
 
 func _create_damage_number() -> DamageNumber:
