@@ -173,27 +173,10 @@ static func candidates(
 					and not allowed_categories.has(String(stats.get("category", ""))):
 				continue
 			pool.append({"kind": KIND_NEW_WEAPON, "id": weapon_id})
-	for passive_id: String in passives:
-		if not OFFERABLE_PASSIVES.has(passive_id):
-			continue
-		var passive: Dictionary = passives[passive_id]
-		var stacks: int = int(passive_stacks.get(passive_id, 0))
-		if stacks >= int(passive.get("max_stacks", 0)):
-			continue
-		# A passive already in the build always keeps growing; a NEW one only
-		# while a slot is free.
-		if stacks == 0 and not passive_slots_left:
-			continue
-		# N9-110 (owner: 연쇄 확장 같은 건 한 기술에 국한돼 잘 안 쓴다): a
-		# mechanic-bound passive is only OFFERED while an owned weapon can
-		# actually use it — a card that does nothing is a wasted slot. An
-		# already-stacked one keeps growing regardless: a mod can swap the
-		# build under the investment, and punishing the pick would be worse.
-		if stacks == 0 and not _passive_has_a_customer(
-			passive_id, weapons, owned_levels, has_damaging_active
-		):
-			continue
-		pool.append({"kind": KIND_PASSIVE, "id": passive_id})
+	# N11-8 (owner: 패시브를 아예 아이들러쪽 업그레이드로 넘기고 액티브만 매번
+	# 빌드를 바꿀 수 있게): the pool offers WEAPONS ONLY. The seventeen former
+	# passive cards are permanent refine_* ranks on the meta tree now — a run's
+	# choices are the build, the camp's ranks are the growth.
 	if not pool.is_empty():
 		return pool
 	# Safety net: a full build whose every weapon and passive is maxed would

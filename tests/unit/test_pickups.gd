@@ -233,16 +233,16 @@ func test_chest_never_offers_a_passive_the_run_has_not_taken() -> bool:
 
 func test_chest_still_offers_what_the_run_already_holds() -> bool:
 	# The filter must not empty the pool — a chest that can offer nothing pays
-	# fallback gold instead of a reward.
+	# fallback gold instead of a reward. N11-8: passives left the run, so the
+	# chest's held-only pool is weapon upgrades alone.
 	var pool: Array[Dictionary] = _chest_pool({"owned": 1}, {"attack_damage": 1})
 	var has_weapon: bool = false
-	var has_passive: bool = false
 	for choice: Dictionary in pool:
 		if String(choice["kind"]) == LevelUp.KIND_WEAPON_UP and String(choice["id"]) == "owned":
 			has_weapon = true
-		if String(choice["kind"]) == LevelUp.KIND_PASSIVE and String(choice["id"]) == "attack_damage":
-			has_passive = true
-	return has_weapon and has_passive
+		if String(choice["kind"]) == LevelUp.KIND_PASSIVE:
+			return false
+	return has_weapon
 
 
 ## N9-55 field passives (owner: "떨어져있는 패시브를 주우면 4개 이상으로도
@@ -281,10 +281,12 @@ func test_field_spawn_point_survives_a_negative_distance() -> bool:
 	return Pickups.field_spawn_point(player, 0.0, -100.0) == player
 
 
-func test_shipped_field_passive_block_is_reachable_and_offscreen() -> bool:
-	# The shipped numbers must place the drop outside the view (or it collects
-	# itself) and inside a distance a player would actually walk.
-	return Pickups.field_passive_issues(_pickups()).is_empty()
+func test_shipped_field_passive_block_stays_parked() -> bool:
+	# N11-8: in-run passives moved to the permanent refine ranks, so the spawn
+	# block is parked under a "_" key — the run must see NO live block (one
+	# "missing block" issue is the parked state). N11-3 re-aims the thief at
+	# materials and revives these numbers.
+	return Pickups.field_passive_issues(_pickups()).size() == 1
 
 
 func test_field_passive_issues_catch_an_onscreen_spawn() -> bool:

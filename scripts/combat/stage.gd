@@ -958,7 +958,7 @@ func _execute_trap(active: Dictionary) -> void:
 	var ward: Ward = _trap_pool.acquire()
 	ward.arm(
 		_player.global_position, _spawner, active.get("ward", {}),
-		float(active.get("damage", 0.0)) * (1.0 + _passive_bonus("skill_power")),
+		float(active.get("damage", 0.0)) * (1.0 + _build_bonus("skill_power")),
 		{}, UiPalette.ACCENT_ARCHER
 	)
 	_play_active_art(active, _player.global_position, 0.0)
@@ -997,7 +997,7 @@ func _execute_burst(active: Dictionary) -> void:
 	var radius: float = float(active.get("radius_px", 0.0))
 	# N9-88 도력: the one number an active-skill build can grow.
 	var damage: float = (
-		float(active.get("damage", 0.0)) * (1.0 + _passive_bonus("skill_power"))
+		float(active.get("damage", 0.0)) * (1.0 + _build_bonus("skill_power"))
 	)
 	# N3-18: a clean expanding wave that lands exactly on the damage radius —
 	# the N3-17 DeathPuff reuse opened as an opaque gold pancake covering half
@@ -1047,7 +1047,7 @@ func _execute_cleave(active: Dictionary) -> void:
 	var arc_rad: float = deg_to_rad(float(active.get("arc_deg", 0.0)))
 	var aim: float = _player.last_move_direction.angle()
 	var damage: float = (
-		float(active.get("damage", 0.0)) * (1.0 + _passive_bonus("skill_power"))
+		float(active.get("damage", 0.0)) * (1.0 + _build_bonus("skill_power"))
 	)
 	# Every art names its own sheet (N9-169). Borrowing the 환도 swing made the
 	# skill look like a weapon attack; the fallback only keeps a nameless art
@@ -1087,7 +1087,7 @@ func _on_orb_collected(orb: XpOrb) -> void:
 	# N7-2 문리 + N9-3 passive: xp_gain meta and passive bonuses both scale
 	# every orb at pickup through the same multiplier.
 	_run_state.add_xp(int(round(
-		float(orb.xp_value) * (1.0 + _meta_bonus("xp_gain") + _passive_bonus("xp_gain"))
+		float(orb.xp_value) * (1.0 + _build_bonus("xp_gain"))
 		* Difficulty.reward_mult(_tier, _run_length, "xp_mult")
 	)))
 	_refresh_progress_hud()
@@ -1380,16 +1380,12 @@ func _add_weapon_node(weapon_id: String) -> void:
 	_refresh_weapon_scales()
 
 
-func _passive_bonus(passive_id: String) -> float:
-	var per_stack: float = float(
-		(_passives_data.get(passive_id, {}) as Dictionary).get("per_stack", 0.0)
-	)
-	var stacked: float = per_stack * float(_passive_stacks.get(passive_id, 0))
-	# N10-12 기본 스킬: the class's own trait, folded in here so it reaches every
-	# reader of that stat without any of them learning a new concept — the
-	# taoist's 음양 widens the same area_scale the passive card grows. It is
-	# permanent and unstackable, which is what separates a class from a build.
-	return stacked + _innate_bonus(passive_id)
+## N11-8 (owner: 패시브를 아예 아이들러쪽 업그레이드로): the in-run passive
+## stacks are gone — a build stat is the PERMANENT refine rank (meta tree)
+## plus the class innate. Same accessor shape the stack version had, so
+## every stat reader migrated without learning a new concept.
+func _build_bonus(stat_id: String) -> float:
+	return _meta_bonus(stat_id) + _innate_bonus(stat_id)
 
 
 ## The one innate a character carries, if it feeds this stat.
@@ -1425,16 +1421,24 @@ func _pause_build_summary() -> Dictionary:
 				_owned_levels, _replaced_weapons
 			),
 		})
+	# N11-8 (owner: 패시브를 아예 아이들러쪽 업그레이드로): the passive column
+	# shows the PERMANENT refine ranks — the camp's growth, visible from the
+	# pause sheet so a run can still answer "what am I built on".
 	var passives: Array[Dictionary] = []
-	for passive_id: String in _passive_stacks:
-		var stacks: int = int(_passive_stacks[passive_id])
-		if stacks <= 0:
+	var meta_ranks: Dictionary = {}
+	if SaveService.instance != null:
+		meta_ranks = SaveService.instance.profile.get("meta_tree", {})
+	for passive_id: String in _passives_data:
+		if passive_id.begins_with("_"):
+			continue
+		var rank: int = int(meta_ranks.get("refine_" + passive_id, 0))
+		if rank <= 0:
 			continue
 		var passive: Dictionary = _passives_data.get(passive_id, {})
 		passives.append({
 			"id": passive_id,
 			"name": UiLocale.data_name(passive, passive_id),
-			"stacks": stacks,
+			"stacks": rank,
 			"max": int(passive.get("max_stacks", 0)),
 		})
 	return {
@@ -1459,9 +1463,11 @@ func _refresh_belongings() -> void:
 		if count <= 0:
 			continue
 		materials.append({"id": loot_id, "count": count})
+	# N11-8: the belongings row is what THIS RUN gathered — weapons and
+	# materials. Permanent refine ranks live on the pause sheet, not here.
 	_hud.set_belongings(
 		summary.get("weapons", []) as Array,
-		summary.get("passives", []) as Array,
+		[],
 		materials,
 	)
 
@@ -1473,21 +1479,21 @@ func _refresh_belongings() -> void:
 ## `modified` marks a line that a passive or the meta tree has moved off its
 ## base, so the panel can highlight what this run actually built.
 func _pause_stat_lines() -> Array[Dictionary]:
-	var move: float = 1.0 + _passive_bonus("move_speed") + _meta_bonus("move_speed")
-	var damage: float = 1.0 + _passive_bonus("attack_damage") + _meta_bonus("attack_damage")
-	var attack_speed: float = 1.0 + _passive_bonus("attack_speed") + _meta_bonus("attack_speed")
-	var defense: float = _meta_bonus("damage_reduction") + _passive_bonus("defense")
-	var magnet: float = 1.0 + _passive_bonus("magnet_radius") + _meta_bonus("magnet_radius")
+	var move: float = 1.0 + _build_bonus("move_speed")
+	var damage: float = 1.0 + _build_bonus("attack_damage")
+	var attack_speed: float = 1.0 + _build_bonus("attack_speed")
+	var defense: float = _meta_bonus("damage_reduction") + _build_bonus("defense")
+	var magnet: float = 1.0 + _build_bonus("magnet_radius")
 	var projectile_speed: float = (
-		1.0 + _passive_bonus("projectile_speed") + _meta_bonus("projectile_speed")
+		1.0 + _build_bonus("projectile_speed")
 	)
-	var extra_projectiles: int = int(round(_passive_bonus("projectile_count")))
-	var crit_chance: float = _passive_bonus("crit_chance") + _meta_bonus("crit_chance")
+	var extra_projectiles: int = int(round(_build_bonus("projectile_count")))
+	var crit_chance: float = _build_bonus("crit_chance")
 	var crit_multiplier: float = (
-		CRIT_MULTIPLIER + _passive_bonus("crit_damage") + _meta_bonus("crit_damage")
+		CRIT_MULTIPLIER + _build_bonus("crit_damage")
 	)
-	var xp_gain: float = 1.0 + _meta_bonus("xp_gain") + _passive_bonus("xp_gain")
-	var luck: float = _meta_bonus("luck") + _passive_bonus("luck")
+	var xp_gain: float = 1.0 + _build_bonus("xp_gain")
+	var luck: float = _build_bonus("luck")
 	# The damage floor is the one applied in _refresh_run_scalars; showing the
 	# raw sum would promise a reduction the player does not actually get.
 	var applied_defense: float = 1.0 - maxf(1.0 - defense, 0.5)
@@ -1583,47 +1589,47 @@ func _apply_passive_effects(gained_id: String) -> void:
 func _refresh_run_scalars() -> void:
 	_refresh_weapon_scales()
 	_player.set_speed_scale(
-		1.0 + _passive_bonus("move_speed") + _meta_bonus("move_speed")
+		1.0 + _build_bonus("move_speed")
 	)
 	# N9-3g 방비 passive joins the 철피 meta reduction; floored at taking 50%
 	# so no future stat combo can approach immunity.
 	_player.set_damage_taken_scale(maxf(
-		1.0 - _meta_bonus("damage_reduction") - _passive_bonus("defense"), 0.5
+		1.0 - _meta_bonus("damage_reduction") - _build_bonus("defense"), 0.5
 	))
 	_orb_config = _orb_config_base.duplicate()
 	_orb_config["magnet_radius_px"] = (
 		float(_orb_config_base.get("magnet_radius_px", 0.0))
-		* (1.0 + _passive_bonus("magnet_radius") + _meta_bonus("magnet_radius"))
+		* (1.0 + _build_bonus("magnet_radius"))
 	)
 
 
 func _refresh_weapon_scales() -> void:
-	var damage_scale: float = 1.0 + _passive_bonus("attack_damage") + _meta_bonus("attack_damage")
+	var damage_scale: float = 1.0 + _build_bonus("attack_damage")
 	var cooldown_scale: float = 1.0 / (
-		1.0 + _passive_bonus("attack_speed") + _meta_bonus("attack_speed")
+		1.0 + _build_bonus("attack_speed")
 	)
 	var speed_scale: float = (
-		1.0 + _passive_bonus("projectile_speed") + _meta_bonus("projectile_speed")
+		1.0 + _build_bonus("projectile_speed")
 	)
-	var extra_projectiles: int = int(round(_passive_bonus("projectile_count")))
+	var extra_projectiles: int = int(round(_build_bonus("projectile_count")))
 	# N9-18/N9-19 치명타: chance from 치명타 확률, multiplier from the base
 	# x2 plus every 치명 일격 stack.
-	var crit_chance: float = _passive_bonus("crit_chance") + _meta_bonus("crit_chance")
+	var crit_chance: float = _build_bonus("crit_chance")
 	var crit_multiplier: float = (
-		CRIT_MULTIPLIER + _passive_bonus("crit_damage") + _meta_bonus("crit_damage")
+		CRIT_MULTIPLIER + _build_bonus("crit_damage")
 	)
 	# N9-88 mechanic-reshaping passives, same vocabulary as the meta tree.
 	# Built once per refresh and handed to every weapon; a weapon whose
 	# mechanic has none of these blocks folds them as no-ops.
 	var field_effects: Dictionary = {}
-	if _passive_bonus("chain_amount") > 0.0:
-		field_effects["chain_jumps"] = _passive_bonus("chain_amount")
-	if _passive_bonus("seal_haste") > 0.0:
-		field_effects["seal_burst"] = _passive_bonus("seal_haste")
-	if _passive_bonus("burn_power") > 0.0:
-		field_effects["burn_dps"] = _passive_bonus("burn_power")
-	if _passive_bonus("area_scale") > 0.0:
-		field_effects["area_radius"] = _passive_bonus("area_scale")
+	if _build_bonus("chain_amount") > 0.0:
+		field_effects["chain_jumps"] = _build_bonus("chain_amount")
+	if _build_bonus("seal_haste") > 0.0:
+		field_effects["seal_burst"] = _build_bonus("seal_haste")
+	if _build_bonus("burn_power") > 0.0:
+		field_effects["burn_dps"] = _build_bonus("burn_power")
+	if _build_bonus("area_scale") > 0.0:
+		field_effects["area_radius"] = _build_bonus("area_scale")
 	for weapon_id: String in _weapon_nodes:
 		var weapon: AutoWeapon = _weapon_nodes[weapon_id]
 		weapon.set_scales(damage_scale, cooldown_scale, speed_scale)
@@ -1673,7 +1679,7 @@ func _spawn_loot(enemy: Enemy) -> void:
 	# N4-9 천운 + N9-3 행운 passive: both luck sources scale special-material
 	# odds only, through the same capped multiplier inside Loot.roll_drops.
 	var drops: Array[String] = Loot.roll_drops(
-		table, _loot_rng, _loot_data, _meta_bonus("luck") + _passive_bonus("luck")
+		table, _loot_rng, _loot_data, _build_bonus("luck")
 	)
 	# N6-1 scripted first run: any overdue guarantee rides the next kill; a
 	# natural drop of the same loot earlier satisfies it via _first_run_log.
@@ -2242,7 +2248,7 @@ func _on_chest_opened(chest: Chest) -> void:
 		return
 	_play_sfx("chest_open")
 	var count: int = Pickups.roll_chest_count(
-		_pickups_data.get("chest", {}), _meta_bonus("luck"), _loot_rng
+		_pickups_data.get("chest", {}), _build_bonus("luck"), _loot_rng
 	)
 	_chest_counts.append(count)
 	_chest_pending += count

@@ -776,9 +776,13 @@ func _rebuild_belongings() -> void:
 	first.add_child(_belongings_slots(
 		_belongings_held.get("weapons", []) as Array, LevelUp.WEAPON_SLOTS, true
 	))
-	second.add_child(_belongings_slots(
-		_belongings_held.get("passives", []) as Array, LevelUp.PASSIVE_SLOTS, false
-	))
+	# N11-8: passives left the run — the row carries them only if a caller
+	# still hands some in (empty means no padded hole cells, not "0 of 4").
+	var held_passives: Array = _belongings_held.get("passives", []) as Array
+	if not held_passives.is_empty():
+		second.add_child(_belongings_slots(
+			held_passives, LevelUp.PASSIVE_SLOTS, false
+		))
 	var carried: Control = _belongings_materials(
 		_belongings_held.get("materials", []) as Array
 	)
@@ -1365,9 +1369,14 @@ func _refresh_build_summary(summary: Dictionary) -> void:
 		var group := VBoxContainer.new()
 		group.name = "PassiveGroup"
 		group.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		group.add_child(
-			_slot_header(UiLocale.t("패시브"), passives.size(), LevelUp.PASSIVE_SLOTS)
+		# N11-8: these are the camp's PERMANENT refine ranks now, not run
+		# stacks — no slot fraction, the count is simply how many are trained.
+		var refine_header: Label = _label(
+			"%s %d" % [UiLocale.t("연마"), passives.size()],
+			UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
 		)
+		refine_header.name = "연마Slots"
+		group.add_child(refine_header)
 		# N9-160 (owner: 빌드를 글 말고 이미지로): the passive list mirrors the
 		# weapon grid — icon wells with a stack readout under each.
 		var grid := GridContainer.new()

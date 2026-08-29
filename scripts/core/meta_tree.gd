@@ -30,7 +30,10 @@ const SCALAR_STATS: Array[String] = [
 	"max_hp", "move_speed", "attack_damage", "attack_speed", "magnet_radius",
 	# N9-93 (owner: the tree is too small): three more run-wide scalars, wired
 	# into the same _passive_bonus + _meta_bonus expressions the others use.
-	"crit_chance", "crit_damage", "projectile_speed"
+	"crit_chance", "crit_damage", "projectile_speed",
+	# N11-8 (owner: 패시브를 아예 아이들러쪽 업그레이드로): the former in-run
+	# passives live here now — same _meta_bonus expressions, permanent ranks.
+	"skill_power", "defense", "area_scale"
 ]
 ## Run economy multipliers (Stage gold/xp pickup paths; luck scales the
 ## special-material drop odds in the loot roll — N4-9).
@@ -44,7 +47,9 @@ const WEAPON_STATS: Array[String] = [
 	"burn_duration", "chain_jumps", "ward_radius", "orbit_count", "seal_burst",
 	# N9-93: the two fold keys N9-88 added for the field passives — one fold,
 	# both suppliers, so a tree node gets them for the price of a data entry.
-	"burn_dps", "area_radius"
+	"burn_dps", "area_radius",
+	# N11-8 migrated weapon-flavoured passives (integer ladders cap them).
+	"burn_power", "chain_amount", "seal_haste", "projectile_count"
 ]
 ## Fractional stats that MUST declare a positive config.stat_caps entry; the
 ## integer counters above are capped by their rank ladders instead.
@@ -52,7 +57,9 @@ const CAPPED_STATS: Array[String] = [
 	"max_hp", "move_speed", "attack_damage", "attack_speed", "magnet_radius",
 	"gold_gain", "xp_gain", "luck", "damage_reduction", "hit_invuln",
 	"burn_duration", "ward_radius", "crit_chance", "crit_damage",
-	"projectile_speed", "burn_dps", "area_radius"
+	"projectile_speed", "burn_dps", "area_radius",
+	# N11-8 fractional migrants.
+	"skill_power", "defense", "area_scale", "burn_power"
 ]
 ## Sealed weapons must always need at least this many stacks to burst.
 const MIN_SEAL_BURST := 2

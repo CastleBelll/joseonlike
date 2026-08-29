@@ -28,6 +28,14 @@ const WEAPONS := {
 		"per_level": {"damage": 3.5, "cooldown_sec": -0.04},
 		"evolution_only": false,
 	},
+	# N11-8: with passives out of the pool a three-card screen needs three
+	# offerable weapons in the fixture.
+	"staff": {
+		"name_ko": "석장", "grade": "common", "damage": 9.0,
+		"cooldown_sec": 1.0, "speed": 300.0, "max_level": 3,
+		"per_level": {"damage": 2.0, "cooldown_sec": -0.02},
+		"evolution_only": false,
+	},
 }
 const PASSIVES := {
 	"attack_damage": {"name_ko": "공격력", "stat": "attack_damage", "per_stack": 0.06, "max_stacks": 2},
@@ -95,15 +103,20 @@ func test_pool_excludes_owned_evolution_and_zero_speed_new_weapons() -> bool:
 	for choice: Dictionary in pool:
 		if choice["kind"] == LevelUp.KIND_NEW_WEAPON:
 			new_ids.append(String(choice["id"]))
-	return new_ids == ["bow"]
+	return new_ids == ["bow", "staff"]
 
 
-func test_pool_excludes_unwired_passive_stats() -> bool:
-	var pool: Array[Dictionary] = LevelUp.candidates({}, PASSIVES, {}, {})
+## N11-8 (owner: 패시브를 아예 아이들러쪽 업그레이드로 넘기고 액티브만
+## 매번 빌드): the pool is WEAPONS ONLY — a passive card must never appear,
+## however much slot room the run has.
+func test_pool_offers_weapons_only() -> bool:
+	var pool: Array[Dictionary] = LevelUp.candidates(
+		WEAPONS, PASSIVES, {"talisman": 1}, {}
+	)
 	for choice: Dictionary in pool:
-		if choice["id"] == "unwired":
+		if String(choice.get("kind", "")) == LevelUp.KIND_PASSIVE:
 			return false
-	return pool.size() == 2
+	return not pool.is_empty()
 
 
 func test_real_data_pool_offers_nothing_when_everything_maxed() -> bool:
@@ -441,62 +454,6 @@ func test_describe_passive_flat_amount() -> bool:
 +1 (1/2)"
 
 
-func test_mechanic_passives_need_a_customer_weapon() -> bool:
-	# N9-110 (owner: 연쇄 확장 같은 건 한 기술에 국한돼 잘 안 쓴다): a
-	# mechanic-bound passive only appears while an owned weapon can use it.
-	var weapons := {
-		"sword": {"max_level": 8},
-		"noebu": {"max_level": 8, "chain": {"jumps": 2}},
-	}
-	var passives := {
-		"chain_amount": {"name_ko": "연쇄 확장", "per_stack": 1.0, "max_stacks": 2},
-		"attack_damage": {"name_ko": "공격력", "per_stack": 0.06, "max_stacks": 5},
-	}
-	var no_chain: Array[Dictionary] = LevelUp.candidates(weapons, passives, {"sword": 1}, {})
-	for choice: Dictionary in no_chain:
-		if String(choice.get("id", "")) == "chain_amount":
-			push_error("test_level_up: chain_amount offered with no chain weapon owned")
-			return false
-	var with_chain: Array[Dictionary] = LevelUp.candidates(weapons, passives, {"noebu": 1}, {})
-	var offered: bool = false
-	for choice: Dictionary in with_chain:
-		if String(choice.get("id", "")) == "chain_amount":
-			offered = true
-	if not offered:
-		push_error("test_level_up: chain_amount missing despite an owned chain weapon")
-		return false
-	# An invested stack keeps growing even after a mod swaps the weapon away.
-	var stacked: Array[Dictionary] = LevelUp.candidates(
-		weapons, passives, {"sword": 1}, {"chain_amount": 1}
-	)
-	for choice: Dictionary in stacked:
-		if String(choice.get("id", "")) == "chain_amount":
-			return true
-	push_error("test_level_up: a stacked chain_amount stopped being offered")
-	return false
-
-
-func test_burn_passive_needs_a_burn_weapon() -> bool:
-	var weapons := {
-		"sword": {"max_level": 8},
-		"honbul": {"max_level": 8, "on_hit_status": {"id": "burn", "dps": 4.0}},
-	}
-	var passives := {
-		"burn_power": {"name_ko": "불씨 정통", "per_stack": 0.2, "max_stacks": 3},
-	}
-	var without: Array[Dictionary] = LevelUp.candidates(weapons, passives, {"sword": 1}, {})
-	for choice: Dictionary in without:
-		if String(choice.get("id", "")) == "burn_power":
-			push_error("test_level_up: burn_power offered with nothing that burns")
-			return false
-	var with_burn: Array[Dictionary] = LevelUp.candidates(weapons, passives, {"honbul": 1}, {})
-	for choice: Dictionary in with_burn:
-		if String(choice.get("id", "")) == "burn_power":
-			return true
-	push_error("test_level_up: burn_power missing despite an owned burn weapon")
-	return false
-
-
 func test_describe_passive_leads_with_its_desc() -> bool:
 	# N9-105 (owner: a bare % never says what it touches): with a desc in
 	# data the body explains the effect instead of repeating the title.
@@ -706,91 +663,6 @@ func test_a_full_weapon_build_stops_offering_new_weapons() -> bool:
 	return _kinds(pool, LevelUp.KIND_WEAPON_UP).size() == 4
 
 
-func test_a_full_passive_build_still_grows_the_passives_it_has() -> bool:
-	var stacks := {"attack_damage": 1, "move_speed": 1, "max_hp": 1, "magnet_radius": 1}
-	var pool: Array[Dictionary] = LevelUp.candidates(
-		SLOT_WEAPONS, SLOT_PASSIVES, {"w1": 1}, stacks
-	)
-	var offered: Array[String] = _kinds(pool, LevelUp.KIND_PASSIVE)
-	# The fifth passive is locked out; the four taken ones keep climbing.
-	return offered.size() == 4 and not offered.has("luck")
-
-
-func test_a_zero_stack_passive_does_not_consume_a_slot() -> bool:
-	# A passive that was offered and never taken can linger at 0 in the dict;
-	# counting it would silently shrink the build by one.
-	var stacks := {"attack_damage": 1, "move_speed": 0, "max_hp": 0, "magnet_radius": 0}
-	var pool: Array[Dictionary] = LevelUp.candidates(
-		SLOT_WEAPONS, SLOT_PASSIVES, {"w1": 1}, stacks
-	)
-	return _kinds(pool, LevelUp.KIND_PASSIVE).size() == 5
-
-
-## N10-6 dead-card gates. A passive nothing in the build can spend is a wasted
-## slot on the screen, and the warrior and the archer each had one.
-const MIXED_WEAPONS := {
-	"arc": {
-		"name_ko": "환도", "grade": "common", "damage": 16.0, "cooldown_sec": 0.8,
-		"speed": 0.0, "mechanic": "melee_arc", "max_level": 8,
-		"per_level": {"damage": 3.5}, "evolution_only": false,
-	},
-	"shot": {
-		"name_ko": "각궁", "grade": "common", "damage": 10.0, "cooldown_sec": 0.9,
-		"speed": 380.0, "mechanic": "straight", "max_level": 8,
-		"per_level": {"damage": 2.5}, "evolution_only": false,
-	},
-}
-const SHOT_PASSIVES := {
-	"projectile_count": {"name_ko": "다중 투사", "stat": "projectile_count", "per_stack": 1.0, "max_stacks": 2},
-	"projectile_speed": {"name_ko": "신속 투사", "stat": "projectile_speed", "per_stack": 0.1, "max_stacks": 5},
-	"skill_power": {"name_ko": "도력", "stat": "skill_power", "per_stack": 0.1, "max_stacks": 5},
-	"attack_damage": {"name_ko": "공격력", "stat": "attack_damage", "per_stack": 0.06, "max_stacks": 5},
-}
-
-
-func _offered_passives(
-	owned: Dictionary, stacks: Dictionary, has_damaging_active: bool
-) -> Array[String]:
-	var pool: Array[Dictionary] = LevelUp.candidates(
-		MIXED_WEAPONS, SHOT_PASSIVES, owned, stacks, {}, {}, [], [], false,
-		has_damaging_active
-	)
-	return _kinds(pool, LevelUp.KIND_PASSIVE)
-
-
-func test_a_swing_only_build_is_not_offered_projectile_passives() -> bool:
-	var offered: Array[String] = _offered_passives({"arc": 1}, {}, true)
-	return (
-		not offered.has("projectile_count")
-		and not offered.has("projectile_speed")
-		and offered.has("attack_damage")
-	)
-
-
-func test_owning_one_projectile_weapon_reopens_them() -> bool:
-	var offered: Array[String] = _offered_passives({"arc": 1, "shot": 1}, {}, true)
-	return offered.has("projectile_count") and offered.has("projectile_speed")
-
-
-func test_a_character_with_no_damaging_art_is_not_offered_skill_power() -> bool:
-	# The archer carries no actives at all, so 도력 could never pay her back.
-	return not _offered_passives({"shot": 1}, {}, false).has("skill_power")
-
-
-func test_a_character_with_a_damaging_art_still_gets_skill_power() -> bool:
-	return _offered_passives({"shot": 1}, {}, true).has("skill_power")
-
-
-func test_a_dead_passive_already_stacked_keeps_growing() -> bool:
-	# N9-110 holds: a mod can swap the build under an investment, and punishing
-	# the pick afterwards would be worse than offering it.
-	var offered: Array[String] = _offered_passives(
-		{"arc": 1}, {"projectile_count": 1}, true
-	)
-	return offered.has("projectile_count")
-
-
-## N10-5 card mix. The draw must not read a class's roster size as its odds.
 func _mixed_pool(weapon_cards: int, passive_cards: int) -> Array[Dictionary]:
 	var pool: Array[Dictionary] = []
 	for i: int in range(weapon_cards):

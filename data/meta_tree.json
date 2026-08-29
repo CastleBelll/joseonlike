@@ -1,23 +1,30 @@
 {
  "config": {
   "stat_caps": {
-   "max_hp": 0.15,
-   "move_speed": 0.12,
-   "attack_damage": 0.2,
-   "attack_speed": 0.16,
-   "magnet_radius": 0.3,
+   "max_hp": 0.65,
+   "move_speed": 0.37,
+   "attack_damage": 0.5,
+   "attack_speed": 0.56,
+   "magnet_radius": 1.05,
    "gold_gain": 0.3,
-   "xp_gain": 0.32,
+   "xp_gain": 0.82,
    "damage_reduction": 0.14,
    "hit_invuln": 0.3,
-   "luck": 0.5,
+   "luck": 0.75,
    "burn_duration": 0.5,
    "ward_radius": 0.24,
-   "crit_chance": 0.1,
-   "crit_damage": 0.4,
-   "projectile_speed": 0.16,
+   "crit_chance": 0.4,
+   "crit_damage": 1.4,
+   "projectile_speed": 0.66,
    "burn_dps": 0.3,
-   "area_radius": 0.16
+   "area_radius": 0.16,
+   "skill_power": 0.5,
+   "projectile_count": 2.0,
+   "area_scale": 0.4,
+   "defense": 0.2,
+   "burn_power": 0.6,
+   "chain_amount": 2.0,
+   "seal_haste": 2.0
   },
   "revive": {
    "hp_ratio": 0.3,
@@ -25,7 +32,8 @@
   },
   "first_find": {
    "at_sec": 45.0
-  }
+  },
+  "_refine_note": "N11-8 (오너: 패시브를 아예 아이들러쪽 업그레이드로 넘기고): 구 인런 패시브 17종이 refine_* 영구 노드가 됐다. per_rank·랭크 수는 passives.json의 per_stack·max_stacks 그대로, stat_caps는 기존 캡 + 패시브 총량으로 상향. 비용 곡선은 초안 — N11-6 경제 패스에서 재측정한다."
  },
  "nodes": [
   {
@@ -931,6 +939,402 @@
    "pos": [
     0.72,
     5
+   ]
+  },
+  {
+   "id": "refine_attack_damage",
+   "name_ko": "공격력",
+   "name_en": "Attack Damage",
+   "icon": "whetstone",
+   "effect": {
+    "stat": "attack_damage",
+    "per_rank": 0.06
+   },
+   "desc_ko": "공격력 +6% (연마)",
+   "desc_en": "Attack Damage +6% (refined)",
+   "costs": [
+    80,
+    180,
+    400,
+    800,
+    1500
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    9
+   ]
+  },
+  {
+   "id": "refine_attack_speed",
+   "name_ko": "공격 속도",
+   "name_en": "Attack Speed",
+   "icon": "beast_fang",
+   "effect": {
+    "stat": "attack_speed",
+    "per_rank": 0.08
+   },
+   "desc_ko": "공격 속도 +8% (연마)",
+   "desc_en": "Attack Speed +8% (refined)",
+   "costs": [
+    80,
+    180,
+    400,
+    800,
+    1500
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    9
+   ]
+  },
+  {
+   "id": "refine_move_speed",
+   "name_ko": "이동 속도",
+   "name_en": "Move Speed",
+   "icon": "bamboo",
+   "effect": {
+    "stat": "move_speed",
+    "per_rank": 0.05
+   },
+   "desc_ko": "이동 속도 +5% (연마)",
+   "desc_en": "Move Speed +5% (refined)",
+   "costs": [
+    80,
+    180,
+    400,
+    800,
+    1500
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    10
+   ]
+  },
+  {
+   "id": "refine_crit_chance",
+   "name_ko": "치명타 확률",
+   "name_en": "Crit Chance",
+   "icon": "beast_fang",
+   "effect": {
+    "stat": "crit_chance",
+    "per_rank": 0.05
+   },
+   "desc_ko": "치명타 확률 +5% (연마)",
+   "desc_en": "Crit Chance +5% (refined)",
+   "costs": [
+    80,
+    180,
+    400,
+    800,
+    1500,
+    2600
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    10
+   ]
+  },
+  {
+   "id": "refine_max_hp",
+   "name_ko": "최대 체력",
+   "name_en": "Max HP",
+   "icon": "tough_fiber",
+   "effect": {
+    "stat": "max_hp",
+    "per_rank": 0.1
+   },
+   "desc_ko": "최대 체력 +10% (연마)",
+   "desc_en": "Max HP +10% (refined)",
+   "costs": [
+    80,
+    180,
+    400,
+    800,
+    1500
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    11
+   ]
+  },
+  {
+   "id": "refine_xp_gain",
+   "name_ko": "경험치 획득",
+   "name_en": "XP Gain",
+   "icon": "wonhon_shard",
+   "effect": {
+    "stat": "xp_gain",
+    "per_rank": 0.1
+   },
+   "desc_ko": "경험치 획득 +10% (연마)",
+   "desc_en": "XP Gain +10% (refined)",
+   "costs": [
+    80,
+    180,
+    400,
+    800,
+    1500
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    11
+   ]
+  },
+  {
+   "id": "refine_luck",
+   "name_ko": "행운",
+   "name_en": "Luck",
+   "icon": "cinnabar",
+   "effect": {
+    "stat": "luck",
+    "per_rank": 0.05
+   },
+   "desc_ko": "행운 +5% (연마)",
+   "desc_en": "Luck +5% (refined)",
+   "costs": [
+    80,
+    180,
+    400,
+    800,
+    1500
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    12
+   ]
+  },
+  {
+   "id": "refine_skill_power",
+   "name_ko": "도력",
+   "name_en": "Skill Power",
+   "icon": "talisman_paper",
+   "effect": {
+    "stat": "skill_power",
+    "per_rank": 0.1
+   },
+   "desc_ko": "도력 +10% (연마)",
+   "desc_en": "Skill Power +10% (refined)",
+   "costs": [
+    80,
+    180,
+    400,
+    800,
+    1500
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    12
+   ]
+  },
+  {
+   "id": "refine_projectile_count",
+   "name_ko": "다중 투사",
+   "name_en": "Multi Shot",
+   "icon": "thunder_stone",
+   "effect": {
+    "stat": "projectile_count",
+    "per_rank": 1.0
+   },
+   "desc_ko": "다중 투사 +1 (연마)",
+   "desc_en": "Multi Shot +1 (refined)",
+   "costs": [
+    1200,
+    3200
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    13
+   ]
+  },
+  {
+   "id": "refine_projectile_speed",
+   "name_ko": "신속 투사",
+   "name_en": "Swift Shot",
+   "icon": "thunder_stone",
+   "effect": {
+    "stat": "projectile_speed",
+    "per_rank": 0.1
+   },
+   "desc_ko": "신속 투사 +10% (연마)",
+   "desc_en": "Swift Shot +10% (refined)",
+   "costs": [
+    80,
+    180,
+    400,
+    800,
+    1500
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    13
+   ]
+  },
+  {
+   "id": "refine_area_scale",
+   "name_ko": "광역 확장",
+   "name_en": "Area Up",
+   "icon": "dokkaebi_flame",
+   "effect": {
+    "stat": "area_scale",
+    "per_rank": 0.08
+   },
+   "desc_ko": "광역 확장 +8% (연마)",
+   "desc_en": "Area Up +8% (refined)",
+   "costs": [
+    80,
+    180,
+    400,
+    800,
+    1500
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    14
+   ]
+  },
+  {
+   "id": "refine_defense",
+   "name_ko": "방비",
+   "name_en": "Defense",
+   "icon": "ghost_iron",
+   "effect": {
+    "stat": "defense",
+    "per_rank": 0.05
+   },
+   "desc_ko": "방비 +5% (연마)",
+   "desc_en": "Defense +5% (refined)",
+   "costs": [
+    100,
+    240,
+    550,
+    1100
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    14
+   ]
+  },
+  {
+   "id": "refine_magnet_radius",
+   "name_ko": "끌어당김",
+   "name_en": "Magnet",
+   "icon": "wonhon_shard",
+   "effect": {
+    "stat": "magnet_radius",
+    "per_rank": 0.15
+   },
+   "desc_ko": "끌어당김 +15% (연마)",
+   "desc_en": "Magnet +15% (refined)",
+   "costs": [
+    80,
+    180,
+    400,
+    800,
+    1500
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    15
+   ]
+  },
+  {
+   "id": "refine_burn_power",
+   "name_ko": "불씨 정통",
+   "name_en": "Ember Mastery",
+   "icon": "fire_spirit_stone",
+   "effect": {
+    "stat": "burn_power",
+    "per_rank": 0.2
+   },
+   "desc_ko": "불씨 정통 +20% (연마)",
+   "desc_en": "Ember Mastery +20% (refined)",
+   "costs": [
+    150,
+    360,
+    800
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    15
+   ]
+  },
+  {
+   "id": "refine_chain_amount",
+   "name_ko": "연쇄 확장",
+   "name_en": "Chain Reach",
+   "icon": "thunder_stone",
+   "effect": {
+    "stat": "chain_amount",
+    "per_rank": 1.0
+   },
+   "desc_ko": "연쇄 확장 +1 (연마)",
+   "desc_en": "Chain Reach +1 (refined)",
+   "costs": [
+    800,
+    2200
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    16
+   ]
+  },
+  {
+   "id": "refine_seal_haste",
+   "name_ko": "봉인 가속",
+   "name_en": "Seal Haste",
+   "icon": "talisman_paper",
+   "effect": {
+    "stat": "seal_haste",
+    "per_rank": 1.0
+   },
+   "desc_ko": "봉인 가속 +1 (연마)",
+   "desc_en": "Seal Haste +1 (refined)",
+   "costs": [
+    500,
+    1400
+   ],
+   "requires": [],
+   "pos": [
+    0.72,
+    16
+   ]
+  },
+  {
+   "id": "refine_crit_damage",
+   "name_ko": "치명 일격",
+   "name_en": "Crit Damage",
+   "icon": "whetstone",
+   "effect": {
+    "stat": "crit_damage",
+    "per_rank": 0.25
+   },
+   "desc_ko": "치명 일격 +25% (연마)",
+   "desc_en": "Crit Damage +25% (refined)",
+   "costs": [
+    100,
+    240,
+    550,
+    1100
+   ],
+   "requires": [],
+   "pos": [
+    0.28,
+    17
    ]
   }
  ]

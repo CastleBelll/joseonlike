@@ -134,9 +134,10 @@ func test_empty_slots_are_drawn_so_the_budget_is_visible() -> bool:
 	var run: Control = hud.belongings_run("Weapons")
 	var passed: bool = run != null
 	passed = passed and run.get_child_count() == LevelUp.WEAPON_SLOTS
-	var passives: Control = hud.belongings_run("Passives")
-	passed = passed and passives != null
-	passed = passed and passives.get_child_count() == LevelUp.PASSIVE_SLOTS
+	# N11-8: passives left the run — an empty passive list draws NO padded
+	# hole row (the old "0 of 4" readout would be a lie about a budget that
+	# no longer exists in-run).
+	passed = passed and hud.belongings_run("Passives") == null
 	hud.free()
 	if not passed:
 		push_error("test_combat_hud: belongings row hides the empty slots")

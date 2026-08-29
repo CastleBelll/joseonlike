@@ -1,68 +1,68 @@
 {
-  "break_table": [
-    {
-      "kind": "nothing",
-      "weight": 46.0
-    },
-    {
-      "kind": "gold",
-      "weight": 38.0
-    },
-    {
-      "kind": "health",
-      "weight": 10.0
-    },
-    {
-      "kind": "nuke",
-      "weight": 3.0
-    },
-    {
-      "kind": "magnet",
-      "weight": 3.0
-    }
-  ],
-  "_rules": {
-    "plain_share_min": 0.8
+ "break_table": [
+  {
+   "kind": "nothing",
+   "weight": 46.0
   },
-  "gold": {
-    "amount": 40
+  {
+   "kind": "gold",
+   "weight": 38.0
   },
-  "health": {
-    "hp_ratio": 0.25,
-    "full_hp_gold": 25
+  {
+   "kind": "health",
+   "weight": 10.0
   },
-  "elite_heal": {
-    "hp_ratio": 0.15
+  {
+   "kind": "nuke",
+   "weight": 3.0
   },
-  "nuke": {
-    "damage": 999.0,
-    "elite_boss_damage": 150.0,
-    "ring_radius_px": 320.0
-  },
-  "magnet": {
-    "ring_radius_px": 120.0
-  },
-  "chest": {
-    "open_radius_px": 26.0,
-    "weights": {
-      "1": 82.0,
-      "3": 15.0,
-      "5": 3.0
-    },
-    "luck_shift": {
-      "1": 0.0,
-      "3": 3.0,
-      "5": 5.0
-    },
-    "fallback_gold": 60
-  },
-  "field_passive": {
-    "_note": "N9-55 필드 패시브. 지도에 떨어져 있는 패시브를 걸어가서 줍는다. 레벨업 화면의 4칸 제한을 받지 않는다 — 고른 게 아니라 찾은 것이므로. interval_sec마다 최대 max_live개까지, 플레이어 기준 spawn_min~max_px 링 위에 놓인다. min_offscreen_px는 화면 반대각선의 절반보다 커야 화면 밖에서 생긴다.",
-    "interval_sec": 22.0,
-    "max_live": 3,
-    "spawn_min_px": 620.0,
-    "spawn_max_px": 1100.0,
-    "min_offscreen_px": 560.0,
-    "despawn_px": 2200.0
+  {
+   "kind": "magnet",
+   "weight": 3.0
   }
+ ],
+ "_rules": {
+  "plain_share_min": 0.8
+ },
+ "gold": {
+  "amount": 40
+ },
+ "health": {
+  "hp_ratio": 0.25,
+  "full_hp_gold": 25
+ },
+ "elite_heal": {
+  "hp_ratio": 0.15
+ },
+ "nuke": {
+  "damage": 999.0,
+  "elite_boss_damage": 150.0,
+  "ring_radius_px": 320.0
+ },
+ "magnet": {
+  "ring_radius_px": 120.0
+ },
+ "chest": {
+  "open_radius_px": 26.0,
+  "weights": {
+   "1": 82.0,
+   "3": 15.0,
+   "5": 3.0
+  },
+  "luck_shift": {
+   "1": 0.0,
+   "3": 3.0,
+   "5": 5.0
+  },
+  "fallback_gold": 60
+ },
+ "_field_passive_parked": {
+  "_note": "N11-8: 인런 패시브가 영구 연마로 이관되며 스폰 정지(키 이름으로 꺼짐). 야광귀 절도 대상은 N11-3 전리품 경제에서 재료로 재지정하며 이 수치를 재사용한다.",
+  "interval_sec": 22.0,
+  "max_live": 3,
+  "spawn_min_px": 620.0,
+  "spawn_max_px": 1100.0,
+  "min_offscreen_px": 560.0,
+  "despawn_px": 2200.0
+ }
 }

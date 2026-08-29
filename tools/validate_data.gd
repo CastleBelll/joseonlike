@@ -344,8 +344,15 @@ func _check_impact() -> void:
 
 
 func _check_field_passives() -> void:
-	for issue: String in Pickups.field_passive_issues(_load(DATA_DIR + "/pickups.json")):
-		_fail("pickups " + issue)
+	# N11-8: in-run passives moved to the permanent refine ranks, so the spawn
+	# block is deliberately PARKED under "_field_passive_parked" — a live block
+	# reappearing would silently revive the old system. When N11-3 re-aims the
+	# thief at materials, this check flips back to validating the live numbers.
+	var pickups: Dictionary = _load(DATA_DIR + "/pickups.json")
+	if pickups.has("field_passive"):
+		_fail("pickups field_passive must stay parked (N11-8) — rename to _field_passive_parked")
+	if not pickups.has("_field_passive_parked"):
+		_fail("pickups _field_passive_parked block missing (N11-3 will revive it)")
 
 
 func _check_difficulties() -> void:
