@@ -687,9 +687,32 @@ func _is_landscape() -> bool:
 
 
 ## F1: the widest caption that cannot reach its row neighbour on this canvas.
+## QA re-verify: the fixed 0.44 span assumed two-column rows, and the one
+## three-column row (우치 row 2, min-sep 0.35) still overlapped — the span
+## is MEASURED from the current tab's rows now, so new data cannot break it.
 func _caption_width(width: float) -> float:
-	var fits: float = (COLUMN_SPAN * width - CAPTION_GAP) / (1.0 + COLUMN_SPAN)
+	var span: float = _tab_min_column_sep()
+	var fits: float = (span * width - CAPTION_GAP) / (1.0 + span)
 	return clampf(fits, CAPTION_WIDTH_MIN, NODE_LABEL_WIDTH)
+
+
+## Smallest horizontal gap between neighbouring nodes on any one row of the
+## current tab; COLUMN_SPAN is the ceiling (a lone-column tab needs no less).
+func _tab_min_column_sep() -> float:
+	var rows: Dictionary = {}
+	for entry: Dictionary in _tab_nodes():
+		var pos: Array = entry.get("pos", [0.5, 0.0])
+		var row: int = int(pos[1])
+		if not rows.has(row):
+			rows[row] = [] as Array[float]
+		(rows[row] as Array[float]).append(float(pos[0]))
+	var narrowest: float = COLUMN_SPAN
+	for row: int in rows:
+		var xs: Array[float] = rows[row]
+		xs.sort()
+		for i: int in range(1, xs.size()):
+			narrowest = minf(narrowest, xs[i] - xs[i - 1])
+	return maxf(narrowest, 0.1)
 
 
 func _row_height() -> float:

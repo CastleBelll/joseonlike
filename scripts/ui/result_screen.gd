@@ -18,7 +18,7 @@ const PANEL_MARGIN_X := 48.0
 const PANEL_MARGIN_Y_LANDSCAPE := 24.0
 ## QA F2: the floor the margin donation may never cross — the sheet keeps a
 ## visible band of night around it.
-const PANEL_MARGIN_Y_MIN := 12.0
+const PANEL_MARGIN_Y_MIN := 8.0
 ## QA F2: earned lines the sheet prints before folding the rest into "+N".
 const EARNED_LINES_MAX := 3
 const PANEL_WIDTH := 492.0
@@ -35,6 +35,10 @@ const PANEL_HEIGHT_FLOOR_LANDSCAPE := 320.0
 ## this cap serves have the room.
 const PANEL_HEIGHT_MAX := 600.0
 const HEADER_HEIGHT := 72.0
+## QA re-verify (N11-9v): the 540-tall landscape band ran ~30px short after
+## every other donation — the header is the one band that can still pay
+## there without touching content. The title reads fine on 48.
+const HEADER_HEIGHT_LANDSCAPE := 48.0
 const ROW_HEIGHT := 44.0
 const BODY_MARGIN := 24.0
 const CTA_HEIGHT := 64.0
@@ -97,6 +101,17 @@ func _layout_panel() -> void:
 	# achievements — the last line rendered half-cut behind a scrollbar.
 	# Landscape has no height to donate to margins.
 	var margin_y: float = PANEL_MARGIN_Y_LANDSCAPE if root_w > root_h else PANEL_MARGIN_X
+	# N11-9v: landscape spends less on the title band; the header and body
+	# re-place per orientation so the chrome sum below stays honest.
+	var header_height: float = (
+		HEADER_HEIGHT_LANDSCAPE if root_w > root_h else HEADER_HEIGHT
+	)
+	var header: Control = _panel.find_child("Header", true, false) as Control
+	if header != null:
+		header.offset_bottom = header_height
+	var body: Control = _panel.find_child("Body", true, false) as Control
+	if body != null:
+		body.offset_top = header_height
 	# QA F2/F3 (N11-3b): eight rows plus earned lines outgrew the band — the
 	# vertical margins donate down to a floor before anything scrolls, the
 	# same grammar as the level-up sheet's top inset.
@@ -120,7 +135,7 @@ func _layout_panel() -> void:
 			if style != null else 46.0
 		)
 		var chrome: float = (
-			style_y + HEADER_HEIGHT + CTA_HEIGHT + BODY_MARGIN * 2.0
+			style_y + header_height + CTA_HEIGHT + BODY_MARGIN * 2.0
 			+ float(UiPalette.SPACE_MD)
 		)
 		var room: float = maxf(available - chrome, 60.0)
