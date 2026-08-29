@@ -1,0 +1,63 @@
+{
+ "_note": "N11-7 (오너 확정 2026-08-29): 본거지 NPC 명부. N11-5 본거지 맵화가 이 명부를 소비한다 — 기능당 NPC 하나, 기존 화면은 NPC 대화로 진입한다. building은 camp.gd BUILDINGS의 id와 느슨히 연결되는 일터 표식(아직 없는 건물은 N11-5에서 생긴다). name_hanja는 한자 이름이 있는 경우만; 돌무쇠·너름은 순우리말이라 비워 둔다.",
+ "dolmusoe": {
+  "name_ko": "돌무쇠",
+  "name_en": "Dolmusoe",
+  "name_hanja": "",
+  "role_ko": "야장",
+  "role_en": "Blacksmith",
+  "building": "smithy",
+  "service": "mod_unlocks",
+  "line_ko": "괴이 잡던 쇠는 내 손에서 다시 태어나지."
+ },
+ "choha": {
+  "name_ko": "초하",
+  "name_en": "Choha",
+  "name_hanja": "初夏",
+  "role_ko": "의녀",
+  "role_en": "Herbalist",
+  "building": "apothecary",
+  "service": "elixirs",
+  "line_ko": "밤에 다친 몸은 낮에 고치는 법이오."
+ },
+ "sosul": {
+  "name_ko": "소슬",
+  "name_en": "Sosul",
+  "name_hanja": "蕭瑟",
+  "role_ko": "무녀",
+  "role_en": "Shrine Maiden",
+  "building": "shrine",
+  "service": "meta_tree",
+  "line_ko": "명부수 가지 끝에 그대의 밤이 걸려 있소."
+ },
+ "mukheon": {
+  "name_ko": "묵헌",
+  "name_en": "Mukheon",
+  "name_hanja": "墨軒",
+  "role_ko": "사관",
+  "role_en": "Archivist",
+  "building": "archive",
+  "service": "bestiary",
+  "line_ko": "기록되지 않은 괴이는 두 번 온다."
+ },
+ "neoreum": {
+  "name_ko": "너름",
+  "name_en": "Neoreum",
+  "name_hanja": "",
+  "role_ko": "객주",
+  "role_en": "Broker",
+  "building": "market",
+  "service": "storehouse",
+  "line_ko": "밤에서 주워 온 것, 값은 내가 쳐 주지."
+ },
+ "beomgang": {
+  "name_ko": "범강",
+  "name_en": "Beomgang",
+  "name_hanja": "虎剛",
+  "role_ko": "교두",
+  "role_en": "Drillmaster",
+  "building": "training",
+  "service": "training",
+  "line_ko": "몸이 기억할 때까지. 한 번 더."
+ }
+}
