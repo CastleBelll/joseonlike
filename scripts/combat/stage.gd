@@ -1486,11 +1486,6 @@ func _pause_build_summary() -> Dictionary:
 	}
 
 
-## B0-1: push the HUD belongings row. Called from the places the build actually
-## moves — a level-up pick, a loot pickup, a field passive — rather than every
-## frame, because redrawing eight unchanged cells sixty times a second is work
-## for nothing. Reuses `_pause_build_summary` so the row and the pause screen
-## can never disagree about what is held.
 ## Total pages the profile's 괴이록 holds, all kinds together (N11-3b).
 func _bestiary_count() -> int:
 	var record: Dictionary = Bestiary.normalized_record(_profile().get("bestiary"))
@@ -1500,6 +1495,11 @@ func _bestiary_count() -> int:
 	return total
 
 
+## B0-1: push the HUD belongings row. Called from the places the build actually
+## moves — a level-up pick, a loot pickup, a field passive — rather than every
+## frame, because redrawing eight unchanged cells sixty times a second is work
+## for nothing. Reuses `_pause_build_summary` so the row and the pause screen
+## can never disagree about what is held.
 func _refresh_belongings() -> void:
 	if _hud == null:
 		return

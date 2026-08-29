@@ -497,3 +497,49 @@ func test_material_bill_gates_and_spends() -> bool:
 	if not passed:
 		push_error("test_meta_tree: material bill gating/spending broke")
 	return passed
+
+## N11-3b: cheapest_next is what the result screen sells — every exclusion
+## branch gets a case (gold-only reachability is the contract).
+func test_cheapest_next_picks_the_cheapest_reachable_rank() -> bool:
+	# Fresh state, broke: root(10) is cheaper than tao_burn(30); the locked
+	# branch (requires root) and the warrior's node must not compete.
+	var best: Dictionary = MetaTree.cheapest_next(_tiny_tree(), {}, 0, UNLOCKED)
+	return (
+		String(best.get("id", "")) == "root"
+		and int(best.get("cost", 0)) == 10
+		and int(best.get("gap", 0)) == 10
+	)
+
+
+func test_cheapest_next_gap_is_zero_when_affordable() -> bool:
+	var best: Dictionary = MetaTree.cheapest_next(_tiny_tree(), {}, 50, UNLOCKED)
+	return String(best.get("id", "")) == "root" and int(best.get("gap", -1)) == 0
+
+
+func test_cheapest_next_skips_locked_and_foreign_branches() -> bool:
+	# root maxed: branch unlocks (20) and beats tao_burn (30); the warrior's
+	# 30-cost node must never appear while the warrior is locked.
+	var state := {"root": 2}
+	var best: Dictionary = MetaTree.cheapest_next(_tiny_tree(), state, 0, UNLOCKED)
+	return String(best.get("id", "")) == "branch" and int(best.get("gap", 0)) == 20
+
+
+func test_cheapest_next_excludes_material_billed_nodes_until_stocked() -> bool:
+	var tree: Dictionary = _tiny_tree()
+	# Make the cheap root demand a material the pouch lacks.
+	(tree["nodes"][0] as Dictionary)["materials"] = {"fire_stone": [1, 1]}
+	var broke: Dictionary = MetaTree.cheapest_next(tree, {}, 0, UNLOCKED, {})
+	var stocked: Dictionary = MetaTree.cheapest_next(
+		tree, {}, 0, UNLOCKED, {"fire_stone": 1}
+	)
+	# Without the stone the next ding is tao_burn; with it, root returns.
+	return (
+		String(broke.get("id", "")) == "tao_burn"
+		and String(stocked.get("id", "")) == "root"
+	)
+
+
+func test_cheapest_next_empty_when_everything_is_maxed() -> bool:
+	var state := {"root": 2, "branch": 1, "tao_burn": 1}
+	return MetaTree.cheapest_next(_tiny_tree(), state, 9999, UNLOCKED).is_empty()
+

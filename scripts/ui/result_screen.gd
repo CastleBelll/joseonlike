@@ -16,6 +16,11 @@ const PANEL_MARGIN_X := 48.0
 ## Landscape vertical breathing room — the 540 canvas cannot spare the
 ## portrait 48 above and below (Q17).
 const PANEL_MARGIN_Y_LANDSCAPE := 24.0
+## QA F2: the floor the margin donation may never cross — the sheet keeps a
+## visible band of night around it.
+const PANEL_MARGIN_Y_MIN := 12.0
+## QA F2: earned lines the sheet prints before folding the rest into "+N".
+const EARNED_LINES_MAX := 3
 const PANEL_WIDTH := 492.0
 ## Wide enough for the landscape two-column rows to keep their values.
 const PANEL_WIDTH_LANDSCAPE := 760.0
@@ -90,6 +95,9 @@ func _layout_panel() -> void:
 	# achievements — the last line rendered half-cut behind a scrollbar.
 	# Landscape has no height to donate to margins.
 	var margin_y: float = PANEL_MARGIN_Y_LANDSCAPE if root_w > root_h else PANEL_MARGIN_X
+	# QA F2/F3 (N11-3b): eight rows plus earned lines outgrew the band — the
+	# vertical margins donate down to a floor before anything scrolls, the
+	# same grammar as the level-up sheet's top inset.
 	# V1 follow-up: the fixed height cap could not know how tall the wrapped
 	# EN lines run, so the sheet scrolled under it. Same honest two-step as
 	# the pause paper: zero the scroll's minimum, the panel's own minimum is
@@ -123,6 +131,15 @@ func _layout_panel() -> void:
 			)
 		_row_scroll.custom_minimum_size = Vector2(0.0, minf(content, room))
 		var wanted: float = chrome + _row_scroll.custom_minimum_size.y
+		if wanted > available:
+			var give: float = minf(
+				wanted - available, (margin_y - PANEL_MARGIN_Y_MIN) * 2.0
+			)
+			if give > 0.0:
+				available += give
+				room = maxf(available - chrome, 60.0)
+				_row_scroll.custom_minimum_size = Vector2(0.0, minf(content, room))
+				wanted = chrome + _row_scroll.custom_minimum_size.y
 		# Resweep play R8: the 480 look-floor is a portrait number — landscape
 		# rows spread into two columns and need barely 340, so flooring at 480
 		# left ~180px of blank paper between the rows and the CTA. Landscape
@@ -239,9 +256,18 @@ func _show_earned(earned: Variant) -> void:
 		child.queue_free()
 	if earned is not Array:
 		return
+	# QA F2/F3: four earned lines beside the eight rows overflow the short
+	# canvases. The sheet shows the first few; the rest are one counted line —
+	# the achievements screen holds the full list either way.
+	var shown: int = 0
+	var hidden: int = 0
 	for entry: Variant in earned:
 		if entry is not Dictionary:
 			continue
+		if shown >= EARNED_LINES_MAX:
+			hidden += 1
+			continue
+		shown += 1
 		var name_text: String = _earned_name(entry)
 		var reward: int = int((entry as Dictionary).get("reward_gold", 0))
 		var line: String = UiLocale.t("업적 달성") + " — " + name_text
@@ -263,6 +289,13 @@ func _show_earned(earned: Variant) -> void:
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_earned_box.add_child(label)
+	if hidden > 0:
+		var more := _label(
+			UiLocale.t("업적 %d개 더 달성 — 업적에서 확인") % hidden,
+			UiPalette.FONT_SIZE_LABEL, UiPalette.GOLD
+		)
+		more.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_earned_box.add_child(more)
 
 
 func _earned_name(entry: Dictionary) -> String:
@@ -347,12 +380,19 @@ func _make_body() -> Control:
 	_gold_value = _add_row(rows, UiLocale.t("엽전"))
 	_total_gold_value = _add_row(rows, UiLocale.t("보유 엽전"))
 	# N11-3b growth rows (hidden when they would read zero).
+	# QA F1: their values carry SENTENCES ("Iron Bones — 28 more coins"), and
+	# a one-line Label's minimum width is the whole sentence — the panel's
+	# minimum walked 81px off a 486 canvas. Wrapping caps the width demand at
+	# the longest word; the honest height pass already pays for extra lines.
 	_banked_value = _add_row(rows, UiLocale.t("창고 재료"))
 	_banked_row = _banked_value.get_parent() as Control
 	_records_value = _add_row(rows, UiLocale.t("괴이록"))
 	_records_row = _records_value.get_parent() as Control
 	_next_value = _add_row(rows, UiLocale.t("다음 강화"))
 	_next_row = _next_value.get_parent() as Control
+	for value: Label in [_banked_value, _records_value, _next_value]:
+		value.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_earned_box = VBoxContainer.new()
 	_earned_box.name = "EarnedAchievements"
 	_earned_box.add_theme_constant_override("separation", UiPalette.SPACE_XS)
