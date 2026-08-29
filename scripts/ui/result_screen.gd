@@ -20,6 +20,9 @@ const PANEL_WIDTH := 492.0
 ## Wide enough for the landscape two-column rows to keep their values.
 const PANEL_WIDTH_LANDSCAPE := 760.0
 const PANEL_HEIGHT := 480.0
+## Landscape look-floor (resweep play R8): two-column rows need far less
+## height than the portrait stack — 480 there is 180px of blank paper.
+const PANEL_HEIGHT_FLOOR_LANDSCAPE := 320.0
 ## Owner (모든 UI/UX는 반응형으로): the paper takes the height the screen can
 ## spare up to this, so the summary never scrolls where it does not have to.
 ## QA F1: four earned achievements need ~570 of paper in portrait; at 560 the
@@ -30,6 +33,8 @@ const HEADER_HEIGHT := 72.0
 const ROW_HEIGHT := 44.0
 const BODY_MARGIN := 24.0
 const CTA_HEIGHT := 64.0
+## R7: entrance fade length, shared feel with the settings paper.
+const FADE_IN_SEC := 0.12
 
 var _root: Control
 var _panel: PanelContainer
@@ -112,7 +117,14 @@ func _layout_panel() -> void:
 			)
 		_row_scroll.custom_minimum_size = Vector2(0.0, minf(content, room))
 		var wanted: float = chrome + _row_scroll.custom_minimum_size.y
-		half_h = clampf(wanted, minf(PANEL_HEIGHT, available), available) / 2.0
+		# Resweep play R8: the 480 look-floor is a portrait number — landscape
+		# rows spread into two columns and need barely 340, so flooring at 480
+		# left ~180px of blank paper between the rows and the CTA. Landscape
+		# floors lower and lets the sheet hug its content.
+		var floor_h: float = (
+			PANEL_HEIGHT_FLOOR_LANDSCAPE if root_w > root_h else PANEL_HEIGHT
+		)
+		half_h = clampf(wanted, minf(floor_h, available), available) / 2.0
 	_panel.offset_left = -half_w
 	_panel.offset_right = half_w
 	_panel.offset_top = -half_h
@@ -130,6 +142,13 @@ func _ready() -> void:
 	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_root)
+	# Resweep visual R6: the same modal dim wash the other papers wear.
+	var scrim := ColorRect.new()
+	scrim.name = "Scrim"
+	scrim.color = UiPalette.MODAL_SCRIM
+	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(scrim)
 	var panel := PanelContainer.new()
 	panel.name = "PaperPanel"
 	panel.add_theme_stylebox_override("panel", UiIcons.paper_panel())
@@ -178,6 +197,12 @@ func open(outcome: String, summary: Dictionary) -> void:
 	# The paper can only measure content that exists — earned lines included.
 	_layout_panel()
 	visible = true
+	# Resweep visual R7: the same short entrance fade the other modals wear.
+	# PROCESS_MODE_ALWAYS above keeps the tween ticking over the paused run.
+	if is_inside_tree():
+		_root.modulate.a = 0.0
+		var tween: Tween = create_tween()
+		tween.tween_property(_root, "modulate:a", 1.0, FADE_IN_SEC)
 
 
 ## N9-155: one gold line per achievement completed by this run — the name in

@@ -27,6 +27,8 @@ const PANEL_WIDTH := 492.0
 ## the 게임 rows, so the paper widens and the rows run in two columns.
 const PANEL_WIDTH_LANDSCAPE := 760.0
 const HEADER_HEIGHT := 72.0
+## R7: entrance fade length, shared feel with the result sheet.
+const FADE_IN_SEC := 0.12
 const BODY_MARGIN := 32.0
 const ROW_HEIGHT := 56.0
 ## The control side of a slider row. 176 left the label side too narrow once
@@ -84,6 +86,14 @@ func _ready() -> void:
 	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_root)
+	# Resweep visual R6: a dim wash behind the paper so the popup reads as a
+	# modal layer over the screen instead of a plate sitting on it.
+	var scrim := ColorRect.new()
+	scrim.name = "Scrim"
+	scrim.color = UiPalette.MODAL_SCRIM
+	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(scrim)
 	var panel := PanelContainer.new()
 	panel.name = "PaperPanel"
 	panel.add_theme_stylebox_override("panel", UiIcons.paper_panel())
@@ -148,9 +158,20 @@ func _layout_panel() -> void:
 func open() -> void:
 	_layout_panel()
 	visible = true
+	_fade_in()
 	_close_button.grab_focus()
 	if SfxService.instance != null:
 		SfxService.instance.play("ui_open")
+
+
+## Resweep visual R7: the 족자 unrolls, this paper popped — every modal gets
+## at least the short fade so appearing reads as an entrance, not a glitch.
+func _fade_in() -> void:
+	if not is_inside_tree():
+		return
+	_root.modulate.a = 0.0
+	var tween: Tween = create_tween()
+	tween.tween_property(_root, "modulate:a", 1.0, FADE_IN_SEC)
 
 
 func _on_close_pressed() -> void:
@@ -398,7 +419,13 @@ func _adapt_row(row: Container) -> Container:
 	var name_label: Label = row.get_child(0) as Label
 	if _landscape_pages and name_label != null:
 		name_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
-	if not narrow:
+	# Resweep visual R8: a landscape two-column cell cannot pay for the words
+	# AND a slider with its % readout side by side — the label trimmed while
+	# the page still had height to spare. Slider rows stack there too.
+	var stack_for_slider: bool = (
+		_landscape_pages and row.get_node_or_null("Slider") != null
+	)
+	if not narrow and not stack_for_slider:
 		return row
 	var stack := VBoxContainer.new()
 	stack.name = String(row.name) + "Stack"

@@ -262,7 +262,9 @@ def cut_frames(image, grid):
 ## white mass in the night and reads as a particle error, not a monster. The
 ## art contract says 1 logical px of ink outline; at EXPORT_SCALE 4 that is a
 ## 4px dilate of the alpha, filled with ink where the sprite is not.
-OUTLINED = {"ash_wraith"}
+## Resweep play R5: the geuseundae shares the flaw — its black eyes and limbs
+## vanish at ~24px and the body mushes into one pale blob without the ink ring.
+OUTLINED = {"ash_wraith", "geuseundae"}
 OUTLINE_PX = 4
 OUTLINE_INK = (14, 12, 15, 255)
 

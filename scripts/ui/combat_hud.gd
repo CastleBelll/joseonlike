@@ -147,9 +147,10 @@ const GRADE_BORDER_WIDTH := 2
 const BUILD_CELL_HEIGHT := 66.0
 const BUILD_PASSIVE_COLUMNS := 2
 const BUILD_PASSIVE_ROW_HEIGHT := 26.0
-# N5-1 boss bar: thin strip across the very top, above the timer.
+# N5-1 boss bar: strip across the very top, above the timer. Same height as
+# the XP rail so the shared HD plate renders at the same scale (resweep R2).
 const BOSS_BAR_TOP := 8.0
-const BOSS_BAR_HEIGHT := 16.0
+const BOSS_BAR_HEIGHT := 26.0
 # N3-8 player-hit vignette edge thickness and peak opacity.
 const VIGNETTE_THICKNESS := 28.0
 const VIGNETTE_MAX_ALPHA := 0.45
@@ -165,6 +166,7 @@ const ACTIVE_CLUSTER_MARGIN := 32.0
 
 var _elapsed: float = 0.0
 var _timer_label: Label
+var _timer_plate: PanelContainer
 var _xp_bar: ProgressBar
 var _xp_art: Control
 ## The hp fill's own stylebox, kept so the low-health colour can be swapped on
@@ -198,7 +200,6 @@ var _settings_popup: SettingsPopup
 var build_provider: Callable
 var _belongings: Control
 var _belongings_lines_box: VBoxContainer
-var _belongings_scrim: Panel
 var _belongings_held: Dictionary = {}
 var _belongings_lines: int = 1
 var _boss_bar: ProgressBar
@@ -422,6 +423,9 @@ func show_boss_bar() -> void:
 func set_boss_hp(current: float, hp_max: float) -> void:
 	_boss_bar.max_value = maxf(hp_max, 1.0)
 	_boss_bar.value = current
+	var art: Control = _boss_bar.get_node_or_null("BossArt")
+	if art != null:
+		art.queue_redraw()
 
 
 func hide_boss_bar() -> void:
@@ -510,14 +514,36 @@ func _build_corner_buttons() -> void:
 
 
 func _build_timer() -> void:
+	# Resweep play R13: the bare glyphs floated on the battlefield, and the
+	# 족자's top rail crossed them when a level-up opened. A quiet ink chip
+	# grounds the clock the way the belongings scrim grounds the slots.
+	_timer_plate = PanelContainer.new()
+	_timer_plate.name = "TimerPlate"
+	_timer_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_timer_plate.add_theme_stylebox_override("panel", _hud_chip_style())
+	_timer_plate.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_timer_plate.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_timer_plate.offset_top = TOP_MARGIN
 	_timer_label = _label(format_time(0.0), TIMER_FONT_SIZE, UiPalette.TEXT_ON_DARK)
 	_timer_label.name = "TimerLabel"
-	_timer_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_timer_label.offset_top = TOP_MARGIN
 	_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_timer_label.add_theme_color_override("font_outline_color", UiPalette.INK)
 	_timer_label.add_theme_constant_override("outline_size", TIMER_OUTLINE_SIZE)
-	add_child(_timer_label)
+	_timer_plate.add_child(_timer_label)
+	add_child(_timer_plate)
+
+
+## The translucent ink chip behind the always-on-field readouts (R13/R14) —
+## same idea as the belongings scrim, chip-token corners.
+func _hud_chip_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = BELONGINGS_SCRIM
+	style.set_corner_radius_all(UiPalette.CHIP_RADIUS)
+	style.content_margin_left = UiPalette.CHIP_PAD_X
+	style.content_margin_right = UiPalette.CHIP_PAD_X
+	style.content_margin_top = UiPalette.CHIP_PAD_Y
+	style.content_margin_bottom = UiPalette.CHIP_PAD_Y
+	return style
 
 
 func _build_xp_bar() -> void:
@@ -565,15 +591,23 @@ func _build_level_label() -> void:
 
 
 func _build_counters() -> void:
+	# Resweep play R14: same ink chip as the timer — monster sprites walked
+	# straight behind the bare numbers.
+	var panel := PanelContainer.new()
+	panel.name = "Counters"
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_theme_stylebox_override("panel", _hud_chip_style())
+	panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	# The chip's side padding is paid outward, not out of the rows' width.
+	panel.offset_left = -(COUNTER_STACK_WIDTH + UiPalette.CHIP_PAD_X * 2.0)
+	panel.offset_right = -UiPalette.SPACE_MD
+	panel.offset_top = BAND_BOTTOM + UiPalette.SPACE_XS
 	var stack := VBoxContainer.new()
-	stack.name = "Counters"
-	stack.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	stack.offset_left = -COUNTER_STACK_WIDTH
-	stack.offset_right = -UiPalette.SPACE_MD
-	stack.offset_top = BAND_BOTTOM + UiPalette.SPACE_XS
+	stack.name = "Stack"
+	panel.add_child(stack)
 	_kill_label = _counter_row(stack, "Kills", UiIcons.icon_rect(UiIcons.hud_icon("skull"), ICON_SIZE))
 	_gold_label = _counter_row(stack, "Gold", UiIcons.icon_rect(UiIcons.hud_icon("loot"), ICON_SIZE))
-	add_child(stack)
+	add_child(panel)
 
 
 ## One right-aligned icon + number row; returns the number label.
@@ -614,16 +648,9 @@ func _build_belongings() -> void:
 	_belongings_lines_box.add_theme_constant_override(
 		"separation", BELONGINGS_LINE_GAP
 	)
-	# Behind the lines, sized to what they actually take rather than to the
-	# clamp: a scrim spanning the whole clamp would be a bar across the screen.
-	_belongings_scrim = Panel.new()
-	_belongings_scrim.name = "Scrim"
-	_belongings_scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var scrim := StyleBoxFlat.new()
-	scrim.bg_color = BELONGINGS_SCRIM
-	scrim.set_corner_radius_all(BELONGINGS_SCRIM_CORNER)
-	_belongings_scrim.add_theme_stylebox_override("panel", scrim)
-	_belongings.add_child(_belongings_scrim)
+	# Resweep play R12: one scrim sized to the WIDEST line hung 130px of
+	# empty plate past the shorter line's last cell. Each line wears its own
+	# plate now (built in _rebuild_belongings), sized to that line alone.
 	_belongings.add_child(_belongings_lines_box)
 	_layout_belongings()
 
@@ -641,25 +668,27 @@ func _layout_belongings() -> void:
 	if wanted != _belongings_lines and not _belongings_held.is_empty():
 		_rebuild_belongings()
 	_belongings.offset_bottom = _belongings.offset_top + _belongings_height()
-	_fit_belongings_scrim()
 
 
-## The scrim tracks the content, so it disappears with an empty run instead of
-## leaving a floating rectangle where nothing is held yet.
-func _fit_belongings_scrim() -> void:
-	if _belongings_scrim == null or _belongings_lines_box == null:
-		return
-	var demand: Vector2 = _belongings_lines_box.get_combined_minimum_size()
-	_belongings_scrim.visible = demand.x > 0.0
-	_belongings_scrim.position = Vector2(-BELONGINGS_SCRIM_PAD, -BELONGINGS_SCRIM_PAD)
-	_belongings_scrim.size = demand + Vector2(
-		BELONGINGS_SCRIM_PAD * 2.0, BELONGINGS_SCRIM_PAD * 2.0
-	)
+## R12: each line's own scrim plate — hugging its content, never another
+## line's width. Padding lives inside, so the height math counts it.
+func _belongings_line_plate(line_name: String) -> PanelContainer:
+	var plate := PanelContainer.new()
+	plate.name = line_name
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plate.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	var scrim := StyleBoxFlat.new()
+	scrim.bg_color = BELONGINGS_SCRIM
+	scrim.set_corner_radius_all(BELONGINGS_SCRIM_CORNER)
+	scrim.set_content_margin_all(BELONGINGS_SCRIM_PAD)
+	plate.add_theme_stylebox_override("panel", scrim)
+	return plate
 
 
 func _belongings_height() -> float:
 	var lines: float = float(_belongings_lines)
-	return lines * BELONGINGS_SLOT + (lines - 1.0) * BELONGINGS_LINE_GAP
+	var line_height: float = BELONGINGS_SLOT + BELONGINGS_SCRIM_PAD * 2.0
+	return lines * line_height + (lines - 1.0) * BELONGINGS_LINE_GAP
 
 
 ## Owner (경험치, 체력이 상단으로 가고 / 시간이 너무 커): the top band is stacked
@@ -676,7 +705,7 @@ func _layout_top_band() -> void:
 	var landscape: bool = _is_landscape()
 	var cursor: float = LANDSCAPE_BAR_TOP if landscape else BAR_TOP
 	if not landscape:
-		_timer_label.offset_top = TOP_MARGIN
+		_timer_plate.offset_top = TOP_MARGIN
 	# QA (visual, b735bc0 H7): the boss bar sat at a fixed y=8 that B0-1b moved
 	# the landscape bars on top of, so a boss fight covered the Lv badge. It is
 	# part of the stack now — it takes the top of the band when it is showing and
@@ -690,8 +719,8 @@ func _layout_top_band() -> void:
 	cursor += BAR_HEIGHT
 	if landscape:
 		cursor += UiPalette.SPACE_XS
-		_timer_label.offset_top = cursor
-		cursor += float(TIMER_FONT_SIZE)
+		_timer_plate.offset_top = cursor
+		cursor += float(TIMER_FONT_SIZE) + UiPalette.CHIP_PAD_Y * 2.0
 	cursor += UiPalette.SPACE_XS
 	if _level_label != null:
 		_level_label.position.y = cursor
@@ -728,18 +757,22 @@ func _rebuild_belongings() -> void:
 		_belongings_lines_box.remove_child(child)
 		child.queue_free()
 	_belongings_lines = 2 if _is_landscape() else 1
+	var first_plate: PanelContainer = _belongings_line_plate("Line0Plate")
 	var first := HBoxContainer.new()
 	first.name = "Line0"
 	first.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	first.add_theme_constant_override("separation", BELONGINGS_GROUP_GAP)
-	_belongings_lines_box.add_child(first)
+	first_plate.add_child(first)
+	_belongings_lines_box.add_child(first_plate)
 	var second: HBoxContainer = first
 	if _belongings_lines == 2:
+		var second_plate: PanelContainer = _belongings_line_plate("Line1Plate")
 		second = HBoxContainer.new()
 		second.name = "Line1"
 		second.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		second.add_theme_constant_override("separation", BELONGINGS_GROUP_GAP)
-		_belongings_lines_box.add_child(second)
+		second_plate.add_child(second)
+		_belongings_lines_box.add_child(second_plate)
 	first.add_child(_belongings_slots(
 		_belongings_held.get("weapons", []) as Array, LevelUp.WEAPON_SLOTS, true
 	))
@@ -755,7 +788,6 @@ func _rebuild_belongings() -> void:
 	# fill arrives before any resize event, and a stale one-line box clipped
 	# the whole second line until the window next moved (found by the Q21 probe).
 	_belongings.offset_bottom = _belongings.offset_top + _belongings_height()
-	_fit_belongings_scrim()
 
 
 ## The run of cells with this name, wherever the current orientation put it.
@@ -881,7 +913,14 @@ func _belongings_slot_style(tint: Color) -> StyleBox:
 
 ## Bottom-right count, drawn over the icon rather than beside it so a stacked
 ## cell stays the same width as an unstacked one and the run never reflows.
-func _belongings_count(value: int) -> Label:
+## Wrapped in a plain Control: the cell is a PanelContainer, and a container
+## re-sorts direct children onto its full content rect every layout pass — the
+## F17 inset offsets survived only until the first resize, which is why the
+## digits crept back onto the frame late in a run (resweep play R4).
+func _belongings_count(value: int) -> Control:
+	var holder := Control.new()
+	holder.name = "CountHolder"
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var label: Label = _label(
 		str(value), BELONGINGS_COUNT_FONT, UiPalette.TEXT_ON_DARK
 	)
@@ -895,7 +934,8 @@ func _belongings_count(value: int) -> Label:
 	label.offset_bottom = -2.0
 	label.add_theme_color_override("font_outline_color", UiPalette.INK)
 	label.add_theme_constant_override("outline_size", OWNED_COUNT_OUTLINE)
-	return label
+	holder.add_child(label)
+	return holder
 
 
 ## The loot half of the row. Returns null when nothing has dropped yet — an
@@ -937,11 +977,24 @@ func _build_boss_bar() -> void:
 	_boss_bar.name = "BossBar"
 	_boss_bar.show_percentage = false
 	_boss_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# QA F9: this was the band's last raw slab — a flat purple rectangle over
-	# an HD wooden rail. It wears the same kit track as everything else now,
-	# with the boss colour as its fill, and shares the band inset so the two
-	# bars end on the same x.
-	_apply_bar_art(_boss_bar, UiPalette.BOSS)
+	# QA resweep R2: the stylebox track never survived in play — the fill
+	# painted over it and the bar read as a flat purple slab next to the HD
+	# EXP rail. The boss bar is the same reveal the XP rail is now, on the
+	# kit's HP plate (heart cap, wood track), so the two bars in the band
+	# share material, height, and edges by construction.
+	var plate: Texture2D = UiIcons.kit_texture("bar_hp")
+	if plate != null:
+		var empty := StyleBoxEmpty.new()
+		_boss_bar.add_theme_stylebox_override("background", empty)
+		_boss_bar.add_theme_stylebox_override("fill", empty)
+		var art := XpBarArt.new()
+		art.name = "BossArt"
+		art.plate = plate
+		art.set_anchors_preset(Control.PRESET_FULL_RECT)
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_boss_bar.add_child(art)
+	else:
+		_apply_bar_art(_boss_bar, UiPalette.BOSS)
 	_boss_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_apply_bar_band(_boss_bar)
 	_boss_bar.offset_top = BOSS_BAR_TOP
@@ -975,10 +1028,13 @@ func _build_pause_overlay() -> void:
 	# child reordering inside this control can win. The overlay (and the
 	# settings popup) live on their own higher canvas layer instead — above
 	# everything the HUD or the stage will ever add to layer one.
-	_overlay_layer = CanvasLayer.new()
-	_overlay_layer.name = "OverlayLayer"
-	_overlay_layer.layer = OVERLAY_CANVAS_LAYER
-	add_child(_overlay_layer)
+	# Guarded: a locale rebuild (resweep visual R1) replaces the overlay but
+	# keeps the layer — the settings popup lives on it too.
+	if _overlay_layer == null:
+		_overlay_layer = CanvasLayer.new()
+		_overlay_layer.name = "OverlayLayer"
+		_overlay_layer.layer = OVERLAY_CANVAS_LAYER
+		add_child(_overlay_layer)
 	_pause_overlay = Control.new()
 	_pause_overlay.name = "PauseOverlay"
 	# Must keep taking input while the paused tree is frozen.
@@ -1120,7 +1176,15 @@ func _select_pause_tab(tab: String) -> void:
 	_pause_scroll.custom_minimum_size = Vector2.ZERO
 	var chrome: float = _pause_panel.get_combined_minimum_size().y
 	var room: float = maxf(available - chrome, 60.0)
-	var content: float = section.get_combined_minimum_size().y
+	# Resweep play R10: sized to the ACTIVE tab the paper jumped hundreds of
+	# pixels on every tab switch. Both sections are measurable while hidden,
+	# so the sheet holds the larger tab's height and only the content swaps.
+	var content: float = maxf(
+		_build_section.get_combined_minimum_size().y,
+		_evolution_section.get_combined_minimum_size().y
+	)
+	if content <= 0.0:
+		content = section.get_combined_minimum_size().y
 	_pause_scroll.custom_minimum_size = Vector2(0.0, minf(content, room))
 	var wanted: float = chrome + _pause_scroll.custom_minimum_size.y
 	_pause_panel.offset_top = OVERLAY_PANEL_TOP
@@ -1199,7 +1263,22 @@ func _layout_pause_panel_width(panel: Control) -> void:
 	# PanelContainer forced past fixed offsets grows to the RIGHT only — the
 	# paper sat 77px off centre and covered the skill button. Widening the
 	# band to the real minimum keeps the growth symmetric around the anchor.
-	var half_width: float = maxf(band, panel.get_combined_minimum_size().x) / 2.0
+	var wanted: float = panel.get_combined_minimum_size().x
+	# Resweep play R10: the panel's minimum only counts the VISIBLE tab (a
+	# container skips hidden children), so the paper's width jumped per tab.
+	# Add the hidden section's surplus so both tabs share one sheet width.
+	if _build_section != null and _evolution_section != null:
+		var active: float = (
+			_evolution_section.get_combined_minimum_size().x
+			if _evolution_section.visible
+			else _build_section.get_combined_minimum_size().x
+		)
+		var widest: float = maxf(
+			_build_section.get_combined_minimum_size().x,
+			_evolution_section.get_combined_minimum_size().x
+		)
+		wanted += maxf(widest - active, 0.0)
+	var half_width: float = maxf(band, wanted) / 2.0
 	panel.offset_left = -half_width
 	panel.offset_right = half_width
 
@@ -1223,6 +1302,26 @@ func _on_pause_pressed() -> void:
 	# minimum width is only honest after this frame's tree flush (Q20).
 	_layout_pause_panel_width.call_deferred(_pause_panel)
 	_resume_button.grab_focus()
+
+
+## Resweep visual R1: the overlay's chrome strings (일시 정지, tabs, 계속하기,
+## 타이틀로) are set at build time. A locale flip rebuilds the overlay; the
+## summary content repopulates on the next open anyway.
+func _rebuild_pause_overlay_for_locale() -> void:
+	if _pause_overlay == null:
+		return
+	var was_open: bool = _pause_overlay.visible
+	_pause_overlay.queue_free()
+	_build_pause_overlay()
+	# The settings popup (still open — it fired this signal) must stay above
+	# the rebuilt overlay, which was just appended after it on the layer.
+	_overlay_layer.move_child(_pause_overlay, 0)
+	if was_open:
+		if build_provider.is_valid():
+			_refresh_build_summary(build_provider.call())
+		_pause_overlay.visible = true
+		_layout_pause_panel_width.call_deferred(_pause_panel)
+		_resume_button.grab_focus()
 
 
 ## Rebuilds the pause overlay's build rows and resizes the centered panel
@@ -1513,6 +1612,10 @@ func _on_settings_pressed() -> void:
 		_settings_popup = SettingsPopup.new()
 		_overlay_layer.add_child(_settings_popup)
 		_settings_popup.closed.connect(_on_settings_closed)
+		# Resweep visual R1: the pause overlay's strings are set at build time,
+		# so a language flip in this popup left 계속하기/타이틀로 in the old
+		# locale. Rebuild the overlay the way the title screen re-renders.
+		_settings_popup.locale_changed.connect(_rebuild_pause_overlay_for_locale)
 	get_tree().paused = true
 	_settings_popup.open()
 
@@ -1689,6 +1792,10 @@ class ActiveButton:
 	var skill_name: String = ""
 	var icon_texture: Texture2D = null
 	var _fraction: float = 0.0  # remaining cooldown, 1 → 0
+	# Compare against the last *drawn* fraction: per-frame deltas (~0.002 at
+	# an 8s cooldown) never cross the threshold, which froze the sweep at
+	# its first frame when compared against the last received value.
+	var _drawn_fraction: float = 0.0
 
 	func _init() -> void:
 		flat = true
@@ -1696,10 +1803,10 @@ class ActiveButton:
 
 	func set_cooldown(fraction: float) -> void:
 		var ready_flip: bool = (_fraction > 0.0) != (fraction > 0.0)
-		var moved: bool = absf(fraction - _fraction) > 0.01
 		_fraction = fraction
 		disabled = fraction > 0.0
-		if ready_flip or moved:
+		if ready_flip or absf(fraction - _drawn_fraction) > 0.01:
+			_drawn_fraction = fraction
 			queue_redraw()
 
 	func _draw() -> void:

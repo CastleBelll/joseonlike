@@ -18,9 +18,9 @@ const MARGIN_SIDE := 24
 const MARGIN_TOP := 24
 const MARGIN_BOTTOM := 32
 const BACK_SIZE := 44.0
-const PILL_CORNER_RADIUS := 18
-const PILL_PADDING_X := 14
-const PILL_PADDING_Y := 6
+const PILL_CORNER_RADIUS := UiPalette.PILL_RADIUS
+const PILL_PADDING_X := UiPalette.PILL_PAD_X
+const PILL_PADDING_Y := UiPalette.PILL_PAD_Y
 const TAB_HEIGHT := 48.0
 const CARD_CORNER_RADIUS := 12
 const CARD_BORDER_WIDTH := 2
@@ -29,9 +29,9 @@ const CARD_MIN_HEIGHT := 76.0
 const WELL_SIZE := 56.0
 const WELL_CORNER_RADIUS := 8
 const ICON_SIZE := 48.0
-const TIER_PILL_CORNER_RADIUS := 10
-const TIER_PILL_PADDING_X := 10
-const TIER_PILL_PADDING_Y := 2
+const TIER_PILL_CORNER_RADIUS := UiPalette.CHIP_RADIUS
+const TIER_PILL_PADDING_X := UiPalette.CHIP_PAD_X
+const TIER_PILL_PADDING_Y := UiPalette.CHIP_PAD_Y
 ## Dimmed silhouette strength for undiscovered icons (??? rule, GDD §18).
 const UNDISCOVERED_TEXT_ALPHA := 0.55
 
@@ -51,6 +51,7 @@ var _tab_buttons: Dictionary = {}
 ## count is set per layout pass, never cached, so a flip cannot leave the old
 ## one behind.
 var _rows_box: GridContainer
+var _scroll: ScrollContainer
 var _progress_label: Label
 
 
@@ -105,6 +106,7 @@ func build_ui() -> void:
 
 	var scroll := ScrollContainer.new()
 	scroll.name = "Scroll"
+	_scroll = scroll
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_rows_box = GridContainer.new()
@@ -192,6 +194,10 @@ func _build_tabs() -> Control:
 func _on_tab_pressed(kind: String) -> void:
 	_tab = kind
 	_refresh()
+	# Resweep visual R2: a new tab kept the old tab's scroll offset — the
+	# meta tree's tabs already reset, so this list starts at its top too.
+	if _scroll != null:
+		_scroll.scroll_vertical = 0
 
 
 func _on_back_pressed() -> void:

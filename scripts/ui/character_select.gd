@@ -23,7 +23,9 @@ const ACCENT_COLORS := {
 	"archer_green": UiPalette.ACCENT_ARCHER,
 }
 
-const TITLE_FONT_SIZE := 40
+# Resweep visual R9: the 40px one-off outsized every other screen title —
+# this screen uses the shared title token like the rest of the chrome.
+const TITLE_FONT_SIZE := UiPalette.FONT_SIZE_TITLE
 const TITLE_TOP_MARGIN := 40
 const DETAIL_NAME_FONT_SIZE := 32
 const PANEL_WIDTH_RATIO := 0.92
@@ -469,8 +471,12 @@ func _build_tile(model: Dictionary) -> Button:
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 	var accent: Color = model["accent"]
+	# Resweep visual R4: a darkened accent on the near-black tile was
+	# unreadable — locked names keep legible muted light ink; the silhouette
+	# and the · 잠김 suffix carry the locked signal.
 	name_label.add_theme_color_override(
-		"font_color", accent.darkened(LOCKED_TEXT_DARKEN) if model["locked"] else accent
+		"font_color",
+		UiPalette.TEXT_MUTED_ON_DARK if model["locked"] else accent
 	)
 	if model["locked"]:
 		# F29: say it, do not just tint it — the silhouette plus a coloured
@@ -487,16 +493,19 @@ func _build_selected_badge() -> Control:
 	badge.name = "SelectedBadge"
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	badge.add_theme_constant_override("separation", UiPalette.SPACE_XS)
+	# Resweep visual R4: SUCCESS green on the cream sheet measured 1.49:1 —
+	# the chosen-mark speaks vermilion, the seal colour this UI already uses
+	# for 새김/NEW, and clears AA on cream.
 	var dot := Label.new()
 	dot.name = "Dot"
 	dot.text = "●"
-	dot.add_theme_color_override("font_color", UiPalette.SUCCESS)
+	dot.add_theme_color_override("font_color", UiPalette.VERMILION)
 	dot.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 	badge.add_child(dot)
 	var word := Label.new()
 	word.name = "Word"
 	word.text = UiLocale.text("select.selected")
-	word.add_theme_color_override("font_color", UiPalette.SUCCESS)
+	word.add_theme_color_override("font_color", UiPalette.VERMILION)
 	word.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 	badge.add_child(word)
 	return badge

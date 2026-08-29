@@ -14,6 +14,8 @@ extends Control
 const BASE_RADIUS := 60.0  # 120px base diameter
 const KNOB_RADIUS := 24.0  # 48px knob diameter
 const BASE_ALPHA := 0.35
+## R15: darkens the base's kit disc so it sits behind the full-value knob.
+const BASE_DISC_DIM := 0.55
 const RING_ALPHA := 0.6
 const KNOB_ALPHA := 0.75
 const RING_WIDTH := 3.0
@@ -118,11 +120,24 @@ func _draw() -> void:
 		return
 	var opacity: float = _opacity()
 	var center: Vector2 = _origin - global_position
-	draw_circle(center, BASE_RADIUS, Color(UiPalette.JOYSTICK_BASE, BASE_ALPHA * opacity))
-	draw_arc(
-		center, BASE_RADIUS - RING_WIDTH / 2.0, 0.0, TAU, RING_POINT_COUNT,
-		Color(UiPalette.JOYSTICK_RING, RING_ALPHA * opacity), RING_WIDTH
-	)
+	# Resweep play R15: the knob went ceramic while the base stayed a flat
+	# circle with a hairline ring — the pad now draws the same kit disc,
+	# dimmed well below the knob so the pair reads as base and handle.
+	var base: Texture2D = UiIcons.kit_texture("disc_0")
+	if base != null:
+		var base_size := Vector2.ONE * BASE_RADIUS * 2.0
+		draw_texture_rect(
+			base, Rect2(center - base_size / 2.0, base_size), false,
+			Color(BASE_DISC_DIM, BASE_DISC_DIM, BASE_DISC_DIM, BASE_ALPHA * opacity)
+		)
+	else:
+		draw_circle(
+			center, BASE_RADIUS, Color(UiPalette.JOYSTICK_BASE, BASE_ALPHA * opacity)
+		)
+		draw_arc(
+			center, BASE_RADIUS - RING_WIDTH / 2.0, 0.0, TAU, RING_POINT_COUNT,
+			Color(UiPalette.JOYSTICK_RING, RING_ALPHA * opacity), RING_WIDTH
+		)
 	# F21: the grey disc was the last un-chromed control on screen. The kit's
 	# ceramic disc is the knob now — still quiet next to the wood buttons,
 	# but of the same material world. The flat circle stays as the fallback.

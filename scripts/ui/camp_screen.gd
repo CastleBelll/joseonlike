@@ -40,7 +40,8 @@ const SPOT_BORDER_WIDTH := 2
 const SPOT_COLUMNS := 3
 const BUTTON_HEIGHT := 64
 const SELECT_BUTTON_HEIGHT := 56
-const COIN_ICON_SIZE := 32.0
+# R13: matches the meta tree's coin so the pill is the same on both screens.
+const COIN_ICON_SIZE := 28.0
 const NOTICE_FADE_SEC := 1.6
 const CYCLE_BUTTON_HEIGHT := 44.0
 ## N9-35: same flat corner glyph the title and the combat HUD already use.
@@ -74,6 +75,10 @@ func _ready() -> void:
 	# the headless layout test constructs the screen with no SceneTree.
 	_settings_popup = SettingsPopup.new()
 	add_child(_settings_popup)
+	# Resweep visual R1: flipping the language in this popup left every camp
+	# string in the old locale until the next rebuild. Same wiring as the
+	# title screen — rebuild the screen the popup sits on.
+	_settings_popup.locale_changed.connect(_rebuild_for_locale)
 	# N9-1a: 본거지 has its own track; guarded because the headless layout test
 	# builds this screen with no autoloads running.
 	if MusicService.instance != null:
@@ -250,10 +255,30 @@ func _build_header(summary: Dictionary) -> Control:
 	title.name = "CampTitle"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
-	header.add_child(UiIcons.icon_rect(UiIcons.hud_icon("coin"), COIN_ICON_SIZE))
-	var gold := _label(str(int(summary["gold"])), UiPalette.FONT_SIZE_TITLE, UiPalette.TEXT_ON_DARK)
+	# Resweep visual R13: the same value wore different clothes per screen —
+	# 수련 keeps it in a bordered pill, the camp floated it bare. One pill,
+	# same tokens, both screens.
+	var pill := PanelContainer.new()
+	pill.name = "GoldPill"
+	var pill_box := StyleBoxFlat.new()
+	pill_box.bg_color = UiPalette.CARD_BG
+	pill_box.border_color = UiPalette.CARD_BORDER_DIM
+	pill_box.set_border_width_all(3)
+	pill_box.set_corner_radius_all(UiPalette.PILL_RADIUS)
+	pill_box.content_margin_left = UiPalette.PILL_PAD_X
+	pill_box.content_margin_right = UiPalette.PILL_PAD_X
+	pill_box.content_margin_top = UiPalette.PILL_PAD_Y
+	pill_box.content_margin_bottom = UiPalette.PILL_PAD_Y
+	pill.add_theme_stylebox_override("panel", pill_box)
+	var pill_row := HBoxContainer.new()
+	pill_row.name = "PillRow"
+	pill_row.add_theme_constant_override("separation", UiPalette.SPACE_XS)
+	pill_row.add_child(UiIcons.icon_rect(UiIcons.hud_icon("coin"), COIN_ICON_SIZE))
+	var gold := _label(str(int(summary["gold"])), UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_ON_DARK)
 	gold.name = "GoldValue"
-	header.add_child(gold)
+	pill_row.add_child(gold)
+	pill.add_child(pill_row)
+	header.add_child(pill)
 	# N9-146: the screen-anchored gear owns the corner now; this spacer keeps
 	# the gold counter out from under it.
 	#
@@ -326,6 +351,17 @@ func _on_resized() -> void:
 		return
 	_was_landscape = now
 	_built_width = size.x
+	for child: Node in get_children():
+		if child != _settings_popup:
+			child.queue_free()
+	build_ui()
+
+
+## Resweep visual R1: every camp string is set at build time, so a locale
+## flip rebuilds the screen the same way an orientation flip does.
+func _rebuild_for_locale() -> void:
+	_built_width = size.x
+	_was_landscape = _is_landscape()
 	for child: Node in get_children():
 		if child != _settings_popup:
 			child.queue_free()

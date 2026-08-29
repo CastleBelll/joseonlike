@@ -241,7 +241,9 @@ func test_mod_card_masks_unrecorded_result() -> bool:
 	)
 	return (
 		String(masked["desc"]) == "낡은 부적 → ??? (레벨 유지)"
-		and String(masked["icon_weapon_id"]).is_empty()
+		# Resweep play R7: a masked result shows the BASE weapon in the well —
+		# already owned, leaks nothing — instead of an empty glyph tile.
+		and String(masked["icon_weapon_id"]) == "talisman"
 		and String(masked["icon_loot_id"]) == "fire_stone"
 		and String(known["desc"]).contains("화염 부적")
 		and String(known["icon_weapon_id"]) == "fire_talisman"

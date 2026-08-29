@@ -36,11 +36,17 @@ func test_theme_font_covers_every_renderable_character() -> bool:
 	return missing.is_empty()
 
 
+## Default-ignorable format controls (ZWSP/ZWNJ/ZWJ, WORD JOINER, BOM): the
+## text shaper renders them as zero-width regardless of the font, so they
+## need no glyph. keep_all (resweep play R9) puts U+2060 in card descs.
+const FORMAT_CONTROLS: Array[int] = [0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF]
+
+
 func _check(text: String, path: String, font: Font, missing: Dictionary) -> void:
 	var seen: Dictionary = {}
 	for i: int in text.length():
 		var code: int = text.unicode_at(i)
-		if code < 0x80 or seen.has(code):
+		if code < 0x80 or seen.has(code) or code in FORMAT_CONTROLS:
 			continue
 		seen[code] = true
 		var ch: String = char(code)

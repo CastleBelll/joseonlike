@@ -14,7 +14,9 @@ const BOSS_FONT_SIZE := 18  # N5-1: boss hits read bigger and gold
 const CRIT_FONT_SIZE := 22
 const CRIT_PREFIX := "★"
 const CRIT_RISE_SCALE := 1.5
-const OUTLINE_SIZE := 2
+# Resweep play R18: one step thicker — on 폐허 마을's near-black rubble the
+# thin ring vanished and mid-fade numbers read as loose grey pixels.
+const OUTLINE_SIZE := 3
 const RISE_SPEED := 30.0
 const LIFETIME_SEC := 0.6
 const RISE_OFFSET := Vector2(0.0, -14.0)  # start above the enemy's center

@@ -140,6 +140,8 @@ const OWNED_WRAP_GAP := 4.0
 const OWNED_MAX_ROWS := 2
 const OWNED_MAX_ROWS_LANDSCAPE := 1
 const OWNED_BADGE_HEIGHT := 18.0
+## R17: lifts the Lv badge off the well's bottom frame.
+const OWNED_BADGE_INSET := 3.0
 const OWNED_BADGE_OUTLINE := 4
 const CLOSE_BUTTON_SIZE := Vector2(200.0, 64.0)
 
@@ -170,6 +172,14 @@ func _ready() -> void:
 	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_root)
+	# Resweep visual R6: dim the paused battlefield behind the 족자 the same
+	# way the other modals do.
+	var scrim := ColorRect.new()
+	scrim.name = "Scrim"
+	scrim.color = UiPalette.MODAL_SCRIM
+	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(scrim)
 	_panel = PanelContainer.new()
 	_panel.name = "PaperPanel"
 	# Owner (파워 업 시에 저 두루마리가 펼쳐지면서 내용이 나왔으면): the popup
@@ -240,6 +250,12 @@ func open(
 	for child: Node in _owned_row.get_children():
 		child.queue_free()
 	_title.text = header_text
+	# Resweep play R9 (혼불 크/기): CJK shaping treats every Hangul syllable
+	# as a break opportunity, so WORD_SMART still wraps mid-word. A WORD
+	# JOINER inside each space-delimited word limits breaks to spaces, and
+	# the same string feeds measure and render so the two stay one layout.
+	for card: Dictionary in display_cards:
+		card["desc"] = keep_all(String(card.get("desc", "")))
 	var landscape: bool = _is_landscape()
 	_last_cards = display_cards
 	_last_owned = owned_levels
@@ -389,6 +405,12 @@ func open(
 	# source), so the estimate is trusted again in both orientations. The sweep's
 	# no-scroll assertion across all 22 combinations is the guard that put it
 	# back, and what re-opens this if the estimate ever lies again.
+	# 스크롤이 제일 싫다: when the honest estimate runs a few pixels past the
+	# band (measured 7.2 on the 0.9-squeezed canvas with a five-line passive),
+	# the strip's double bottom gap pays before the cards scroll. Borrowing is
+	# capped at one gap so the strip never sits flush on the screen edge.
+	if estimated > available and estimated - available <= strip_gap:
+		available += strip_gap
 	var panel_height: float = minf(estimated, available)
 	# Owner (아래 무기 종류 레벨 보여주는게 너무 떨어져있어 두루마리 아래로,
 	# 세로 모드 일때도): the strip rides right under the scroll in BOTH
@@ -542,14 +564,52 @@ static func card_font() -> Font:
 static func card_height_for(
 	desc: String, font: Font, wrap_width: float, line_spacing: int
 ) -> float:
-	var measured: Vector2 = font.get_multiline_string_size(
-		desc, HORIZONTAL_ALIGNMENT_LEFT, wrap_width, UiPalette.FONT_SIZE_LABEL,
-		-1, DESC_BREAK_FLAGS
-	)
-	var line_height: float = maxf(font.get_height(UiPalette.FONT_SIZE_LABEL), 1.0)
-	var lines: int = maxi(int(ceilf(measured.y / (line_height + float(line_spacing)))), 1)
-	var text_height: float = measured.y + float(line_spacing * (lines - 1))
+	var text_height: float = _desc_text_height(desc, font, wrap_width, line_spacing)
 	return maxf(CARD_HEIGHT_MIN, DESC_TOP + text_height + DESC_BOTTOM_PAD)
+
+
+## Shape the description exactly the way the Label will (resweep play R3):
+## get_multiline_string_size undercounted the real wrap by a full line on the
+## long passive descriptions — measured 4 lines where the Label rendered 5 —
+## and the set_size below the Label's minimum then let the last line draw
+## past the card. TextParagraph with the Label's break flags IS the Label's
+## own layout, so the measured height and the rendered height are one number.
+const WORD_JOINER := "⁠"
+
+
+## Keep-all wrapping for Korean (resweep play R9): a WORD JOINER between the
+## characters of each space-delimited word removes the per-syllable break
+## opportunities CJK shaping adds, so lines break at spaces only. Idempotent —
+## a joiner is never doubled on a re-open.
+static func keep_all(text: String) -> String:
+	var out := ""
+	for i: int in text.length():
+		var ch: String = text[i]
+		if i > 0:
+			var prev: String = text[i - 1]
+			var boundary: bool = (
+				prev == " " or prev == "\n" or ch == " " or ch == "\n"
+				or prev == WORD_JOINER or ch == WORD_JOINER
+			)
+			if not boundary:
+				out += WORD_JOINER
+		out += ch
+	return out
+
+
+static func _desc_text_height(
+	desc: String, font: Font, wrap_width: float, line_spacing: int
+) -> float:
+	var paragraph := TextParagraph.new()
+	paragraph.break_flags = DESC_BREAK_FLAGS
+	paragraph.width = wrap_width
+	paragraph.add_string(desc, font, UiPalette.FONT_SIZE_LABEL)
+	# Height from the paragraph's LINE COUNT at the font's full height, not
+	# paragraph.get_size(): the paragraph reports tight glyph lines (16px)
+	# while the Label spends font.get_height() (19px) per line.
+	var lines: int = maxi(paragraph.get_line_count(), 1)
+	var line_height: float = maxf(font.get_height(UiPalette.FONT_SIZE_LABEL), 1.0)
+	return float(lines) * line_height + float(line_spacing * (lines - 1))
 
 
 ## Unclamped panel height for a card stack: header, body/scroll margins, the
@@ -628,27 +688,14 @@ static func owned_strip_height(
 static func column_card_height_for(
 	desc: String, font: Font, wrap_width: float, line_spacing: int
 ) -> float:
-	var measured: Vector2 = font.get_multiline_string_size(
-		desc, HORIZONTAL_ALIGNMENT_LEFT, wrap_width, UiPalette.FONT_SIZE_LABEL,
-		-1, DESC_BREAK_FLAGS
-	)
+	var text_height: float = _desc_text_height(desc, font, wrap_width, line_spacing)
 	var line_height: float = maxf(font.get_height(UiPalette.FONT_SIZE_LABEL), 1.0)
-	var lines: int = maxi(int(ceilf(measured.y / (line_height + float(line_spacing)))), 1)
-	var text_height: float = measured.y + float(line_spacing * (lines - 1))
 	# N10-16: the bottom pad is a full well margin in portrait, where the card is
 	# a wide row with air to spare. A landscape column is the tight axis — on a
 	# 540 canvas the cards asked for three pixels more than the band could ever
-	# give — and half a margin under the last line still reads as a margin.
-	# The line count divides by height PLUS spacing while measured.y carries no
-	# spacing, so a description one line from the boundary is counted short and
-	# its last line renders past the card. One line of headroom covers that off
-	# by one — and it is why the landscape panel needed a slack constant before:
-	# the shortfall was here, not in the panel.
-	# One line of headroom because the line count divides by height PLUS spacing
-	# while measured.y carries no spacing, so a description one line from the
-	# boundary is counted short and renders past the card. No bottom pad in a
-	# column: the headroom already reads as one, and on a 540 canvas the band is
-	# hard-capped — every pixel here is one the cards do not get.
+	# give. The TextParagraph measure is exact now (resweep play R3), but the
+	# one-line headroom stays: with no bottom pad in a column it is what reads
+	# as the margin under the last line.
 	return maxf(
 		CARD_COLUMN_HEIGHT_MIN, COLUMN_DESC_TOP + text_height + line_height
 	)
@@ -885,7 +932,10 @@ func _build_owned_row(
 			UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_ON_DARK
 		)
 		level_label.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-		level_label.offset_top = -OWNED_BADGE_HEIGHT
+		# Resweep play R17: flush to the bottom edge the digits sat ON the
+		# well's border — a small inset clears the frame in both orientations.
+		level_label.offset_top = -(OWNED_BADGE_HEIGHT + OWNED_BADGE_INSET)
+		level_label.offset_bottom = -OWNED_BADGE_INSET
 		level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		level_label.add_theme_color_override("font_outline_color", UiPalette.INK)
 		level_label.add_theme_constant_override("outline_size", OWNED_BADGE_OUTLINE)

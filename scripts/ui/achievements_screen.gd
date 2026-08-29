@@ -24,12 +24,11 @@ const CARD_CORNER_RADIUS := 12
 const CARD_BORDER_WIDTH := 2
 const CARD_PADDING := 14
 const CARD_MIN_HEIGHT := 96.0
-const PILL_CORNER_RADIUS := 10
-const PILL_PADDING_X := 10
-const PILL_PADDING_Y := 2
+const PILL_CORNER_RADIUS := UiPalette.CHIP_RADIUS
+const PILL_PADDING_X := UiPalette.CHIP_PAD_X
+const PILL_PADDING_Y := UiPalette.CHIP_PAD_Y
 ## Unaffordable rows stay readable rather than greyed to near-nothing: the
 ## player has to be able to read what they are saving up for.
-const LOCKED_ALPHA := 0.75
 
 var _data: Dictionary = {}
 var _unlocks: Dictionary = {}
@@ -127,7 +126,8 @@ func _build_header() -> Control:
 	var pill := PanelContainer.new()
 	pill.name = "CountPill"
 	# F34: same wood as the bestiary's counter — one palette up top.
-	pill.add_theme_stylebox_override("panel", _pill_box(UiPalette.WOOD_PRESSED))
+	# Resweep visual R10: and the same PILL layer tokens, not the row chip's.
+	pill.add_theme_stylebox_override("panel", _pill_box(UiPalette.WOOD_PRESSED, false))
 	_count_label = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
 	_count_label.name = "CountValue"
 	pill.add_child(_count_label)
@@ -175,9 +175,11 @@ func _build_row(row: Dictionary) -> Control:
 	var top := HBoxContainer.new()
 	top.name = "TopLine"
 	top.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	# Resweep visual R3: the unearned plate is already darkened to tan, and a
+	# muted ink on tan measured 2.27:1 — the plate carries the locked signal,
+	# so the text stays full ink and stays readable.
 	var name_label: Label = _label(
-		String(row["name"]), UiPalette.FONT_SIZE_BODY,
-		UiPalette.INK if earned else UiPalette.TEXT_MUTED_ON_PAPER
+		String(row["name"]), UiPalette.FONT_SIZE_BODY, UiPalette.INK
 	)
 	name_label.name = "Name"
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -185,21 +187,26 @@ func _build_row(row: Dictionary) -> Control:
 	top.add_child(_status_pill(row))
 	box.add_child(top)
 
+	# R3: muted ink on the earned cream plate passes; on the unearned tan
+	# plate it fell to 2.20:1 with the alpha dim on top. Unearned descs are
+	# full ink with no dim — locked is the plate's job, not the text's.
 	var desc: Label = _label(
-		String(row["desc"]), UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
+		String(row["desc"]), UiPalette.FONT_SIZE_LABEL,
+		UiPalette.TEXT_MUTED_ON_PAPER if earned else UiPalette.INK
 	)
 	desc.name = "Desc"
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.modulate.a = 1.0 if earned else LOCKED_ALPHA
 	box.add_child(desc)
 
 	# The reward line only appears when there is one, so an achievement that
 	# grants nothing does not pretend otherwise with an empty row.
 	var reward: String = _reward_text(row)
 	if not reward.is_empty():
+		# R3/R5: SUCCESS green sat outside the paper palette and GOLD on the
+		# tan plate measured 1.98:1 — dark wood ink passes on both plates and
+		# reads as the same reward line in either state.
 		var reward_label: Label = _label(
-			reward, UiPalette.FONT_SIZE_LABEL,
-			UiPalette.SUCCESS if earned else UiPalette.GOLD
+			reward, UiPalette.FONT_SIZE_LABEL, UiPalette.WOOD_TEXT
 		)
 		reward_label.name = "Reward"
 		box.add_child(reward_label)
@@ -227,9 +234,12 @@ func _status_pill(row: Dictionary) -> Control:
 	var pill := PanelContainer.new()
 	pill.name = "Status"
 	pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# R5: SUCCESS green and the night-blue CARD_BG were both foreign chips on
+	# this paper — the pill speaks the wood/vermilion grammar the rest of the
+	# chrome uses (bestiary NEW, the counter pill).
 	var earned: bool = bool(row["earned"])
-	var fill: Color = UiPalette.SUCCESS if earned else UiPalette.CARD_BG
-	var color: Color = UiPalette.INK if earned else UiPalette.TEXT_MUTED_ON_DARK
+	var fill: Color = UiPalette.VERMILION if earned else UiPalette.WOOD_PRESSED
+	var color: Color = UiPalette.TEXT_ON_DARK if earned else UiPalette.INK
 	var text: String = UiLocale.text("achievements.earned") if earned else "%d/%d" % [
 		int(row["have"]), int(row["need"])
 	]
@@ -260,14 +270,16 @@ func _card_box(earned: bool) -> StyleBox:
 	return box
 
 
-func _pill_box(fill: Color) -> StyleBoxFlat:
+func _pill_box(fill: Color, chip: bool = true) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = fill
-	box.set_corner_radius_all(PILL_CORNER_RADIUS)
-	box.content_margin_left = PILL_PADDING_X
-	box.content_margin_right = PILL_PADDING_X
-	box.content_margin_top = PILL_PADDING_Y
-	box.content_margin_bottom = PILL_PADDING_Y
+	box.set_corner_radius_all(PILL_CORNER_RADIUS if chip else UiPalette.PILL_RADIUS)
+	var pad_x: int = PILL_PADDING_X if chip else UiPalette.PILL_PAD_X
+	var pad_y: int = PILL_PADDING_Y if chip else UiPalette.PILL_PAD_Y
+	box.content_margin_left = pad_x
+	box.content_margin_right = pad_x
+	box.content_margin_top = pad_y
+	box.content_margin_bottom = pad_y
 	return box
 
 

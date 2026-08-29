@@ -881,11 +881,14 @@ static func as_card(
 	grades: Dictionary = {},
 	masked_results: Array = []
 ) -> Dictionary:
-	# N4-9: a masked mod result must not leak through its icon either — the
-	# well falls back to the material icon the card already shows.
+	# N4-9: a masked mod result must not leak through its icon either.
+	# Resweep play R7: but an EMPTY well fell to the first-syllable glyph
+	# ("개" on an ink tile) next to two fully drawn cards. The BASE weapon —
+	# the thing being transformed, which the player already owns and sees —
+	# leaks nothing and keeps the card pictorial.
 	var icon_id: String = icon_weapon_id(choice)
 	if masked_results.has(icon_id):
-		icon_id = ""
+		icon_id = String((choice.get("mod", {}) as Dictionary).get("weapon_id", ""))
 	return {
 		"name": display_name(choice, weapons, passives),
 		"desc": describe(

@@ -220,8 +220,12 @@ func test_landscape_columns_fit_the_540_height() -> bool:
 		tallest = maxf(
 			tallest, LevelUpPopup.column_card_height_for(desc, font, wrap_width, spacing)
 		)
+	# Landscape budget must be priced with LANDSCAPE chrome — the portrait
+	# defaults (64px header, 20px margins) overstate the frame by 74px and
+	# failed the honest TextParagraph card measure (resweep play R3).
 	var unclamped: float = LevelUpPopup.panel_height_for(
-		[tallest], style.get_margin(SIDE_TOP) + style.get_margin(SIDE_BOTTOM)
+		[tallest], style.get_margin(SIDE_TOP) + style.get_margin(SIDE_BOTTOM),
+		LevelUpPopup.HEADER_HEIGHT_LANDSCAPE, LevelUpPopup.BODY_MARGIN_LANDSCAPE
 	)
 	var limit: float = (
 		LevelUpPopup.DESIGN_HEIGHT_LANDSCAPE - LevelUpPopup.PANEL_TOP_LANDSCAPE

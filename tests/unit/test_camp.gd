@@ -110,7 +110,7 @@ func test_camp_screen_builds() -> bool:
 	var scene: PackedScene = load(CAMP_SCENE)
 	var camp: CampScreen = scene.instantiate()
 	camp.build_ui()
-	var passed: bool = camp.get_node_or_null("Layout/ColumnScroll/Column/Header/GoldValue") != null
+	var passed: bool = camp.get_node_or_null("Layout/ColumnScroll/Column/Header/GoldPill/PillRow/GoldValue") != null
 	passed = passed and camp.get_node_or_null("Layout/ColumnScroll/Column/Stats") != null
 	var grid: GridContainer = camp.get_node_or_null("Layout/ColumnScroll/Column/Buildings")
 	passed = passed and grid != null and grid.get_child_count() == Camp.buildings().size()

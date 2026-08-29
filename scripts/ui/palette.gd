@@ -3,9 +3,16 @@ extends RefCounted
 ## Design tokens from DESIGN.md §1-2. The only place raw color values live.
 
 const NIGHT := Color("#16110d")
+## Resweep visual R6: the dim wash every modal lays over the screen behind
+## it, so an open paper reads as a layer instead of furniture on the page.
+const MODAL_SCRIM := Color(0.086, 0.067, 0.051, 0.45)
 const NIGHT_BROWN := Color("#241a12")
 const PAPER := Color("#ede0c4")
-const PAPER_CARD := Color("#f6ecf0")
+# Resweep visual R11: the old #f6ecf0/#c9a0a6 pair sat at a pink hue angle
+# (~320-350°) beside the ~40° warm PAPER — the cards read as pink-white on
+# cream. Same lightness, warmed into the paper family.
+# Kept a step lighter than PAPER_INSET so the hover state still dims.
+const PAPER_CARD := Color("#fbf6ea")
 const WOOD := Color("#e2a057")
 const WOOD_HOVER := Color("#edb26c")
 const WOOD_PRESSED := Color("#c08544")
@@ -26,9 +33,21 @@ const TEXT_ON_DARK := Color("#f0e6d2")
 
 # Paper-panel popup tokens (DESIGN.md §3 종이 패널 / 선택 카드, capture _07).
 const PAPER_INSET := Color("#f7f0e2")
-const PAPER_CARD_BORDER := Color("#c9a0a6")
+const PAPER_CARD_BORDER := Color("#c9b28e")
 const LATTICE := Color("#a89880")
-const TEXT_MUTED_ON_PAPER := Color("#6b6258")
+# Resweep visual R12: #6b6258 measured 4.39-4.47:1 on the cream plates —
+# just under AA. One step darker clears 5.3:1 on every paper tone in use.
+const TEXT_MUTED_ON_PAPER := Color("#5e564c")
+
+## Resweep visual R10: the two pill layers as shared tokens — the header
+## counter pill (bestiary/achievements/meta gold) and the small in-row chip
+## (tier, status). Screens size their pills from here, not from local numbers.
+const PILL_RADIUS := 18
+const PILL_PAD_X := 14
+const PILL_PAD_Y := 6
+const CHIP_RADIUS := 10
+const CHIP_PAD_X := 10
+const CHIP_PAD_Y := 2
 # N5-3 camp stats: muted row names on the dark card (AA vs NIGHT_BROWN).
 const TEXT_MUTED_ON_DARK := Color("#b0a494")
 const PILL_TEXT := Color("#ffffff")

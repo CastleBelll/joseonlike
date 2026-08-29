@@ -18,16 +18,16 @@ func test_build_and_update() -> bool:
 	var hud := CombatHud.new()
 	hud.build_ui()
 	var passed: bool = hud.mouse_filter == Control.MOUSE_FILTER_IGNORE
-	var timer: Label = hud.get_node("TimerLabel")
+	var timer: Label = hud.get_node("TimerPlate/TimerLabel")
 	passed = passed and timer.text == "0:00"
 	hud.set_level(3)
 	# The label carries the NUMBER; whether it also carries the word depends on
 	# whether the kit cap already says it (see test_the_level_is_stated_once).
 	passed = passed and (hud.get_node("LevelLabel") as Label).text.contains("3")
 	hud.set_kills(35)
-	passed = passed and (hud.get_node("Counters/Kills/Value") as Label).text == "35"
+	passed = passed and (hud.get_node("Counters/Stack/Kills/Value") as Label).text == "35"
 	hud.set_gold(1)
-	passed = passed and (hud.get_node("Counters/Gold/Value") as Label).text == "1"
+	passed = passed and (hud.get_node("Counters/Stack/Gold/Value") as Label).text == "1"
 	var bar: ProgressBar = hud.get_node("XpBar")
 	hud.set_xp(4, 10)
 	passed = passed and bar.max_value == 10.0 and bar.value == 4.0
@@ -101,7 +101,7 @@ func test_counter_and_corner_icons_use_real_textures() -> bool:
 	hud.build_ui()
 	var passed: bool = true
 	for row_name: String in ["Kills", "Gold"]:
-		var icon: TextureRect = hud.get_node("Counters/" + row_name).get_child(0) as TextureRect
+		var icon: TextureRect = hud.get_node("Counters/Stack/" + row_name).get_child(0) as TextureRect
 		passed = passed and icon != null and icon.texture != null
 		passed = passed and icon.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST
 	for button_name: String in ["PauseButton", "InfoButton"]:
@@ -293,13 +293,13 @@ func test_landscape_splits_the_row_and_portrait_does_not() -> bool:
 	hud.size = Vector2(960.0, 540.0)
 	hud._layout_belongings()
 	hud.set_belongings([{"id": "sword"}], [{"id": "attack_damage", "stacks": 2}], [])
-	var passed: bool = hud.get_node_or_null("Belongings/Lines/Line1") != null
+	var passed: bool = hud.find_child("Line1", true, false) != null
 	passed = passed and hud.belongings_run("Weapons").get_parent().name == "Line0"
 	passed = passed and hud.belongings_run("Passives").get_parent().name == "Line1"
 	# Rotating must re-split without the stage pushing the build again.
 	hud.size = Vector2(540.0, 960.0)
 	hud._layout_belongings()
-	passed = passed and hud.get_node_or_null("Belongings/Lines/Line1") == null
+	passed = passed and hud.find_child("Line1", true, false) == null
 	passed = passed and hud.belongings_run("Weapons") != null
 	passed = passed and hud.belongings_run("Passives") != null
 	hud.free()
@@ -315,7 +315,7 @@ func test_landscape_puts_the_bars_above_the_clock() -> bool:
 	hud.size = Vector2(960.0, 540.0)
 	hud._layout_top_band()
 	var xp: Control = hud.get_node("XpBar")
-	var clock: Control = hud.get_node("TimerLabel")
+	var clock: Control = hud.get_node("TimerPlate")
 	var passed: bool = xp.offset_top < clock.offset_top
 	hud.size = Vector2(540.0, 960.0)
 	hud._layout_top_band()
