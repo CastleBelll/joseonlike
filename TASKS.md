@@ -350,6 +350,11 @@ EXP 레일 채움은 실측으로 **버그 아님** 확정(초기 의심 반증)
 **N11-1 즉시 손질 (04b11db)**: crit shake 1.1→0.3·hitstop 0.045→0.02 / 구슬
 live_cap 800 가치 병합 / 추격 속도 x1.18 + 사다리 단조화 (BALANCE.md 측정 기록).
 
+**N11-7 이름 (오너: 무사, 궁수, npc들도 이름 지어주고)**: 우치(雨池) 문법에 맞춰
+무사 = 석주(石柱), 궁수 = 월영(月影) — characters.json 데이터화, galmuri_fallback
+서브셋에 石柱月影 4자 재베이크(6.9KB, 폰트 커버리지 테스트 PASS), 라이선스 행 갱신.
+NPC 이름 초안 6종은 ROADMAP N11-7에 기록(본거지 맵화 때 오너 확인 후 확정).
+
 **N11-2 성능 아키텍처 (오너 가이드)**: 계측(playtest perf 라인, 분당 physics_ms/
 process_ms/live/orbs) 결과 physics가 프레임의 ~85%. 적용 — ① 적 물리 바디 제거
 (충돌 셰이프 없음, move_and_slide 폐지, 직접 적분) ② 프롭 접촉은 StageField
