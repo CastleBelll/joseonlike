@@ -200,7 +200,9 @@ static func achievement_data() -> Dictionary:
 ## together), then one atomic write persists it — a crash in between leaves
 ## the old state fully intact. Returns the MetaTree.REASON_* outcome.
 func purchase_meta_node(tree: Dictionary, node_id: String) -> String:
-	var unlocked: Array[String] = MetaTree.unlocked_characters(MetaTree.load_characters())
+	var unlocked: Array[String] = MetaTree.unlocked_characters(
+		MetaTree.load_characters(), profile
+	)
 	var result: Dictionary = MetaTree.purchase(profile, tree, node_id, unlocked)
 	if bool(result["ok"]):
 		profile = result["profile"]

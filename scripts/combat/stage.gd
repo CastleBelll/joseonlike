@@ -910,7 +910,7 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 		MetaTree.load_tree(),
 		profile.get("meta_tree", {}) as Dictionary,
 		int(profile.get("gold", 0)),
-		MetaTree.unlocked_characters(MetaTree.load_characters()),
+		MetaTree.unlocked_characters(MetaTree.load_characters(), profile),
 		profile.get("materials", {}) as Dictionary
 	)
 	# N9-22: surviving the night opens the next tier of the ladder.

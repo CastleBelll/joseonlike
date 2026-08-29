@@ -94,11 +94,22 @@ static func load_characters() -> Dictionary:
 ## Characters whose branch is purchasable. Mirrors CharacterSelect's rule:
 ## only "default" unlocks are playable today; achievement/gold unlocks join
 ## this list when those systems land.
-static func unlocked_characters(characters: Dictionary) -> Array[String]:
+## QA gate F3 (N11-9): the tree must honor the SAME unlock rule the roster
+## screen does — a profile that earned first_boss can PLAY the warrior, so
+## refusing to sell the warrior's training was a wall with no door. The
+## profile is optional so pure-logic tests keep their default-only view.
+static func unlocked_characters(
+	characters: Dictionary, profile: Dictionary = {}
+) -> Array[String]:
 	var result: Array[String] = []
 	for character_id: String in characters:
 		var unlock: Dictionary = (characters[character_id] as Dictionary).get("unlock", {})
-		if String(unlock.get("type", "")) == "default":
+		var kind: String = String(unlock.get("type", ""))
+		if kind == "default":
+			result.append(character_id)
+		elif kind == "achievement" and not profile.is_empty() 				and Achievements.is_earned(
+					profile, String(unlock.get("achievement_id", ""))
+				):
 			result.append(character_id)
 	return result
 

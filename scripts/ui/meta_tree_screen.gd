@@ -17,6 +17,13 @@ const MARGIN_BOTTOM := 32
 const NODE_SIZE := 72.0
 const NODE_ICON_SIZE := 40.0
 const NODE_LABEL_WIDTH := 150.0
+## QA gate F1 (N11-9): the two caption columns sit 0.44 of the usable width
+## apart, so on a narrow canvas a fixed 150px caption overlaps its row
+## neighbour glyph-on-glyph. The width adapts until caption <= separation
+## (solving w <= 0.44*(canvas-w) - gap), floored so a caption stays a word.
+const COLUMN_SPAN := 0.44
+const CAPTION_GAP := 6.0
+const CAPTION_WIDTH_MIN := 88.0
 const ROW_HEIGHT := 165.0
 const CANVAS_TOP_PAD := 28.0
 const CANVAS_BOTTOM_PAD := 72.0
@@ -89,8 +96,10 @@ func _ready() -> void:
 func build_ui() -> void:
 	_tree = MetaTree.load_tree()
 	_characters = MetaTree.load_characters()
-	_unlocked = MetaTree.unlocked_characters(_characters)
 	_profile = _live_profile()
+	# QA gate F3: the profile decides which branches sell (achievement
+	# unlocks included) — read it BEFORE asking who is purchasable.
+	_unlocked = MetaTree.unlocked_characters(_characters, _profile)
 	# Corrupt or stale tree state heals once, up front — the whole screen
 	# then renders from clean state only. N7-2 migration: nodes the rework
 	# removed are pruned here (with this warning) and NOT refunded.
@@ -322,7 +331,7 @@ func _populate_tab() -> void:
 		var caption := _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_ON_DARK)
 		caption.name = "Caption_" + node_id
 		caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		caption.custom_minimum_size = Vector2(NODE_LABEL_WIDTH, 0.0)
+		caption.custom_minimum_size = Vector2(_caption_width(_canvas.size.x), 0.0)
 		caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_canvas.add_child(caption)
 		_node_labels[node_id] = caption
@@ -370,11 +379,21 @@ func _build_detail_card() -> Control:
 	_detail_name.name = "DetailName"
 	lines.add_child(_detail_name)
 	_detail_effect = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.INK)
+	# F2: the locked-branch hint routes through this label too (line 55x) —
+	# same sentence-width hazard, same wrap.
+	_detail_effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_detail_effect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_detail_effect.name = "DetailEffect"
 	_detail_effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lines.add_child(_detail_effect)
 	_detail_info = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER)
 	_detail_info.name = "DetailInfo"
+	# QA gate F2 (N11-9): unlock hints and material bills are SENTENCES — a
+	# one-line Label's minimum width became the column's minimum and pushed
+	# the tab row and the gold pill 664px off the canvas. Wrap collapses the
+	# demand to the longest word (the V1/result-sheet grammar).
+	_detail_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_detail_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lines.add_child(_detail_info)
 	row.add_child(lines)
 	return card
@@ -652,8 +671,11 @@ func _layout_nodes() -> void:
 		var button: Button = _node_buttons[node_id]
 		button.position = center - Vector2(NODE_SIZE / 2.0, NODE_SIZE / 2.0)
 		var caption: Label = _node_labels[node_id]
+		var caption_width: float = _caption_width(width)
+		caption.custom_minimum_size = Vector2(caption_width, 0.0)
+		caption.size.x = caption_width
 		caption.position = Vector2(
-			center.x - NODE_LABEL_WIDTH / 2.0, center.y + NODE_SIZE / 2.0
+			center.x - caption_width / 2.0, center.y + NODE_SIZE / 2.0
 		)
 
 
@@ -662,6 +684,12 @@ func _layout_nodes() -> void:
 ## resize — a cached value would be the stale-on-flip bug this pass is fixing.
 func _is_landscape() -> bool:
 	return size.x > size.y
+
+
+## F1: the widest caption that cannot reach its row neighbour on this canvas.
+func _caption_width(width: float) -> float:
+	var fits: float = (COLUMN_SPAN * width - CAPTION_GAP) / (1.0 + COLUMN_SPAN)
+	return clampf(fits, CAPTION_WIDTH_MIN, NODE_LABEL_WIDTH)
 
 
 func _row_height() -> float:
@@ -717,9 +745,10 @@ func _tab_nodes() -> Array[Dictionary]:
 
 func _node_center(entry: Dictionary, width: float) -> Vector2:
 	var pos: Array = entry.get("pos", [0.5, 0.0])
-	var usable: float = width - NODE_LABEL_WIDTH
+	var caption_width: float = _caption_width(width)
+	var usable: float = width - caption_width
 	return Vector2(
-		NODE_LABEL_WIDTH / 2.0 + float(pos[0]) * maxf(usable, 0.0),
+		caption_width / 2.0 + float(pos[0]) * maxf(usable, 0.0),
 		_canvas_top_pad() + float(pos[1]) * _row_height() + NODE_SIZE / 2.0
 	)
 

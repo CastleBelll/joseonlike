@@ -51,10 +51,12 @@ var _gold_value: Label
 var _total_gold_value: Label
 # N6-2: the death line — row shown on defeat only, so death teaches something.
 var _death_row: Control
-var _banked_value: Label
-var _banked_row: Control
-var _records_value: Label
-var _records_row: Control
+var _harvest_value: Label
+var _harvest_row: Control
+## QA gate F5: set by _layout_panel when content still outgrew the donated
+## band — open() then folds the earned lines to their summary and lays out
+## once more before showing anything.
+var _scroll_engaged: bool = false
 var _next_value: Label
 var _next_row: Control
 ## N9-155 (owner: 업적 달성 알림이 표시가 안 된다): the stage has handed the
@@ -140,6 +142,7 @@ func _layout_panel() -> void:
 				room = maxf(available - chrome, 60.0)
 				_row_scroll.custom_minimum_size = Vector2(0.0, minf(content, room))
 				wanted = chrome + _row_scroll.custom_minimum_size.y
+		_scroll_engaged = content > _row_scroll.custom_minimum_size.y + 0.5
 		# Resweep play R8: the 480 look-floor is a portrait number — landscape
 		# rows spread into two columns and need barely 340, so flooring at 480
 		# left ~180px of blank paper between the rows and the CTA. Landscape
@@ -221,12 +224,16 @@ func open(outcome: String, summary: Dictionary) -> void:
 	_total_gold_value.text = str(int(summary.get("total_gold", 0)))
 	# N11-3b: the growth rows — what the night banked, what it recorded, and
 	# the next rank within reach. A zero row hides instead of reading "0".
+	# F5: one harvest row instead of two — eight rows were the overflow.
 	var banked: int = int(summary.get("banked_materials", 0))
-	_banked_row.visible = banked > 0
-	_banked_value.text = UiLocale.t("%d개 창고로") % banked
 	var records: int = int(summary.get("new_records", 0))
-	_records_row.visible = records > 0
-	_records_value.text = UiLocale.t("%d쪽 새로 새겨짐") % records
+	var harvest: Array[String] = []
+	if banked > 0:
+		harvest.append(UiLocale.t("재료 +%d") % banked)
+	if records > 0:
+		harvest.append(UiLocale.t("기록 +%d쪽") % records)
+	_harvest_row.visible = not harvest.is_empty()
+	_harvest_value.text = " · ".join(harvest)
 	var next_upgrade: Dictionary = summary.get("next_upgrade", {})
 	_next_row.visible = not next_upgrade.is_empty()
 	if not next_upgrade.is_empty():
@@ -240,6 +247,12 @@ func open(outcome: String, summary: Dictionary) -> void:
 	_show_earned(summary.get("earned", []))
 	# The paper can only measure content that exists — earned lines included.
 	_layout_panel()
+	# F5: when even the donated band cannot hold the earned lines, they fold
+	# to their one-line summary — the achievements screen holds the list, and
+	# a sheet that scrolls holds nothing (owner rule).
+	if _scroll_engaged:
+		_show_earned(summary.get("earned", []), 0)
+		_layout_panel()
 	visible = true
 	# Resweep visual R7: the same short entrance fade the other modals wear.
 	# PROCESS_MODE_ALWAYS above keeps the tween ticking over the paused run.
@@ -251,7 +264,7 @@ func open(outcome: String, summary: Dictionary) -> void:
 
 ## N9-155: one gold line per achievement completed by this run — the name in
 ## gold with its reward, so the rule that fired is the thing the player reads.
-func _show_earned(earned: Variant) -> void:
+func _show_earned(earned: Variant, line_cap: int = EARNED_LINES_MAX) -> void:
 	for child: Node in _earned_box.get_children():
 		child.queue_free()
 	if earned is not Array:
@@ -264,7 +277,7 @@ func _show_earned(earned: Variant) -> void:
 	for entry: Variant in earned:
 		if entry is not Dictionary:
 			continue
-		if shown >= EARNED_LINES_MAX:
+		if shown >= line_cap:
 			hidden += 1
 			continue
 		shown += 1
@@ -291,7 +304,10 @@ func _show_earned(earned: Variant) -> void:
 		_earned_box.add_child(label)
 	if hidden > 0:
 		var more := _label(
-			UiLocale.t("업적 %d개 더 달성 — 업적에서 확인") % hidden,
+			(
+				UiLocale.t("업적 %d개 달성 — 업적에서 확인") if shown == 0
+				else UiLocale.t("업적 %d개 더 달성 — 업적에서 확인")
+			) % hidden,
 			UiPalette.FONT_SIZE_LABEL, UiPalette.GOLD
 		)
 		more.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -384,13 +400,11 @@ func _make_body() -> Control:
 	# a one-line Label's minimum width is the whole sentence — the panel's
 	# minimum walked 81px off a 486 canvas. Wrapping caps the width demand at
 	# the longest word; the honest height pass already pays for extra lines.
-	_banked_value = _add_row(rows, UiLocale.t("창고 재료"))
-	_banked_row = _banked_value.get_parent() as Control
-	_records_value = _add_row(rows, UiLocale.t("괴이록"))
-	_records_row = _records_value.get_parent() as Control
+	_harvest_value = _add_row(rows, UiLocale.t("이번 밤 수확"))
+	_harvest_row = _harvest_value.get_parent() as Control
 	_next_value = _add_row(rows, UiLocale.t("다음 강화"))
 	_next_row = _next_value.get_parent() as Control
-	for value: Label in [_banked_value, _records_value, _next_value]:
+	for value: Label in [_harvest_value, _next_value]:
 		value.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_earned_box = VBoxContainer.new()
