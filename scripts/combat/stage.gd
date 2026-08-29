@@ -1178,6 +1178,23 @@ func _show_next_level_up() -> void:
 		pool, mod_pool, CHOICES_PER_LEVEL + int(_meta_bonus("choice_count")),
 		_choice_rng, _weapon_card_share
 	)
+	# N11-8 follow-up (QA: 한 장짜리 화면은 "선택"이 아니라 "확인 버튼"이다 —
+	# 176개 화면 중 91개가 3장 미달, 후보 17종이 연마로 이관된 직접 결과):
+	# a single non-mod candidate applies itself with a float label instead of
+	# pausing the fight for a screen with no decision on it. A lone MOD card
+	# still opens the screen — it spends a material and swaps a weapon, and
+	# that stays the player's call. Two cards remain a real choice.
+	if choices.size() == 1 and String(choices[0].get("kind", "")) != LevelUp.KIND_MOD:
+		var auto_choice: Dictionary = choices[0]
+		_apply_level_up_choice(auto_choice)
+		_float_label("%s %s" % [
+			LevelUp.display_name(auto_choice, _weapons_data, _passives_data),
+			UiLocale.t("자동 강화"),
+		])
+		_refresh_belongings()
+		_pending_level_ups -= 1
+		_advance_popup_queue()
+		return
 	var masked: Array[String] = _unknown_mod_results(choices)
 	var cards: Array[Dictionary] = []
 	for choice: Dictionary in choices:
