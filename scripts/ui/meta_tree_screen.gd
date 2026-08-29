@@ -40,6 +40,19 @@ const CANVAS_BOTTOM_PAD_LANDSCAPE := 40.0
 const NODE_BORDER_WIDTH := 3
 const EDGE_WIDTH := 3.0
 const TRUNK_WIDTH := 10.0
+## N11-11 (owner: 마인드맵처럼 업그레이드가 퍼져나가고 호버 클릭 시 애니메이션
+## 이랑 사운드도): every node hangs off the trunk (or its requires parent) by
+## a drawn curve, so the tree reads as branches spreading, not a list.
+const BRANCH_SAMPLES := 14
+const PULSE_PERIOD_SEC := 1.6
+const PULSE_RING_PAD := 4.0
+const PULSE_RING_SWING := 2.5
+const HOVER_SCALE := 1.1
+const HOVER_TWEEN_SEC := 0.1
+const PRESS_PUNCH_SCALE := 0.92
+const BURST_SEC := 0.5
+const BURST_RADIUS_FROM := NODE_SIZE * 0.5
+const BURST_RADIUS_TO := NODE_SIZE * 1.3
 const CAPTION_TRUNK_PAD := 4.0
 const PILL_CORNER_RADIUS := UiPalette.PILL_RADIUS
 const PILL_PADDING_X := UiPalette.PILL_PAD_X
@@ -68,6 +81,10 @@ var _selected_id: String = ""
 var _profile: Dictionary = SaveProfile.default_profile()
 
 var _canvas: Control
+## N11-11 living-graph state: breathing phase for purchasable nodes, and the
+## one-shot purchase bursts ({"at": Vector2, "t": float}) still expanding.
+var _pulse_phase: float = 0.0
+var _bursts: Array[Dictionary] = []
 var _scroll: ScrollContainer
 var _gold_label: Label
 var _detail_name: Label
@@ -313,6 +330,12 @@ func _populate_tab() -> void:
 		button.custom_minimum_size = Vector2(NODE_SIZE, NODE_SIZE)
 		button.size = Vector2(NODE_SIZE, NODE_SIZE)
 		button.pressed.connect(_on_node_pressed.bind(node_id))
+		# N11-11 hover/press feel: scale breathes up under the pointer and
+		# punches on the tap, with the shared UI ticks. Pivot at the disc's
+		# middle or the scale walks the button diagonally.
+		button.pivot_offset = Vector2(NODE_SIZE, NODE_SIZE) / 2.0
+		button.mouse_entered.connect(_on_node_hover.bind(button, true))
+		button.mouse_exited.connect(_on_node_hover.bind(button, false))
 		var icon: TextureRect = UiIcons.icon_rect(
 			UiIcons.loot_icon(String(entry.get("icon", ""))), NODE_ICON_SIZE
 		)
@@ -417,7 +440,47 @@ func select_node(node_id: String) -> void:
 
 
 func _on_node_pressed(node_id: String) -> void:
+	_play_sfx("ui_open")
+	var button: Button = _node_buttons.get(node_id)
+	if button != null and is_inside_tree():
+		var tween: Tween = create_tween()
+		tween.tween_property(
+			button, "scale", Vector2.ONE * PRESS_PUNCH_SCALE, HOVER_TWEEN_SEC / 2.0
+		)
+		tween.tween_property(button, "scale", Vector2.ONE, HOVER_TWEEN_SEC)
 	select_node(node_id)
+
+
+func _on_node_hover(button: Button, entered: bool) -> void:
+	if not is_inside_tree():
+		return
+	if entered:
+		_play_sfx("ui_click")
+	var tween: Tween = create_tween()
+	tween.tween_property(
+		button, "scale",
+		Vector2.ONE * (HOVER_SCALE if entered else 1.0), HOVER_TWEEN_SEC
+	).set_ease(Tween.EASE_OUT)
+
+
+func _play_sfx(sound_id: String) -> void:
+	if SfxService.instance != null:
+		SfxService.instance.play(sound_id)
+
+
+## N11-11: the graph breathes — purchasable rings swell on a slow sine and
+## finished bursts fall out of the list. Redraws only while this screen is
+## the scene, which it always is when visible.
+func _process(delta: float) -> void:
+	_pulse_phase = fmod(_pulse_phase + delta, PULSE_PERIOD_SEC)
+	var alive: Array[Dictionary] = []
+	for burst: Dictionary in _bursts:
+		burst["t"] = float(burst.get("t", 0.0)) + delta
+		if float(burst["t"]) < BURST_SEC:
+			alive.append(burst)
+	_bursts = alive
+	if _canvas != null:
+		_canvas.queue_redraw()
 
 
 func _on_canvas_input(event: InputEvent) -> void:
@@ -447,12 +510,22 @@ func _on_cta_pressed() -> void:
 	match reason:
 		MetaTree.REASON_OK:
 			_flash_notice(UiLocale.text("meta.bought"))
+			# N11-11: the coin lands audibly and the node rings outward once.
+			_play_sfx("levelup")
+			var entry: Dictionary = MetaTree.node(_tree, _selected_id)
+			if not entry.is_empty() and _canvas != null:
+				_bursts.append({
+					"at": _node_center(entry, _canvas.size.x), "t": 0.0,
+				})
 		MetaTree.REASON_GOLD:
 			_flash_notice(UiLocale.text("meta.no_gold"))
+			_play_sfx("ui_close")
 		MetaTree.REASON_MATERIALS:
 			_flash_notice(UiLocale.text("meta.no_materials"))
+			_play_sfx("ui_close")
 		MetaTree.REASON_CHARACTER:
 			_flash_notice(UiLocale.text("meta.char_locked"))
+			_play_sfx("ui_close")
 		_:
 			# locked/maxed/unknown never expose a CTA; reaching here means a
 			# stale click raced a state change — just re-render.
@@ -808,18 +881,79 @@ func _draw_graph() -> void:
 			UiPalette.WOOD_BORDER, TRUNK_WIDTH
 		)
 	var state: Dictionary = _profile.get("meta_tree", {})
+	# N11-11: branches, not wires. A node with prerequisites hangs off its
+	# parent; a root node hangs off the trunk one half-row above itself, so
+	# the whole tab reads as growth spreading out of the spine. Colour is the
+	# node's own state: bought gold, buyable wood, locked dim.
 	for entry: Dictionary in _tab_nodes():
 		var to_center: Vector2 = _node_center(entry, width)
-		for required: Variant in entry.get("requires", []):
+		var branch_color: Color = _node_state_color(entry, state)
+		var requires: Array = entry.get("requires", [])
+		if requires.is_empty():
+			var spine := Vector2(width / 2.0, to_center.y - _row_height() * 0.45)
+			_draw_branch(spine, to_center, branch_color)
+		for required: Variant in requires:
 			var from_entry: Dictionary = MetaTree.node(_tree, String(required))
 			if from_entry.is_empty():
 				continue
-			var satisfied: bool = MetaTree.rank_of(state, String(required)) >= 1
-			_canvas.draw_line(
-				_node_center(from_entry, width), to_center,
-				UiPalette.GOLD_BORDER if satisfied else UiPalette.CARD_BORDER_DIM,
-				EDGE_WIDTH
+			_draw_branch(_node_center(from_entry, width), to_center, branch_color)
+	# Breathing ring on every node the player could buy RIGHT NOW, a steady
+	# gold ring on what is already theirs — the growth state readable at a
+	# glance, before any caption is read.
+	var ring_swell: float = sin(_pulse_phase * TAU / PULSE_PERIOD_SEC) * PULSE_RING_SWING
+	for entry: Dictionary in _tab_nodes():
+		var center: Vector2 = _node_center(entry, width)
+		var node_id: String = String(entry.get("id", ""))
+		if MetaTree.rank_of(state, node_id) >= MetaTree.max_rank(entry):
+			_canvas.draw_arc(
+				center, NODE_SIZE / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
+				UiPalette.GOLD_BORDER, 2.0
 			)
+		elif _is_buyable(entry, state):
+			_canvas.draw_arc(
+				center, NODE_SIZE / 2.0 + PULSE_RING_PAD + ring_swell, 0.0, TAU, 32,
+				Color(UiPalette.GOLD, 0.65), 2.0
+			)
+	# One-shot purchase bursts: an expanding, fading gold ring where the coin
+	# was just spent.
+	for burst: Dictionary in _bursts:
+		var t: float = float(burst.get("t", 0.0)) / BURST_SEC
+		var radius: float = lerpf(BURST_RADIUS_FROM, BURST_RADIUS_TO, t)
+		_canvas.draw_arc(
+			burst.get("at", Vector2.ZERO), radius, 0.0, TAU, 40,
+			Color(UiPalette.GOLD, 1.0 - t), 3.0
+		)
+
+
+## N11-11: one quadratic branch curve, sampled — the control point sits on
+## the parent's x at the child's height, which is what bends the line out of
+## the spine the way a branch leaves a trunk.
+func _draw_branch(from: Vector2, to: Vector2, color: Color) -> void:
+	var control := Vector2(from.x, to.y)
+	var points := PackedVector2Array()
+	for i: int in BRANCH_SAMPLES + 1:
+		var t: float = float(i) / float(BRANCH_SAMPLES)
+		var a: Vector2 = from.lerp(control, t)
+		var b: Vector2 = control.lerp(to, t)
+		points.append(a.lerp(b, t))
+	_canvas.draw_polyline(points, color, EDGE_WIDTH, true)
+
+
+## The colour a node's branch and ring speak: bought, within reach, or dim.
+func _node_state_color(entry: Dictionary, state: Dictionary) -> Color:
+	var node_id: String = String(entry.get("id", ""))
+	if MetaTree.rank_of(state, node_id) >= 1:
+		return UiPalette.GOLD_BORDER
+	if _is_buyable(entry, state):
+		return UiPalette.WOOD
+	return UiPalette.CARD_BORDER_DIM
+
+
+func _is_buyable(entry: Dictionary, state: Dictionary) -> bool:
+	return MetaTree.can_purchase(
+		_tree, state, int(_profile.get("gold", 0)), String(entry.get("id", "")),
+		_unlocked, _profile.get("materials", {}) as Dictionary
+	) == MetaTree.REASON_OK
 
 
 ## --- helpers --------------------------------------------------------------
