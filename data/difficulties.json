@@ -1,130 +1,130 @@
 {
-  "_config": {
-    "default_id": "sunhaeng",
-    "default_run_length": "standard",
-    "note": "N9-22 난이도 사다리. rank는 오름차순 고유값. unlock_after가 빈 문자열이면 처음부터 열려 있고, 그 외에는 해당 난이도를 클리어해야 열린다. 배수는 스테이지 데이터 위에 곱해진다. first_run_duration_scale는 첫 런(튜토리얼 런)에만 곱해지는 길이 배율로, 420초 밤을 약 1분으로 줄인다. 길이만 줄이면 같은 웨이브가 압축되어 밀도가 폭증하므로(측정: 봇 36.9초 사망) 첫 런은 스폰 수와 적 능력치도 함께 낮춘다.",
-    "first_run_duration_scale": 0.15,
-    "first_run_spawn_scale": 0.4,
-    "first_run_enemy_hp_scale": 0.6,
-    "first_run_enemy_damage_scale": 0.5,
-    "first_run_boss_hp_scale": 0.15
+ "_config": {
+  "default_id": "sunhaeng",
+  "default_run_length": "standard",
+  "note": "N9-22 난이도 사다리. rank는 오름차순 고유값. unlock_after가 빈 문자열이면 처음부터 열려 있고, 그 외에는 해당 난이도를 클리어해야 열린다. 배수는 스테이지 데이터 위에 곱해진다. first_run_duration_scale는 첫 런(튜토리얼 런)에만 곱해지는 길이 배율로, 420초 밤을 약 1분으로 줄인다. 길이만 줄이면 같은 웨이브가 압축되어 밀도가 폭증하므로(측정: 봇 36.9초 사망) 첫 런은 스폰 수와 적 능력치도 함께 낮춘다. N11 (오너: 난이도가 많이 낮다): 측정에서 사다리가 비단조였다 — 역병(4) xp_mult 1.45가 위협 증가를 상쇄해 수난(2) 패배/역병 승리(시드7). xp_mult는 1.2까지로 평탄화(성장은 골드·메타가 담당), 대신 enemy_speed_mult를 1.32까지 올려 키팅으로 무력화되던 필드 압박을 랭크가 실제로 조인다.",
+  "first_run_duration_scale": 0.15,
+  "first_run_spawn_scale": 0.4,
+  "first_run_enemy_hp_scale": 0.6,
+  "first_run_enemy_damage_scale": 0.5,
+  "first_run_boss_hp_scale": 0.15
+ },
+ "difficulties": [
+  {
+   "id": "sunhaeng",
+   "name_ko": "순행",
+   "name_en": "Calm Path",
+   "desc_ko": "밤이 아직 얕다. 처음 나서는 길.",
+   "rank": 0,
+   "unlock_after": "",
+   "enemy_hp_mult": 1.0,
+   "enemy_damage_mult": 1.0,
+   "enemy_speed_mult": 1.0,
+   "spawn_count_mult": 1.0,
+   "elite_count_mult": 1.0,
+   "boss_hp_mult": 1.0,
+   "gold_mult": 1.0,
+   "xp_mult": 1.0
   },
-  "difficulties": [
-    {
-      "id": "sunhaeng",
-      "name_ko": "순행",
-      "name_en": "Calm Path",
-      "desc_ko": "밤이 아직 얕다. 처음 나서는 길.",
-      "rank": 0,
-      "unlock_after": "",
-      "enemy_hp_mult": 1.0,
-      "enemy_damage_mult": 1.0,
-      "enemy_speed_mult": 1.0,
-      "spawn_count_mult": 1.0,
-      "elite_count_mult": 1.0,
-      "boss_hp_mult": 1.0,
-      "gold_mult": 1.0,
-      "xp_mult": 1.0
-    },
-    {
-      "id": "yeohaeng",
-      "name_ko": "여행",
-      "name_en": "Wandering",
-      "desc_ko": "괴이가 길을 알아본다. 걸음이 무거워진다.",
-      "rank": 1,
-      "unlock_after": "sunhaeng",
-      "enemy_hp_mult": 1.35,
-      "enemy_damage_mult": 1.2,
-      "enemy_speed_mult": 1.05,
-      "spawn_count_mult": 1.15,
-      "elite_count_mult": 1.0,
-      "boss_hp_mult": 1.3,
-      "gold_mult": 1.25,
-      "xp_mult": 1.1
-    },
-    {
-      "id": "sunan",
-      "name_ko": "수난",
-      "name_en": "Ordeal",
-      "desc_ko": "숲이 사람을 밀어낸다. 정예가 잦아진다.",
-      "rank": 2,
-      "unlock_after": "yeohaeng",
-      "enemy_hp_mult": 1.8,
-      "enemy_damage_mult": 1.45,
-      "enemy_speed_mult": 1.1,
-      "spawn_count_mult": 1.3,
-      "elite_count_mult": 1.5,
-      "boss_hp_mult": 1.7,
-      "gold_mult": 1.6,
-      "xp_mult": 1.2
-    },
-    {
-      "id": "akyeon",
-      "name_ko": "악연",
-      "name_en": "Ill Fate",
-      "desc_ko": "무언가가 이쪽을 지목했다. 한 번의 실수가 끝이다.",
-      "rank": 3,
-      "unlock_after": "sunan",
-      "enemy_hp_mult": 2.4,
-      "enemy_damage_mult": 1.75,
-      "enemy_speed_mult": 1.15,
-      "spawn_count_mult": 1.45,
-      "elite_count_mult": 2.0,
-      "boss_hp_mult": 2.2,
-      "gold_mult": 2.0,
-      "xp_mult": 1.3
-    },
-    {
-      "id": "yeokbyeong",
-      "name_ko": "역병",
-      "name_en": "Plague Night",
-      "desc_ko": "밤 전체가 괴이다. 살아 돌아온 자가 드물다.",
-      "rank": 4,
-      "unlock_after": "akyeon",
-      "enemy_hp_mult": 3.2,
-      "enemy_damage_mult": 2.1,
-      "enemy_speed_mult": 1.22,
-      "spawn_count_mult": 1.6,
-      "elite_count_mult": 2.5,
-      "boss_hp_mult": 3.0,
-      "gold_mult": 2.6,
-      "xp_mult": 1.45
-    }
-  ],
-  "run_lengths": [
-    {
-      "id": "short",
-      "name_ko": "짧은 밤",
-      "name_en": "Short Night",
-      "desc_ko": "빠르게 한 판.",
-      "duration_scale": 0.6,
-      "gold_mult": 0.7
-    },
-    {
-      "id": "standard",
-      "name_ko": "보통 밤",
-      "name_en": "Standard Night",
-      "desc_ko": "기준이 되는 길이.",
-      "duration_scale": 1.0,
-      "gold_mult": 1.0
-    },
-    {
-      "id": "long",
-      "name_ko": "긴 밤",
-      "name_en": "Long Night",
-      "desc_ko": "끝까지 버텨본다.",
-      "duration_scale": 1.5,
-      "gold_mult": 1.4
-    },
-    {
-      "id": "endless",
-      "name_ko": "끝없는 밤",
-      "name_en": "Endless Night",
-      "desc_ko": "끝이 없다. 쓰러질 때까지 버텨라.",
-      "desc_en": "No dawn. Last as long as you can.",
-      "duration_scale": 1.0,
-      "gold_mult": 1.6,
-      "endless": true
-    }
-  ]
+  {
+   "id": "yeohaeng",
+   "name_ko": "여행",
+   "name_en": "Wandering",
+   "desc_ko": "괴이가 길을 알아본다. 걸음이 무거워진다.",
+   "rank": 1,
+   "unlock_after": "sunhaeng",
+   "enemy_hp_mult": 1.35,
+   "enemy_damage_mult": 1.2,
+   "enemy_speed_mult": 1.08,
+   "spawn_count_mult": 1.15,
+   "elite_count_mult": 1.0,
+   "boss_hp_mult": 1.3,
+   "gold_mult": 1.25,
+   "xp_mult": 1.05
+  },
+  {
+   "id": "sunan",
+   "name_ko": "수난",
+   "name_en": "Ordeal",
+   "desc_ko": "숲이 사람을 밀어낸다. 정예가 잦아진다.",
+   "rank": 2,
+   "unlock_after": "yeohaeng",
+   "enemy_hp_mult": 1.8,
+   "enemy_damage_mult": 1.45,
+   "enemy_speed_mult": 1.15,
+   "spawn_count_mult": 1.3,
+   "elite_count_mult": 1.5,
+   "boss_hp_mult": 1.7,
+   "gold_mult": 1.6,
+   "xp_mult": 1.1
+  },
+  {
+   "id": "akyeon",
+   "name_ko": "악연",
+   "name_en": "Ill Fate",
+   "desc_ko": "무언가가 이쪽을 지목했다. 한 번의 실수가 끝이다.",
+   "rank": 3,
+   "unlock_after": "sunan",
+   "enemy_hp_mult": 2.4,
+   "enemy_damage_mult": 1.75,
+   "enemy_speed_mult": 1.24,
+   "spawn_count_mult": 1.45,
+   "elite_count_mult": 2.0,
+   "boss_hp_mult": 2.2,
+   "gold_mult": 2.0,
+   "xp_mult": 1.15
+  },
+  {
+   "id": "yeokbyeong",
+   "name_ko": "역병",
+   "name_en": "Plague Night",
+   "desc_ko": "밤 전체가 괴이다. 살아 돌아온 자가 드물다.",
+   "rank": 4,
+   "unlock_after": "akyeon",
+   "enemy_hp_mult": 3.2,
+   "enemy_damage_mult": 2.1,
+   "enemy_speed_mult": 1.32,
+   "spawn_count_mult": 1.6,
+   "elite_count_mult": 2.5,
+   "boss_hp_mult": 3.0,
+   "gold_mult": 2.6,
+   "xp_mult": 1.2
+  }
+ ],
+ "run_lengths": [
+  {
+   "id": "short",
+   "name_ko": "짧은 밤",
+   "name_en": "Short Night",
+   "desc_ko": "빠르게 한 판.",
+   "duration_scale": 0.6,
+   "gold_mult": 0.7
+  },
+  {
+   "id": "standard",
+   "name_ko": "보통 밤",
+   "name_en": "Standard Night",
+   "desc_ko": "기준이 되는 길이.",
+   "duration_scale": 1.0,
+   "gold_mult": 1.0
+  },
+  {
+   "id": "long",
+   "name_ko": "긴 밤",
+   "name_en": "Long Night",
+   "desc_ko": "끝까지 버텨본다.",
+   "duration_scale": 1.5,
+   "gold_mult": 1.4
+  },
+  {
+   "id": "endless",
+   "name_ko": "끝없는 밤",
+   "name_en": "Endless Night",
+   "desc_ko": "끝이 없다. 쓰러질 때까지 버텨라.",
+   "desc_en": "No dawn. Last as long as you can.",
+   "duration_scale": 1.0,
+   "gold_mult": 1.6,
+   "endless": true
+  }
+ ]
 }

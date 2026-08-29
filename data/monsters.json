@@ -1,427 +1,427 @@
 {
-  "forest_goblin": {
-    "name_ko": "숲 도깨비",
-    "name_en": "Forest Goblin",
-    "origin_ko": "한국 설화에서 도깨비는 길을 잃은 나그네를 놀려먹고 부를 빌려 가는 귀신이다. 이들은 호기심 많고 난장이이지만, 때론 치명적이다.",
-    "hp": 10.0,
-    "damage": 5.0,
-    "speed": 55.0,
-    "xp_drop": 3,
-    "behaviour": "chase",
-    "collision_radius": 8.0,
-    "sprite": "res://asset/monsters/forest_goblin"
+ "forest_goblin": {
+  "name_ko": "숲 도깨비",
+  "name_en": "Forest Goblin",
+  "origin_ko": "한국 설화에서 도깨비는 길을 잃은 나그네를 놀려먹고 부를 빌려 가는 귀신이다. 이들은 호기심 많고 난장이이지만, 때론 치명적이다.",
+  "hp": 10.0,
+  "damage": 5.0,
+  "speed": 64.9,
+  "xp_drop": 3,
+  "behaviour": "chase",
+  "collision_radius": 8.0,
+  "sprite": "res://asset/monsters/forest_goblin"
+ },
+ "forest_spirit": {
+  "name_ko": "숲의 원혼",
+  "name_en": "Forest Spirit",
+  "origin_ko": "원혼은 한이 풀리지 않은 죽은 이의 영혼이다. 슬픔과 분노에 가득 찬 그들은 떠도는 영혼으로 남아, 생자의 세상을 배회하며 울음을 낸다.",
+  "hp": 16.0,
+  "damage": 7.0,
+  "speed": 47.2,
+  "xp_drop": 7,
+  "behaviour": "ranged",
+  "collision_radius": 10.0,
+  "sprite": "res://asset/monsters/forest_spirit"
+ },
+ "bamboo_brute": {
+  "name_ko": "죽림 거한",
+  "name_en": "Bamboo Brute",
+  "origin_ko": "거한은 대나무숲에 깃든 흙의 정령이다. 정령왕의 영향 아래 광폭해져, 숲을 지나는 모든 것을 짓밟으려 한다.",
+  "hp": 105.0,
+  "damage": 22.0,
+  "speed": 82.6,
+  "xp_drop": 13,
+  "behaviour": "charger",
+  "collision_radius": 13.0,
+  "sprite": "res://asset/monsters/bamboo_brute"
+ },
+ "bamboo_brute_elite": {
+  "name_ko": "정예 죽림 거한",
+  "name_en": "Elite Bamboo Brute",
+  "elite_of": "bamboo_brute",
+  "hp_mult": 6.0,
+  "damage_mult": 1.5,
+  "speed_mult": 0.85,
+  "size_mult": 1.6,
+  "reward_mult": 6.0
+ },
+ "rusted_armor_elite": {
+  "name_ko": "정예 녹슨 갑주 망령",
+  "name_en": "Elite Rusted Armor Wraith",
+  "elite_of": "rusted_armor",
+  "hp_mult": 6.0,
+  "damage_mult": 1.5,
+  "speed_mult": 0.85,
+  "size_mult": 1.6,
+  "reward_mult": 6.0
+ },
+ "dudueori": {
+  "name_ko": "두두리",
+  "name_en": "Dudueori",
+  "origin_ko": "경주 일대에서 섬기던 목신(木神)으로, 목랑(木郞)이라고도 한다. 『고려사』와 『신증동국여지승람』에 그 이름이 남아 있고, 도깨비의 원형으로 지목되는 존재다. 말과 무기를 바치면 신령하게 돕는다 하여 이의민은 집에 신당을 짓고 그림으로 모셨다. 이 밤의 대숲에서는 바치는 자가 없어, 스스로 걸어 나왔다.",
+  "hp": 2400.0,
+  "damage": 35.0,
+  "speed": 59.0,
+  "xp_drop": 200,
+  "behaviour": "boss",
+  "collision_radius": 20.5,
+  "sprite": "res://asset/monsters/dudueori",
+  "attacks": [
+   {
+    "id": "root_surge",
+    "name_ko": "뿌리 솟구침",
+    "cooldown_sec": 6.5,
+    "warn_sec": 1.0,
+    "radius_px": 62.0,
+    "inner_px": 0.0,
+    "count": 3,
+    "spread_px": 110.0,
+    "lead_sec": 0.35,
+    "damage": 24.0,
+    "knockback_scale": 1.0
+   },
+   {
+    "id": "grove_wrath",
+    "name_ko": "목랑의 진노",
+    "cooldown_sec": 11.0,
+    "warn_sec": 1.5,
+    "radius_px": 260.0,
+    "inner_px": 110.0,
+    "count": 1,
+    "spread_px": 0.0,
+    "lead_sec": 0.0,
+    "damage": 30.0,
+    "knockback_scale": 2.6
+   }
+  ]
+ },
+ "gwimyeon_dokkaebi": {
+  "name_ko": "귀면 도깨비",
+  "name_en": "Ghost-Face Dokkaebi",
+  "hp": 32.0,
+  "damage": 10.0,
+  "speed": 68.4,
+  "xp_drop": 2,
+  "behaviour": "chase",
+  "collision_radius": 13.5
+ },
+ "blue_dokkaebi": {
+  "name_ko": "푸른 도깨비",
+  "name_en": "Blue Dokkaebi",
+  "hp": 19.0,
+  "damage": 6.0,
+  "speed": 80.2,
+  "xp_drop": 2,
+  "behaviour": "swarm",
+  "collision_radius": 14.0
+ },
+ "gumiho_scout": {
+  "name_ko": "여우 정찰병",
+  "name_en": "Fox Spirit Scout",
+  "hp": 26.0,
+  "damage": 9.0,
+  "speed": 88.5,
+  "xp_drop": 2,
+  "behaviour": "chase",
+  "collision_radius": 21.0
+ },
+ "seonbi_wraith": {
+  "name_ko": "선비 원혼",
+  "name_en": "Scholar's Wraith",
+  "hp": 26.0,
+  "damage": 8.0,
+  "speed": 44.8,
+  "xp_drop": 8,
+  "behaviour": "ranged",
+  "collision_radius": 9.0
+ },
+ "haetae_guardian": {
+  "name_ko": "해태 수호상",
+  "name_en": "Haetae Guardian",
+  "hp": 136.0,
+  "damage": 29.0,
+  "speed": 76.7,
+  "xp_drop": 13,
+  "behaviour": "charger",
+  "collision_radius": 20.5
+ },
+ "dokkaebi_king": {
+  "name_ko": "도깨비 왕",
+  "name_en": "Dokkaebi King",
+  "hp": 4160.0,
+  "damage": 56.0,
+  "speed": 61.4,
+  "xp_drop": 320,
+  "behaviour": "boss",
+  "collision_radius": 25.5
+ },
+ "cheonyeo_gwisin": {
+  "name_ko": "처녀 귀신",
+  "name_en": "Maiden Ghost",
+  "hp": 38.0,
+  "damage": 12.0,
+  "speed": 47.2,
+  "xp_drop": 12,
+  "behaviour": "ranged",
+  "collision_radius": 23.5
+ },
+ "dalgyal_gwisin": {
+  "name_ko": "달걀 귀신",
+  "name_en": "Faceless Ghost",
+  "hp": 48.0,
+  "damage": 14.0,
+  "speed": 59.0,
+  "xp_drop": 2,
+  "behaviour": "chase",
+  "collision_radius": 23.5
+ },
+ "jeoseung_saja": {
+  "name_ko": "저승사자",
+  "name_en": "Death's Envoy",
+  "hp": 224.0,
+  "damage": 47.0,
+  "speed": 85.0,
+  "xp_drop": 21,
+  "behaviour": "charger",
+  "collision_radius": 25.5
+ },
+ "tomb_jangseung": {
+  "name_ko": "무덤 장승",
+  "name_en": "Tomb Guardian Post",
+  "hp": 38.0,
+  "damage": 12.0,
+  "speed": 15.0,
+  "xp_drop": 12,
+  "behaviour": "ranged",
+  "collision_radius": 9.0
+ },
+ "imugi_whelp": {
+  "name_ko": "새끼 이무기",
+  "name_en": "Young Imugi",
+  "hp": 41.0,
+  "damage": 12.0,
+  "speed": 68.4,
+  "xp_drop": 2,
+  "behaviour": "chase",
+  "collision_radius": 14.0
+ },
+ "ancient_imugi": {
+  "name_ko": "늙은 이무기",
+  "name_en": "Ancient Imugi",
+  "hp": 6240.0,
+  "damage": 84.0,
+  "speed": 56.6,
+  "xp_drop": 480,
+  "behaviour": "boss",
+  "collision_radius": 26.0
+ },
+ "wonhon": {
+  "name_ko": "떠도는 원혼",
+  "name_en": "Wandering Spirit",
+  "hp": 54.0,
+  "damage": 17.0,
+  "speed": 51.9,
+  "xp_drop": 17,
+  "behaviour": "ranged",
+  "collision_radius": 13.0
+ },
+ "dokkaebi_fire": {
+  "name_ko": "도깨비불",
+  "name_en": "Dokkaebi Fire",
+  "hp": 54.0,
+  "damage": 17.0,
+  "speed": 64.9,
+  "xp_drop": 17,
+  "behaviour": "ranged",
+  "collision_radius": 17.0
+ },
+ "shadow_dokkaebi": {
+  "name_ko": "그림자 도깨비",
+  "name_en": "Shadow Dokkaebi",
+  "hp": 62.0,
+  "damage": 20.0,
+  "speed": 94.4,
+  "xp_drop": 3,
+  "behaviour": "chase",
+  "collision_radius": 14.5
+ },
+ "fox_spirit": {
+  "name_ko": "여우 요괴",
+  "name_en": "Fox Spirit",
+  "hp": 41.0,
+  "damage": 14.0,
+  "speed": 82.6,
+  "xp_drop": 3,
+  "behaviour": "swarm",
+  "collision_radius": 18.5
+ },
+ "bulgasari": {
+  "name_ko": "불가사리",
+  "name_en": "Bulgasari",
+  "hp": 289.0,
+  "damage": 61.0,
+  "speed": 76.7,
+  "xp_drop": 27,
+  "behaviour": "charger",
+  "collision_radius": 20.5
+ },
+ "gumiho": {
+  "name_ko": "구미호",
+  "name_en": "Nine-Tailed Fox",
+  "hp": 8840.0,
+  "damage": 119.0,
+  "speed": 64.9,
+  "xp_drop": 680,
+  "behaviour": "boss",
+  "collision_radius": 29.5
+ },
+ "geuseundae": {
+  "name_ko": "그슨대",
+  "name_en": "Geuseundae",
+  "origin_ko": "제주에서 전해지는 어둠의 괴이다. 캄캄한 밤에 한없이 큰 형상으로 나타나 사람을 해치는데, 칼로 베어도 상하기는커녕 벨수록 더 커진다. 여럿이 횃불을 들고 나서야 비로소 그림자 본체가 사라졌다고 한다. 빛 밖에서는 벨 수 없다.",
+  "hp": 90.0,
+  "damage": 5.0,
+  "speed": 42.5,
+  "xp_drop": 22,
+  "behaviour": "chase",
+  "collision_radius": 13.0,
+  "shadow": {
+   "grow_per_sec": 0.06,
+   "max_scale": 2.8,
+   "lit_shrink_per_sec": 0.5,
+   "damage_per_scale": 3.0,
+   "leash_px": 420.0,
+   "leash_fade_sec": 1.6
   },
-  "forest_spirit": {
-    "name_ko": "숲의 원혼",
-    "name_en": "Forest Spirit",
-    "origin_ko": "원혼은 한이 풀리지 않은 죽은 이의 영혼이다. 슬픔과 분노에 가득 찬 그들은 떠도는 영혼으로 남아, 생자의 세상을 배회하며 울음을 낸다.",
-    "hp": 16.0,
-    "damage": 7.0,
-    "speed": 40.0,
-    "xp_drop": 7,
-    "behaviour": "ranged",
-    "collision_radius": 10.0,
-    "sprite": "res://asset/monsters/forest_spirit"
+  "sprite": "res://asset/monsters/geuseundae"
+ },
+ "ash_wraith": {
+  "name_ko": "잿귀",
+  "name_en": "Ash Wraith",
+  "origin_ko": "불탄 마을의 재 더미에서 일어나는 원혼. 잿빛 몸에 잉걸 눈만 붉게 남았다 — 꺼진 줄 알았던 불씨가 사람을 잊지 못한 것이다.",
+  "hp": 12.0,
+  "damage": 6.0,
+  "speed": 59.0,
+  "xp_drop": 3,
+  "behaviour": "chase",
+  "collision_radius": 10.0,
+  "sprite": "res://asset/monsters/ash_wraith"
+ },
+ "cursed_hound": {
+  "name_ko": "들개 요괴",
+  "name_en": "Cursed Hound",
+  "origin_ko": "주인 잃은 들개들이 저주받은 마을을 배회하다 요괴가 됐다. 무리 지어 빠르게 덮친다.",
+  "hp": 9.0,
+  "damage": 5.0,
+  "speed": 112.1,
+  "xp_drop": 4,
+  "behaviour": "chase",
+  "collision_radius": 14.0,
+  "sprite": "res://asset/monsters/cursed_hound"
+ },
+ "rusted_armor": {
+  "name_ko": "녹슨 갑주 망령",
+  "name_en": "Rusted Armor",
+  "origin_ko": "주인 잃은 두정갑이 스스로 걷는다. 빈 투구 속에 식지 않은 불씨가 있다 — 느리지만, 멈추지 않는다.",
+  "hp": 110.0,
+  "damage": 20.0,
+  "speed": 44.8,
+  "xp_drop": 13,
+  "behaviour": "chase",
+  "collision_radius": 10.0,
+  "sprite": "res://asset/monsters/rusted_armor"
+ },
+ "powder_dokkaebi": {
+  "name_ko": "화약 도깨비",
+  "name_en": "Powder Dokkaebi",
+  "origin_ko": "화약통을 짊어진 붉은 도깨비. 폐촌의 화약고를 제 몸으로 삼았다 — 껴안기 전에 떨어뜨릴 것.",
+  "hp": 14.0,
+  "damage": 26.0,
+  "speed": 85.0,
+  "xp_drop": 6,
+  "behaviour": "suicide",
+  "_suicide_note": "N9-165: the origin text promises a bomb — it stops at arm's length, burns a fuse the player can outrun or kill, then takes the powder with it. Contact damage never applies to a suicide.",
+  "suicide": {
+   "trigger_px": 44.0,
+   "fuse_sec": 0.85,
+   "radius_px": 98.0,
+   "damage": 34.0
   },
-  "bamboo_brute": {
-    "name_ko": "죽림 거한",
-    "name_en": "Bamboo Brute",
-    "origin_ko": "거한은 대나무숲에 깃든 흙의 정령이다. 정령왕의 영향 아래 광폭해져, 숲을 지나는 모든 것을 짓밟으려 한다.",
-    "hp": 105.0,
-    "damage": 22.0,
-    "speed": 70.0,
-    "xp_drop": 13,
-    "behaviour": "charger",
-    "collision_radius": 13.0,
-    "sprite": "res://asset/monsters/bamboo_brute"
+  "collision_radius": 12.0,
+  "sprite": "res://asset/monsters/powder_dokkaebi"
+ },
+ "yagwanggwi": {
+  "name_ko": "야광귀",
+  "name_en": "Yagwanggwi",
+  "origin_ko": "섣달그믐 밤 하늘에서 내려와 남의 신발을 신어보고, 발에 맞으면 신은 채 달아나는 귀신. 때려 죽일 것이 아니라 쫓아가 되찾을 것.",
+  "hp": 16.0,
+  "damage": 0.0,
+  "speed": 92.0,
+  "xp_drop": 4,
+  "behaviour": "thief",
+  "_theft_note": "N10-1a: 세시풍속의 신발 도둑을 그대로 규칙으로 옮겼다. 필드에 놓인 패시브로 곧장 걸어가 집어 들고 플레이어 반대편으로 달아난다. 접촉 피해가 0인 것은 설정이 아니라 설계다 — 쫓을지 말지가 플레이어의 선택이어야 하고, 놓치면 그 패시브는 이 런에서 영영 사라진다.",
+  "theft": {
+   "seek_px": 900.0,
+   "grab_px": 26.0,
+   "escape_px": 1150.0,
+   "flee_speed_mult": 1.35
   },
-  "bamboo_brute_elite": {
-    "name_ko": "정예 죽림 거한",
-    "name_en": "Elite Bamboo Brute",
-    "elite_of": "bamboo_brute",
-    "hp_mult": 6.0,
-    "damage_mult": 1.5,
-    "speed_mult": 0.85,
-    "size_mult": 1.6,
-    "reward_mult": 6.0
-  },
-  "rusted_armor_elite": {
-    "name_ko": "정예 녹슨 갑주 망령",
-    "name_en": "Elite Rusted Armor Wraith",
-    "elite_of": "rusted_armor",
-    "hp_mult": 6.0,
-    "damage_mult": 1.5,
-    "speed_mult": 0.85,
-    "size_mult": 1.6,
-    "reward_mult": 6.0
-  },
-  "dudueori": {
-    "name_ko": "두두리",
-    "name_en": "Dudueori",
-    "origin_ko": "경주 일대에서 섬기던 목신(木神)으로, 목랑(木郞)이라고도 한다. 『고려사』와 『신증동국여지승람』에 그 이름이 남아 있고, 도깨비의 원형으로 지목되는 존재다. 말과 무기를 바치면 신령하게 돕는다 하여 이의민은 집에 신당을 짓고 그림으로 모셨다. 이 밤의 대숲에서는 바치는 자가 없어, 스스로 걸어 나왔다.",
-    "hp": 2400.0,
-    "damage": 35.0,
-    "speed": 50.0,
-    "xp_drop": 200,
-    "behaviour": "boss",
-    "collision_radius": 20.5,
-    "sprite": "res://asset/monsters/dudueori",
-    "attacks": [
-      {
-        "id": "root_surge",
-        "name_ko": "뿌리 솟구침",
-        "cooldown_sec": 6.5,
-        "warn_sec": 1.0,
-        "radius_px": 62.0,
-        "inner_px": 0.0,
-        "count": 3,
-        "spread_px": 110.0,
-        "lead_sec": 0.35,
-        "damage": 24.0,
-        "knockback_scale": 1.0
-      },
-      {
-        "id": "grove_wrath",
-        "name_ko": "목랑의 진노",
-        "cooldown_sec": 11.0,
-        "warn_sec": 1.5,
-        "radius_px": 260.0,
-        "inner_px": 110.0,
-        "count": 1,
-        "spread_px": 0.0,
-        "lead_sec": 0.0,
-        "damage": 30.0,
-        "knockback_scale": 2.6
-      }
-    ]
-  },
-  "gwimyeon_dokkaebi": {
-    "name_ko": "귀면 도깨비",
-    "name_en": "Ghost-Face Dokkaebi",
-    "hp": 32.0,
-    "damage": 10.0,
-    "speed": 58.0,
-    "xp_drop": 2,
-    "behaviour": "chase",
-    "collision_radius": 13.5
-  },
-  "blue_dokkaebi": {
-    "name_ko": "푸른 도깨비",
-    "name_en": "Blue Dokkaebi",
-    "hp": 19.0,
-    "damage": 6.0,
-    "speed": 68.0,
-    "xp_drop": 2,
-    "behaviour": "swarm",
-    "collision_radius": 14.0
-  },
-  "gumiho_scout": {
-    "name_ko": "여우 정찰병",
-    "name_en": "Fox Spirit Scout",
-    "hp": 26.0,
-    "damage": 9.0,
-    "speed": 75.0,
-    "xp_drop": 2,
-    "behaviour": "chase",
-    "collision_radius": 21.0
-  },
-  "seonbi_wraith": {
-    "name_ko": "선비 원혼",
-    "name_en": "Scholar's Wraith",
-    "hp": 26.0,
-    "damage": 8.0,
-    "speed": 38.0,
-    "xp_drop": 8,
-    "behaviour": "ranged",
-    "collision_radius": 9.0
-  },
-  "haetae_guardian": {
-    "name_ko": "해태 수호상",
-    "name_en": "Haetae Guardian",
-    "hp": 136.0,
-    "damage": 29.0,
-    "speed": 65.0,
-    "xp_drop": 13,
-    "behaviour": "charger",
-    "collision_radius": 20.5
-  },
-  "dokkaebi_king": {
-    "name_ko": "도깨비 왕",
-    "name_en": "Dokkaebi King",
-    "hp": 4160.0,
-    "damage": 56.0,
-    "speed": 52.0,
-    "xp_drop": 320,
-    "behaviour": "boss",
-    "collision_radius": 25.5
-  },
-  "cheonyeo_gwisin": {
-    "name_ko": "처녀 귀신",
-    "name_en": "Maiden Ghost",
-    "hp": 38.0,
-    "damage": 12.0,
-    "speed": 40.0,
-    "xp_drop": 12,
-    "behaviour": "ranged",
-    "collision_radius": 23.5
-  },
-  "dalgyal_gwisin": {
-    "name_ko": "달걀 귀신",
-    "name_en": "Faceless Ghost",
-    "hp": 48.0,
-    "damage": 14.0,
-    "speed": 50.0,
-    "xp_drop": 2,
-    "behaviour": "chase",
-    "collision_radius": 23.5
-  },
-  "jeoseung_saja": {
-    "name_ko": "저승사자",
-    "name_en": "Death's Envoy",
-    "hp": 224.0,
-    "damage": 47.0,
-    "speed": 72.0,
-    "xp_drop": 21,
-    "behaviour": "charger",
-    "collision_radius": 25.5
-  },
-  "tomb_jangseung": {
-    "name_ko": "무덤 장승",
-    "name_en": "Tomb Guardian Post",
-    "hp": 38.0,
-    "damage": 12.0,
-    "speed": 15.0,
-    "xp_drop": 12,
-    "behaviour": "ranged",
-    "collision_radius": 9.0
-  },
-  "imugi_whelp": {
-    "name_ko": "새끼 이무기",
-    "name_en": "Young Imugi",
-    "hp": 41.0,
-    "damage": 12.0,
-    "speed": 58.0,
-    "xp_drop": 2,
-    "behaviour": "chase",
-    "collision_radius": 14.0
-  },
-  "ancient_imugi": {
-    "name_ko": "늙은 이무기",
-    "name_en": "Ancient Imugi",
-    "hp": 6240.0,
-    "damage": 84.0,
-    "speed": 48.0,
-    "xp_drop": 480,
-    "behaviour": "boss",
-    "collision_radius": 26.0
-  },
-  "wonhon": {
-    "name_ko": "떠도는 원혼",
-    "name_en": "Wandering Spirit",
-    "hp": 54.0,
-    "damage": 17.0,
-    "speed": 44.0,
-    "xp_drop": 17,
-    "behaviour": "ranged",
-    "collision_radius": 13.0
-  },
-  "dokkaebi_fire": {
-    "name_ko": "도깨비불",
-    "name_en": "Dokkaebi Fire",
-    "hp": 54.0,
-    "damage": 17.0,
-    "speed": 55.0,
-    "xp_drop": 17,
-    "behaviour": "ranged",
-    "collision_radius": 17.0
-  },
-  "shadow_dokkaebi": {
-    "name_ko": "그림자 도깨비",
-    "name_en": "Shadow Dokkaebi",
-    "hp": 62.0,
-    "damage": 20.0,
-    "speed": 80.0,
-    "xp_drop": 3,
-    "behaviour": "chase",
-    "collision_radius": 14.5
-  },
-  "fox_spirit": {
-    "name_ko": "여우 요괴",
-    "name_en": "Fox Spirit",
-    "hp": 41.0,
-    "damage": 14.0,
-    "speed": 70.0,
-    "xp_drop": 3,
-    "behaviour": "swarm",
-    "collision_radius": 18.5
-  },
-  "bulgasari": {
-    "name_ko": "불가사리",
-    "name_en": "Bulgasari",
-    "hp": 289.0,
-    "damage": 61.0,
-    "speed": 65.0,
-    "xp_drop": 27,
-    "behaviour": "charger",
-    "collision_radius": 20.5
-  },
-  "gumiho": {
-    "name_ko": "구미호",
-    "name_en": "Nine-Tailed Fox",
-    "hp": 8840.0,
-    "damage": 119.0,
-    "speed": 55.0,
-    "xp_drop": 680,
-    "behaviour": "boss",
-    "collision_radius": 29.5
-  },
-  "geuseundae": {
-    "name_ko": "그슨대",
-    "name_en": "Geuseundae",
-    "origin_ko": "제주에서 전해지는 어둠의 괴이다. 캄캄한 밤에 한없이 큰 형상으로 나타나 사람을 해치는데, 칼로 베어도 상하기는커녕 벨수록 더 커진다. 여럿이 횃불을 들고 나서야 비로소 그림자 본체가 사라졌다고 한다. 빛 밖에서는 벨 수 없다.",
+  "_art_note": "No sprite set yet, so PlaceholderArt draws it (CLAUDE.md §5: a missing texture never blocks a gameplay feature). Wanted art is logged in ASSET_REQUIREMENTS.md.",
+  "collision_radius": 11.0
+ },
+ "samdugumi": {
+  "name_ko": "삼두구미",
+  "name_en": "Samdugumi",
+  "origin_ko": "제주. 무덤을 파먹는 머리 셋 꼬리 아홉의 괴물. 제 다리를 떼어내 부리고, 떼어낸 다리가 말을 한다. 통째로 베려 들면 아무것도 되지 않는다 — 하나씩 떼어놓아야 한다.",
+  "hp": 240.0,
+  "damage": 22.0,
+  "speed": 51.9,
+  "xp_drop": 40,
+  "behaviour": "multipart",
+  "_parts_note": "N10-3a/b: 제주 전승의 약점 셋을 규칙으로 옮겼다. 부위가 하나라도 남아 있으면 본체는 피해를 받지 않는다 — '베어도 소용없다'가 곧 판정이다. 부위마다 그 부위를 여는 재료가 정해져 있어(버드나무=꼬리, 생달걀=다리, 무쇠=머리), 들고 있지 않으면 그 부위는 상하지 않는다: 파밍이 곧 공략이다. 부위가 떨어질 때마다 그 부위가 하던 일이 사라진다.",
+  "parts": [
+   {
+    "id": "legs",
+    "name_ko": "아홉 꼬리",
+    "hp": 70.0,
+    "on_break": {
+     "speed_mult": 0.62
+    },
+    "material": "willow_branch"
+   },
+   {
+    "id": "arms",
+    "name_ko": "떼어낸 다리",
+    "hp": 70.0,
+    "on_break": {
+     "damage_mult": 0.7
+    },
+    "material": "raw_egg"
+   },
+   {
+    "id": "head",
+    "name_ko": "세 머리",
     "hp": 90.0,
-    "damage": 5.0,
-    "speed": 36.0,
-    "xp_drop": 22,
-    "behaviour": "chase",
-    "collision_radius": 13.0,
-    "shadow": {
-      "grow_per_sec": 0.06,
-      "max_scale": 2.8,
-      "lit_shrink_per_sec": 0.5,
-      "damage_per_scale": 3.0,
-      "leash_px": 420.0,
-      "leash_fade_sec": 1.6
+    "on_break": {
+     "damage_mult": 0.6
     },
-    "sprite": "res://asset/monsters/geuseundae"
-  },
-  "ash_wraith": {
-    "name_ko": "잿귀",
-    "name_en": "Ash Wraith",
-    "origin_ko": "불탄 마을의 재 더미에서 일어나는 원혼. 잿빛 몸에 잉걸 눈만 붉게 남았다 — 꺼진 줄 알았던 불씨가 사람을 잊지 못한 것이다.",
-    "hp": 12.0,
-    "damage": 6.0,
-    "speed": 50.0,
-    "xp_drop": 3,
-    "behaviour": "chase",
-    "collision_radius": 10.0,
-    "sprite": "res://asset/monsters/ash_wraith"
-  },
-  "cursed_hound": {
-    "name_ko": "들개 요괴",
-    "name_en": "Cursed Hound",
-    "origin_ko": "주인 잃은 들개들이 저주받은 마을을 배회하다 요괴가 됐다. 무리 지어 빠르게 덮친다.",
-    "hp": 9.0,
-    "damage": 5.0,
-    "speed": 95.0,
-    "xp_drop": 4,
-    "behaviour": "chase",
-    "collision_radius": 14.0,
-    "sprite": "res://asset/monsters/cursed_hound"
-  },
-  "rusted_armor": {
-    "name_ko": "녹슨 갑주 망령",
-    "name_en": "Rusted Armor",
-    "origin_ko": "주인 잃은 두정갑이 스스로 걷는다. 빈 투구 속에 식지 않은 불씨가 있다 — 느리지만, 멈추지 않는다.",
-    "hp": 110.0,
-    "damage": 20.0,
-    "speed": 38.0,
-    "xp_drop": 13,
-    "behaviour": "chase",
-    "collision_radius": 10.0,
-    "sprite": "res://asset/monsters/rusted_armor"
-  },
-  "powder_dokkaebi": {
-    "name_ko": "화약 도깨비",
-    "name_en": "Powder Dokkaebi",
-    "origin_ko": "화약통을 짊어진 붉은 도깨비. 폐촌의 화약고를 제 몸으로 삼았다 — 껴안기 전에 떨어뜨릴 것.",
-    "hp": 14.0,
-    "damage": 26.0,
-    "speed": 72.0,
-    "xp_drop": 6,
-    "behaviour": "suicide",
-    "_suicide_note": "N9-165: the origin text promises a bomb — it stops at arm's length, burns a fuse the player can outrun or kill, then takes the powder with it. Contact damage never applies to a suicide.",
-    "suicide": {
-      "trigger_px": 44.0,
-      "fuse_sec": 0.85,
-      "radius_px": 98.0,
-      "damage": 34.0
-    },
-    "collision_radius": 12.0,
-    "sprite": "res://asset/monsters/powder_dokkaebi"
-  },
-  "yagwanggwi": {
-    "name_ko": "야광귀",
-    "name_en": "Yagwanggwi",
-    "origin_ko": "섣달그믐 밤 하늘에서 내려와 남의 신발을 신어보고, 발에 맞으면 신은 채 달아나는 귀신. 때려 죽일 것이 아니라 쫓아가 되찾을 것.",
-    "hp": 16.0,
-    "damage": 0.0,
-    "speed": 78.0,
-    "xp_drop": 4,
-    "behaviour": "thief",
-    "_theft_note": "N10-1a: 세시풍속의 신발 도둑을 그대로 규칙으로 옮겼다. 필드에 놓인 패시브로 곧장 걸어가 집어 들고 플레이어 반대편으로 달아난다. 접촉 피해가 0인 것은 설정이 아니라 설계다 — 쫓을지 말지가 플레이어의 선택이어야 하고, 놓치면 그 패시브는 이 런에서 영영 사라진다.",
-    "theft": {
-      "seek_px": 900.0,
-      "grab_px": 26.0,
-      "escape_px": 1150.0,
-      "flee_speed_mult": 1.35
-    },
-    "_art_note": "No sprite set yet, so PlaceholderArt draws it (CLAUDE.md §5: a missing texture never blocks a gameplay feature). Wanted art is logged in ASSET_REQUIREMENTS.md.",
-    "collision_radius": 11.0
-  },
-  "samdugumi": {
-    "name_ko": "삼두구미",
-    "name_en": "Samdugumi",
-    "origin_ko": "제주. 무덤을 파먹는 머리 셋 꼬리 아홉의 괴물. 제 다리를 떼어내 부리고, 떼어낸 다리가 말을 한다. 통째로 베려 들면 아무것도 되지 않는다 — 하나씩 떼어놓아야 한다.",
-    "hp": 240.0,
-    "damage": 22.0,
-    "speed": 44.0,
-    "xp_drop": 40,
-    "behaviour": "multipart",
-    "_parts_note": "N10-3a/b: 제주 전승의 약점 셋을 규칙으로 옮겼다. 부위가 하나라도 남아 있으면 본체는 피해를 받지 않는다 — '베어도 소용없다'가 곧 판정이다. 부위마다 그 부위를 여는 재료가 정해져 있어(버드나무=꼬리, 생달걀=다리, 무쇠=머리), 들고 있지 않으면 그 부위는 상하지 않는다: 파밍이 곧 공략이다. 부위가 떨어질 때마다 그 부위가 하던 일이 사라진다.",
-    "parts": [
-      {
-        "id": "legs",
-        "name_ko": "아홉 꼬리",
-        "hp": 70.0,
-        "on_break": {
-          "speed_mult": 0.62
-        },
-        "material": "willow_branch"
-      },
-      {
-        "id": "arms",
-        "name_ko": "떼어낸 다리",
-        "hp": 70.0,
-        "on_break": {
-          "damage_mult": 0.7
-        },
-        "material": "raw_egg"
-      },
-      {
-        "id": "head",
-        "name_ko": "세 머리",
-        "hp": 90.0,
-        "on_break": {
-          "damage_mult": 0.6
-        },
-        "material": "cast_iron"
-      }
-    ],
-    "_art_note": "No sprite set yet, so PlaceholderArt draws it (CLAUDE.md §5). Wanted art is logged in ASSET_REQUIREMENTS.md.",
-    "collision_radius": 20.0,
-    "is_elite": true
-  },
-  "general_wraith": {
-    "name_ko": "장군 원혼",
-    "name_en": "General's Wraith",
-    "origin_ko": "마을을 지키다 전장에서 죽은 장수의 원혼. 지키지 못한 밤을 반투명한 갑주로 되풀이한다 — 지키러 온 자와, 지키지 못한 자가 마주 선다.",
-    "hp": 3000.0,
-    "damage": 38.0,
-    "speed": 48.0,
-    "xp_drop": 220,
-    "behaviour": "boss",
-    "collision_radius": 21.0,
-    "sprite": "res://asset/monsters/general_wraith"
-  }
+    "material": "cast_iron"
+   }
+  ],
+  "_art_note": "No sprite set yet, so PlaceholderArt draws it (CLAUDE.md §5). Wanted art is logged in ASSET_REQUIREMENTS.md.",
+  "collision_radius": 20.0,
+  "is_elite": true
+ },
+ "general_wraith": {
+  "name_ko": "장군 원혼",
+  "name_en": "General's Wraith",
+  "origin_ko": "마을을 지키다 전장에서 죽은 장수의 원혼. 지키지 못한 밤을 반투명한 갑주로 되풀이한다 — 지키러 온 자와, 지키지 못한 자가 마주 선다.",
+  "hp": 3000.0,
+  "damage": 38.0,
+  "speed": 56.6,
+  "xp_drop": 220,
+  "behaviour": "boss",
+  "collision_radius": 21.0,
+  "sprite": "res://asset/monsters/general_wraith"
+ }
 }

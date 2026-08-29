@@ -159,6 +159,8 @@ var _meta_gold: int = 0
 ## which is the point — what this measures is that the clock never fires and
 ## the field never falls silent.
 var _endless: bool = false
+## N11: --difficulty=<id> selects a ladder rank for the measured run.
+var _difficulty_id: String = ""
 var _rarity_rows: Array[Dictionary] = []
 var _headless: bool = false
 var _damage_total: float = 0.0
@@ -274,6 +276,8 @@ func _parse_args() -> void:
 			_stage_id = arg.get_slice("=", 1)
 		elif arg == "--endless":
 			_endless = true
+		elif arg.begins_with("--difficulty="):
+			_difficulty_id = arg.get_slice("=", 1)
 
 
 ## Spends `budget` gold on the cheapest available node each step — the way a
@@ -359,6 +363,10 @@ func _start_run() -> void:
 		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 	if _endless and SaveService.instance != null:
 		SaveService.instance.set_setting(Difficulty.RUN_LENGTH_KEY, "endless", false)
+		SaveService.instance._write_locked = true
+		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
+	if not _difficulty_id.is_empty() and SaveService.instance != null:
+		SaveService.instance.set_setting(Difficulty.SELECTED_KEY, _difficulty_id, false)
 		SaveService.instance._write_locked = true
 		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
 	if _run_seed != 0:
