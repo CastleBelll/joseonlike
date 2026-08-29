@@ -261,6 +261,11 @@ var sieves: Array[Dictionary] = []
 ## and the shadow probe read them whole; what runs every frame reads these.
 var light_grid := PropGrid.new()
 var sieve_grid := PropGrid.new()
+## N11-2 (owner perf pass): the solid props' collision rects, bucketed, so an
+## enemy resolves prop contact with a grid lookup instead of carrying a
+## physics body through move_and_slide. Entries keep a body ref — a broken
+## Breakable's entry answers invalid and is skipped by the reader.
+var solids_grid := PropGrid.new()
 
 
 ## N9-6 infinite field: the world grows chunk by chunk as the player travels.
@@ -364,6 +369,16 @@ func _instantiate(
 			var body: StaticBody2D = _make_solid(String(placement["id"]), prop)
 			body.position = pos
 			add_child(body)
+			# N11-2: the same rect the physics shape covers, grid-indexed for
+			# the enemies' manual contact resolve.
+			var box: Array = prop.get("collision", [])
+			var half := Vector2(float(box[2]) / 2.0, float(box[3]) / 2.0)
+			solids_grid.add({
+				"position": pos + Vector2(float(box[0]), float(box[1])) + half,
+				"radius": maxf(half.x, half.y),
+				"half": half,
+				"body": body,
+			})
 		else:
 			var visual: Node2D = _make_visual(prop)
 			visual.position = pos

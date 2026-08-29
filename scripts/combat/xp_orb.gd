@@ -18,12 +18,19 @@ const GLOW_ALPHA := 0.45
 ## case is the magnet grabbing ~3 frames late, invisible next to the pull
 ## animation itself. Pickup and LootDrop inherit this loop and the saving.
 const IDLE_CHECK_FRAMES := 4
+## N11-2 (owner: 화면 밖은 업데이트 빈도를 확 낮추기): an orb far past the
+## magnet's reach re-checks even less often. The player cannot cross the far
+## band in 16 frames, and attract_now still catches every orb within its
+## next glance — a sub-second stagger on a full-field pull reads as a sweep.
+const FAR_CHECK_FRAMES := 16
+const FAR_RADIUS_MULT := 4.0
 
 var xp_value: int = 0
 
 var _player: Player
 var _magnet_radius_squared: float = 0.0
 var _collect_radius_squared: float = 0.0
+var _far_radius_squared: float = 0.0
 var _acceleration: float = 0.0
 var _max_speed: float = 0.0
 var _speed: float = 0.0
@@ -41,6 +48,8 @@ func launch(at: Vector2, xp: int, player: Player, orb_config: Dictionary) -> voi
 	var collect_radius: float = float(orb_config.get("collect_radius_px", 0.0))
 	_magnet_radius_squared = magnet_radius * magnet_radius
 	_collect_radius_squared = collect_radius * collect_radius
+	var far_radius: float = magnet_radius * FAR_RADIUS_MULT
+	_far_radius_squared = far_radius * far_radius
 	_acceleration = float(orb_config.get("magnet_accel_px_s2", 0.0))
 	_max_speed = float(orb_config.get("max_speed_px_s", 0.0))
 	_speed = 0.0
@@ -66,7 +75,10 @@ func _physics_process(delta: float) -> void:
 		collected.emit(self)
 		return
 	if distance_squared > _magnet_radius_squared:
-		_idle_skip = IDLE_CHECK_FRAMES - 1
+		_idle_skip = (
+			FAR_CHECK_FRAMES if distance_squared > _far_radius_squared
+			else IDLE_CHECK_FRAMES
+		) - 1
 		return
 	_speed = CombatMath.accelerated_speed(_speed, _acceleration, delta, _max_speed)
 	var direction: Vector2 = CombatMath.chase_direction(

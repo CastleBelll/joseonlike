@@ -53,6 +53,15 @@ const PLACEHOLDER_COLORS: Dictionary = {
 ## instance; 60 live enemies must never rebuild atlas slices per spawn.
 static var _frames_cache: Dictionary = {}
 
+## N11-2: the field's solid-prop rect grid, set by the stage once the field
+## is built. Null in headless unit tests — enemies then move unobstructed,
+## which is what those tests already assumed.
+static var solids: PropGrid = null
+## Steering re-aim cadence (~10Hz at 60fps). The aim is cheap; the point is
+## the cadence pattern the owner asked for, and it keeps a 210-horde from
+## re-aiming in lockstep on one frame.
+const STEER_INTERVAL_FRAMES := 6
+
 ## N4-2 elite derivation: an "elite_of" monsters.json entry is pure data-side
 ## multipliers over its base monster. Returns a full stats dict the ordinary
 ## setup() consumes — same enemy code, bigger and tougher numbers.
@@ -102,9 +111,11 @@ var _size_scale: float = 1.0  # N4-2: elite variants render bigger
 ## True while a one-shot attack cycle is playing and owns the sprite.
 var _attacking: bool = false
 var _facing: int = PlayerMotion.FACING_RIGHT
-var _shape: CollisionShape2D
 var _block_normal := Vector2.ZERO
 var _avoid_sign: float = 1.0
+## N11-2 cached steering aim and its staggered refresh countdown.
+var _steer := Vector2.ZERO
+var _steer_skip: int = 0
 # N3-8 hit feedback state (numbers from data/effects.json via the spawner).
 var _flash_left: float = 0.0
 var _flash_sec: float = 0.0
@@ -182,12 +193,14 @@ var _shadow_leash_left: float = 0.0
 
 
 func _ready() -> void:
-	collision_layer = COLLISION_LAYER_ENEMY
-	# Solid stage props (N3-9) are the only thing an enemy collides with.
-	collision_mask = StageField.LAYER_OBSTACLE
-	_shape = CollisionShape2D.new()
-	_shape.shape = CircleShape2D.new()
-	add_child(_shape)
+	# N11-2 (owner perf pass): no physics body. The enemy carries NO collision
+	# shape and never calls move_and_slide — nothing in the game queries enemy
+	# bodies (damage is proximity, projectiles scan the active list), so the
+	# only physics work was prop sliding, which _resolve_solids now does
+	# against the field's grid. 210 live bodies out of the physics space was
+	# the measured bulk of the endless frame (physics_ms ~6x process_ms).
+	collision_layer = 0
+	collision_mask = 0
 	# The Visual wrapper carries the facing flip (scale.x = ±1) for both the
 	# sprite and the placeholder rect, mirroring the player's structure.
 	_visual = Node2D.new()
@@ -242,6 +255,12 @@ func setup(
 		part_names.append(String((part as Dictionary).get("name_ko", "")))
 	is_thief = String(stats.get("behaviour", "")) == "thief"
 	_theft = stats.get("theft", {})
+	# N11-2: scatter the steering re-aims across frames (owner: 500마리가
+	# 같은 프레임에 AI 업데이트하면 프레임이 튄다). Combat stream, like the
+	# orb idle stagger — which frame an enemy re-aims on shapes the run.
+	_steer = Vector2.ZERO
+	_steer_skip = int(CombatRng.roll() * float(STEER_INTERVAL_FRAMES)) \
+		% STEER_INTERVAL_FRAMES
 	carried_passive = ""
 	theft_goal = Vector2(NAN, NAN)
 	stalled = false
@@ -281,7 +300,6 @@ func setup(
 	_time_since_contact = contact_cooldown  # first touch may hit immediately
 	separation_push = Vector2.ZERO
 	_target = target
-	(_shape.shape as CircleShape2D).radius = contact_radius
 	_block_normal = Vector2.ZERO
 	# Fixed per-instance detour side keeps two blocked enemies from mirroring
 	# each other forever on the same wall face.
@@ -369,35 +387,90 @@ func _physics_process(delta: float) -> void:
 	_knockback = _knockback.move_toward(Vector2.ZERO, _knockback_decay * delta)
 	if is_suicide and _update_fuse(delta):
 		return  # the powder went off; this body has left the space
-	var desired: Vector2 = CombatMath.chase_direction(
-		global_position, _target.global_position
-	)
+	# N11-2 (owner: AI를 매 프레임 계산하지 않기): the steering AIM re-derives
+	# on a staggered cadence — spawn-seeded so a horde spreads its updates
+	# across frames — while the movement itself integrates every frame with
+	# the cached aim. The player crosses a few px between re-aims, invisible
+	# next to the separation jostle.
+	_steer_skip -= 1
+	if _steer_skip <= 0:
+		_steer_skip = STEER_INTERVAL_FRAMES
+		var desired: Vector2 = CombatMath.chase_direction(
+			global_position, _target.global_position
+		)
+		if is_thief:
+			if not carried_passive.is_empty():
+				# Carrying: the player is the thing to get away from. Same
+				# chase maths, read backwards, so a cornered thief still
+				# slides along props instead of grinding into them.
+				desired = -desired
+			elif not is_nan(theft_goal.x):
+				desired = CombatMath.chase_direction(global_position, theft_goal)
+		_steer = CombatMath.avoid_direction(desired, _block_normal, _avoid_sign)
 	var speed: float = _speed * (_shock_scale if _shock_left > 0.0 else 1.0)
-	if is_thief:
-		if not carried_passive.is_empty():
-			# Carrying: the player is the thing to get away from. Same chase
-			# maths, read backwards, so a cornered thief still slides along
-			# props instead of grinding into them.
-			desired = -desired
-			speed *= float(_theft.get("flee_speed_mult", 1.0))
-		elif not is_nan(theft_goal.x):
-			desired = CombatMath.chase_direction(global_position, theft_goal)
-	var steer: Vector2 = CombatMath.avoid_direction(desired, _block_normal, _avoid_sign)
+	if is_thief and not carried_passive.is_empty():
+		speed *= float(_theft.get("flee_speed_mult", 1.0))
 	# Stunned (진언, N4-4b): the chase stops dead; only knockback still moves it.
 	if _stun_left > 0.0 or _shadow_leashed or _fuse_lit or stalled:
 		speed = 0.0
-	velocity = Separation.blended_direction(steer, separation_push) * speed + _knockback
-	move_and_slide()
-	_block_normal = (
-		get_slide_collision(0).get_normal() if get_slide_collision_count() > 0
-		else Vector2.ZERO
-	)
+	velocity = Separation.blended_direction(_steer, separation_push) * speed + _knockback
+	# N11-2 (owner perf pass): direct integration — no move_and_slide, no
+	# physics body. Prop contact resolves against the field's solids grid.
+	global_position += velocity * delta
+	_block_normal = _resolve_solids()
 	_update_visual_motion()
 	# A bomb never also body-slams: its whole damage is the blast. A thief never
 	# lands a hit at all — chasing it has to be the player's choice, not
 	# something they are punished into.
 	if _stun_left <= 0.0 and not is_suicide and not is_thief:
 		_try_contact_damage()
+
+
+## N11-2: circle-vs-rect contact against the field's solids grid — the manual
+## replacement for move_and_slide's prop sliding. Pushes this enemy out of
+## every overlapped rect and returns the blended contact normal (what the
+## avoid steering reads, exactly as it read the slide collision before).
+## Broken breakables stay parked in the grid; their entries answer dead here.
+func _resolve_solids() -> Vector2:
+	if solids == null:
+		return Vector2.ZERO
+	var normal := Vector2.ZERO
+	for entry: Dictionary in solids.near(global_position):
+		# Variant, not Object: a typed assign REJECTS a freed instance with a
+		# runtime error before is_instance_valid can answer for it.
+		var body: Variant = entry.get("body")
+		if not is_instance_valid(body):
+			continue  # a stale grid from a torn-down stage answers dead
+		if body is Breakable and not (body as Breakable).alive():
+			continue
+		var center: Vector2 = entry.get("position", Vector2.ZERO)
+		var half: Vector2 = entry.get("half", Vector2.ZERO)
+		var closest := Vector2(
+			clampf(global_position.x, center.x - half.x, center.x + half.x),
+			clampf(global_position.y, center.y - half.y, center.y + half.y)
+		)
+		var away: Vector2 = global_position - closest
+		var distance: float = away.length()
+		if distance >= contact_radius:
+			continue
+		if distance > 0.001:
+			var push: Vector2 = away / distance
+			global_position += push * (contact_radius - distance)
+			normal += push
+			continue
+		# Center inside the rect: exit along the axis of least penetration.
+		var to_center: Vector2 = global_position - center
+		var exit_x: float = half.x - absf(to_center.x) + contact_radius
+		var exit_y: float = half.y - absf(to_center.y) + contact_radius
+		var axis_push: Vector2
+		if exit_x < exit_y:
+			axis_push = Vector2(1.0 if to_center.x >= 0.0 else -1.0, 0.0)
+			global_position += axis_push * exit_x
+		else:
+			axis_push = Vector2(0.0, 1.0 if to_center.y >= 0.0 else -1.0)
+			global_position += axis_push * exit_y
+		normal += axis_push
+	return normal.normalized() if normal != Vector2.ZERO else Vector2.ZERO
 
 
 ## Runs the fuse: lights it at arm's length, counts it down while the bomb

@@ -342,6 +342,24 @@ F27 타이머 방향별 층(디자인 결정 필요), F14-선택 종이 길이(�
 
 EXP 레일 채움은 실측으로 **버그 아님** 확정(초기 의심 반증).
 
+### 2026-08-29 N11 리텐션 개편 개시 (오너 지시)
+
+오너: 치명타 떨림 과함 / 끝없는 밤 렉 / 난이도 낮음 / 아이들러식 성장 + 본거지
+맵화·NPC·개조 해금 + 이름. 분해는 [ROADMAP.md](ROADMAP.md) N11 절이 정본.
+
+**N11-1 즉시 손질 (04b11db)**: crit shake 1.1→0.3·hitstop 0.045→0.02 / 구슬
+live_cap 800 가치 병합 / 추격 속도 x1.18 + 사다리 단조화 (BALANCE.md 측정 기록).
+
+**N11-2 성능 아키텍처 (오너 가이드)**: 계측(playtest perf 라인, 분당 physics_ms/
+process_ms/live/orbs) 결과 physics가 프레임의 ~85%. 적용 — ① 적 물리 바디 제거
+(충돌 셰이프 없음, move_and_slide 폐지, 직접 적분) ② 프롭 접촉은 StageField
+solids_grid(PropGrid) 원-사각 수동 해결(부서진 Breakable·해제된 청크는 유효성
+검사로 스킵) ③ 조향 재조준 10Hz 스태거(스폰 시드 분산) ④ 원거리 구슬 체크
+4→16프레임. 전후(끝없는 밤, seed 7, speed 8): @120s physics 46.6→19.2ms(-59%),
+@180s 40.5→23.4ms — 적 수 54→116으로 2배인데도. 유한 런 sanity: converge 87.6→
+83.3s, stacked 0.02, 정면 3시드 2승 1패(seed 7 보스전 패배 — 접전이지 게이트
+아님). 603/603 · validate PASS.
+
 ### 2026-08-29 재훑기 (오너: "QA 돌리면서 다시 진행해 한 번더 훑어 / 결과 나오면 다 수정해")
 
 QA 2조 병행 — 시각 하네스([docs/QA_RESWEEP_VISUAL_2026-08-29.md](docs/QA_RESWEEP_VISUAL_2026-08-29.md) 13건) +

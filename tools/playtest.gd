@@ -121,6 +121,8 @@ var _midrun_shot_done: bool = false
 var _hint_shown: bool = false
 var _hint_shot_done: bool = true
 var _fps_min_all: float = 1e9
+const PERF_MARK_EVERY_SEC := 60.0
+var _next_perf_mark: float = 60.0
 var _peak_live: int = 0
 var _peak_orbs: int = 0
 var _orb_probe: int = 0
@@ -512,6 +514,19 @@ func _process(delta: float) -> void:
 		# Whole-run fps floor; skip the first second while the scene warms up.
 		if _real_elapsed > 1.0:
 			_fps_min_all = minf(_fps_min_all, Engine.get_frames_per_second())
+		# N11 perf breakdown (owner: Profiler에서 어디가 튀는지 먼저): one line
+		# per sim minute — where the frame goes, and what is alive to spend it.
+		if elapsed >= _next_perf_mark:
+			_next_perf_mark += PERF_MARK_EVERY_SEC
+			print("PLAYTEST perf @%.0fs fps=%.0f physics_ms=%.2f process_ms=%.2f live=%d orbs=%d nodes=%d" % [
+				elapsed,
+				Engine.get_frames_per_second(),
+				Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
+				Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+				_spawner._active.size(),
+				_stage._live_orbs.size(),
+				int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)),
+			])
 	# N6-2: the standing-still probe has proven its point once the opening
 	# window is well past — report and stop instead of idling to a sure death.
 	if _idle and elapsed >= IDLE_QUIT_SEC and _stage._outcome == RunFlow.OUTCOME_NONE \

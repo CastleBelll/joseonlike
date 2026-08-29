@@ -265,6 +265,10 @@ func _stage_ready_field() -> void:
 	_field_seed = field_seed
 	_props_catalog = props_config.get("props", {})
 	_field_config = field_config
+	# N11-2: hand the enemies this run's solid grid — their manual prop
+	# contact (no physics bodies). Static because every live enemy shares
+	# one field; each stage build overwrites it with its own grid.
+	Enemy.solids = _field.solids_grid
 	# The origin field's footprint counts as already generated: any chunk it
 	# overlaps must never re-scatter on top of the N6-5 origin layout.
 	var origin := Rect2(-_ground_size / 2.0, _ground_size)
