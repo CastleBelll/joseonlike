@@ -22,6 +22,10 @@ const INK := Color("#1a1613")
 const GOLD := Color("#ffd94a")
 const GOLD_BORDER := Color("#c49a3d")
 const VERMILION := Color("#bf402a")
+## Resweep verify R4: VERMILION as TEXT on cream measures 4.2-4.4:1 — fine
+## as a fill under light text, short as ink. The deep shade clears 4.9+ on
+## every paper tone; use it whenever vermilion words sit on paper.
+const VERMILION_INK := Color("#a83a26")
 ## QA (visual, b735bc0 H7): the boss bar and the player's low-health bar were
 ## both VERMILION, so the two most urgent readouts on screen were the same
 ## colour and neither said whose health it was. The boss gets its own — a

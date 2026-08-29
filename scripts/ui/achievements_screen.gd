@@ -128,7 +128,8 @@ func _build_header() -> Control:
 	# F34: same wood as the bestiary's counter — one palette up top.
 	# Resweep visual R10: and the same PILL layer tokens, not the row chip's.
 	pill.add_theme_stylebox_override("panel", _pill_box(UiPalette.WOOD_PRESSED, false))
-	_count_label = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
+	# Verify round observation: gold on the wood pill was 2.29:1 — full ink.
+	_count_label = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.INK)
 	_count_label.name = "CountValue"
 	pill.add_child(_count_label)
 	header.add_child(pill)
@@ -266,7 +267,7 @@ func _card_box(earned: bool) -> StyleBox:
 	box.bg_color = UiPalette.CARD_BG
 	box.set_corner_radius_all(CARD_CORNER_RADIUS)
 	box.set_border_width_all(CARD_BORDER_WIDTH)
-	box.border_color = UiPalette.SUCCESS if earned else UiPalette.CARD_BORDER_DIM
+	box.border_color = UiPalette.WOOD_BORDER if earned else UiPalette.CARD_BORDER_DIM
 	return box
 
 

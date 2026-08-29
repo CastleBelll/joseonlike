@@ -495,17 +495,18 @@ func _build_selected_badge() -> Control:
 	badge.add_theme_constant_override("separation", UiPalette.SPACE_XS)
 	# Resweep visual R4: SUCCESS green on the cream sheet measured 1.49:1 —
 	# the chosen-mark speaks vermilion, the seal colour this UI already uses
-	# for 새김/NEW, and clears AA on cream.
+	# for 새김/NEW. Verify round: plain VERMILION as ink still read 4.2-4.4,
+	# so the badge wears the deep ink shade (5.2+ on this sheet).
 	var dot := Label.new()
 	dot.name = "Dot"
 	dot.text = "●"
-	dot.add_theme_color_override("font_color", UiPalette.VERMILION)
+	dot.add_theme_color_override("font_color", UiPalette.VERMILION_INK)
 	dot.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 	badge.add_child(dot)
 	var word := Label.new()
 	word.name = "Word"
 	word.text = UiLocale.text("select.selected")
-	word.add_theme_color_override("font_color", UiPalette.VERMILION)
+	word.add_theme_color_override("font_color", UiPalette.VERMILION_INK)
 	word.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
 	badge.add_child(word)
 	return badge

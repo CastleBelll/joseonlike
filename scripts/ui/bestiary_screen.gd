@@ -165,7 +165,9 @@ func _build_header() -> Control:
 	pill.name = "ProgressPill"
 	# F34: CARD_BG's cold navy sat outside the gold/wood palette up here.
 	pill.add_theme_stylebox_override("panel", _pill_box(UiPalette.WOOD_PRESSED, false))
-	_progress_label = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_ON_DARK)
+	# Verify round observation: light ink on the wood pill was 2.54:1 — the
+	# counter reads in full ink like the achievements pill.
+	_progress_label = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.INK)
 	_progress_label.name = "ProgressValue"
 	pill.add_child(_progress_label)
 	header.add_child(pill)
@@ -311,7 +313,12 @@ func _build_row(row: Dictionary) -> Control:
 	for line: String in row["lines"] as Array[String]:
 		if line.is_empty():
 			continue
-		var line_label := _label(line, UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER)
+		# Verify round observation: paper-muted ink on an undiscovered card's
+		# dark ground read 2.6:1 — the muted tone follows the plate it sits on.
+		var line_label := _label(
+			line, UiPalette.FONT_SIZE_LABEL,
+			UiPalette.TEXT_MUTED_ON_PAPER if discovered else UiPalette.TEXT_MUTED_ON_DARK
+		)
 		line_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		texts.add_child(line_label)
 		line_count += 1
@@ -320,7 +327,7 @@ func _build_row(row: Dictionary) -> Control:
 	if not discovered and line_count == 0:
 		var hint := _label(
 			UiLocale.t("아직 기록되지 않았다 — 밤에서 마주치면 새겨진다"),
-			UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
+			UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_DARK
 		)
 		hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		texts.add_child(hint)

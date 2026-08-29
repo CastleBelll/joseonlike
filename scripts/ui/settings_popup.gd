@@ -419,12 +419,12 @@ func _adapt_row(row: Container) -> Container:
 	var name_label: Label = row.get_child(0) as Label
 	if _landscape_pages and name_label != null:
 		name_label.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_LABEL)
-	# Resweep visual R8: a landscape two-column cell cannot pay for the words
-	# AND a slider with its % readout side by side — the label trimmed while
-	# the page still had height to spare. Slider rows stack there too.
-	var stack_for_slider: bool = (
-		_landscape_pages and row.get_node_or_null("Slider") != null
-	)
+	# Resweep visual R8 + verify N1: no band pays for the words AND a slider
+	# with its % readout side by side — landscape's two-column cell trimmed,
+	# and the 540 portrait row still trimmed 조이스틱 불투명도 (needs 170px,
+	# had 118). Slider rows stack in EVERY layout; only the short rows
+	# (toggle, language) keep the label-left/control-right line.
+	var stack_for_slider: bool = row.get_node_or_null("Slider") != null
 	if not narrow and not stack_for_slider:
 		return row
 	var stack := VBoxContainer.new()

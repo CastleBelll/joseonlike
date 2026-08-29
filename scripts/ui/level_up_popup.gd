@@ -41,6 +41,9 @@ const PANEL_MAX_WIDTH := 492.0
 ## which is exactly the columns and leaves nothing for the margins.
 const PANEL_MAX_WIDTH_LANDSCAPE := 768.0
 const PANEL_TOP := 96.0
+## The head margin the deficit donation may never take (verify round, R3):
+## the sheet still reads as hanging, not glued to the top edge.
+const PANEL_TOP_MIN := 24.0
 ## Landscape has 540 design px of height; the portrait 96px top would eat it.
 const PANEL_TOP_LANDSCAPE := 16.0
 ## The project's design viewport height; aspect "expand" can hand a taller one.
@@ -405,11 +408,19 @@ func open(
 	# source), so the estimate is trusted again in both orientations. The sweep's
 	# no-scroll assertion across all 22 combinations is the guard that put it
 	# back, and what re-opens this if the estimate ever lies again.
-	# 스크롤이 제일 싫다: when the honest estimate runs a few pixels past the
-	# band (measured 7.2 on the 0.9-squeezed canvas with a five-line passive),
-	# the strip's double bottom gap pays before the cards scroll. Borrowing is
-	# capped at one gap so the strip never sits flush on the screen edge.
-	if estimated > available and estimated - available <= strip_gap:
+	# 스크롤이 제일 싫다: when the honest estimate runs past the band, chrome
+	# pays before the cards scroll — first the top inset (a look, not a need;
+	# verify round measured 29.2px over on 486x864 with the 4-line passive),
+	# then the strip's double bottom gap. Both are capped so the sheet keeps
+	# a minimum head margin and the strip never sits flush on the edge.
+	var deficit: float = estimated - available
+	if deficit > 0.0 and not landscape:
+		var top_give: float = minf(deficit, top - PANEL_TOP_MIN)
+		if top_give > 0.0:
+			top -= top_give
+			available += top_give
+			deficit -= top_give
+	if deficit > 0.0 and deficit <= strip_gap:
 		available += strip_gap
 	var panel_height: float = minf(estimated, available)
 	# Owner (아래 무기 종류 레벨 보여주는게 너무 떨어져있어 두루마리 아래로,
