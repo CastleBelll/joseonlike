@@ -158,3 +158,16 @@ func test_shipped_first_run_table_guarantees_a_special_material() -> bool:
 	return Ftue.first_run_issues(
 		table, loot, float(forest.get("duration_sec", 0.0))
 	).is_empty()
+
+## N11-10: the archivist's welcome fires once and the pages exist.
+func test_archivist_welcome_is_one_shot() -> bool:
+	var profile: Dictionary = SaveProfile.default_profile()
+	if not Ftue.should_meet_archivist(profile):
+		return false
+	var met: Dictionary = Ftue.mark_archivist_met(profile)
+	return (
+		not Ftue.should_meet_archivist(met)
+		and Ftue.should_meet_archivist(profile)  # the original is untouched
+		and Ftue.archivist_pages().size() >= 3
+	)
+

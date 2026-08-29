@@ -83,6 +83,18 @@ func _ready() -> void:
 	# builds this screen with no autoloads running.
 	if MusicService.instance != null:
 		MusicService.instance.play("camp")
+	# N11-10 (owner: 처음은 설명해주는 가이드 엔피씨): the archivist meets the
+	# player on their first camp visit — once, and the flag survives the run.
+	if SaveService.instance != null 			and not SaveService.instance.is_harness_profile() 			and Ftue.should_meet_archivist(SaveService.instance.profile):
+		var welcome := GuideDialog.new()
+		welcome.name = "ArchivistWelcome"
+		welcome.portrait_path = ""
+		add_child(welcome)
+		welcome.open(Ftue.archivist_pages())
+		welcome.finished.connect(func() -> void:
+			SaveService.instance.mark_archivist_met()
+			welcome.queue_free()
+		)
 
 
 ## Builds every child node. Public so the headless test can construct the

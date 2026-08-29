@@ -36,6 +36,14 @@ var profile: Dictionary = SaveProfile.default_profile()
 ## N7-1 fail-safe: a profile written by a NEWER build is never loaded and
 ## never overwritten — the session runs on an in-memory default instead.
 var _write_locked: bool = false
+
+
+## True while a harness drives a throwaway profile (N11-10): one-shot FTUE
+## moments must not fire for it — they would mark themselves seen on a
+## profile that cannot save, and pollute every layout measurement with a
+## modal that a real first visit earns exactly once.
+func is_harness_profile() -> bool:
+	return _write_locked
 ## Why writes are locked, so the log says which guard fired. The lock is set
 ## both by the newer-build guard and by every harness that swaps in a throwaway
 ## profile, and one message for both told the reader the wrong thing.
@@ -114,6 +122,11 @@ func mark_difficulty_cleared(id: String) -> void:
 	if bool(result["changed"]):
 		profile = result["profile"]
 		save_profile()
+
+
+func mark_archivist_met() -> void:
+	profile = Ftue.mark_archivist_met(profile)
+	save_profile()
 
 
 func mark_level_up_explained() -> void:

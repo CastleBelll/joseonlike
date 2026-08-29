@@ -10,6 +10,9 @@ const FTUE_KEY := "ftue"
 const MOVE_HINT_SEEN := "move_hint_seen"
 const MOD_EXPLAINED := "mod_explained"
 const GUIDE_SEEN := "guide_seen"
+## N11-10 (owner: 처음은 설명해주는 가이드 엔피씨): the archivist's one-time
+## camp welcome — the death-pays loop, the training hall, the one-tap sortie.
+const ARCHIVIST_MET := "archivist_met"
 
 ## The one allowed tutorial line (GDD §28): rides on the first 개조 card,
 ## never a popup, never a second line.
@@ -129,6 +132,25 @@ static func should_show_guide(profile: Dictionary) -> bool:
 
 static func mark_guide_seen(profile: Dictionary) -> Dictionary:
 	return _with_flag(profile, GUIDE_SEEN)
+
+
+static func should_meet_archivist(profile: Dictionary) -> bool:
+	return not _flag(profile, ARCHIVIST_MET)
+
+
+static func mark_archivist_met(profile: Dictionary) -> Dictionary:
+	return _with_flag(profile, ARCHIVIST_MET)
+
+
+## The archivist's welcome pages (N11-10), GuideDialog grammar. A pure const
+## so the camp and the tests read the same script.
+static func archivist_pages() -> Array[Dictionary]:
+	return [
+		{"name": "묵헌", "text": "돌아왔군. 사관 묵헌 — 밤에 든 것을 기록하는 자다. 그대의 밤도 방금 장부에 올렸다."},
+		{"name": "묵헌", "text": "밤에서 지는 것도 벌이다. 엽전과 재료는 창고에 남고, 괴이록에는 새 기록이 쌓인다."},
+		{"name": "묵헌", "text": "수련에서 몸을 벼려라. 어제보다 강하게 나가는 것 — 그것이 이 본거지의 법도다."},
+		{"name": "묵헌", "text": "준비가 되면 출정하라. 밤은 언제나 기다린다."},
+	]
 
 
 static func should_explain_level_up(profile: Dictionary) -> bool:

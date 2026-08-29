@@ -36,6 +36,9 @@ const BUTTON_SIZE := Vector2(120.0, 48.0)
 const PORTRAIT_PATH := "res://asset/characters/taoist/portrait.png"
 
 var _pages: Array[Dictionary] = []
+## N11-10: which face speaks. The stage guide keeps the default; the camp's
+## archivist has no art yet, so an empty path hides the well entirely.
+var portrait_path: String = PORTRAIT_PATH
 var _index: int = 0
 var _name_label: Label
 var _body_label: Label
@@ -114,9 +117,10 @@ func _ready() -> void:
 		well_style.bg_color = UiPalette.NIGHT
 		well_style.set_corner_radius_all(PORTRAIT_CORNER)
 		well.add_theme_stylebox_override("panel", well_style)
-	if ResourceLoader.exists(PORTRAIT_PATH, "Texture2D"):
+	well.visible = not portrait_path.is_empty()
+	if ResourceLoader.exists(portrait_path, "Texture2D"):
 		var portrait := TextureRect.new()
-		portrait.texture = load(PORTRAIT_PATH)
+		portrait.texture = load(portrait_path)
 		portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
