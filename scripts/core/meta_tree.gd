@@ -206,6 +206,40 @@ static func has_materials(profile_materials: Dictionary, bill: Dictionary) -> bo
 	return true
 
 
+## N11 (owner: 처음은 약하고 점점 강해지는 아이들러 감각): the cheapest rank
+## the player could take next with GOLD alone — the "next ding" the result
+## screen sells after every night. A node blocked by anything gold cannot
+## fix (locks, another character's branch, a material bill the pouch lacks)
+## is not "next". Empty when nothing is left to buy.
+static func cheapest_next(
+	tree: Dictionary, state: Dictionary, gold: int,
+	unlocked: Array[String], materials: Dictionary = {}
+) -> Dictionary:
+	var best: Dictionary = {}
+	for entry: Dictionary in nodes(tree):
+		var node_id: String = String(entry.get("id", ""))
+		var reason: String = can_purchase(
+			tree, state, gold, node_id, unlocked, materials
+		)
+		if reason == REASON_GOLD:
+			# Gold refusal must be the ONLY blocker for the node to count as
+			# reachable-by-earning — the gold check fires before the material
+			# check inside can_purchase, so re-ask about the bill here.
+			if not has_materials(materials, next_materials(entry, rank_of(state, node_id))):
+				continue
+		elif reason != REASON_OK:
+			continue
+		var cost: int = next_cost(entry, rank_of(state, node_id))
+		if best.is_empty() or cost < int(best.get("cost", 0)):
+			best = {
+				"id": node_id,
+				"entry": entry,
+				"cost": cost,
+				"gap": maxi(cost - gold, 0),
+			}
+	return best
+
+
 static func can_purchase(
 	tree: Dictionary, state: Dictionary, gold: int, node_id: String,
 	unlocked: Array[String], materials: Dictionary = {}

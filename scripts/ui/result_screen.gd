@@ -46,6 +46,12 @@ var _gold_value: Label
 var _total_gold_value: Label
 # N6-2: the death line — row shown on defeat only, so death teaches something.
 var _death_row: Control
+var _banked_value: Label
+var _banked_row: Control
+var _records_value: Label
+var _records_row: Control
+var _next_value: Label
+var _next_row: Control
 ## N9-155 (owner: 업적 달성 알림이 표시가 안 된다): the stage has handed the
 ## run's completed achievements over since N9-65 — this is where they show.
 var _earned_box: VBoxContainer
@@ -178,8 +184,11 @@ func _ready() -> void:
 ## Show the screen for a finished run. `outcome` is a RunFlow.OUTCOME_*;
 ## `summary` comes from RunFlow.build_summary.
 func open(outcome: String, summary: Dictionary) -> void:
+	# N11-3b (owner: 처음은 약하고 점점 강해지는 아이들러): a defeat reads as
+	# a night that PAID, not a failure stamp — the framing is half the loop.
 	_title_label.text = (
-		UiLocale.t("승리") if outcome == RunFlow.OUTCOME_VICTORY else UiLocale.t("패배")
+		UiLocale.t("승리") if outcome == RunFlow.OUTCOME_VICTORY
+		else UiLocale.t("밤이 깊었다")
 	)
 	# N6-2: what killed the run, localized — victory never shows the row.
 	var defeated: bool = outcome == RunFlow.OUTCOME_DEFEAT
@@ -193,6 +202,24 @@ func open(outcome: String, summary: Dictionary) -> void:
 	_gold_value.text = str(int(summary.get("gold", 0)))
 	# N5-2: permanent gold after banking this run (SaveManager.bank_run).
 	_total_gold_value.text = str(int(summary.get("total_gold", 0)))
+	# N11-3b: the growth rows — what the night banked, what it recorded, and
+	# the next rank within reach. A zero row hides instead of reading "0".
+	var banked: int = int(summary.get("banked_materials", 0))
+	_banked_row.visible = banked > 0
+	_banked_value.text = UiLocale.t("%d개 창고로") % banked
+	var records: int = int(summary.get("new_records", 0))
+	_records_row.visible = records > 0
+	_records_value.text = UiLocale.t("%d쪽 새로 새겨짐") % records
+	var next_upgrade: Dictionary = summary.get("next_upgrade", {})
+	_next_row.visible = not next_upgrade.is_empty()
+	if not next_upgrade.is_empty():
+		var entry: Dictionary = next_upgrade.get("entry", {})
+		var next_name: String = UiLocale.data_name(entry, String(next_upgrade.get("id", "")))
+		var gap: int = int(next_upgrade.get("gap", 0))
+		_next_value.text = (
+			UiLocale.t("%s — 지금 강화 가능") % next_name if gap <= 0
+			else UiLocale.t("%s까지 %d냥") % [next_name, gap]
+		)
 	_show_earned(summary.get("earned", []))
 	# The paper can only measure content that exists — earned lines included.
 	_layout_panel()
@@ -319,6 +346,13 @@ func _make_body() -> Control:
 	_kills_value = _add_row(rows, UiLocale.t("처치"))
 	_gold_value = _add_row(rows, UiLocale.t("엽전"))
 	_total_gold_value = _add_row(rows, UiLocale.t("보유 엽전"))
+	# N11-3b growth rows (hidden when they would read zero).
+	_banked_value = _add_row(rows, UiLocale.t("창고 재료"))
+	_banked_row = _banked_value.get_parent() as Control
+	_records_value = _add_row(rows, UiLocale.t("괴이록"))
+	_records_row = _records_value.get_parent() as Control
+	_next_value = _add_row(rows, UiLocale.t("다음 강화"))
+	_next_row = _next_value.get_parent() as Control
 	_earned_box = VBoxContainer.new()
 	_earned_box.name = "EarnedAchievements"
 	_earned_box.add_theme_constant_override("separation", UiPalette.SPACE_XS)

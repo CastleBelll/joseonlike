@@ -49,6 +49,7 @@ const CRIT_MULTIPLIER := 2.0
 var _run_state: RunState
 var _orb_pool: NodePool
 var _number_pool: NodePool
+var _bestiary_start_count: int = 0
 var _orb_config: Dictionary = {}
 var _orb_config_base: Dictionary = {}
 ## Live (uncollected) XP orbs, for the N11 live_cap merge. Erased on collect.
@@ -298,6 +299,9 @@ func _stage_ready_field() -> void:
 		func(amount: float, at: Vector2) -> void: _on_hit_landed(amount, at, false)
 	)
 	_feedback = _load_json(Spawner.EFFECTS_PATH).get("hit_feedback", {})
+	# N11-3b: what the night ADDS to the 괴이록 is part of what it pays —
+	# snapshot the record size so the result screen can count the new pages.
+	_bestiary_start_count = _bestiary_count()
 	var stage_entry: Dictionary = _load_json(Spawner.STAGES_PATH).get(Spawner.stage_id(), {})
 	# N9-22: the same tier/length scaling the spawner applies, so the HUD
 	# clock and the wave schedule always agree on when the night ends.
@@ -892,6 +896,23 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 	# An achievement that lands silently is one the player never learns the
 	# rule for, and the rule is the reason it exists.
 	summary["earned"] = SaveService.instance.take_earned_achievements()
+	# N11-3b (owner: 결과 화면이 성장을 판다): what the night banked and what
+	# it puts in reach — the idler loop's whole pitch, printed where the run
+	# ends. Materials count the POUCH delta, records the 괴이록 delta, and
+	# the next upgrade is the cheapest rank gold alone can still close.
+	var banked: int = 0
+	for loot_id: Variant in _run_state.inventory:
+		banked += maxi(int(_run_state.inventory[loot_id]), 0)
+	summary["banked_materials"] = banked
+	summary["new_records"] = maxi(_bestiary_count() - _bestiary_start_count, 0)
+	var profile: Dictionary = _profile()
+	summary["next_upgrade"] = MetaTree.cheapest_next(
+		MetaTree.load_tree(),
+		profile.get("meta_tree", {}) as Dictionary,
+		int(profile.get("gold", 0)),
+		MetaTree.unlocked_characters(MetaTree.load_characters()),
+		profile.get("materials", {}) as Dictionary
+	)
 	# N9-22: surviving the night opens the next tier of the ladder.
 	if outcome == RunFlow.OUTCOME_VICTORY:
 		var config: Dictionary = Difficulty.load_config()
@@ -1470,6 +1491,15 @@ func _pause_build_summary() -> Dictionary:
 ## frame, because redrawing eight unchanged cells sixty times a second is work
 ## for nothing. Reuses `_pause_build_summary` so the row and the pause screen
 ## can never disagree about what is held.
+## Total pages the profile's 괴이록 holds, all kinds together (N11-3b).
+func _bestiary_count() -> int:
+	var record: Dictionary = Bestiary.normalized_record(_profile().get("bestiary"))
+	var total: int = 0
+	for kind: String in Bestiary.KINDS:
+		total += (record.get(kind, []) as Array).size()
+	return total
+
+
 func _refresh_belongings() -> void:
 	if _hud == null:
 		return
