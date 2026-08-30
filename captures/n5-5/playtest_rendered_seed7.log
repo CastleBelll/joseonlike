@@ -1,0 +1,23 @@
+PLAYTEST shot: C:/Users/sjkim/AppData/Roaming/Godot/app_userdata/JOSEONLIKE/playtest_opening.png
+PLAYTEST shot: C:/Users/sjkim/AppData/Roaming/Godot/app_userdata/JOSEONLIKE/playtest_midrun.png
+PLAYTEST shot: C:/Users/sjkim/AppData/Roaming/Godot/app_userdata/JOSEONLIKE/playtest_milestone_card.png
+PLAYTEST shot: C:/Users/sjkim/AppData/Roaming/Godot/app_userdata/JOSEONLIKE/playtest_surge.png
+PLAYTEST shot: C:/Users/sjkim/AppData/Roaming/Godot/app_userdata/JOSEONLIKE/playtest_result.png
+PLAYTEST outcome: victory at 262.7s
+PLAYTEST level: 11 (level-ups: 10, skipped screens: 0)
+PLAYTEST weapons: { "old_talisman": 3, "sinjang": 3, "gyeolgye": 1, "seokjang": 1, "bow": 3, "beopgeom": 2, "honbul": 1, "hwabu": 1, "sal": 1 } (replaced: [])
+PLAYTEST grades: { "old_talisman": "rare", "sinjang": "common", "gyeolgye": "rare", "seokjang": "common", "bow": "common", "beopgeom": "common", "honbul": "common", "hwabu": "common", "sal": "common" } (grade picks: 4)
+PLAYTEST surge fps: min 59 avg 60 over 1624 samples
+PLAYTEST mod cards: offered on 0 screens, taken 0 at []
+PLAYTEST specials dropped: 0 at []
+PLAYTEST mod results offered as new weapon: 0
+PLAYTEST fps floor (whole run): 47
+PLAYTEST crowd: peak live 52, avg stacked 0.00 over 253 samples
+PLAYTEST kills: 194 gold: 639
+PLAYTEST breaks: 5 { "nothing": 3, "magnet": 1, "gold": 1 }
+PLAYTEST chests opened: 5 counts: [1, 5, 1, 3, 5]
+PLAYTEST first level-up: 22.2s (idle=false)
+PLAYTEST damage taken 0-20s: 6.0 (hp now 105.0/138.0)
+PLAYTEST first-run: hint shown false, guarantees 0, fired {  }
+PLAYTEST boss killed
+PLAYTEST damage total: 11367 (43.3 dps over 262.7s)
