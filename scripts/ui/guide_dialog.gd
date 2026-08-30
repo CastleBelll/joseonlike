@@ -40,6 +40,9 @@ var _portrait_well: PanelContainer
 ## N11-10: which face speaks. The stage guide keeps the default; the camp's
 ## archivist has no art yet, so an empty path hides the well entirely.
 var portrait_path: String = PORTRAIT_PATH
+## QA M-2: the camp's archivist welcome anchors to the top band instead —
+## bottom placement buried the lower-yard spots it was introducing.
+var anchor_top: bool = false
 var _index: int = 0
 var _name_label: Label
 var _body_label: Label
@@ -56,6 +59,12 @@ func _apply_panel_band(panel: Control) -> void:
 	var wide: bool = root != null and root.size.x > root.size.y
 	var height: float = PANEL_HEIGHT_LANDSCAPE if wide else PANEL_HEIGHT
 	var margin: float = PANEL_BOTTOM_MARGIN_LANDSCAPE if wide else PANEL_BOTTOM_MARGIN
+	if anchor_top:
+		panel.anchor_top = 0.0
+		panel.anchor_bottom = 0.0
+		panel.offset_top = PANEL_MARGIN
+		panel.offset_bottom = PANEL_MARGIN + height
+		return
 	panel.offset_top = -(height + margin)
 	panel.offset_bottom = -margin
 

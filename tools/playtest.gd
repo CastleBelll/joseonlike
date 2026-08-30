@@ -291,7 +291,10 @@ func _tree_bought_with(budget: int) -> Dictionary:
 	var profile: Dictionary = SaveService.instance.profile.duplicate(true)
 	profile["gold"] = budget
 	profile["meta_tree"] = {}
-	var unlocked: Array[String] = MetaTree.unlocked_characters(MetaTree.load_characters())
+	var unlocked: Array[String] = MetaTree.unlocked_characters(
+		MetaTree.load_characters(),
+		SaveService.instance.profile if SaveService.instance != null else {}
+	)
 	var bought: int = 0
 	while true:
 		var state: Dictionary = profile.get("meta_tree", {})

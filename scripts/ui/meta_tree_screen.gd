@@ -813,7 +813,7 @@ func _refresh_detail(state: Dictionary, gold: int) -> void:
 
 ## Branch tabs remind whose runs the node applies to; the trunk stays quiet.
 func _detail_info_line() -> String:
-	if _current_tab == TAB_TRUNK:
+	if _current_tab == TAB_TRUNK or _current_tab == TAB_REFINE:
 		return UiLocale.text("meta.permanent")
 	return UiLocale.text("meta.branch_only_fmt") % MetaTree.display_name(
 		_characters.get(_current_tab, {}) as Dictionary, UiLocale.current_locale

@@ -118,6 +118,10 @@ func _ready() -> void:
 		var welcome := GuideDialog.new()
 		welcome.name = "ArchivistWelcome"
 		welcome.portrait_path = ""
+		# QA M-2: bottom-anchored the panel buried 3-4 lower-yard spots and
+		# their NPC name labels on the very screen it explains; the top band
+		# holds only sky above the shrine row.
+		welcome.anchor_top = true
 		add_child(welcome)
 		welcome.open(Ftue.archivist_pages())
 		# QA F-17: the dialog panel sits over the dial row, and the sortie
