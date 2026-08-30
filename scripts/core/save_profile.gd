@@ -32,6 +32,8 @@ static func default_profile() -> Dictionary:
 		# N9-162 수련 재료: leftover run loot banks here and the meta tree
 		# spends it alongside gold.
 		"materials": {},
+		# N11-4: smithy-unlocked mod recipe ids.
+		Smithy.PROFILE_KEY: [],
 		"selected_character": DEFAULT_CHARACTER,
 		"settings": {
 			# N9-109 (owner: 기본 세팅 사운드를 지금보다 30% 낮춰): default
@@ -116,10 +118,14 @@ static func migrate(profile: Dictionary) -> Dictionary:
 	# JSON parses every number as float — normalize types so a loaded profile
 	# is indistinguishable from a freshly built one.
 	merged["gold"] = maxi(int(merged["gold"]), 0)
+	# QA N11-4 F-2: materials carries dynamic loot-id keys, so the default-
+	# shape sub-key merge above (which walks the DEFAULT's empty dict) copies
+	# nothing — take the stored pouch whole, then normalize it below. Same
+	# trap and same cure as meta_tree.
 	var pouch: Dictionary = {}
-	if merged.get("materials") is Dictionary:
-		for loot_id: Variant in (merged["materials"] as Dictionary):
-			var count: int = int((merged["materials"] as Dictionary)[loot_id])
+	if profile.get("materials") is Dictionary:
+		for loot_id: Variant in (profile["materials"] as Dictionary):
+			var count: int = int((profile["materials"] as Dictionary)[loot_id])
 			if count > 0:
 				pouch[String(loot_id)] = count
 	merged["materials"] = pouch
@@ -153,6 +159,15 @@ static func migrate(profile: Dictionary) -> Dictionary:
 		if not id.is_empty() and not unlocks.has(id):
 			unlocks.append(id)
 	merged[Unlocks.PROFILE_KEY] = unlocks
+	# QA N11-4 F-1: smithy recipe unlocks survive the round trip with the
+	# same string coercion as unlocks — before this, migrate() silently
+	# dropped the key and every unlock died at the next boot.
+	var recipes: Array = []
+	for raw: Variant in (merged.get(Smithy.PROFILE_KEY, []) as Array):
+		var id: String = "%s" % raw
+		if not id.is_empty() and not recipes.has(id):
+			recipes.append(id)
+	merged[Smithy.PROFILE_KEY] = recipes
 	# N9-65: same coercion for the earned list, and counters forced to numbers.
 	# Consumers do arithmetic on these, and a hand-edited string would abort
 	# whatever ran first.

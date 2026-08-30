@@ -130,3 +130,18 @@ func test_apply_run_result_keeps_best_records() -> bool:
 		and int(stats["runs_played"]) == 2 \
 		and int(stats["bosses_killed"]) == 0 \
 		and int(after["gold"]) == 15
+
+
+func test_round_trip_preserves_materials_and_mod_unlocks() -> bool:
+	# QA N11-4 F-1/F-2: dynamic-key pouch and the smithy unlock list must
+	# survive serialize -> deserialize -> migrate, or every boot wipes them.
+	var profile: Dictionary = SaveProfile.default_profile()
+	profile["materials"] = {"whetstone": 9, "cinnabar": 7}
+	profile[Smithy.PROFILE_KEY] = ["bongmageom_mod"]
+	var restored: Dictionary = SaveProfile.migrate(
+		SaveProfile.deserialize(SaveProfile.serialize(profile))
+	)
+	if int((restored["materials"] as Dictionary).get("whetstone", 0)) != 9 			or int((restored["materials"] as Dictionary).get("cinnabar", 0)) != 7:
+		push_error("test_save_profile: the material pouch must survive a round trip")
+		return false
+	return Smithy.is_unlocked(restored, "bongmageom_mod")
