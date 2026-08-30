@@ -77,6 +77,11 @@ const NOTICE_FADE_SEC := 1.4
 const LOCKED_ICON_ALPHA := 0.35
 ## The shared-trunk tab id; character tabs use the roster id.
 const TAB_TRUNK := ""
+## QA gate I-3: 34 trunk nodes cannot hold 62px spacing on a landscape
+## canvas (needed area 130k > available 109k) — the 17 refine migrants get
+## their own tab, and every tab fits its ellipse with room to breathe.
+const TAB_REFINE := "_refine"
+const REFINE_PREFIX := "refine_"
 
 var _tree: Dictionary = {}
 var _characters: Dictionary = {}
@@ -94,6 +99,8 @@ var _pulse_phase: float = 0.0
 var _bursts: Array[Dictionary] = []
 ## QA I-5 growth fraction (0..1) the branch drawing honors; I-10 tween store.
 var _grow: float = 1.0
+## QA I-3: the per-layout disc scale the convergence fallback settles on.
+var _node_scale: float = 1.0
 var _grow_tween: Tween
 var _node_tweens: Dictionary = {}
 var _scroll: ScrollContainer
@@ -280,7 +287,7 @@ func _build_tabs() -> Control:
 	var tabs := HBoxContainer.new()
 	tabs.name = "Tabs"
 	tabs.add_theme_constant_override("separation", UiPalette.SPACE_SM)
-	var tab_ids: Array[String] = [TAB_TRUNK]
+	var tab_ids: Array[String] = [TAB_TRUNK, TAB_REFINE]
 	for character_id: String in _characters:
 		tab_ids.append(character_id)
 	for tab_id: String in tab_ids:
@@ -288,6 +295,10 @@ func _build_tabs() -> Control:
 		tab.name = "Tab_" + (tab_id if not tab_id.is_empty() else "shared")
 		tab.custom_minimum_size = Vector2(0.0, TAB_HEIGHT)
 		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		# Five tabs on a 486 canvas: the long en captions ("Wolyeong ·
+		# Locked") must yield by ellipsis or the row shoves the last tab off
+		# the screen — the pill still reads by its leading name.
+		tab.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		tab.add_theme_color_override("font_color", UiPalette.TEXT_ON_DARK)
 		tab.add_theme_color_override("font_hover_color", UiPalette.TEXT_ON_DARK)
 		tab.add_theme_color_override("font_pressed_color", UiPalette.TEXT_ON_DARK)
@@ -303,6 +314,8 @@ func _on_tab_pressed(tab_id: String) -> void:
 		return
 	_current_tab = tab_id
 	_selected_id = ""
+	# QA F-10: the biggest state change on the screen gets a click.
+	_play_sfx("ui_click")
 	# QA I-12: a burst belongs to the tab it was bought on.
 	_bursts.clear()
 	_populate_tab()
@@ -321,6 +334,10 @@ func _start_growth() -> void:
 	_grow = 0.0
 	_grow_tween = create_tween()
 	_grow_tween.tween_property(self, "_grow", 1.0, GROW_SEC).set_ease(Tween.EASE_OUT)
+	_grow_tween.finished.connect(func() -> void:
+		for node_id: Variant in _node_buttons:
+			(_node_buttons[node_id] as Button).scale = Vector2.ONE
+	)
 	if is_inside_tree():
 		_scroll.scroll_vertical = 0
 
@@ -388,6 +405,13 @@ func _populate_tab() -> void:
 		_focus_caption.add_theme_color_override("font_outline_color", UiPalette.NIGHT)
 		_focus_caption.add_theme_constant_override("outline_size", 4)
 		_focus_caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# QA I-5: night-on-night text over a stray disc was barely legible —
+		# the caption sits on its own translucent slate.
+		var slate := StyleBoxFlat.new()
+		slate.bg_color = Color(UiPalette.NIGHT, 0.72)
+		slate.set_corner_radius_all(6)
+		slate.set_content_margin_all(6.0)
+		_focus_caption.add_theme_stylebox_override("normal", slate)
 	if _focus_caption.get_parent() != _canvas:
 		if _focus_caption.get_parent() != null:
 			_focus_caption.get_parent().remove_child(_focus_caption)
@@ -525,6 +549,21 @@ func _play_sfx(sound_id: String) -> void:
 ## the scene, which it always is when visible.
 func _process(delta: float) -> void:
 	_pulse_phase = fmod(_pulse_phase + delta, PULSE_PERIOD_SEC)
+	# QA I-4/F-9: while the tab grows, the discs POP outward with the reach
+	# of the branches — center first, rim last — instead of standing complete
+	# under lines being drawn.
+	if _grow < 1.0:
+		var center := _canvas.size / 2.0
+		var span: float = maxf(_canvas.size.length() / 2.0, 1.0)
+		for node_id: Variant in _node_buttons:
+			var button: Button = _node_buttons[node_id]
+			var reach: float = (
+				(_radial.get(node_id, center) as Vector2) - center
+			).length() / span
+			var t: float = clampf((_grow - reach * 0.5) / 0.5, 0.0, 1.0)
+			button.scale = Vector2.ONE * t
+	elif not _node_tweens.is_empty() or true:
+		pass
 	var alive: Array[Dictionary] = []
 	for burst: Dictionary in _bursts:
 		burst["t"] = float(burst.get("t", 0.0)) + delta
@@ -609,6 +648,8 @@ func _refresh_tabs() -> void:
 		var muted: bool = false
 		if tab_id == TAB_TRUNK:
 			caption = UiLocale.text("meta.tab_shared")
+		elif tab_id == TAB_REFINE:
+			caption = UiLocale.t("연마")
 		else:
 			caption = MetaTree.display_name(
 				_characters.get(tab_id, {}) as Dictionary, UiLocale.current_locale
@@ -629,7 +670,7 @@ func _refresh_tabs() -> void:
 
 ## True when the visible tab is a character branch the profile cannot buy yet.
 func _branch_locked() -> bool:
-	return _current_tab != TAB_TRUNK and _current_tab not in _unlocked
+	return _current_tab != TAB_TRUNK and _current_tab != TAB_REFINE 		and _current_tab not in _unlocked
 
 
 func _style_node(
@@ -672,8 +713,9 @@ func _style_node(
 			+ UiLocale.text("meta.cost_fmt") % cost
 	else:
 		status = UiLocale.text("meta.cost_fmt") % cost
-	if selected:
-		border = UiPalette.GOLD
+	# QA I-6: selection no longer re-tints the plate — the gold disc was
+	# swallowing the icon, and the icon IS the node's identity. A drawn ring
+	# marks the pick instead (see _draw_graph).
 
 	for state_name: String in ["normal", "hover", "pressed"]:
 		button.add_theme_stylebox_override(state_name, _node_plate(fill, border))
@@ -788,9 +830,9 @@ func _layout_nodes() -> void:
 		if not _node_buttons.has(node_id):
 			continue
 		var button: Button = _node_buttons[node_id]
+		var half: float = _node_size() / 2.0
 		button.position = (
-			(_radial.get(node_id, Vector2.ZERO) as Vector2)
-			- Vector2(NODE_SIZE / 2.0, NODE_SIZE / 2.0)
+			(_radial.get(node_id, Vector2.ZERO) as Vector2) - Vector2(half, half)
 		)
 	_place_focus_caption()
 
@@ -832,15 +874,25 @@ func _compute_radial() -> void:
 				changed = true
 	var bearings: Dictionary = {}
 	var rings: Dictionary = {}
+	# QA I-13: a small tab (≤16 flat nodes) walks ONE even ring — the golden
+	# spiral clumps into a quadrant at low counts (measured 6/5/2/2). Bigger
+	# tabs keep the area-even spiral, pushed out to fill the ellipse.
+	var even_ring: bool = flat.size() <= 16
 	for i: int in flat.size():
 		var node_id: String = String(flat[i]["id"])
-		var angle: float = float(i) * GOLDEN_ANGLE
-		# sqrt spreads the AREA evenly; the +0.35 keeps node zero off the hub.
-		# A flat node that ANCHORS a chain stays in the inner half, so its arm
-		# has somewhere to grow.
-		var ring: float = sqrt((float(i) + 0.35) / float(entries.size()))
-		if int(below.get(node_id, 0)) > 0:
-			ring = minf(ring, 0.45)
+		var angle: float
+		var ring: float
+		if even_ring:
+			angle = float(i) * TAU / float(maxi(flat.size(), 1)) - PI / 2.0
+			ring = 0.55 if int(below.get(node_id, 0)) > 0 else 0.78
+		else:
+			angle = float(i) * GOLDEN_ANGLE
+			# sqrt spreads the AREA evenly; +0.35 keeps node zero off the
+			# hub, and the 0.85 scale pushes the field to FILL the ellipse
+			# (QA F-5: mean fill radius sat at half the canvas).
+			ring = sqrt((float(i) + 0.35) / float(entries.size())) * 0.95
+			if int(below.get(node_id, 0)) > 0:
+				ring = minf(ring, 0.5)
 		_radial[node_id] = center + Vector2(
 			cos(angle) * radius.x * ring, sin(angle) * radius.y * ring
 		)
@@ -878,7 +930,16 @@ func _compute_radial() -> void:
 			placed_any = true
 		if not placed_any:
 			break
-	_relax_radial(center, radius)
+	# QA I-3 convergence fallback: relax, VERIFY, and shrink the discs one
+	# step before ever ending on a silent overlap. The gate proved silence
+	# here costs a 6.7px disc collision on the wide axis.
+	_node_scale = 1.0
+	for _attempt: int in 3:
+		_relax_radial(center, radius)
+		if _min_separation() >= _node_size() + 4.0:
+			break
+		_node_scale *= 0.85
+	_apply_node_sizes()
 
 
 ## N11-12: a couple dozen relaxation sweeps — any pair closer than a node
@@ -886,8 +947,40 @@ func _compute_radial() -> void:
 ## ellipse and off the hub. The analytic pass gives the SHAPE (spiral field,
 ## curling arms); this pass guarantees nothing ever touches, whatever the
 ## data grows into.
+func _node_size() -> float:
+	return NODE_SIZE * _node_scale
+
+
+func _min_separation() -> float:
+	var ids: Array = _radial.keys()
+	var narrowest: float = INF
+	for i: int in ids.size():
+		for j: int in range(i + 1, ids.size()):
+			narrowest = minf(narrowest, (
+				(_radial[ids[i]] as Vector2) - (_radial[ids[j]] as Vector2)
+			).length())
+	return narrowest
+
+
+## Buttons and icons re-fit the settled disc size after a fallback shrink.
+func _apply_node_sizes() -> void:
+	var side: float = _node_size()
+	for node_id: Variant in _node_buttons:
+		var button: Button = _node_buttons[node_id]
+		button.custom_minimum_size = Vector2(side, side)
+		button.size = Vector2(side, side)
+		button.pivot_offset = Vector2(side, side) / 2.0
+		var icon: TextureRect = button.get_node_or_null("Icon")
+		if icon != null:
+			var icon_side: float = NODE_ICON_SIZE * _node_scale
+			icon.offset_left = -icon_side / 2.0
+			icon.offset_top = -icon_side / 2.0
+			icon.offset_right = icon_side / 2.0
+			icon.offset_bottom = icon_side / 2.0
+
+
 func _relax_radial(center: Vector2, radius: Vector2) -> void:
-	var min_sep: float = NODE_SIZE + 6.0
+	var min_sep: float = _node_size() + 6.0
 	var ids: Array = _radial.keys()
 	for _sweep: int in 24:
 		var moved: bool = false
@@ -908,7 +1001,7 @@ func _relax_radial(center: Vector2, radius: Vector2) -> void:
 				_radial[ids[i]] = a - push
 				_radial[ids[j]] = b + push
 				moved = true
-		var hub_clear: float = HUB_RADIUS + NODE_SIZE / 2.0 + 2.0
+		var hub_clear: float = HUB_RADIUS + _node_size() / 2.0 + 2.0
 		for node_id: Variant in ids:
 			var offset: Vector2 = (_radial[node_id] as Vector2) - center
 			# Inside the ellipse…
@@ -937,13 +1030,37 @@ func _place_focus_caption() -> void:
 	var at: Vector2 = _radial[_selected_id]
 	_focus_caption.visible = true
 	_focus_caption.size = Vector2.ZERO
-	_focus_caption.position = Vector2(
-		clampf(
-			at.x - _focus_caption.get_minimum_size().x / 2.0,
-			4.0, _canvas.size.x - _focus_caption.get_minimum_size().x - 4.0
-		),
-		minf(at.y + NODE_SIZE / 2.0 + 6.0, _canvas.size.y - 26.0)
-	)
+	var want: Vector2 = _focus_caption.get_minimum_size()
+	# QA I-5: try below, above, right, left of the disc, and keep the first
+	# slot that covers no other node — falling back to the least-covered.
+	var half: float = _node_size() / 2.0
+	var slots: Array[Vector2] = [
+		at + Vector2(-want.x / 2.0, half + 6.0),
+		at + Vector2(-want.x / 2.0, -half - 6.0 - want.y),
+		at + Vector2(half + 8.0, -want.y / 2.0),
+		at + Vector2(-half - 8.0 - want.x, -want.y / 2.0),
+	]
+	var best: Vector2 = slots[0]
+	var best_hits: int = 1 << 30
+	for slot: Vector2 in slots:
+		var clamped := Vector2(
+			clampf(slot.x, 4.0, maxf(_canvas.size.x - want.x - 4.0, 4.0)),
+			clampf(slot.y, 4.0, maxf(_canvas.size.y - want.y - 4.0, 4.0))
+		)
+		var rect := Rect2(clamped, want)
+		var hits: int = 0
+		for node_id: Variant in _radial:
+			if String(node_id) == _selected_id:
+				continue
+			var other: Vector2 = _radial[node_id]
+			if rect.intersects(Rect2(other - Vector2(half, half), Vector2(half, half) * 2.0)):
+				hits += 1
+		if hits < best_hits:
+			best_hits = hits
+			best = clamped
+			if hits == 0:
+				break
+	_focus_caption.position = best
 
 
 ## Row pitch and canvas padding for the orientation on screen right now. Read
@@ -986,6 +1103,20 @@ func _place_side() -> void:
 
 
 func _tab_nodes() -> Array[Dictionary]:
+	# I-3: the trunk splits — 기본기 on the shared tab, the migrated refine
+	# family on its own. Branch tabs are untouched.
+	if _current_tab == TAB_REFINE:
+		var refined: Array[Dictionary] = []
+		for entry: Dictionary in MetaTree.branch_nodes(_tree, TAB_TRUNK):
+			if String(entry.get("id", "")).begins_with(REFINE_PREFIX):
+				refined.append(entry)
+		return refined
+	if _current_tab == TAB_TRUNK:
+		var trunk: Array[Dictionary] = []
+		for entry: Dictionary in MetaTree.branch_nodes(_tree, TAB_TRUNK):
+			if not String(entry.get("id", "")).begins_with(REFINE_PREFIX):
+				trunk.append(entry)
+		return trunk
 	return MetaTree.branch_nodes(_tree, _current_tab)
 
 
@@ -1048,19 +1179,25 @@ func _draw_graph() -> void:
 			var node_id: String = String(entry.get("id", ""))
 			if MetaTree.rank_of(state, node_id) >= 1:
 				_canvas.draw_arc(
-					center, NODE_SIZE / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
+					center, _node_size() / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
 					UiPalette.GOLD_BORDER, 2.0
 				)
 			elif node_id in pulse_ids:
 				_canvas.draw_arc(
-					center, NODE_SIZE / 2.0 + PULSE_RING_PAD + ring_swell,
+					center, _node_size() / 2.0 + PULSE_RING_PAD + ring_swell,
 					0.0, TAU, 32, Color(UiPalette.GOLD, 0.65), 2.0
 				)
 			elif _is_buyable(entry, state):
 				_canvas.draw_arc(
-					center, NODE_SIZE / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
+					center, _node_size() / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
 					Color(UiPalette.WOOD, 0.55), 2.0
 				)
+	# I-6: the selected node wears a bright ring — plate and icon untouched.
+	if not _selected_id.is_empty() and _radial.has(_selected_id):
+		_canvas.draw_arc(
+			_radial[_selected_id], _node_size() / 2.0 + 2.0, 0.0, TAU, 32,
+			UiPalette.GOLD, 3.0
+		)
 	# One-shot purchase bursts: an expanding, fading gold ring where the coin
 	# was just spent.
 	for burst: Dictionary in _bursts:
@@ -1068,7 +1205,7 @@ func _draw_graph() -> void:
 		var radius: float = lerpf(BURST_RADIUS_FROM, BURST_RADIUS_TO, t)
 		# QA I-6: a white kernel flash under the ring — the coin HITS.
 		_canvas.draw_circle(
-			burst.get("at", Vector2.ZERO), NODE_SIZE / 2.0,
+			burst.get("at", Vector2.ZERO), _node_size() / 2.0,
 			Color(1.0, 1.0, 1.0, (1.0 - t) * 0.3)
 		)
 		_canvas.draw_arc(
@@ -1084,6 +1221,13 @@ func _draw_branch(
 	from: Vector2, to: Vector2, color: Color, dashed: bool = false,
 	width: float = EDGE_WIDTH
 ) -> void:
+	# QA I-4: end the curve at the disc RIMS — a line that dives under a
+	# disc reads as clutter, a line that stops at its edge reads as a link.
+	var axis: Vector2 = (to - from).normalized()
+	var rim: float = _node_size() / 2.0 + 3.0
+	if from.distance_to(to) > rim * 2.5:
+		from = from + axis * rim
+		to = to - axis * rim
 	var control := Vector2(from.x, to.y)
 	var points := PackedVector2Array()
 	# QA I-5: only the grown fraction exists yet — the tab OPENING is where
