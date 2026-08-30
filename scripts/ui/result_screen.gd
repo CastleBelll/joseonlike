@@ -146,17 +146,20 @@ func _layout_panel() -> void:
 				holder.get_combined_minimum_size().y if holder != null
 				else _rows.get_combined_minimum_size().y
 			)
-		_row_scroll.custom_minimum_size = Vector2(0.0, minf(content, room))
-		var wanted: float = chrome + _row_scroll.custom_minimum_size.y
-		if wanted > available:
+		# QA N11-10 gate: the donation must be judged on the UNCLIPPED demand.
+		# It used to compare chrome + min(content, room) against available —
+		# equal by construction exactly when content overflows room, so the
+		# branch never fired and 32px of donated margin sat unused while a
+		# 6px scrollbar broke the no-scroll rule.
+		if content > room:
 			var give: float = minf(
-				wanted - available, (margin_y - PANEL_MARGIN_Y_MIN) * 2.0
+				content - room, (margin_y - PANEL_MARGIN_Y_MIN) * 2.0
 			)
 			if give > 0.0:
 				available += give
 				room = maxf(available - chrome, 60.0)
-				_row_scroll.custom_minimum_size = Vector2(0.0, minf(content, room))
-				wanted = chrome + _row_scroll.custom_minimum_size.y
+		_row_scroll.custom_minimum_size = Vector2(0.0, minf(content, room))
+		var wanted: float = chrome + _row_scroll.custom_minimum_size.y
 		_scroll_engaged = content > _row_scroll.custom_minimum_size.y + 0.5
 		# Resweep play R8: the 480 look-floor is a portrait number — landscape
 		# rows spread into two columns and need barely 340, so flooring at 480
