@@ -21,14 +21,11 @@ const MARGIN_TOP := 24
 const MARGIN_BOTTOM := 28
 const MARGIN_TOP_LANDSCAPE := 12
 const MARGIN_BOTTOM_LANDSCAPE := 12
-const STAT_ROW_HEIGHT := 40.0
 const PANEL_PADDING := 16
 const PANEL_CORNER_RADIUS := 12
-const SPOT_HEIGHT := 88.0
 ## Owner (가로에서 버튼이 너무 크다): landscape trades the portrait height
 ## budget for width, so the plates and CTAs run shorter there — still above
 ## the 44px touch minimum.
-const SPOT_HEIGHT_LANDSCAPE := 64.0
 const BUTTON_HEIGHT_LANDSCAPE := 52
 const SELECT_BUTTON_HEIGHT_LANDSCAPE := 48
 const SPOT_CORNER_RADIUS := 8
@@ -37,17 +34,49 @@ const SPOT_BORDER_WIDTH := 2
 ## the last one, and that third row is what pushed 출정 off a 960px screen once
 ## the difficulty and run-length buttons joined the menu. Three columns fits
 ## the same five spots in two rows, balanced 3+2.
-const SPOT_COLUMNS := 3
 const BUTTON_HEIGHT := 64
 const SELECT_BUTTON_HEIGHT := 56
 # R13: matches the meta tree's coin so the pill is the same on both screens.
 const COIN_ICON_SIZE := 28.0
 const NOTICE_FADE_SEC := 1.6
 const CYCLE_BUTTON_HEIGHT := 44.0
+## N11-5: where everyone stands, normalized to the map layer per orientation.
+## Positions are hand-set against the backdrop art; the placement pass clamps
+## them on-canvas whatever the device, and the sweep guards overlaps.
+const NPCS_PATH := "res://data/npcs.json"
+const SPOT_SIZE := Vector2(96.0, 86.0)
+const SPOT_SIZE_LANDSCAPE := Vector2(88.0, 72.0)
+const SPOT_DISC := 44.0
+const MAP_SPOTS: Array[Dictionary] = [
+	{"id": "shrine", "npc": "sosul", "label": "사당",
+		"scene": "res://scenes/meta_tree.tscn",
+		"pos": [0.24, 0.14], "pos_l": [0.13, 0.22]},
+	{"id": "archive", "npc": "mukheon", "label": "서고",
+		"scene": "res://scenes/bestiary.tscn", "badge": true,
+		"pos": [0.76, 0.12], "pos_l": [0.335, 0.16]},
+	{"id": "stele", "npc": "", "label": "공적비",
+		"scene": "res://scenes/achievements.tscn",
+		"pos": [0.50, 0.26], "pos_l": [0.235, 0.66]},
+	{"id": "barracks", "npc": "", "label": "막사", "select": true,
+		"pos": [0.20, 0.44], "pos_l": [0.54, 0.18]},
+	{"id": "smithy", "npc": "dolmusoe", "label": "대장간",
+		"pos": [0.80, 0.42], "pos_l": [0.86, 0.24]},
+	{"id": "training", "npc": "beomgang", "label": "훈련장",
+		"pos": [0.50, 0.55], "pos_l": [0.875, 0.66]},
+	{"id": "apothecary", "npc": "choha", "label": "약방",
+		"pos": [0.26, 0.74], "pos_l": [0.46, 0.64]},
+	{"id": "market", "npc": "neoreum", "label": "장터",
+		"pos": [0.74, 0.74], "pos_l": [0.685, 0.68]},
+]
 ## N9-35: same flat corner glyph the title and the combat HUD already use.
 const UTILITY_BUTTON_SIZE := 44.0  # UiPalette.TOUCH_TARGET_MIN
 
 var _notice_label: Label
+## N11-5 map state: the ground layer the spots stand on, and the spot nodes
+## keyed by id for the per-resize placement pass.
+var _map_layer: Control
+var _spot_nodes: Dictionary = {}
+var _npcs: Dictionary = {}
 var _notice_tween: Tween
 var _was_landscape: bool = false
 var _built_width: float = 0.0
@@ -59,6 +88,7 @@ var _settings_popup: SettingsPopup
 var _difficulty_config: Dictionary = {}
 var _difficulty_button: Button
 var _run_length_button: Button
+var _region_button: Button
 
 
 func _ready() -> void:
@@ -148,103 +178,46 @@ func build_ui() -> void:
 	margin.add_theme_constant_override("margin_bottom", bottom_margin)
 	add_child(margin)
 
-	# N9-154: landscape hands the camp a 540px-tall canvas the portrait
-	# column overflows — a scroll container absorbs it; portrait fits and
-	# never actually scrolls.
-	var scroll := ScrollContainer.new()
-	scroll.name = "ColumnScroll"
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	margin.add_child(scroll)
-	var column := VBoxContainer.new()
-	column.name = "Column"
-	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	column.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_theme_constant_override("separation", int(UiPalette.SPACE_LG * _squeeze()))
-	scroll.add_child(column)
+	# N11-5 (owner: 왜 본거지가 아직도 버튼이야 맵형식으로 NPC처럼): the camp
+	# is a PLACE now. The button grid and the stats card are gone — the
+	# backdrop is the ground, the people and sites stand ON it as tappable
+	# spots, and only the departure bar stays chrome at the bottom.
+	var frame := VBoxContainer.new()
+	frame.name = "Frame"
+	frame.add_theme_constant_override("separation", int(UiPalette.SPACE_SM))
+	margin.add_child(frame)
 
 	var summary: Dictionary = Camp.summary(_profile())
-	column.add_child(_build_header(summary))
+	frame.add_child(_build_header(summary))
 	add_child(_build_settings_button())
 
-	# N5-4: one quiet line after a run that revealed something new — no popup,
-	# no extra tap (DESIGN.md §5.2); opening the 괴이록 clears it.
-	var hint: String = Bestiary.camp_hint(_profile())
-	var hint_label: Label = null
-	if not hint.is_empty():
-		hint_label = _label(hint, UiPalette.FONT_SIZE_LABEL, UiPalette.GOLD)
-		hint_label.name = "BestiaryHint"
-		hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_map_layer = Control.new()
+	_map_layer.name = "MapLayer"
+	_map_layer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_map_layer.mouse_filter = Control.MOUSE_FILTER_PASS
+	frame.add_child(_map_layer)
+	_build_map_spots()
+	_map_layer.resized.connect(_layout_spots)
 
+	var bottom := VBoxContainer.new()
+	bottom.name = "BottomBar"
+	bottom.add_theme_constant_override("separation", int(UiPalette.SPACE_SM))
+	frame.add_child(bottom)
 	_notice_label = _label("", UiPalette.FONT_SIZE_BODY, UiPalette.GOLD)
 	_notice_label.name = "Notice"
 	_notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-	if _is_landscape():
-		# Two halves: the record on the left, the places and the departure on
-		# the right — the wide screen spends width so nothing has to scroll.
-		var halves := HBoxContainer.new()
-		halves.name = "Halves"
-		halves.add_theme_constant_override("separation", UiPalette.SPACE_LG)
-		halves.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		var left := VBoxContainer.new()
-		left.name = "LeftHalf"
-		left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		left.add_theme_constant_override("separation", UiPalette.SPACE_MD)
-		# Q22: the record card is ~230px on a 540 canvas; pinned to the top it
-		# left the lower half of its column bare backdrop while the right column
-		# ran full height. Equal slack above and below floats the card at the
-		# column's centre, so the two halves carry the same visual weight. The
-		# notice keeps the bottom edge.
-		var left_top_slack := Control.new()
-		left_top_slack.name = "LeftTopSlack"
-		left_top_slack.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		left.add_child(left_top_slack)
-		left.add_child(_build_stats(summary))
-		if hint_label != null:
-			left.add_child(hint_label)
-		var left_spacer := Control.new()
-		left_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		left.add_child(left_spacer)
-		left.add_child(_notice_label)
-		var right := VBoxContainer.new()
-		right.name = "RightHalf"
-		right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		right.add_theme_constant_override("separation", UiPalette.SPACE_MD)
-		right.add_child(_build_buildings())
-		var right_spacer := Control.new()
-		right_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		right.add_child(right_spacer)
-		right.add_child(_build_menu())
-		halves.add_child(left)
-		halves.add_child(right)
-		column.add_child(halves)
-		return
-
-	column.add_child(_build_stats(summary))
-	column.add_child(_build_buildings())
-	if hint_label != null:
-		column.add_child(hint_label)
-
-	# Owner (본거지 세로에 빈 띠가 크다): all the slack used to go above the
-	# departure cluster, which pinned it to the bottom margin and left one wide
-	# band of backdrop doing nothing in the middle. The cluster still belongs
-	# low — 출정 is the thumb's button — so the slack is split rather than
-	# moved: most of it above, a quarter below, which lifts the cluster off the
-	# edge and turns the band into breathing room with ground under it.
-	var spacer := Control.new()
-	spacer.name = "TopSlack"
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	spacer.size_flags_stretch_ratio = 3.0
-	column.add_child(spacer)
-
-	column.add_child(_notice_label)
-	column.add_child(_build_menu())
-
-	var bottom_slack := Control.new()
-	bottom_slack.name = "BottomSlack"
-	bottom_slack.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	bottom_slack.size_flags_stretch_ratio = 1.0
-	column.add_child(bottom_slack)
+	bottom.add_child(_notice_label)
+	bottom.add_child(_build_departure_settings())
+	var depart := Button.new()
+	depart.name = "DepartButton"
+	depart.text = UiLocale.t("출정")
+	depart.custom_minimum_size = Vector2(0.0, float(
+		BUTTON_HEIGHT_LANDSCAPE if _is_landscape()
+		else int(maxf(BUTTON_HEIGHT * _squeeze(), UTILITY_BUTTON_SIZE))
+	))
+	WoodButton.apply(depart)
+	depart.pressed.connect(_on_depart_pressed)
+	bottom.add_child(depart)
 
 
 ## N9-157: per-orientation pixel-art backdrops with the painted single as
@@ -307,39 +280,6 @@ func _build_header(summary: Dictionary) -> Control:
 	return header
 
 
-## Lifetime record rows on a dark card — permanent state only (N5-2 stats).
-func _build_stats(summary: Dictionary) -> Control:
-	var panel := PanelContainer.new()
-	panel.name = "Stats"
-	# N10-17: the run summary sits on the owner's kit plaque, so the hub reads
-	# as the same game as the pause sheet. Flat brown stays as the fallback.
-	var kit: StyleBox = UiIcons.card_panel()
-	if kit != null:
-		(kit as StyleBoxTexture).set_content_margin_all(PANEL_PADDING)
-		panel.add_theme_stylebox_override("panel", kit)
-	else:
-		var box := StyleBoxFlat.new()
-		box.bg_color = UiPalette.NIGHT_BROWN
-		box.set_corner_radius_all(PANEL_CORNER_RADIUS)
-		box.set_content_margin_all(PANEL_PADDING)
-		panel.add_theme_stylebox_override("panel", box)
-	var rows := VBoxContainer.new()
-	rows.name = "Rows"
-	rows.add_theme_constant_override("separation", UiPalette.SPACE_SM)
-	panel.add_child(rows)
-	_add_stat_row(rows, UiLocale.t("출정 횟수"), str(int(summary["runs_played"])))
-	_add_stat_row(rows, UiLocale.t("최고 생존"), String(summary["best_time_text"]))
-	_add_stat_row(rows, UiLocale.t("최고 처치"), str(int(summary["best_kills"])))
-	_add_stat_row(rows, UiLocale.t("보스 처치"), str(int(summary["bosses_killed"])))
-	return panel
-
-
-## GDD building spots: labelled places that answer 준비 중 when touched —
-## present and tappable, never a greyed-out button (DESIGN.md §6).
-## Chrome-first shrink for canvases under the 960 design height (owner:
-## 스크롤이 제일 싫다 — QA F4: the phone base left the camp 36px long).
-## Margins, gaps and plate heights pay; nothing drops below the 44px touch
-## floor and text sizes never change.
 func _squeeze() -> float:
 	if _is_landscape():
 		return 1.0
@@ -380,61 +320,6 @@ func _rebuild_for_locale() -> void:
 	build_ui()
 
 
-func _build_buildings() -> Control:
-	var grid := GridContainer.new()
-	grid.name = "Buildings"
-	# The landscape half is narrower than the portrait band, so the same five
-	# spots read better in two columns there.
-	grid.columns = 2 if _is_landscape() else SPOT_COLUMNS
-	grid.add_theme_constant_override("h_separation", UiPalette.SPACE_MD)
-	grid.add_theme_constant_override("v_separation", UiPalette.SPACE_MD)
-	for building: Dictionary in Camp.buildings():
-		var spot := Button.new()
-		spot.name = "Spot_" + String(building["id"])
-		# The label is a child Label, not button text: English names ("Region
-		# Select") set a hard minimum width as text and dragged the grid past
-		# the screen on a shrunken base, and trimming them made 훈련장 and
-		# 수련 both read "Training …" (mobile-scale QA M3). A wrapping label
-		# keeps the whole word on two lines and costs the cell nothing.
-		var spot_label := _label(
-			String(building["label"]), UiPalette.FONT_SIZE_BODY, UiPalette.INK
-		)
-		spot_label.name = "SpotLabel"
-		spot_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-		# F33: EN labels touched the carved plate edge — a small side inset.
-		spot_label.offset_left = 8.0
-		spot_label.offset_right = -8.0
-		spot_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		spot_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		spot_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		spot_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		spot.add_child(spot_label)
-		spot.custom_minimum_size = Vector2(
-			0.0,
-			SPOT_HEIGHT_LANDSCAPE if _is_landscape()
-			else maxf(SPOT_HEIGHT * _squeeze(), UTILITY_BUTTON_SIZE)
-		)
-		spot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		spot.add_theme_stylebox_override("normal", _spot_plate(UiPalette.CARD_BG))
-		spot.add_theme_stylebox_override("hover", _spot_plate(UiPalette.CARD_BG_SELECTED))
-		spot.add_theme_stylebox_override("pressed", _spot_plate(UiPalette.CARD_BG_SELECTED))
-		spot.add_theme_stylebox_override("focus", _focus_ring())
-		# The plate is paper now, so the label is ink — left dark-on-dark it
-		# sank into the plaque exactly the way the 업적 titles did.
-		spot.add_theme_color_override("font_color", UiPalette.INK)
-		spot.add_theme_color_override("font_hover_color", UiPalette.INK)
-		spot.add_theme_color_override("font_pressed_color", UiPalette.INK)
-		spot.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_BODY)
-		spot.pressed.connect(_on_building_pressed.bind(building))
-		grid.add_child(spot)
-	return grid
-
-
-## The night the player is about to walk into: which tier, how long. Locked
-## tiers are simply not in the cycle — clearing one adds the next.
-## N9-146 (owner: 톱니바퀴는 모든 화면 우측 상단 고정): the gear leaves the
-## header row for a screen-anchored top-right corner, matching combat and the
-## title screen. The header keeps its slot count so gold stays right-aligned.
 func _build_settings_button() -> Control:
 	var settings := Button.new()
 	settings.name = "SettingsButton"
@@ -486,6 +371,10 @@ func _build_departure_settings() -> Control:
 	row.add_child(_difficulty_button)
 	_run_length_button = _cycle_button("RunLengthButton", _on_run_length_pressed)
 	row.add_child(_run_length_button)
+	# N11-5: the region pick moves off the map (its 지역 선택 spot is gone)
+	# and joins the other two departure dials.
+	_region_button = _cycle_button("RegionButton", _cycle_region)
+	row.add_child(_region_button)
 	_refresh_departure_labels()
 	return row
 
@@ -519,6 +408,13 @@ func _refresh_departure_labels() -> void:
 	# only the value, which read as a stray chip next to a labelled one.
 	_run_length_button.text = UiLocale.t("길이 ‹%s›") % UiLocale.data_name(length)
 	_run_length_button.tooltip_text = String(length.get("desc_ko", ""))
+	if _region_button != null:
+		var open: Array[String] = Camp.unlocked_stages(_profile())
+		var current: String = String(_profile().get(
+			"selected_stage", open[0] if not open.is_empty() else ""
+		))
+		_region_button.text = UiLocale.t("출정지 ‹%s›") % Camp.stage_label(current)
+		_style_cycle(_region_button, "plaque_cream")
 	# Owner (난이도, 길이 등급에따라 다른 이미지 배너로): the plaque ladder
 	# darkens as the pick escalates, so the choice reads at a glance before
 	# the words do.
@@ -604,39 +500,6 @@ func _cycle_setting(key: String, ids: Array[String], current: String) -> void:
 	_refresh_departure_labels()
 
 
-func _build_menu() -> Control:
-	var stack := VBoxContainer.new()
-	stack.name = "MenuButtons"
-	stack.add_theme_constant_override("separation", UiPalette.SPACE_MD)
-
-	stack.add_child(_build_departure_settings())
-
-	var select := Button.new()
-	select.name = "SelectButton"
-	select.text = UiLocale.t("수행자 선택")
-	select.custom_minimum_size = Vector2(0.0, float(
-		SELECT_BUTTON_HEIGHT_LANDSCAPE if _is_landscape()
-		else int(maxf(SELECT_BUTTON_HEIGHT * _squeeze(), UTILITY_BUTTON_SIZE))
-	))
-	WoodButton.apply(select)
-	select.pressed.connect(_on_select_pressed)
-	stack.add_child(select)
-
-	var depart := Button.new()
-	depart.name = "DepartButton"
-	depart.text = UiLocale.t("출정")
-	depart.custom_minimum_size = Vector2(0.0, float(
-		BUTTON_HEIGHT_LANDSCAPE if _is_landscape()
-		else int(maxf(BUTTON_HEIGHT * _squeeze(), UTILITY_BUTTON_SIZE))
-	))
-	WoodButton.apply(depart)
-	depart.pressed.connect(_on_depart_pressed)
-	stack.add_child(depart)
-	return stack
-
-
-## One tap into a run (interaction budget, DESIGN.md §5.2). route_character
-## is a no-op for returning profiles, so the saved selection is what departs.
 func _on_depart_pressed() -> void:
 	if SaveService.instance != null:
 		var routed: String = Ftue.route_character(SaveService.instance.profile)
@@ -649,19 +512,150 @@ func _on_select_pressed() -> void:
 	SceneFadeLayer.go(self, SELECT_SCENE)
 
 
-func _on_building_pressed(building: Dictionary) -> void:
-	# N9-150 지역 선택: tapping cycles the departure region through the
-	# unlocked nights; with only one open it explains what opens the next.
-	if Camp.building_in_place(building):
-		_cycle_region()
+## N11-5: a spot is a person or a place. Ready ones route; the rest answer
+## with the NPC's own voice instead of a bare 준비 중.
+func _on_spot_pressed(spot: Dictionary) -> void:
+	if bool(spot.get("select", false)):
+		_on_select_pressed()
 		return
-	var notice: String = Camp.building_notice(building)
-	if notice.is_empty():
-		var scene: String = Camp.building_scene(building)
-		if not scene.is_empty():
-			SceneFadeLayer.go(self, scene)
+	var scene: String = String(spot.get("scene", ""))
+	if not scene.is_empty():
+		SceneFadeLayer.go(self, scene)
 		return
-	_show_notice(String(building["label"]) + " — " + notice)
+	var npc: Dictionary = _npcs.get(String(spot.get("npc", "")), {})
+	var line: String = String(npc.get("line_ko", ""))
+	var speaker: String = UiLocale.data_name(npc, String(spot.get("label", "")))
+	if line.is_empty():
+		_show_notice(UiLocale.t(String(spot.get("label", ""))) + " — " + Camp.NOT_READY_NOTICE)
+		return
+	_show_notice("%s — \"%s\"" % [speaker, UiLocale.t(line)])
+
+
+## One map spot: the kit's ceramic disc with the NPC's first syllable (their
+## portrait slot until art lands), the place name under it, and a NEW badge
+## when the archive has fresh pages. Deliberately NOT a wood button — these
+## are people standing on ground, not chrome.
+func _build_map_spots() -> void:
+	_spot_nodes.clear()
+	_npcs = _load_npcs()
+	var hint: String = Bestiary.camp_hint(_profile())
+	for spot: Dictionary in MAP_SPOTS:
+		var button := Button.new()
+		button.name = "Spot_" + String(spot["id"])
+		button.flat = true
+		button.focus_mode = Control.FOCUS_NONE
+		var spot_size: Vector2 = (
+			SPOT_SIZE_LANDSCAPE if _is_landscape() else SPOT_SIZE
+		)
+		button.custom_minimum_size = spot_size
+		button.size = spot_size
+		button.pivot_offset = spot_size / 2.0
+		button.pressed.connect(_on_spot_pressed.bind(spot))
+		button.mouse_entered.connect(_on_spot_hover.bind(button, true))
+		button.mouse_exited.connect(_on_spot_hover.bind(button, false))
+		var column := VBoxContainer.new()
+		column.name = "Column"
+		column.set_anchors_preset(Control.PRESET_FULL_RECT)
+		column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		column.alignment = BoxContainer.ALIGNMENT_CENTER
+		column.add_theme_constant_override("separation", 2)
+		var well := Control.new()
+		well.name = "Well"
+		well.custom_minimum_size = Vector2(SPOT_DISC, SPOT_DISC)
+		well.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var disc: TextureRect = UiIcons.kit_icon_button("disc_2", SPOT_DISC)
+		if disc != null:
+			disc.name = "Disc"
+			well.add_child(disc)
+		var npc: Dictionary = _npcs.get(String(spot.get("npc", "")), {})
+		var glyph_text: String = UiLocale.data_name(npc, String(spot["label"])).left(1)
+		var glyph := _label(glyph_text, UiPalette.FONT_SIZE_BODY, UiPalette.INK)
+		glyph.name = "Glyph"
+		glyph.set_anchors_preset(Control.PRESET_FULL_RECT)
+		glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		well.add_child(glyph)
+		var well_row := HBoxContainer.new()
+		well_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		well_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		well_row.add_child(well)
+		column.add_child(well_row)
+		var name_label := _label(
+			UiLocale.t(String(spot["label"])), UiPalette.FONT_SIZE_LABEL,
+			UiPalette.TEXT_ON_DARK
+		)
+		name_label.name = "SpotName"
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_label.add_theme_color_override("font_outline_color", UiPalette.NIGHT)
+		name_label.add_theme_constant_override("outline_size", 4)
+		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		column.add_child(name_label)
+		if not npc.is_empty():
+			var who := _label(
+				UiLocale.data_name(npc, ""), UiPalette.FONT_SIZE_LABEL,
+				UiPalette.TEXT_MUTED_ON_DARK
+			)
+			who.name = "SpotNpc"
+			who.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			who.add_theme_color_override("font_outline_color", UiPalette.NIGHT)
+			who.add_theme_constant_override("outline_size", 4)
+			who.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			column.add_child(who)
+		button.add_child(column)
+		if bool(spot.get("badge", false)) and not hint.is_empty():
+			var badge := _label("●", UiPalette.FONT_SIZE_LABEL, UiPalette.GOLD)
+			badge.name = "NewBadge"
+			badge.position = Vector2(spot_size.x - 14.0, 0.0)
+			badge.add_theme_color_override("font_outline_color", UiPalette.NIGHT)
+			badge.add_theme_constant_override("outline_size", 3)
+			badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			button.add_child(badge)
+		_map_layer.add_child(button)
+		_spot_nodes[String(spot["id"])] = button
+	_layout_spots()
+
+
+## Per-resize placement: normalized position times the live map size, clamped
+## so a spot never leaves the ground whatever the device.
+func _layout_spots() -> void:
+	if _map_layer == null or _map_layer.size.x <= 0.0:
+		return
+	var landscape: bool = _is_landscape()
+	var spot_size: Vector2 = SPOT_SIZE_LANDSCAPE if landscape else SPOT_SIZE
+	for spot: Dictionary in MAP_SPOTS:
+		var button: Button = _spot_nodes.get(String(spot["id"]))
+		if button == null:
+			continue
+		var pos: Array = spot.get("pos_l" if landscape else "pos", [0.5, 0.5])
+		var at := Vector2(
+			float(pos[0]) * _map_layer.size.x, float(pos[1]) * _map_layer.size.y
+		) - spot_size / 2.0
+		button.position = Vector2(
+			clampf(at.x, 0.0, maxf(_map_layer.size.x - spot_size.x, 0.0)),
+			clampf(at.y, 0.0, maxf(_map_layer.size.y - spot_size.y, 0.0))
+		)
+
+
+func _on_spot_hover(button: Button, entered: bool) -> void:
+	if not is_inside_tree():
+		return
+	var tween: Tween = create_tween()
+	tween.tween_property(
+		button, "scale", Vector2.ONE * (1.08 if entered else 1.0), 0.1
+	).set_ease(Tween.EASE_OUT)
+
+
+func _load_npcs() -> Dictionary:
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(NPCS_PATH))
+	if parsed is not Dictionary:
+		push_error("camp: cannot read " + NPCS_PATH)
+		return {}
+	var out: Dictionary = {}
+	for npc_id: String in (parsed as Dictionary):
+		if not npc_id.begins_with("_"):
+			out[npc_id] = (parsed as Dictionary)[npc_id]
+	return out
 
 
 func _cycle_region() -> void:
@@ -674,6 +668,7 @@ func _cycle_region() -> void:
 	if SaveService.instance != null:
 		SaveService.instance.profile["selected_stage"] = next
 		SaveService.instance.save_profile()
+	_refresh_departure_labels()
 	_show_notice(UiLocale.t("출정지") + " — " + Camp.stage_label(next))
 
 
@@ -695,24 +690,6 @@ func _profile() -> Dictionary:
 	return SaveProfile.default_profile()
 
 
-func _add_stat_row(rows: VBoxContainer, row_name: String, value_text: String) -> void:
-	var row := HBoxContainer.new()
-	row.name = row_name
-	row.custom_minimum_size = Vector2(0.0, STAT_ROW_HEIGHT * _squeeze())
-	var name_label := _label(row_name, UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_MUTED_ON_PAPER)
-	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(name_label)
-	var value := _label(value_text, UiPalette.FONT_SIZE_BODY, UiPalette.INK)
-	value.name = "Value"
-	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	row.add_child(value)
-	rows.add_child(row)
-
-
-## N10-17: the building spots wear the kit plaque like every other button on
-## this screen — they sat one style apart from the 출정 row right below them,
-## which read as two different menus stacked. Hover keeps its lift through the
-## tint rather than a second fill colour.
 func _spot_plate(fill: Color) -> StyleBox:
 	var kit: StyleBox = UiIcons.card_panel(
 		Color(1.12, 1.10, 1.05) if fill == UiPalette.CARD_BG_SELECTED else Color.WHITE

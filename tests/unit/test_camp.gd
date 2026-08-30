@@ -107,19 +107,27 @@ func test_buildings_roster_and_meta_routing() -> bool:
 
 
 func test_camp_screen_builds() -> bool:
+	# N11-5: the camp is a map now — header chrome, one spot per person or
+	# place standing on the map layer, and the departure bar at the bottom.
 	var scene: PackedScene = load(CAMP_SCENE)
 	var camp: CampScreen = scene.instantiate()
 	camp.build_ui()
-	var passed: bool = camp.get_node_or_null("Layout/ColumnScroll/Column/Header/GoldPill/PillRow/GoldValue") != null
-	passed = passed and camp.get_node_or_null("Layout/ColumnScroll/Column/Stats") != null
-	var grid: GridContainer = camp.get_node_or_null("Layout/ColumnScroll/Column/Buildings")
-	passed = passed and grid != null and grid.get_child_count() == Camp.buildings().size()
-	var depart: Button = camp.get_node_or_null("Layout/ColumnScroll/Column/MenuButtons/DepartButton")
-	passed = passed and depart != null \
-		and depart.custom_minimum_size.y >= UiPalette.TOUCH_TARGET_MIN
-	var select: Button = camp.get_node_or_null("Layout/ColumnScroll/Column/MenuButtons/SelectButton")
-	passed = passed and select != null
+	var passed: bool = camp.get_node_or_null(
+		"Layout/Frame/Header/GoldPill/PillRow/GoldValue"
+	) != null
+	var map_layer: Control = camp.get_node_or_null("Layout/Frame/MapLayer")
+	passed = passed and map_layer != null 		and map_layer.get_child_count() >= CampScreen.MAP_SPOTS.size()
+	for spot: Dictionary in CampScreen.MAP_SPOTS:
+		passed = passed and map_layer.get_node_or_null(
+			"Spot_" + String(spot["id"])
+		) != null
+	var depart: Button = camp.get_node_or_null("Layout/Frame/BottomBar/DepartButton")
+	passed = passed and depart != null 		and depart.custom_minimum_size.y >= UiPalette.TOUCH_TARGET_MIN
+	var region: Button = camp.get_node_or_null(
+		"Layout/Frame/BottomBar/DepartureSettings/RegionButton"
+	)
+	passed = passed and region != null
 	if not passed:
-		push_error("test_camp: camp screen structure incomplete")
+		push_error("test_camp: camp map structure incomplete")
 	camp.free()
 	return passed
