@@ -36,6 +36,7 @@ const BUTTON_SIZE := Vector2(120.0, 48.0)
 const PORTRAIT_PATH := "res://asset/characters/taoist/portrait.png"
 
 var _pages: Array[Dictionary] = []
+var _portrait_well: PanelContainer
 ## N11-10: which face speaks. The stage guide keeps the default; the camp's
 ## archivist has no art yet, so an empty path hides the well entirely.
 var portrait_path: String = PORTRAIT_PATH
@@ -117,7 +118,9 @@ func _ready() -> void:
 		well_style.bg_color = UiPalette.NIGHT
 		well_style.set_corner_radius_all(PORTRAIT_CORNER)
 		well.add_theme_stylebox_override("panel", well_style)
-	well.visible = not portrait_path.is_empty()
+	# QA F-18: an artless speaker shows their first syllable in the well —
+	# the camp-spot grammar — instead of an empty plate or a missing well.
+	_portrait_well = well
 	if ResourceLoader.exists(portrait_path, "Texture2D"):
 		var portrait := TextureRect.new()
 		portrait.texture = load(portrait_path)
@@ -165,6 +168,24 @@ func _ready() -> void:
 	button_row.add_child(_next_button)
 
 
+## F-18: no art yet — the speaker's first syllable stands in, the same
+## grammar the camp spots use for their people.
+func _refresh_portrait_glyph(speaker: String) -> void:
+	if _portrait_well == null or not portrait_path.is_empty():
+		return
+	var glyph: Label = _portrait_well.get_node_or_null("Glyph")
+	if glyph == null:
+		glyph = Label.new()
+		glyph.name = "Glyph"
+		glyph.add_theme_font_size_override("font_size", UiPalette.FONT_SIZE_TITLE)
+		glyph.add_theme_color_override("font_color", UiPalette.GOLD)
+		glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		glyph.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		glyph.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_portrait_well.add_child(glyph)
+	glyph.text = speaker.left(1)
+
+
 func open(pages: Array[Dictionary]) -> void:
 	if pages.is_empty():
 		finished.emit()
@@ -180,6 +201,7 @@ func _show_page() -> void:
 	_dwell_left = 0.0
 	var page: Dictionary = _pages[_index]
 	_name_label.text = UiLocale.t(String(page.get("name", "")))
+	_refresh_portrait_glyph(_name_label.text)
 	_body_label.text = UiLocale.t(String(page.get("text", "")))
 	_next_button.text = (
 		UiLocale.t("가자") if _index == _pages.size() - 1 else UiLocale.t("다음")

@@ -484,10 +484,21 @@ func _build_detail_card() -> Control:
 ## --- selection / purchase -------------------------------------------------
 
 
+## QA R-1: tab ownership lives in ONE place. The refine split taught
+## _tab_nodes a rule select_node never learned, and tapping any refine
+## node threw the screen back to the shared tab — all seventeen migrants
+## were unselectable and unbuyable.
+func _tab_for(node_id: String) -> String:
+	var branch: String = MetaTree.node_character(MetaTree.node(_tree, node_id))
+	if branch == TAB_TRUNK and node_id.begins_with(REFINE_PREFIX):
+		return TAB_REFINE
+	return branch
+
+
 func select_node(node_id: String) -> void:
 	# A programmatic select may target another tab (tests, deep links) — the
 	# tab follows the node so the selection is always visible.
-	var branch: String = MetaTree.node_character(MetaTree.node(_tree, node_id))
+	var branch: String = _tab_for(node_id)
 	if branch != _current_tab:
 		_current_tab = branch
 		_populate_tab()
@@ -877,7 +888,7 @@ func _compute_radial() -> void:
 	# QA I-13: a small tab (≤16 flat nodes) walks ONE even ring — the golden
 	# spiral clumps into a quadrant at low counts (measured 6/5/2/2). Bigger
 	# tabs keep the area-even spiral, pushed out to fill the ellipse.
-	var even_ring: bool = flat.size() <= 16
+	var even_ring: bool = flat.size() <= 17
 	for i: int in flat.size():
 		var node_id: String = String(flat[i]["id"])
 		var angle: float
@@ -1039,6 +1050,12 @@ func _place_focus_caption() -> void:
 		at + Vector2(-want.x / 2.0, -half - 6.0 - want.y),
 		at + Vector2(half + 8.0, -want.y / 2.0),
 		at + Vector2(-half - 8.0 - want.x, -want.y / 2.0),
+		# QA F-6: four diagonals — the cardinal slots all sat on discs in
+		# the dense landscape tabs.
+		at + Vector2(half + 4.0, half + 4.0),
+		at + Vector2(-half - 4.0 - want.x, half + 4.0),
+		at + Vector2(half + 4.0, -half - 4.0 - want.y),
+		at + Vector2(-half - 4.0 - want.x, -half - 4.0 - want.y),
 	]
 	var best: Vector2 = slots[0]
 	var best_hits: int = 1 << 30

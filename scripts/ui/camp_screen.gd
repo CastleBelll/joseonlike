@@ -50,17 +50,17 @@ const SPOT_DISC := 44.0
 const MAP_SPOTS: Array[Dictionary] = [
 	{"id": "shrine", "npc": "sosul", "label": "사당",
 		"scene": "res://scenes/meta_tree.tscn",
-		"pos": [0.24, 0.42], "pos_l": [0.13, 0.34]},
+		"pos": [0.24, 0.42], "pos_l": [0.13, 0.52]},
 	{"id": "archive", "npc": "mukheon", "label": "서고",
 		"scene": "res://scenes/bestiary.tscn", "badge": true,
-		"pos": [0.76, 0.40], "pos_l": [0.335, 0.30]},
+		"pos": [0.76, 0.40], "pos_l": [0.335, 0.48]},
 	{"id": "stele", "npc": "", "label": "공적비",
 		"scene": "res://scenes/achievements.tscn",
 		"pos": [0.50, 0.50], "pos_l": [0.235, 0.72]},
 	{"id": "barracks", "npc": "", "label": "막사", "select": true,
-		"pos": [0.22, 0.62], "pos_l": [0.54, 0.30]},
+		"pos": [0.22, 0.62], "pos_l": [0.54, 0.48]},
 	{"id": "smithy", "npc": "dolmusoe", "label": "대장간",
-		"pos": [0.78, 0.60], "pos_l": [0.86, 0.36]},
+		"pos": [0.78, 0.60], "pos_l": [0.78, 0.50]},
 	{"id": "training", "npc": "beomgang", "label": "훈련장",
 		"pos": [0.50, 0.74], "pos_l": [0.875, 0.72]},
 	{"id": "apothecary", "npc": "choha", "label": "약방",
@@ -370,20 +370,29 @@ func _build_departure_settings() -> Control:
 	_difficulty_config = Difficulty.load_config()
 	# Side by side, not stacked: the column already fills the screen and a
 	# second full-width row pushed 출정 off the bottom on a 540x960 phone.
-	var row := HBoxContainer.new()
-	row.name = "DepartureSettings"
-	row.add_theme_constant_override("separation", UiPalette.SPACE_MD)
-
+	# QA F-16 residue: three dials side by side leave 108px each on a 486
+	# canvas and the en VALUES need 122px — the narrow portrait folds them
+	# into two rows (difficulty+length, then the region full-width).
+	var narrow: bool = not _is_landscape() and size.x < 520.0
+	var frame: Container = VBoxContainer.new() if narrow else HBoxContainer.new()
+	frame.name = "DepartureSettings"
+	frame.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+	var first: Container = frame
+	if narrow:
+		first = HBoxContainer.new()
+		first.name = "DialRow"
+		first.add_theme_constant_override("separation", UiPalette.SPACE_SM)
+		frame.add_child(first)
 	_difficulty_button = _cycle_button("DifficultyButton", _on_difficulty_pressed)
-	row.add_child(_difficulty_button)
+	first.add_child(_difficulty_button)
 	_run_length_button = _cycle_button("RunLengthButton", _on_run_length_pressed)
-	row.add_child(_run_length_button)
+	first.add_child(_run_length_button)
 	# N11-5: the region pick moves off the map (its 지역 선택 spot is gone)
 	# and joins the other two departure dials.
 	_region_button = _cycle_button("RegionButton", _cycle_region)
-	row.add_child(_region_button)
+	frame.add_child(_region_button)
 	_refresh_departure_labels()
-	return row
+	return frame
 
 
 func _cycle_button(node_name: String, handler: Callable) -> Button:
