@@ -14,32 +14,34 @@ const CAMP_SCENE := "res://scenes/camp.tscn"
 const MARGIN_SIDE := 24
 const MARGIN_TOP := 24
 const MARGIN_BOTTOM := 32
-const NODE_SIZE := 72.0
-const NODE_ICON_SIZE := 40.0
-const NODE_LABEL_WIDTH := 150.0
+const NODE_SIZE := 56.0
+const NODE_ICON_SIZE := 32.0
 ## QA gate F1 (N11-9): the two caption columns sit 0.44 of the usable width
 ## apart, so on a narrow canvas a fixed 150px caption overlaps its row
 ## neighbour glyph-on-glyph. The width adapts until caption <= separation
 ## (solving w <= 0.44*(canvas-w) - gap), floored so a caption stays a word.
-const COLUMN_SPAN := 0.44
-const CAPTION_GAP := 6.0
-const CAPTION_WIDTH_MIN := 88.0
-const ROW_HEIGHT := 165.0
-const CANVAS_TOP_PAD := 28.0
-const CANVAS_BOTTOM_PAD := 72.0
 ## Owner (가로모드도 어색하고 자꾸 스크롤이 생길정도라서 크기를 조금씩 줄여도
 ## 될 것 같아): a landscape phone has barely 200px of tree band, so a row pitch
 ## built for a 960-tall screen showed one row and a scrollbar. The nodes keep
 ## their size — they are touch targets and the circle art is built once — and
 ## the SPACING between rows carries the reduction instead.
-const ROW_HEIGHT_LANDSCAPE := 118.0
 ## Wide enough for the detail card's icon well plus two lines of effect text.
 const SIDE_WIDTH_LANDSCAPE := 380.0
-const CANVAS_TOP_PAD_LANDSCAPE := 14.0
-const CANVAS_BOTTOM_PAD_LANDSCAPE := 40.0
 const NODE_BORDER_WIDTH := 3
 const EDGE_WIDTH := 3.0
 const TRUNK_WIDTH := 10.0
+## N11-12 (owner: 가운데 있고 위·아래·옆으로 퍼져나가서 스크롤이 아니라 전체
+## 화면으로): the tab lays out as a RADIAL mindmap — a hub in the middle,
+## flat nodes on a golden-angle elliptical spiral filling the whole canvas,
+## chained nodes pushed outward past their parent. Nothing scrolls; the
+## canvas is the viewport and the spiral is scaled to fit it.
+const GOLDEN_ANGLE := 2.399963
+const HUB_RADIUS := 26.0
+const RADIAL_PAD := 10.0
+## Every chain step also turns, so a deep chain curls into an arm.
+const CHAIN_TURN := 0.42
+## Sibling chained children fan out around the parent's own bearing.
+const CHAIN_FAN := 0.55
 ## N11-11 (owner: 마인드맵처럼 업그레이드가 퍼져나가고 호버 클릭 시 애니메이션
 ## 이랑 사운드도): every node hangs off the trunk (or its requires parent) by
 ## a drawn curve, so the tree reads as branches spreading, not a list.
@@ -53,7 +55,6 @@ const PRESS_PUNCH_SCALE := 0.92
 const BURST_SEC := 0.5
 const BURST_RADIUS_FROM := NODE_SIZE * 0.5
 const BURST_RADIUS_TO := NODE_SIZE * 1.3
-const CAPTION_TRUNK_PAD := 4.0
 const PILL_CORNER_RADIUS := UiPalette.PILL_RADIUS
 const PILL_PADDING_X := UiPalette.PILL_PAD_X
 const PILL_PADDING_Y := UiPalette.PILL_PAD_Y
@@ -101,7 +102,12 @@ var _notice_label: Label
 var _notice_tween: Tween
 var _tab_buttons: Dictionary = {}
 var _node_buttons: Dictionary = {}
-var _node_labels: Dictionary = {}
+## N11-12: one floating caption, under the SELECTED node only — a radial
+## full-fit view has no room for 69 standing labels, and the detail card
+## already carries the words. var name kept singular on purpose.
+var _focus_caption: Label
+## node_id -> canvas-space center, rebuilt per tab/resize by _layout_nodes.
+var _radial: Dictionary = {}
 
 
 func _ready() -> void:
@@ -296,6 +302,9 @@ func _build_graph() -> Control:
 	_scroll.name = "Scroll"
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	# N11-12: the radial map fits the viewport whole — the container stays
+	# for its layout slot, but nothing ever scrolls.
+	_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 
 	_canvas = Control.new()
 	_canvas.name = "Canvas"
@@ -313,16 +322,10 @@ func _build_graph() -> Control:
 func _populate_tab() -> void:
 	for button: Button in _node_buttons.values():
 		button.queue_free()
-	for caption: Label in _node_labels.values():
-		caption.queue_free()
 	_node_buttons.clear()
-	_node_labels.clear()
-	var max_row: float = 0.0
-	for entry: Dictionary in _tab_nodes():
-		max_row = maxf(max_row, float((entry.get("pos", []) as Array)[1]))
-	_canvas.custom_minimum_size = Vector2(
-		0.0, _canvas_top_pad() + (max_row + 1.0) * _row_height() + _canvas_bottom_pad()
-	)
+	_radial.clear()
+	_canvas.custom_minimum_size = Vector2.ZERO
+	_canvas.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	for entry: Dictionary in _tab_nodes():
 		var node_id: String = String(entry["id"])
 		var button := Button.new()
@@ -350,14 +353,18 @@ func _populate_tab() -> void:
 		button.add_child(icon)
 		_canvas.add_child(button)
 		_node_buttons[node_id] = button
-
-		var caption := _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_ON_DARK)
-		caption.name = "Caption_" + node_id
-		caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		caption.custom_minimum_size = Vector2(_caption_width(_canvas.size.x), 0.0)
-		caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		_canvas.add_child(caption)
-		_node_labels[node_id] = caption
+	if _focus_caption == null or not is_instance_valid(_focus_caption):
+		_focus_caption = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_ON_DARK)
+		_focus_caption.name = "FocusCaption"
+		_focus_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_focus_caption.add_theme_color_override("font_outline_color", UiPalette.NIGHT)
+		_focus_caption.add_theme_constant_override("outline_size", 4)
+		_focus_caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if _focus_caption.get_parent() != _canvas:
+		if _focus_caption.get_parent() != null:
+			_focus_caption.get_parent().remove_child(_focus_caption)
+		_canvas.add_child(_focus_caption)
+	_focus_caption.visible = false
 
 
 func _build_detail_card() -> Control:
@@ -584,7 +591,6 @@ func _style_node(
 	entry: Dictionary, node_id: String, state: Dictionary, gold: int
 ) -> void:
 	var button: Button = _node_buttons[node_id]
-	var caption: Label = _node_labels[node_id]
 	var rank: int = MetaTree.rank_of(state, node_id)
 	var unlocked: bool = MetaTree.is_unlocked(_tree, state, node_id)
 	var cost: int = MetaTree.next_cost(entry, rank)
@@ -627,12 +633,17 @@ func _style_node(
 	for state_name: String in ["normal", "hover", "pressed"]:
 		button.add_theme_stylebox_override(state_name, _node_plate(fill, border))
 	button.add_theme_stylebox_override("focus", _node_plate(fill, UiPalette.GOLD))
-	caption.text = name_text + "\n" + status
-	caption.add_theme_color_override(
-		"font_color",
-		UiPalette.TEXT_ON_DARK if (unlocked or rank > 0) and not _branch_locked()
-		else UiPalette.TEXT_MUTED_ON_DARK
-	)
+	# N11-12: only the SELECTED node speaks on the canvas — everyone else
+	# talks through their ring/branch colour and the detail card.
+	if selected and _focus_caption != null:
+		_focus_caption.text = name_text + "
+" + status
+		_focus_caption.add_theme_color_override(
+			"font_color",
+			UiPalette.TEXT_ON_DARK if (unlocked or rank > 0) and not _branch_locked()
+			else UiPalette.TEXT_MUTED_ON_DARK
+		)
+		_place_focus_caption()
 
 
 func _refresh_detail(state: Dictionary, gold: int) -> void:
@@ -724,32 +735,170 @@ func _branch_hint() -> String:
 ## Positions every node/caption from its data pos; runs on canvas resize so
 ## the fractional x coordinates track the actual width.
 func _layout_nodes() -> void:
-	var width: float = _canvas.size.x
-	if width <= 0.0:
+	if _canvas.size.x <= 0.0 or _canvas.size.y <= 0.0:
 		return
-	# The canvas is as tall as the pitch makes it, and the pitch changes with
-	# the orientation — so it is re-measured here rather than only at build,
-	# where a flip would leave the old height (and its scrollbar) behind.
-	var max_row: float = 0.0
-	for entry: Dictionary in _tab_nodes():
-		max_row = maxf(max_row, float((entry.get("pos", []) as Array)[1]))
-	_canvas.custom_minimum_size = Vector2(
-		0.0, _canvas_top_pad() + (max_row + 1.0) * _row_height() + _canvas_bottom_pad()
-	)
+	_compute_radial()
 	for entry: Dictionary in _tab_nodes():
 		var node_id: String = String(entry["id"])
 		if not _node_buttons.has(node_id):
 			continue
-		var center: Vector2 = _node_center(entry, width)
 		var button: Button = _node_buttons[node_id]
-		button.position = center - Vector2(NODE_SIZE / 2.0, NODE_SIZE / 2.0)
-		var caption: Label = _node_labels[node_id]
-		var caption_width: float = _caption_width(width)
-		caption.custom_minimum_size = Vector2(caption_width, 0.0)
-		caption.size.x = caption_width
-		caption.position = Vector2(
-			center.x - caption_width / 2.0, center.y + NODE_SIZE / 2.0
+		button.position = (
+			(_radial.get(node_id, Vector2.ZERO) as Vector2)
+			- Vector2(NODE_SIZE / 2.0, NODE_SIZE / 2.0)
 		)
+	_place_focus_caption()
+
+
+## N11-12: the radial layout. Flat nodes walk a golden-angle spiral scaled to
+## the canvas ellipse — every step turns ~137.5°, which is what spreads them
+## up, down and sideways instead of stacking. A chained node rides its
+## parent's bearing a step further out, siblings fanned around it, so a
+## requires line always points away from the hub like a growing branch.
+func _compute_radial() -> void:
+	_radial.clear()
+	var entries: Array[Dictionary] = _tab_nodes()
+	if entries.is_empty():
+		return
+	var center := _canvas.size / 2.0
+	var radius := Vector2(
+		_canvas.size.x / 2.0 - NODE_SIZE / 2.0 - RADIAL_PAD,
+		_canvas.size.y / 2.0 - NODE_SIZE / 2.0 - RADIAL_PAD
+	)
+	var flat: Array[Dictionary] = []
+	var chained: Array[Dictionary] = []
+	for entry: Dictionary in entries:
+		if (entry.get("requires", []) as Array).is_empty():
+			flat.append(entry)
+		else:
+			chained.append(entry)
+	# Longest chain still hanging BELOW each node — what divides the leftover
+	# radius so an eight-deep trunk chain never piles up on the rim (the 1.0
+	# cap collision the first cut had).
+	var below: Dictionary = {}
+	var changed: bool = true
+	while changed:
+		changed = false
+		for entry: Dictionary in chained:
+			var parent_id: String = String((entry.get("requires", []) as Array)[0])
+			var mine: int = int(below.get(String(entry["id"]), 0))
+			if int(below.get(parent_id, 0)) < mine + 1:
+				below[parent_id] = mine + 1
+				changed = true
+	var bearings: Dictionary = {}
+	var rings: Dictionary = {}
+	for i: int in flat.size():
+		var node_id: String = String(flat[i]["id"])
+		var angle: float = float(i) * GOLDEN_ANGLE
+		# sqrt spreads the AREA evenly; the +0.35 keeps node zero off the hub.
+		# A flat node that ANCHORS a chain stays in the inner half, so its arm
+		# has somewhere to grow.
+		var ring: float = sqrt((float(i) + 0.35) / float(entries.size()))
+		if int(below.get(node_id, 0)) > 0:
+			ring = minf(ring, 0.45)
+		_radial[node_id] = center + Vector2(
+			cos(angle) * radius.x * ring, sin(angle) * radius.y * ring
+		)
+		bearings[node_id] = angle
+		rings[node_id] = ring
+	# Chain arms: each child takes an even share of the radius its parent has
+	# left, and turns a little every step — the arm curls outward like a fern
+	# instead of shooting a straight ray. Passes cover the deepest chain.
+	var sibling_index: Dictionary = {}
+	for _pass: int in entries.size():
+		var placed_any: bool = false
+		for entry: Dictionary in chained:
+			var node_id: String = String(entry["id"])
+			if _radial.has(node_id):
+				continue
+			var parent_id: String = String((entry.get("requires", []) as Array)[0])
+			if not _radial.has(parent_id):
+				continue
+			var index: int = int(sibling_index.get(parent_id, 0))
+			sibling_index[parent_id] = index + 1
+			var fan: float = (
+				0.0 if index == 0
+				else CHAIN_FAN * ceilf(float(index) / 2.0)
+					* (1.0 if index % 2 == 1 else -1.0)
+			)
+			var parent_ring: float = float(rings.get(parent_id, 0.4))
+			var share: float = (1.0 - parent_ring) 				/ float(int(below.get(parent_id, 0)) + 1)
+			var ring: float = minf(parent_ring + maxf(share, 0.07), 1.0)
+			var angle: float = float(bearings.get(parent_id, 0.0)) + CHAIN_TURN + fan
+			_radial[node_id] = center + Vector2(
+				cos(angle) * radius.x * ring, sin(angle) * radius.y * ring
+			)
+			bearings[node_id] = angle
+			rings[node_id] = ring
+			placed_any = true
+		if not placed_any:
+			break
+	_relax_radial(center, radius)
+
+
+## N11-12: a couple dozen relaxation sweeps — any pair closer than a node
+## width pushes apart along its own axis, everything stays inside the canvas
+## ellipse and off the hub. The analytic pass gives the SHAPE (spiral field,
+## curling arms); this pass guarantees nothing ever touches, whatever the
+## data grows into.
+func _relax_radial(center: Vector2, radius: Vector2) -> void:
+	var min_sep: float = NODE_SIZE + 6.0
+	var ids: Array = _radial.keys()
+	for _sweep: int in 24:
+		var moved: bool = false
+		for i: int in ids.size():
+			for j: int in range(i + 1, ids.size()):
+				var a: Vector2 = _radial[ids[i]]
+				var b: Vector2 = _radial[ids[j]]
+				var between: Vector2 = b - a
+				var distance: float = between.length()
+				if distance >= min_sep:
+					continue
+				var push: Vector2 = (
+					between / distance if distance > 0.01
+					# A dead-exact stack needs an arbitrary but DETERMINISTIC
+					# axis, or the layout differs per run.
+					else Vector2.RIGHT.rotated(float(i) * GOLDEN_ANGLE)
+				) * (min_sep - distance) / 2.0
+				_radial[ids[i]] = a - push
+				_radial[ids[j]] = b + push
+				moved = true
+		var hub_clear: float = HUB_RADIUS + NODE_SIZE / 2.0 + 2.0
+		for node_id: Variant in ids:
+			var offset: Vector2 = (_radial[node_id] as Vector2) - center
+			# Inside the ellipse…
+			var unit := Vector2(
+				offset.x / maxf(radius.x, 1.0), offset.y / maxf(radius.y, 1.0)
+			)
+			if unit.length() > 1.0:
+				unit = unit.normalized()
+				offset = Vector2(unit.x * radius.x, unit.y * radius.y)
+			# …and off the hub disc.
+			if offset.length() < hub_clear:
+				offset = (
+					offset.normalized() if offset.length() > 0.01 else Vector2.RIGHT
+				) * hub_clear
+			_radial[node_id] = center + offset
+		if not moved:
+			break
+
+
+## The one caption rides under the selected node (N11-12).
+func _place_focus_caption() -> void:
+	if _focus_caption == null or _selected_id.is_empty() 			or not _radial.has(_selected_id):
+		if _focus_caption != null:
+			_focus_caption.visible = false
+		return
+	var at: Vector2 = _radial[_selected_id]
+	_focus_caption.visible = true
+	_focus_caption.size = Vector2.ZERO
+	_focus_caption.position = Vector2(
+		clampf(
+			at.x - _focus_caption.get_minimum_size().x / 2.0,
+			4.0, _canvas.size.x - _focus_caption.get_minimum_size().x - 4.0
+		),
+		minf(at.y + NODE_SIZE / 2.0 + 6.0, _canvas.size.y - 26.0)
+	)
 
 
 ## Row pitch and canvas padding for the orientation on screen right now. Read
@@ -759,50 +908,6 @@ func _is_landscape() -> bool:
 	return size.x > size.y
 
 
-## F1: the widest caption that cannot reach its row neighbour on this canvas.
-## QA re-verify: the fixed 0.44 span assumed two-column rows, and the one
-## three-column row (우치 row 2, min-sep 0.35) still overlapped — the span
-## is MEASURED from the current tab's rows now, so new data cannot break it.
-func _caption_width(width: float) -> float:
-	var span: float = _tab_min_column_sep()
-	var fits: float = (span * width - CAPTION_GAP) / (1.0 + span)
-	return clampf(fits, CAPTION_WIDTH_MIN, NODE_LABEL_WIDTH)
-
-
-## Smallest horizontal gap between neighbouring nodes on any one row of the
-## current tab; COLUMN_SPAN is the ceiling (a lone-column tab needs no less).
-func _tab_min_column_sep() -> float:
-	var rows: Dictionary = {}
-	for entry: Dictionary in _tab_nodes():
-		var pos: Array = entry.get("pos", [0.5, 0.0])
-		var row: int = int(pos[1])
-		if not rows.has(row):
-			rows[row] = [] as Array[float]
-		(rows[row] as Array[float]).append(float(pos[0]))
-	var narrowest: float = COLUMN_SPAN
-	for row: int in rows:
-		var xs: Array[float] = rows[row]
-		xs.sort()
-		for i: int in range(1, xs.size()):
-			narrowest = minf(narrowest, xs[i] - xs[i - 1])
-	return maxf(narrowest, 0.1)
-
-
-func _row_height() -> float:
-	return ROW_HEIGHT_LANDSCAPE if _is_landscape() else ROW_HEIGHT
-
-
-func _canvas_top_pad() -> float:
-	return CANVAS_TOP_PAD_LANDSCAPE if _is_landscape() else CANVAS_TOP_PAD
-
-
-func _canvas_bottom_pad() -> float:
-	return CANVAS_BOTTOM_PAD_LANDSCAPE if _is_landscape() else CANVAS_BOTTOM_PAD
-
-
-## Puts the detail panel where the current orientation wants it. Only moves on
-## an actual flip: re-parenting on every resize would throw away the scroll
-## position and the selection every time a desktop window is dragged.
 func _place_side() -> void:
 	if _side == null or _body == null:
 		return
@@ -839,47 +944,22 @@ func _tab_nodes() -> Array[Dictionary]:
 	return MetaTree.branch_nodes(_tree, _current_tab)
 
 
-func _node_center(entry: Dictionary, width: float) -> Vector2:
-	var pos: Array = entry.get("pos", [0.5, 0.0])
-	var caption_width: float = _caption_width(width)
-	var usable: float = width - caption_width
-	return Vector2(
-		caption_width / 2.0 + float(pos[0]) * maxf(usable, 0.0),
-		_canvas_top_pad() + float(pos[1]) * _row_height() + NODE_SIZE / 2.0
-	)
+func _node_center(entry: Dictionary, _width: float) -> Vector2:
+	# N11-12: positions come from the radial layout; the width parameter is
+	# kept so the draw path's call sites stay unchanged.
+	return _radial.get(String(entry.get("id", "")), _canvas.size / 2.0)
 
 
 ## The 신목 trunk plus prerequisite edges, drawn under the node buttons.
 ## Satisfied edges warm to GOLD_BORDER so progress reads on the tree itself.
 func _draw_graph() -> void:
 	var width: float = _canvas.size.x
-	var height: float = _canvas.custom_minimum_size.y
-	# F11: the trunk ran straight through the node captions ("부적│연마").
-	# It is drawn as segments now, skipping every caption's rect band.
-	var gaps: Array[Vector2] = []
-	for caption: Label in _node_labels.values():
-		if caption == null:
-			continue
-		var rect: Rect2 = caption.get_rect()
-		var trunk_x: float = width / 2.0
-		if rect.position.x - CAPTION_TRUNK_PAD <= trunk_x 				and trunk_x <= rect.end.x + CAPTION_TRUNK_PAD:
-			gaps.append(Vector2(
-				rect.position.y - CAPTION_TRUNK_PAD, rect.end.y + CAPTION_TRUNK_PAD
-			))
-	gaps.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
-	var cursor: float = 0.0
-	for gap: Vector2 in gaps:
-		if gap.x > cursor:
-			_canvas.draw_line(
-				Vector2(width / 2.0, cursor), Vector2(width / 2.0, gap.x),
-				UiPalette.WOOD_BORDER, TRUNK_WIDTH
-			)
-		cursor = maxf(cursor, gap.y)
-	if cursor < height:
-		_canvas.draw_line(
-			Vector2(width / 2.0, cursor), Vector2(width / 2.0, height),
-			UiPalette.WOOD_BORDER, TRUNK_WIDTH
-		)
+	# N11-12: the spine is a HUB now — the 신목's heartwood at the canvas
+	# center that every flat branch grows out of, up, down and sideways.
+	var hub: Vector2 = _canvas.size / 2.0
+	_canvas.draw_circle(hub, HUB_RADIUS, UiPalette.NIGHT_BROWN)
+	_canvas.draw_arc(hub, HUB_RADIUS, 0.0, TAU, 40, UiPalette.WOOD_BORDER, 3.0)
+	_canvas.draw_arc(hub, HUB_RADIUS * 0.55, 0.0, TAU, 32, UiPalette.GOLD_BORDER, 1.5)
 	var state: Dictionary = _profile.get("meta_tree", {})
 	# N11-11: branches, not wires. A node with prerequisites hangs off its
 	# parent; a root node hangs off the trunk one half-row above itself, so
@@ -890,8 +970,7 @@ func _draw_graph() -> void:
 		var branch_color: Color = _node_state_color(entry, state)
 		var requires: Array = entry.get("requires", [])
 		if requires.is_empty():
-			var spine := Vector2(width / 2.0, to_center.y - _row_height() * 0.45)
-			_draw_branch(spine, to_center, branch_color)
+			_draw_branch(hub, to_center, branch_color)
 		for required: Variant in requires:
 			var from_entry: Dictionary = MetaTree.node(_tree, String(required))
 			if from_entry.is_empty():
