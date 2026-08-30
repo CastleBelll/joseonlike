@@ -33,7 +33,7 @@
   "first_find": {
    "at_sec": 45.0
   },
-  "_refine_note": "N11-8 (오너: 패시브를 아예 아이들러쪽 업그레이드로 넘기고): 구 인런 패시브 17종이 refine_* 영구 노드가 됐다. per_rank·랭크 수는 passives.json의 per_stack·max_stacks 그대로, stat_caps는 기존 캡 + 패시브 총량으로 상향. 비용 곡선은 초안 — N11-6 경제 패스에서 재측정한다.",
+  "_refine_note": "N11-8 (오너: 패시브를 아예 아이들러쪽 업그레이드로 넘기고): 구 인런 패시브 17종이 refine_* 영구 노드가 됐다. per_rank·랭크 수는 passives.json의 per_stack·max_stacks 그대로, stat_caps는 기존 캡 + 패시브 총량으로 상향. 비용 곡선은 초안 — N11-6 경제 패스에서 재측정한다. N11-6a (오너: 갈래가 다양하고 적당한 재화로): 연마 17종을 5뿌리 사슬(공격/술법/생존/신속/투사, 분기 2곳)로 재구성 — 뿌리 첫 비용 70~100냥, 사슬이 깊어질수록 첫 비용이 오르는 선행-비용 규칙 준수, 랭크 성장 x2.2.",
   "_caps_note": "N11-9: stat_caps는 '한 캐릭터가 트렁크+연마+자기 가지로 도달 가능한 최대치'로 자동 산출(캡 낭비 0). 가지를 추가하면 같은 규칙으로 재산출한다."
  },
  "nodes": [
@@ -955,10 +955,10 @@
    "desc_en": "Attack Damage +6% (refined)",
    "costs": [
     80,
-    180,
-    400,
-    800,
-    1500
+    160,
+    320,
+    640,
+    1280
    ],
    "requires": [],
    "pos": [
@@ -978,13 +978,15 @@
    "desc_ko": "공격 속도 +8% (연마)",
    "desc_en": "Attack Speed +8% (refined)",
    "costs": [
-    80,
-    180,
-    400,
-    800,
-    1500
+    120,
+    240,
+    480,
+    960,
+    1920
    ],
-   "requires": [],
+   "requires": [
+    "refine_attack_damage"
+   ],
    "pos": [
     0.72,
     9
@@ -1003,10 +1005,10 @@
    "desc_en": "Move Speed +5% (refined)",
    "costs": [
     80,
-    180,
-    400,
-    800,
-    1500
+    150,
+    300,
+    600,
+    1200
    ],
    "requires": [],
    "pos": [
@@ -1026,14 +1028,16 @@
    "desc_ko": "치명타 확률 +5% (연마)",
    "desc_en": "Crit Chance +5% (refined)",
    "costs": [
-    80,
-    180,
+    200,
     400,
     800,
-    1500,
-    2600
+    1600,
+    3200,
+    6400
    ],
-   "requires": [],
+   "requires": [
+    "refine_attack_speed"
+   ],
    "pos": [
     0.72,
     10
@@ -1051,11 +1055,11 @@
    "desc_ko": "최대 체력 +10% (연마)",
    "desc_en": "Max HP +10% (refined)",
    "costs": [
-    80,
-    180,
-    400,
-    800,
-    1500
+    70,
+    140,
+    280,
+    560,
+    1120
    ],
    "requires": [],
    "pos": [
@@ -1075,13 +1079,15 @@
    "desc_ko": "경험치 획득 +10% (연마)",
    "desc_en": "XP Gain +10% (refined)",
    "costs": [
-    80,
-    180,
-    400,
-    800,
-    1500
+    190,
+    380,
+    760,
+    1520,
+    3040
    ],
-   "requires": [],
+   "requires": [
+    "refine_magnet_radius"
+   ],
    "pos": [
     0.72,
     11
@@ -1099,13 +1105,15 @@
    "desc_ko": "행운 +5% (연마)",
    "desc_en": "Luck +5% (refined)",
    "costs": [
-    80,
     180,
-    400,
-    800,
-    1500
+    360,
+    720,
+    1440,
+    2880
    ],
-   "requires": [],
+   "requires": [
+    "refine_magnet_radius"
+   ],
    "pos": [
     0.28,
     12
@@ -1123,11 +1131,11 @@
    "desc_ko": "도력 +10% (연마)",
    "desc_en": "Skill Power +10% (refined)",
    "costs": [
-    80,
+    90,
     180,
-    400,
-    800,
-    1500
+    360,
+    720,
+    1440
    ],
    "requires": [],
    "pos": [
@@ -1147,10 +1155,12 @@
    "desc_ko": "다중 투사 +1 (연마)",
    "desc_en": "Multi Shot +1 (refined)",
    "costs": [
-    1200,
-    3200
+    260,
+    520
    ],
-   "requires": [],
+   "requires": [
+    "refine_projectile_speed"
+   ],
    "pos": [
     0.28,
     13
@@ -1168,11 +1178,11 @@
    "desc_ko": "신속 투사 +10% (연마)",
    "desc_en": "Swift Shot +10% (refined)",
    "costs": [
-    80,
-    180,
+    100,
+    200,
     400,
     800,
-    1500
+    1600
    ],
    "requires": [],
    "pos": [
@@ -1192,13 +1202,15 @@
    "desc_ko": "광역 확장 +8% (연마)",
    "desc_en": "Area Up +8% (refined)",
    "costs": [
-    80,
-    180,
-    400,
-    800,
-    1500
+    140,
+    280,
+    560,
+    1120,
+    2240
    ],
-   "requires": [],
+   "requires": [
+    "refine_skill_power"
+   ],
    "pos": [
     0.28,
     14
@@ -1216,12 +1228,14 @@
    "desc_ko": "방비 +5% (연마)",
    "desc_en": "Defense +5% (refined)",
    "costs": [
-    100,
-    240,
-    550,
-    1100
+    130,
+    260,
+    520,
+    1040
    ],
-   "requires": [],
+   "requires": [
+    "refine_max_hp"
+   ],
    "pos": [
     0.72,
     14
@@ -1239,13 +1253,15 @@
    "desc_ko": "끌어당김 +15% (연마)",
    "desc_en": "Magnet +15% (refined)",
    "costs": [
-    80,
-    180,
-    400,
-    800,
-    1500
+    110,
+    220,
+    440,
+    880,
+    1760
    ],
-   "requires": [],
+   "requires": [
+    "refine_move_speed"
+   ],
    "pos": [
     0.28,
     15
@@ -1263,11 +1279,13 @@
    "desc_ko": "불씨 정통 +20% (연마)",
    "desc_en": "Ember Mastery +20% (refined)",
    "costs": [
-    150,
-    360,
-    800
+    220,
+    440,
+    880
    ],
-   "requires": [],
+   "requires": [
+    "refine_area_scale"
+   ],
    "pos": [
     0.72,
     15
@@ -1285,10 +1303,12 @@
    "desc_ko": "연쇄 확장 +1 (연마)",
    "desc_en": "Chain Reach +1 (refined)",
    "costs": [
-    800,
-    2200
+    340,
+    680
    ],
-   "requires": [],
+   "requires": [
+    "refine_burn_power"
+   ],
    "pos": [
     0.28,
     16
@@ -1306,10 +1326,12 @@
    "desc_ko": "봉인 가속 +1 (연마)",
    "desc_en": "Seal Haste +1 (refined)",
    "costs": [
-    500,
-    1400
+    360,
+    720
    ],
-   "requires": [],
+   "requires": [
+    "refine_burn_power"
+   ],
    "pos": [
     0.72,
     16
@@ -1327,12 +1349,14 @@
    "desc_ko": "치명 일격 +25% (연마)",
    "desc_en": "Crit Damage +25% (refined)",
    "costs": [
-    100,
-    240,
-    550,
-    1100
+    320,
+    640,
+    1280,
+    2560
    ],
-   "requires": [],
+   "requires": [
+    "refine_crit_chance"
+   ],
    "pos": [
     0.28,
     17
