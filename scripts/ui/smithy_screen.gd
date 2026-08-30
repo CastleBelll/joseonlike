@@ -192,11 +192,14 @@ func _build_row(mod_id: String) -> Control:
 		_weapon_name(String(mod.get("weapon_id", ""))),
 		int(mod.get("level_required", 1)),
 	]
-	# QA N11-4 F-3: the card is the kit's light parchment — dark-ground
-	# text tokens measured 1.07:1 on it. Ink, like every other parchment row.
+	# QA N11-4 F-3 (both rounds): the card is the kit's light parchment, and
+	# the LOCKED card is dimmed further — muted ink measured 2.74:1 on that
+	# tint. Same cure as the achievements rows: full ink on the dim plate,
+	# muted ink only on the bright unlocked one.
 	var detail := _label(
 		base_line + " · " + _bill_text(mod),
-		UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
+		UiPalette.FONT_SIZE_LABEL,
+		UiPalette.TEXT_MUTED_ON_PAPER if unlocked else UiPalette.INK
 	)
 	detail.name = "Detail"
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
