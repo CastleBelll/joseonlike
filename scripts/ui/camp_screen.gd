@@ -50,25 +50,24 @@ const SPOT_DISC := 44.0
 const MAP_SPOTS: Array[Dictionary] = [
 	{"id": "shrine", "npc": "sosul", "label": "사당",
 		"scene": "res://scenes/meta_tree.tscn",
-		"pos": [0.24, 0.14], "pos_l": [0.13, 0.22]},
+		"pos": [0.24, 0.42], "pos_l": [0.13, 0.34]},
 	{"id": "archive", "npc": "mukheon", "label": "서고",
 		"scene": "res://scenes/bestiary.tscn", "badge": true,
-		"pos": [0.76, 0.12], "pos_l": [0.335, 0.16]},
+		"pos": [0.76, 0.40], "pos_l": [0.335, 0.30]},
 	{"id": "stele", "npc": "", "label": "공적비",
 		"scene": "res://scenes/achievements.tscn",
-		"pos": [0.50, 0.26], "pos_l": [0.235, 0.66]},
+		"pos": [0.50, 0.50], "pos_l": [0.235, 0.72]},
 	{"id": "barracks", "npc": "", "label": "막사", "select": true,
-		"pos": [0.20, 0.44], "pos_l": [0.54, 0.18]},
+		"pos": [0.22, 0.62], "pos_l": [0.54, 0.30]},
 	{"id": "smithy", "npc": "dolmusoe", "label": "대장간",
-		"pos": [0.80, 0.42], "pos_l": [0.86, 0.24]},
+		"pos": [0.78, 0.60], "pos_l": [0.86, 0.36]},
 	{"id": "training", "npc": "beomgang", "label": "훈련장",
-		"pos": [0.50, 0.55], "pos_l": [0.875, 0.66]},
+		"pos": [0.50, 0.74], "pos_l": [0.875, 0.72]},
 	{"id": "apothecary", "npc": "choha", "label": "약방",
-		"pos": [0.26, 0.74], "pos_l": [0.46, 0.64]},
+		"pos": [0.26, 0.86], "pos_l": [0.46, 0.72]},
 	{"id": "market", "npc": "neoreum", "label": "장터",
-		"pos": [0.74, 0.74], "pos_l": [0.685, 0.68]},
-]
-## N9-35: same flat corner glyph the title and the combat HUD already use.
+		"pos": [0.74, 0.86], "pos_l": [0.685, 0.76]},
+]## N9-35: same flat corner glyph the title and the combat HUD already use.
 const UTILITY_BUTTON_SIZE := 44.0  # UiPalette.TOUCH_TARGET_MIN
 
 var _notice_label: Label
@@ -121,8 +120,16 @@ func _ready() -> void:
 		welcome.portrait_path = ""
 		add_child(welcome)
 		welcome.open(Ftue.archivist_pages())
+		# QA F-17: the dialog panel sits over the dial row, and the sortie
+		# button underneath stayed live — a player could depart mid-guide.
+		# The bar sleeps while 묵헌 speaks.
+		var bar: Control = get_node_or_null("Layout/Frame/BottomBar")
+		if bar != null:
+			bar.visible = false
 		welcome.finished.connect(func() -> void:
 			SaveService.instance.mark_archivist_met()
+			if bar != null:
+				bar.visible = true
 			welcome.queue_free()
 		)
 
@@ -402,18 +409,27 @@ func _refresh_departure_labels() -> void:
 	var length: Dictionary = Difficulty.run_length(
 		_difficulty_config, Difficulty.selected_run_length(_difficulty_config)
 	)
-	_difficulty_button.text = UiLocale.t("난이도 ‹%s›") % UiLocale.data_name(tier)
+	# QA F-16: 148px cannot hold "Difficulty ‹Calm Path›" — portrait dials
+	# carry the VALUE alone (‹Calm Path› fits), landscape keeps the label.
+	var wide: bool = _is_landscape()
+	_difficulty_button.text = (
+		UiLocale.t("난이도 ‹%s›") if wide else "‹%s›"
+	) % UiLocale.data_name(tier)
 	_difficulty_button.tooltip_text = String(tier.get("desc_ko", ""))
 	# Both cycle buttons name what they cycle; the length button used to show
 	# only the value, which read as a stray chip next to a labelled one.
-	_run_length_button.text = UiLocale.t("길이 ‹%s›") % UiLocale.data_name(length)
+	_run_length_button.text = (
+		UiLocale.t("길이 ‹%s›") if wide else "‹%s›"
+	) % UiLocale.data_name(length)
 	_run_length_button.tooltip_text = String(length.get("desc_ko", ""))
 	if _region_button != null:
 		var open: Array[String] = Camp.unlocked_stages(_profile())
 		var current: String = String(_profile().get(
 			"selected_stage", open[0] if not open.is_empty() else ""
 		))
-		_region_button.text = UiLocale.t("출정지 ‹%s›") % Camp.stage_label(current)
+		_region_button.text = (
+			UiLocale.t("출정지 ‹%s›") if wide else "‹%s›"
+		) % Camp.stage_label(current)
 		_style_cycle(_region_button, "plaque_cream")
 	# Owner (난이도, 길이 등급에따라 다른 이미지 배너로): the plaque ladder
 	# darkens as the pick escalates, so the choice reads at a glance before
@@ -496,8 +512,17 @@ func _cycle_setting(key: String, ids: Array[String], current: String) -> void:
 		_show_notice(UiLocale.t("아직 다른 선택지가 없다"))
 		return
 	var index: int = maxi(ids.find(current), 0)
-	SaveService.instance.set_setting(key, ids[(index + 1) % ids.size()])
+	var next: String = ids[(index + 1) % ids.size()]
+	SaveService.instance.set_setting(key, next)
 	_refresh_departure_labels()
+	# QA F-15: a successful cycle overwrites whatever notice a refused one
+	# left standing — 지역 다이얼과 같은 문법.
+	var entry: Dictionary = (
+		Difficulty.entry(_difficulty_config, next)
+		if key == Difficulty.SELECTED_KEY
+		else Difficulty.run_length(_difficulty_config, next)
+	)
+	_show_notice(UiLocale.data_name(entry, next))
 
 
 func _on_depart_pressed() -> void:
@@ -523,12 +548,16 @@ func _on_spot_pressed(spot: Dictionary) -> void:
 		SceneFadeLayer.go(self, scene)
 		return
 	var npc: Dictionary = _npcs.get(String(spot.get("npc", "")), {})
-	var line: String = String(npc.get("line_ko", ""))
+	# QA F-14: the line follows the locale like every data name does —
+	# ko fallback, so a missing translation degrades instead of mixing.
+	var line: String = String(npc.get(
+		"line_" + UiLocale.current_locale, npc.get("line_ko", "")
+	))
 	var speaker: String = UiLocale.data_name(npc, String(spot.get("label", "")))
 	if line.is_empty():
 		_show_notice(UiLocale.t(String(spot.get("label", ""))) + " — " + Camp.NOT_READY_NOTICE)
 		return
-	_show_notice("%s — \"%s\"" % [speaker, UiLocale.t(line)])
+	_show_notice("%s — \"%s\"" % [speaker, line])
 
 
 ## One map spot: the kit's ceramic disc with the NPC's first syllable (their
@@ -563,6 +592,22 @@ func _build_map_spots() -> void:
 		well.name = "Well"
 		well.custom_minimum_size = Vector2(SPOT_DISC, SPOT_DISC)
 		well.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# QA F-13: a dark halo under the ceramic so the disc separates from
+		# whatever the backdrop puts behind it — the person reads as tappable
+		# before the label does. Placeholder until portrait art lands.
+		var halo := Panel.new()
+		halo.name = "Halo"
+		var halo_style := StyleBoxFlat.new()
+		halo_style.bg_color = Color(UiPalette.NIGHT, 0.55)
+		halo_style.set_corner_radius_all(int(SPOT_DISC / 2.0) + 5)
+		halo.add_theme_stylebox_override("panel", halo_style)
+		halo.set_anchors_preset(Control.PRESET_FULL_RECT)
+		halo.offset_left = -5.0
+		halo.offset_top = -5.0
+		halo.offset_right = 5.0
+		halo.offset_bottom = 5.0
+		halo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		well.add_child(halo)
 		var disc: TextureRect = UiIcons.kit_icon_button("disc_2", SPOT_DISC)
 		if disc != null:
 			disc.name = "Disc"

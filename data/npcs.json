@@ -8,7 +8,8 @@
   "role_en": "Blacksmith",
   "building": "smithy",
   "service": "mod_unlocks",
-  "line_ko": "괴이 잡던 쇠는 내 손에서 다시 태어나지."
+  "line_ko": "괴이 잡던 쇠는 내 손에서 다시 태어나지.",
+  "line_en": "Steel that hunted the fiends is reborn in these hands."
  },
  "choha": {
   "name_ko": "초하",
@@ -18,7 +19,8 @@
   "role_en": "Herbalist",
   "building": "apothecary",
   "service": "elixirs",
-  "line_ko": "밤에 다친 몸은 낮에 고치는 법이오."
+  "line_ko": "밤에 다친 몸은 낮에 고치는 법이오.",
+  "line_en": "Wounds taken in the night are mended by day."
  },
  "sosul": {
   "name_ko": "소슬",
@@ -28,7 +30,8 @@
   "role_en": "Shrine Maiden",
   "building": "shrine",
   "service": "meta_tree",
-  "line_ko": "명부수 가지 끝에 그대의 밤이 걸려 있소."
+  "line_ko": "명부수 가지 끝에 그대의 밤이 걸려 있소.",
+  "line_en": "Your night hangs from the tip of the netherworld tree."
  },
  "mukheon": {
   "name_ko": "묵헌",
@@ -38,7 +41,8 @@
   "role_en": "Archivist",
   "building": "archive",
   "service": "bestiary",
-  "line_ko": "기록되지 않은 괴이는 두 번 온다."
+  "line_ko": "기록되지 않은 괴이는 두 번 온다.",
+  "line_en": "A fiend left unrecorded comes twice."
  },
  "neoreum": {
   "name_ko": "너름",
@@ -48,7 +52,8 @@
   "role_en": "Broker",
   "building": "market",
   "service": "storehouse",
-  "line_ko": "밤에서 주워 온 것, 값은 내가 쳐 주지."
+  "line_ko": "밤에서 주워 온 것, 값은 내가 쳐 주지.",
+  "line_en": "Whatever the night gave up - I'll name its price."
  },
  "beomgang": {
   "name_ko": "범강",
@@ -58,6 +63,7 @@
   "role_en": "Drillmaster",
   "building": "training",
   "service": "training",
-  "line_ko": "몸이 기억할 때까지. 한 번 더."
+  "line_ko": "몸이 기억할 때까지. 한 번 더.",
+  "line_en": "Until the body remembers. Once more."
  }
 }
