@@ -54,3 +54,5 @@ new_asset/source/bgm/
 joseonlike_web.zip
 itch_assets/
 __pycache__/
+tmp/
+captures/

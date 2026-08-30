@@ -1,9 +1,0 @@
-== taoist  role=magic_aoe hp=105 spd=92.0 invuln=0.8
-   innate: {"id": "eumyang", "name_ko": "음양", "name_en": "Yin and Yang", "desc_ko": "술법과 무기의 범위가 넓다", "desc_en": "Every art reaches further", "stat": "area_scale", "value": 0.12}
-
-== warrior  role=melee_bruiser hp=170 spd=76.0 invuln=1.0
-   innate: {"id": "cheolsim", "name_ko": "철심", "name_en": "Iron Heart", "desc_ko": "받는 피해가 줄어든다", "desc_en": "You take less damage", "stat": "defense", "value": 0.12}
-
-== archer  role=ranged_dps hp=78 spd=110.0 invuln=0.72
-   innate: {"id": "bosa", "name_ko": "보사", "name_en": "Walking Shot", "desc_ko": "투사체가 더 빠르게 날아간다", "desc_en": "Arrows fly faster", "stat": "projectile_speed", "value": 0.2}
-
