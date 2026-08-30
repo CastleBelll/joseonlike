@@ -47,14 +47,20 @@ const CHAIN_FAN := 0.55
 ## a drawn curve, so the tree reads as branches spreading, not a list.
 const BRANCH_SAMPLES := 14
 const PULSE_PERIOD_SEC := 1.6
-const PULSE_RING_PAD := 4.0
+## QA I-11: clear of the hover-scaled disc (39.6px) through the whole cycle.
+const PULSE_RING_PAD := 8.0
+## QA I-8: only the CHEAPEST few breathe — 22 rings breathing at once point
+## nowhere. The rest of the buyable set wears a static wood ring.
+const PULSE_LIMIT := 4
+## QA I-5: branches GROW out of the hub when a tab opens.
+const GROW_SEC := 0.35
 const PULSE_RING_SWING := 2.5
 const HOVER_SCALE := 1.1
 const HOVER_TWEEN_SEC := 0.1
 const PRESS_PUNCH_SCALE := 0.92
 const BURST_SEC := 0.5
 const BURST_RADIUS_FROM := NODE_SIZE * 0.5
-const BURST_RADIUS_TO := NODE_SIZE * 1.3
+const BURST_RADIUS_TO := NODE_SIZE * 1.6
 const PILL_CORNER_RADIUS := UiPalette.PILL_RADIUS
 const PILL_PADDING_X := UiPalette.PILL_PAD_X
 const PILL_PADDING_Y := UiPalette.PILL_PAD_Y
@@ -86,6 +92,10 @@ var _canvas: Control
 ## one-shot purchase bursts ({"at": Vector2, "t": float}) still expanding.
 var _pulse_phase: float = 0.0
 var _bursts: Array[Dictionary] = []
+## QA I-5 growth fraction (0..1) the branch drawing honors; I-10 tween store.
+var _grow: float = 1.0
+var _grow_tween: Tween
+var _node_tweens: Dictionary = {}
 var _scroll: ScrollContainer
 var _gold_label: Label
 var _detail_name: Label
@@ -112,6 +122,8 @@ var _radial: Dictionary = {}
 
 func _ready() -> void:
 	build_ui()
+	# QA I-5: the first screen entry grows too, not just tab switches.
+	_start_growth()
 
 
 ## Builds every child node. Public so the headless test can construct the
@@ -291,8 +303,24 @@ func _on_tab_pressed(tab_id: String) -> void:
 		return
 	_current_tab = tab_id
 	_selected_id = ""
+	# QA I-12: a burst belongs to the tab it was bought on.
+	_bursts.clear()
 	_populate_tab()
 	_refresh()
+	_start_growth()
+
+
+## QA I-5: the branches GROW out of the hub over a third of a second when a
+## tab opens — the spreading is a moment, not a still.
+func _start_growth() -> void:
+	if not is_inside_tree():
+		_grow = 1.0
+		return
+	if _grow_tween != null and _grow_tween.is_valid():
+		_grow_tween.kill()
+	_grow = 0.0
+	_grow_tween = create_tween()
+	_grow_tween.tween_property(self, "_grow", 1.0, GROW_SEC).set_ease(Tween.EASE_OUT)
 	if is_inside_tree():
 		_scroll.scroll_vertical = 0
 
@@ -447,27 +475,44 @@ func select_node(node_id: String) -> void:
 
 
 func _on_node_pressed(node_id: String) -> void:
-	_play_sfx("ui_open")
+	# QA I-9: the TAP is the click sound; hover went silent — a wheel scroll
+	# over the map rattled a dozen ticks.
+	_play_sfx("ui_click")
 	var button: Button = _node_buttons.get(node_id)
 	if button != null and is_inside_tree():
-		var tween: Tween = create_tween()
+		var tween: Tween = _fresh_tween(button)
 		tween.tween_property(
 			button, "scale", Vector2.ONE * PRESS_PUNCH_SCALE, HOVER_TWEEN_SEC / 2.0
 		)
-		tween.tween_property(button, "scale", Vector2.ONE, HOVER_TWEEN_SEC)
+		# QA I-10: the punch settles back to the HOVER scale while the
+		# pointer is still on the disc, not past it.
+		tween.tween_property(
+			button, "scale",
+			Vector2.ONE * (HOVER_SCALE if button.is_hovered() else 1.0),
+			HOVER_TWEEN_SEC
+		)
 	select_node(node_id)
 
 
 func _on_node_hover(button: Button, entered: bool) -> void:
 	if not is_inside_tree():
 		return
-	if entered:
-		_play_sfx("ui_click")
-	var tween: Tween = create_tween()
+	var tween: Tween = _fresh_tween(button)
 	tween.tween_property(
 		button, "scale",
 		Vector2.ONE * (HOVER_SCALE if entered else 1.0), HOVER_TWEEN_SEC
 	).set_ease(Tween.EASE_OUT)
+
+
+## QA I-10: one live tween per node — a fresh gesture kills the old one, so
+## fast in-out passes never stack fighting animations.
+func _fresh_tween(button: Button) -> Tween:
+	var old_tween: Tween = _node_tweens.get(button.name)
+	if old_tween != null and old_tween.is_valid():
+		old_tween.kill()
+	var tween: Tween = create_tween()
+	_node_tweens[button.name] = tween
+	return tween
 
 
 func _play_sfx(sound_id: String) -> void:
@@ -968,53 +1013,84 @@ func _draw_graph() -> void:
 	for entry: Dictionary in _tab_nodes():
 		var to_center: Vector2 = _node_center(entry, width)
 		var branch_color: Color = _node_state_color(entry, state)
+		var dashed: bool = branch_color == UiPalette.CARD_BORDER_DIM
 		var requires: Array = entry.get("requires", [])
 		if requires.is_empty():
-			_draw_branch(hub, to_center, branch_color)
+			_draw_branch(hub, to_center, branch_color, dashed)
 		for required: Variant in requires:
 			var from_entry: Dictionary = MetaTree.node(_tree, String(required))
 			if from_entry.is_empty():
 				continue
-			_draw_branch(_node_center(from_entry, width), to_center, branch_color)
+			_draw_branch(
+				_node_center(from_entry, width), to_center, branch_color, dashed
+			)
 	# Breathing ring on every node the player could buy RIGHT NOW, a steady
 	# gold ring on what is already theirs — the growth state readable at a
 	# glance, before any caption is read.
 	var ring_swell: float = sin(_pulse_phase * TAU / PULSE_PERIOD_SEC) * PULSE_RING_SWING
-	for entry: Dictionary in _tab_nodes():
-		var center: Vector2 = _node_center(entry, width)
-		var node_id: String = String(entry.get("id", ""))
-		if MetaTree.rank_of(state, node_id) >= MetaTree.max_rank(entry):
-			_canvas.draw_arc(
-				center, NODE_SIZE / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
-				UiPalette.GOLD_BORDER, 2.0
-			)
-		elif _is_buyable(entry, state):
-			_canvas.draw_arc(
-				center, NODE_SIZE / 2.0 + PULSE_RING_PAD + ring_swell, 0.0, TAU, 32,
-				Color(UiPalette.GOLD, 0.65), 2.0
-			)
+	# QA I-8: only the cheapest few buyable nodes breathe — the rest wear a
+	# static wood ring, and anything OWNED (QA I-3: rank 1 counts, not just
+	# maxed) wears gold. Rings wait for the growth to arrive (I-5).
+	var pulse_ids: Array[String] = _cheapest_buyable_ids(state)
+	if _grow >= 0.9:
+		for entry: Dictionary in _tab_nodes():
+			var center: Vector2 = _node_center(entry, width)
+			var node_id: String = String(entry.get("id", ""))
+			if MetaTree.rank_of(state, node_id) >= 1:
+				_canvas.draw_arc(
+					center, NODE_SIZE / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
+					UiPalette.GOLD_BORDER, 2.0
+				)
+			elif node_id in pulse_ids:
+				_canvas.draw_arc(
+					center, NODE_SIZE / 2.0 + PULSE_RING_PAD + ring_swell,
+					0.0, TAU, 32, Color(UiPalette.GOLD, 0.65), 2.0
+				)
+			elif _is_buyable(entry, state):
+				_canvas.draw_arc(
+					center, NODE_SIZE / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
+					Color(UiPalette.WOOD, 0.55), 2.0
+				)
 	# One-shot purchase bursts: an expanding, fading gold ring where the coin
 	# was just spent.
 	for burst: Dictionary in _bursts:
 		var t: float = float(burst.get("t", 0.0)) / BURST_SEC
 		var radius: float = lerpf(BURST_RADIUS_FROM, BURST_RADIUS_TO, t)
+		# QA I-6: a white kernel flash under the ring — the coin HITS.
+		_canvas.draw_circle(
+			burst.get("at", Vector2.ZERO), NODE_SIZE / 2.0,
+			Color(1.0, 1.0, 1.0, (1.0 - t) * 0.3)
+		)
 		_canvas.draw_arc(
 			burst.get("at", Vector2.ZERO), radius, 0.0, TAU, 40,
-			Color(UiPalette.GOLD, 1.0 - t), 3.0
+			Color(UiPalette.GOLD, 1.0 - t), 4.0
 		)
 
 
 ## N11-11: one quadratic branch curve, sampled — the control point sits on
 ## the parent's x at the child's height, which is what bends the line out of
 ## the spine the way a branch leaves a trunk.
-func _draw_branch(from: Vector2, to: Vector2, color: Color) -> void:
+func _draw_branch(
+	from: Vector2, to: Vector2, color: Color, dashed: bool = false
+) -> void:
 	var control := Vector2(from.x, to.y)
 	var points := PackedVector2Array()
-	for i: int in BRANCH_SAMPLES + 1:
+	# QA I-5: only the grown fraction exists yet — the tab OPENING is where
+	# the mindmap's spreading actually reads.
+	var grown: int = maxi(int(round(_grow * float(BRANCH_SAMPLES))), 1)
+	for i: int in grown + 1:
 		var t: float = float(i) / float(BRANCH_SAMPLES)
 		var a: Vector2 = from.lerp(control, t)
 		var b: Vector2 = control.lerp(to, t)
 		points.append(a.lerp(b, t))
+	if dashed:
+		# QA I-3: locked speaks in FORM, not colour alone — every other
+		# sampled segment is skipped, which reads as a dashed vine.
+		var index: int = 0
+		while index + 1 < points.size():
+			_canvas.draw_line(points[index], points[index + 1], color, 2.0)
+			index += 2
+		return
 	_canvas.draw_polyline(points, color, EDGE_WIDTH, true)
 
 
@@ -1026,6 +1102,26 @@ func _node_state_color(entry: Dictionary, state: Dictionary) -> Color:
 	if _is_buyable(entry, state):
 		return UiPalette.WOOD
 	return UiPalette.CARD_BORDER_DIM
+
+
+## QA I-8: the ids whose rings breathe — the few cheapest next steps.
+func _cheapest_buyable_ids(state: Dictionary) -> Array[String]:
+	var priced: Array[Dictionary] = []
+	for entry: Dictionary in _tab_nodes():
+		if not _is_buyable(entry, state):
+			continue
+		priced.append({
+			"id": String(entry.get("id", "")),
+			"cost": MetaTree.next_cost(entry, MetaTree.rank_of(state, String(entry.get("id", "")))),
+		})
+	priced.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			return int(a["cost"]) < int(b["cost"])
+	)
+	var out: Array[String] = []
+	for i: int in mini(priced.size(), PULSE_LIMIT):
+		out.append(String(priced[i]["id"]))
+	return out
 
 
 func _is_buyable(entry: Dictionary, state: Dictionary) -> bool:
