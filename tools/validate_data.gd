@@ -888,6 +888,14 @@ func _check_loot(monsters: Dictionary, weapons: Dictionary, stages: Dictionary) 
 			_fail(mod_label + ".result_weapon '%s' must be evolution_only" % result_id)
 		if not loot.has(mod.get("loot_id", "")):
 			_fail(mod_label + ".loot_id not in loot.json")
+		# N11-4: every recipe must be smithy-unlockable — a mod without a
+		# priced unlock block can never appear in any run again.
+		var unlock: Dictionary = mod.get("unlock", {})
+		if int(unlock.get("gold", 0)) <= 0:
+			_fail(mod_label + ".unlock.gold must be positive")
+		for unlock_loot: String in (unlock.get("materials", {}) as Dictionary):
+			if not loot.has(unlock_loot):
+				_fail(mod_label + ".unlock.materials '%s' not in loot.json" % unlock_loot)
 	_check_ui_icons(weapons, loot)
 
 

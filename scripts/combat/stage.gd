@@ -355,6 +355,14 @@ func _stage_ready_field() -> void:
 	_loot_data = _load_json(LOOT_PATH)
 	_drop_tables = _load_json(DROP_TABLES_PATH)
 	_mods_data = _load_json(WEAPON_MODS_PATH)
+	# N11-4: a run only sees recipes the smithy has unlocked. Harness
+	# profiles waive the gate so playtest bots and QA fixtures still
+	# exercise 개조 without grinding the camp first.
+	if SaveService.instance != null:
+		_mods_data = Smithy.runtime_mods(
+			_mods_data, SaveService.instance.profile,
+			SaveService.instance.is_harness_profile()
+		)
 	_loot_pool = NodePool.new(self, _create_loot_drop)
 	# C6: this used to call randomize(), which reads OS entropy and ignores the
 	# run seed entirely — the comment here claimed one seed replayed a run's

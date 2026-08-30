@@ -60,6 +60,7 @@ const MAP_SPOTS: Array[Dictionary] = [
 	{"id": "barracks", "npc": "", "label": "막사", "select": true,
 		"pos": [0.22, 0.62], "pos_l": [0.54, 0.48]},
 	{"id": "smithy", "npc": "dolmusoe", "label": "대장간",
+		"scene": "res://scenes/smithy.tscn",
 		"pos": [0.78, 0.60], "pos_l": [0.78, 0.50]},
 	{"id": "training", "npc": "beomgang", "label": "훈련장",
 		"pos": [0.50, 0.74], "pos_l": [0.875, 0.72]},

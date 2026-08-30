@@ -103,6 +103,16 @@ func mark_mod_explained() -> void:
 	save_profile()
 
 
+## N11-4: the smithy spends gold + materials to open one recipe; the fold is
+## atomic in Smithy.unlock and only a successful buy touches disk.
+func unlock_mod(mods: Dictionary, mod_id: String) -> String:
+	var result: Dictionary = Smithy.unlock(profile, mods, mod_id)
+	if bool(result["ok"]):
+		profile = result["profile"]
+		save_profile()
+	return String(result["reason"])
+
+
 func mark_guide_seen() -> void:
 	profile = Ftue.mark_guide_seen(profile)
 	save_profile()
