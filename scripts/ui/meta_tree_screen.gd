@@ -1014,15 +1014,25 @@ func _draw_graph() -> void:
 		var to_center: Vector2 = _node_center(entry, width)
 		var branch_color: Color = _node_state_color(entry, state)
 		var dashed: bool = branch_color == UiPalette.CARD_BORDER_DIM
+		# QA FAIL-2 (1.17:1 between bought gold and buyable wood): the LINE
+		# ITSELF carries the state — owned 4px, within-reach 3px, locked a
+		# 2px dashed vine in a dim that still exists on the night ground
+		# (CARD_BORDER_DIM measured 1.66:1 — near-invisible).
+		if dashed:
+			branch_color = Color(UiPalette.TEXT_MUTED_ON_DARK, 0.45)
+		var branch_width: float = (
+			4.0 if branch_color == UiPalette.GOLD_BORDER else EDGE_WIDTH
+		)
 		var requires: Array = entry.get("requires", [])
 		if requires.is_empty():
-			_draw_branch(hub, to_center, branch_color, dashed)
+			_draw_branch(hub, to_center, branch_color, dashed, branch_width)
 		for required: Variant in requires:
 			var from_entry: Dictionary = MetaTree.node(_tree, String(required))
 			if from_entry.is_empty():
 				continue
 			_draw_branch(
-				_node_center(from_entry, width), to_center, branch_color, dashed
+				_node_center(from_entry, width), to_center, branch_color,
+				dashed, branch_width
 			)
 	# Breathing ring on every node the player could buy RIGHT NOW, a steady
 	# gold ring on what is already theirs — the growth state readable at a
@@ -1071,7 +1081,8 @@ func _draw_graph() -> void:
 ## the parent's x at the child's height, which is what bends the line out of
 ## the spine the way a branch leaves a trunk.
 func _draw_branch(
-	from: Vector2, to: Vector2, color: Color, dashed: bool = false
+	from: Vector2, to: Vector2, color: Color, dashed: bool = false,
+	width: float = EDGE_WIDTH
 ) -> void:
 	var control := Vector2(from.x, to.y)
 	var points := PackedVector2Array()
@@ -1091,7 +1102,7 @@ func _draw_branch(
 			_canvas.draw_line(points[index], points[index + 1], color, 2.0)
 			index += 2
 		return
-	_canvas.draw_polyline(points, color, EDGE_WIDTH, true)
+	_canvas.draw_polyline(points, color, width, true)
 
 
 ## The colour a node's branch and ring speak: bought, within reach, or dim.
