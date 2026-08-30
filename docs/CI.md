@@ -220,3 +220,17 @@ retired with it — itch serves uploads from its own versioned CDN.
 Gameplay/meta code can call `show_rewarded()`, `show_interstitial()`, `is_available()`,
 and `log_event()` today; each file's header comment documents which SDK it's shaped
 for and what real integration requires.
+
+
+## QA 워크트리 사전 절차 (N11 게이트 I-2)
+
+`git add --renormalize .` 은 **인덱스만** 정규화한다 — CRLF로 체크아웃된 워킹 트리는
+그대로 남아 멀티라인 문자열 리터럴에 을 끼워 넣고, 테스트가 "3/600 실패"처럼
+제품 회귀로 위장한다(2026-08-28 landscape QA, 2026-08-30 통합 게이트 — 220파일).
+QA 워크트리는 측정 전에 반드시:
+
+```sh
+git config core.autocrlf false
+git add --renormalize . && git checkout-index --force -a   # 워킹 트리까지 LF
+git ls-files '*.gd' '*.tscn' '*.json' '*.tres'   | xargs grep -lU $'' && echo "CRLF LEFT — 게이트 중단"
+```
