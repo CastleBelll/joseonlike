@@ -184,7 +184,7 @@ func _build_row(mod_id: String) -> Control:
 	row.add_child(text_box)
 
 	var result_name: String = _weapon_name(String(mod.get("result_weapon", "")))
-	var name_label := _label(result_name, UiPalette.FONT_SIZE_BODY, UiPalette.TEXT_ON_DARK)
+	var name_label := _label(result_name, UiPalette.FONT_SIZE_BODY, UiPalette.INK)
 	name_label.name = "Name"
 	text_box.add_child(name_label)
 
@@ -192,9 +192,11 @@ func _build_row(mod_id: String) -> Control:
 		_weapon_name(String(mod.get("weapon_id", ""))),
 		int(mod.get("level_required", 1)),
 	]
+	# QA N11-4 F-3: the card is the kit's light parchment — dark-ground
+	# text tokens measured 1.07:1 on it. Ink, like every other parchment row.
 	var detail := _label(
 		base_line + " · " + _bill_text(mod),
-		UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_DARK
+		UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER
 	)
 	detail.name = "Detail"
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

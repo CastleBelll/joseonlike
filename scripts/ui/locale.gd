@@ -49,7 +49,7 @@ const STRINGS := {
 	"meta.char_locked": {"ko": "수행자 해금 후 구매 가능", "en": "Unlock the cultivator to purchase"},
 	"bestiary.title": {"ko": "괴이록", "en": "Records of Anomalies"},
 	"smithy.title": {"ko": "대장간", "en": "Smithy"},
-	"smithy.unlock_fmt": {"ko": "해금 — %d냥", "en": "Unlock — %d"},
+	"smithy.unlock_fmt": {"ko": "해금 — %d냥", "en": "Unlock — %d coins"},
 	"smithy.unlocked": {"ko": "해금됨", "en": "Unlocked"},
 	"smithy.bought": {"ko": "레시피 해금!", "en": "Recipe unlocked!"},
 	"smithy.from_fmt": {"ko": "%s Lv.%d 개조", "en": "Mod %s at Lv.%d"},
