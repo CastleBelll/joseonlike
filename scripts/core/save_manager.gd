@@ -22,6 +22,7 @@ const BUS_MASTER := "Master"
 const BUS_MUSIC := "Music"
 const BUS_EFFECTS := "Effects"
 const ACHIEVEMENTS_PATH := "res://data/achievements.json"
+const META_TREE_PATH := "res://data/meta_tree.json"
 const BUS_BY_SETTING := {
 	"master_volume": BUS_MASTER,
 	"music_volume": BUS_MUSIC,
@@ -53,13 +54,38 @@ var _write_lock_reason: String = "writes locked"
 var _earned_achievements: Array[Dictionary] = []
 
 
+## N11-18: coins handed back by the tree redesign, for the camp to announce
+## once. Zero when there was nothing to refund.
+var pending_refund: int = 0
+
+
 func _init() -> void:
 	instance = self
 
 
 func _ready() -> void:
 	profile = _load_from_disk()
+	_refund_removed_nodes()
 	apply_settings()
+
+
+## N11-18: the redesign removed 49 tree nodes, so a returning profile is paid
+## back what it spent on them before anything reads the tree. One pass — the
+## ranks are dropped in the same fold, so a second boot finds nothing to
+## refund. The amount is remembered for the camp to announce once.
+func _refund_removed_nodes() -> void:
+	var tree: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string(META_TREE_PATH)
+	)
+	if not tree is Dictionary:
+		return
+	var result: Dictionary = MetaTree.refund_removed(profile, tree as Dictionary)
+	var coins: int = int(result["refunded"])
+	if coins <= 0:
+		return
+	profile = result["profile"]
+	pending_refund = coins
+	save_profile()
 
 
 ## Sets one settings key, applies it immediately, and optionally persists.

@@ -10,8 +10,12 @@ const SPAWNING_FIELDS: Array[String] = [
 const CHARACTER_FIELDS: Array[String] = ["base_hp", "base_speed", "hit_invuln_sec"]
 # N2-1 select-card copy: every roster entry must render a full row card.
 const CHARACTER_TEXT_FIELDS: Array[String] = [
-	"name_ko", "name_en", "name_hanja", "title_ko", "title_en", "quote_ko", "quote_en"
+	"name_ko", "name_en", "title_ko", "title_en", "quote_ko", "quote_en"
 ]
+## N11-18: 꺽정 and 일지 are folk-tale names with no standard hanja, and the
+## theme font has no glyph for the ones that exist — the field stays required
+## but may be empty, exactly like data/npcs.json already allows.
+const CHARACTER_OPTIONAL_TEXT_FIELDS: Array[String] = ["name_hanja"]
 ## N9-73: "coming_soon" is a character that is not built yet — no weapons, no
 ## actives. It is a type of its own rather than an achievement nobody can
 ## honour: the card used to promise 전사 to whoever earned 도깨비 사냥꾼, and
@@ -381,6 +385,9 @@ func _check_character_card(
 	character: Dictionary, achievements: Dictionary, character_id: String
 ) -> void:
 	var label: String = "characters." + character_id
+	for field: String in CHARACTER_OPTIONAL_TEXT_FIELDS:
+		if not character.has(field):
+			_fail("characters.%s.%s missing" % [character_id, field])
 	for field: String in CHARACTER_TEXT_FIELDS:
 		if String(character.get(field, "")).is_empty():
 			_fail("%s.%s missing or empty" % [label, field])

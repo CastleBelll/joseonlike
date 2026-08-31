@@ -54,9 +54,9 @@
   }
  },
  "warrior": {
-  "name_ko": "석주",
-  "name_en": "Seokju",
-  "name_hanja": "石柱",
+  "name_ko": "꺽정",
+  "name_en": "Kkeokjeong",
+  "name_hanja": "",
   "title_ko": "환도를 벼리는 무인",
   "title_en": "Blade of the Unyielding",
   "quote_ko": "칼끝에 망설임을 남기지 않는다.",
@@ -115,9 +115,9 @@
   }
  },
  "archer": {
-  "name_ko": "월영",
-  "name_en": "Wolyeong",
-  "name_hanja": "月影",
+  "name_ko": "일지",
+  "name_en": "Ilji",
+  "name_hanja": "",
   "title_ko": "바람을 읽는 명궁",
   "title_en": "Archer Who Reads the Wind",
   "quote_ko": "시위를 떠난 화살은 돌아오지 않는다.",

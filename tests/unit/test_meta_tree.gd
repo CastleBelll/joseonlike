@@ -388,7 +388,7 @@ func test_screen_builds_with_tabs_and_cta_follows_selection() -> bool:
 	var screen: MetaTreeScreen = (load(META_SCENE) as PackedScene).instantiate()
 	screen.build_ui()
 	var passed: bool = screen.find_child("GoldValue", true, false) != null
-	passed = passed and screen.find_child("Node_iron_bones", true, false) != null
+	passed = passed and screen.find_child("Node_coin_eye", true, false) != null
 	# One tab per roster character plus the shared trunk.
 	passed = passed and screen.find_child("Tab_shared", true, false) != null \
 		and screen.find_child("Tab_taoist", true, false) != null \
@@ -398,15 +398,15 @@ func test_screen_builds_with_tabs_and_cta_follows_selection() -> bool:
 	# No selection: the CTA is hidden, never a dead greyed button.
 	passed = passed and cta != null and not cta.visible
 	# Selecting an affordable-shape node shows the CTA (broke profile → 부족).
-	screen.select_node("iron_bones")
+	screen.select_node("coin_eye")
 	passed = passed and cta.visible
 	# A locked node hides the CTA and names its requirement in the card.
 	# N11-14 rewired the trunk for breadth: 부적 연마 is a root now, 돌가죽
 	# is the node still gated behind 철골.
-	screen.select_node("stone_skin")
+	screen.select_node("ledger_eye")
 	var effect_label: Label = screen.find_child("DetailEffect", true, false)
 	passed = passed and not cta.visible \
-		and effect_label != null and effect_label.text.contains("철골")
+		and effect_label != null and effect_label.text.contains("엽전 눈")
 	if not passed:
 		push_error("test_meta_tree: screen structure or CTA state wrong")
 	screen.free()
@@ -421,22 +421,22 @@ func test_screen_branch_tabs_switch_and_lock() -> bool:
 	screen.select_node("burn_mastery")
 	var passed: bool = screen._current_tab == "taoist" \
 		and screen._node_buttons.has("burn_mastery") \
-		and not screen._node_buttons.has("iron_bones")
+		and not screen._node_buttons.has("coin_eye")
 	var cta: Button = screen.find_child("CtaButton", true, false)
 	passed = passed and cta.visible
 	# A locked character's branch: node visible, CTA hidden, and the reason
 	# NAMED — whatever it says. N9-73 changed that text from a promise nothing
 	# could keep ("earn 도깨비 사냥꾼") to the truth ("not built yet"), so the
 	# rule under test is that a locked branch explains itself, not the wording.
-	screen.select_node("hwando_hone")
+	screen.select_node("iron_stance")
 	var info_label: Label = screen.find_child("DetailInfo", true, false)
 	passed = passed and screen._current_tab == "warrior" \
-		and screen._node_buttons.has("hwando_hone") \
+		and screen._node_buttons.has("iron_stance") \
 		and not cta.visible \
 		and info_label != null and not info_label.text.is_empty()
 	# Even a forced CTA press on a locked branch buys nothing.
 	screen._profile["gold"] = 99999
-	screen._selected_id = "hwando_hone"
+	screen._selected_id = "iron_stance"
 	screen._on_cta_pressed()
 	passed = passed and int(screen._profile["gold"]) == 99999 \
 		and (screen._profile["meta_tree"] as Dictionary).is_empty()
@@ -451,17 +451,17 @@ func test_screen_cta_refuses_purchase_without_gold() -> bool:
 	# gold and rank must not move (edge #1).
 	var screen: MetaTreeScreen = (load(META_SCENE) as PackedScene).instantiate()
 	screen.build_ui()
-	screen.select_node("iron_bones")
+	screen.select_node("coin_eye")
 	screen._on_cta_pressed()
 	var passed: bool = int(screen._profile["gold"]) == 0 \
 		and (screen._profile["meta_tree"] as Dictionary).is_empty()
 	# With gold, the same tap buys rank 1 and the pill reflects the spend —
 	# expected remainder derives from data so a cost retune cannot break this.
-	var rank_cost: int = MetaTree.next_cost(MetaTree.node(MetaTree.load_tree(), "iron_bones"), 0)
+	var rank_cost: int = MetaTree.next_cost(MetaTree.node(MetaTree.load_tree(), "coin_eye"), 0)
 	screen._profile["gold"] = 100
 	screen._on_cta_pressed()
 	passed = passed and int(screen._profile["gold"]) == 100 - rank_cost \
-		and MetaTree.rank_of(screen._profile["meta_tree"], "iron_bones") == 1
+		and MetaTree.rank_of(screen._profile["meta_tree"], "coin_eye") == 1
 	# Deselect: the CTA can never act on a stale selection (edge #13).
 	screen._on_canvas_input(_click())
 	screen._on_cta_pressed()
@@ -545,3 +545,26 @@ func test_cheapest_next_empty_when_everything_is_maxed() -> bool:
 	var state := {"root": 2, "branch": 1, "tao_burn": 1}
 	return MetaTree.cheapest_next(_tiny_tree(), state, 9999, UNLOCKED).is_empty()
 
+
+
+func test_refund_removed_pays_back_and_drops_the_ranks() -> bool:
+	# N11-18: the redesign removed 49 nodes; a profile holding their ranks gets
+	# the exact coins back, once, and the dead ids leave the state.
+	var tree := {
+		"config": {"_removed_refunds": {"gone_node": [100, 250], "other_gone": [80]}},
+		"nodes": [],
+	}
+	var profile: Dictionary = SaveProfile.default_profile()
+	profile["gold"] = 40
+	profile["meta_tree"] = {"gone_node": 2, "other_gone": 1, "kept_node": 3}
+	var result: Dictionary = MetaTree.refund_removed(profile, tree)
+	var next: Dictionary = result["profile"]
+	if int(result["refunded"]) != 430 or int(next["gold"]) != 470:
+		push_error("test_meta_tree: refund must pay 100+250+80 into the purse")
+		return false
+	var state: Dictionary = next["meta_tree"]
+	if state.has("gone_node") or state.has("other_gone") or int(state["kept_node"]) != 3:
+		push_error("test_meta_tree: refunded ids must leave, kept ids must stay")
+		return false
+	# Second pass finds nothing — the ranks are already gone.
+	return int(MetaTree.refund_removed(next, tree)["refunded"]) == 0

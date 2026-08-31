@@ -310,6 +310,38 @@ static func purchase(
 ## N7-2 migration contract: nodes removed by the rework are pruned here with
 ## the caller's warning and their gold is deliberately NOT refunded — the
 ## rework is a repricing, not a rollback (data/BALANCE.md N7-2).
+## N11-18 정리 패스 refund (owner: 환불해줘). The redesign removed 49 nodes, and
+## the standing N7-2 policy — a rework is a repricing, not a rollback — would
+## have silently eaten what the player spent on them. The tree ships a
+## `config._removed_refunds` table of every removed id and its cost ladder, so
+## a profile holding those ranks gets the exact coins back, once. Returns
+## {"profile": Dictionary, "refunded": int}.
+static func refund_removed(profile: Dictionary, tree: Dictionary) -> Dictionary:
+	var table: Dictionary = (tree.get("config", {}) as Dictionary).get(
+		"_removed_refunds", {}
+	)
+	var state: Dictionary = profile.get("meta_tree", {})
+	if table.is_empty() or state.is_empty():
+		return {"profile": profile, "refunded": 0}
+	var coins: int = 0
+	var kept: Dictionary = {}
+	for key: Variant in state.keys():
+		var node_id: String = String(key)
+		if not table.has(node_id):
+			kept[node_id] = int(state[key])
+			continue
+		var ladder: Array = table[node_id]
+		var rank: int = clampi(int(state[key]), 0, ladder.size())
+		for i: int in rank:
+			coins += int(ladder[i])
+	if coins <= 0 and kept.size() == state.size():
+		return {"profile": profile, "refunded": 0}
+	var next: Dictionary = profile.duplicate(true)
+	next["gold"] = mini(int(next.get("gold", 0)) + coins, SaveProfile.MAX_GOLD)
+	next["meta_tree"] = kept
+	return {"profile": next, "refunded": coins}
+
+
 static func sanitize_state(tree: Dictionary, state: Dictionary) -> Dictionary:
 	var clean: Dictionary = {}
 	var dropped: int = 0
