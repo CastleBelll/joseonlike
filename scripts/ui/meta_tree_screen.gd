@@ -26,7 +26,10 @@ const NODE_ICON_SIZE := 32.0
 ## their size — they are touch targets and the circle art is built once — and
 ## the SPACING between rows carries the reduction instead.
 ## Wide enough for the detail card's icon well plus two lines of effect text.
-const SIDE_WIDTH_LANDSCAPE := 380.0
+## QA N11-14 F-8: the landscape panel held 210px of dead night under its card
+## (38.9% of the screen height) while the tree was squeezed into 508x368. The
+## panel keeps what the card and CTA actually need; the tree takes the rest.
+const SIDE_WIDTH_LANDSCAPE := 300.0
 const NODE_BORDER_WIDTH := 3
 const EDGE_WIDTH := 3.0
 const TRUNK_WIDTH := 10.0
@@ -36,9 +39,35 @@ const TRUNK_WIDTH := 10.0
 ## chained nodes pushed outward past their parent. Nothing scrolls; the
 ## canvas is the viewport and the spiral is scaled to fit it.
 const GOLDEN_ANGLE := 2.399963
-const HUB_RADIUS := 38.0
+const HUB_RADIUS := 30.0
 ## Owner (노드들끼리 간격도 다 다르고): the gap a ring keeps from the next.
-const RING_GAP := 18.0
+const RING_GAP := 14.0
+## Each ring out shrinks its discs by this much, down to NODE_SIZE_MIN.
+const RING_TAPER := 0.84
+const NODE_SIZE_MIN := 34.0
+## Where a lone ring of roots sits when the tab has no revealed depth yet.
+const SINGLE_RING := 0.62
+## The closest the first ring sits to the hub when the rings have room to
+## spread — a ring pinned against the hub face reads as a clump.
+const FIRST_RING_MIN := 0.44
+## How many rings of the chain the canvas shows at once — a portrait radius of
+## ~230px seats this many readable discs, and past it the links stop being
+## legible at all.
+const VISIBLE_DEPTH := 3
+## The grid web: how many cells the short side is cut into, the disc's share
+## of a cell, and the compass order a chain walks.
+const GRID_SPAN := 7.0
+const CELL_MIN := 46.0
+const CELL_MAX := 96.0
+const CELL_FILL := 0.78
+const GRID_RING: Array[Vector2i] = [
+	Vector2i(0, -1), Vector2i(1, -1), Vector2i(1, 0), Vector2i(1, 1),
+	Vector2i(0, 1), Vector2i(-1, 1), Vector2i(-1, 0), Vector2i(-1, -1),
+]
+## How far an over-deep node steps aside inside its own wedge, and how far it
+## pulls back in, so a tail deeper than the canvas never stacks on its parent.
+const OVERFLOW_FAN := 0.34
+const OVERFLOW_PULL := 0.17
 const RADIAL_PAD := 10.0
 ## Owner (곡선말고 직선으로 여러 갈래로): a chain runs STRAIGHT out along its
 ## root's bearing. Only a real fork opens an angle, and both forked arms
@@ -115,6 +144,10 @@ var _bursts: Array[Dictionary] = []
 ## Owner (숨어있던 노드들이 나와야): ids that just appeared, and how far into
 ## their arrival they are — they scale up from nothing while the rest holds.
 var _reveal_ids: Array[String] = []
+## QA N11-14 F-5/F-6: the settled disc size per node, tapering ring by ring.
+var _node_sizes: Dictionary = {}
+## Where the hub cell landed after the web was centred on its own extent.
+var _hub_pos: Vector2 = Vector2.ZERO
 var _reveal_phase: float = 1.0
 ## QA I-5 growth fraction (0..1) the branch drawing honors; I-10 tween store.
 var _grow: float = 1.0
@@ -904,7 +937,7 @@ func _layout_nodes() -> void:
 		if not _node_buttons.has(node_id):
 			continue
 		var button: Button = _node_buttons[node_id]
-		var half: float = _node_size() / 2.0
+		var half: float = _node_size_of(node_id) / 2.0
 		button.position = (
 			(_radial.get(node_id, Vector2.ZERO) as Vector2) - Vector2(half, half)
 		)
@@ -922,101 +955,177 @@ func _layout_nodes() -> void:
 ## requires line always points away from the hub like a growing branch.
 func _compute_radial() -> void:
 	_radial.clear()
+	_node_sizes.clear()
 	var entries: Array[Dictionary] = _revealed_nodes()
 	if entries.is_empty():
 		return
+	# QA N11-14 F-4/F-5/F-6: rings could not hold a five-deep chain in a
+	# 508x368 landscape canvas — the tail piled onto the outer ring, links
+	# became chords across the field and cut through other discs. The tree is
+	# a GRID web now: the hub takes the middle cell, every node takes a cell,
+	# and a child always lands on a cell NEXT to its parent. Equal cells make
+	# the spacing equal everywhere, and a link one cell long cannot reach far
+	# enough to cross a third disc.
 	var center := _canvas.size / 2.0
-	var radius := Vector2(
-		_canvas.size.x / 2.0 - NODE_SIZE / 2.0 - RADIAL_PAD,
-		_canvas.size.y / 2.0 - NODE_SIZE / 2.0 - RADIAL_PAD
-	)
-	# Owner (노드들끼리 간격도 다 다르고): every node on one ring now takes an
-	# EQUAL slice of the circle, so the gap between neighbours is the same all
-	# the way round. Rings are the tiers: a node sits one ring further out than
-	# the prerequisite it grew from, and each ring is ordered by its parent's
-	# bearing so no two straight links ever cross.
-	var depth: Dictionary = {}
-	var parent_of: Dictionary = {}
-	var shown: Dictionary = {}
-	for entry: Dictionary in entries:
-		shown[String(entry["id"])] = true
+	var depth: Dictionary = _depth_map(entries)
+	var children: Dictionary = {}
+	var roots: Array[String] = []
 	for entry: Dictionary in entries:
 		var node_id: String = String(entry["id"])
 		var requires: Array = entry.get("requires", [])
-		if requires.is_empty() or not shown.has(String(requires[0])):
-			depth[node_id] = 1
-		else:
-			parent_of[node_id] = String(requires[0])
-	var settled: bool = false
-	while not settled:
-		settled = true
-		for entry: Dictionary in entries:
-			var node_id: String = String(entry["id"])
-			if depth.has(node_id):
-				continue
-			var parent_id: String = String(parent_of.get(node_id, ""))
-			if depth.has(parent_id):
-				depth[node_id] = int(depth[parent_id]) + 1
-				settled = false
-	var deepest: int = 1
-	for entry: Dictionary in entries:
-		deepest = maxi(deepest, int(depth.get(String(entry["id"]), 1)))
-	var span: float = maxf(minf(radius.x, radius.y), 1.0)
-	var inner: float = (HUB_RADIUS + _node_size() + 12.0) / span
-	# A ring never sits closer to the next than a disc plus breathing room, so
-	# discs stay readable however deep the tree grows. A chain deeper than the
-	# canvas can hold keeps going on the outermost ring, which is evenly
-	# spaced anyway — the link is still one straight segment.
-	var pitch: float = (_node_size() + RING_GAP) / span
-	var max_rings: int = maxi(int(floor((1.0 - inner) / pitch)) + 1, 1)
-	if deepest <= max_rings:
-		pitch = (1.0 - inner) / float(maxi(deepest - 1, 1))
-	# Levels past the last ring share it, so they must share its slot list too
-	# — two buckets at one radius would both start at the same bearing.
-	var rings: Dictionary = {}
-	for entry: Dictionary in entries:
-		var node_id: String = String(entry["id"])
-		var slot: int = mini(int(depth.get(node_id, 1)), max_rings)
-		var members: Array = rings.get(slot, [])
-		members.append(node_id)
-		rings[slot] = members
-	var bearings: Dictionary = {}
-	for level: int in range(1, max_rings + 1):
-		var members: Array = rings.get(level, [])
-		if members.is_empty():
+		var parent_id: String = "" if requires.is_empty() else String(requires[0])
+		if parent_id.is_empty() or not depth.has(parent_id) or int(depth[node_id]) == 1:
+			roots.append(node_id)
 			continue
-		if level > 1:
-			# Sorted by the parent's bearing, so the ring's even spacing keeps
-			# every child on the same side as the node it came from.
-			members.sort_custom(func(a: Variant, b: Variant) -> bool:
-				return float(bearings.get(parent_of.get(a, ""), 0.0)) 					< float(bearings.get(parent_of.get(b, ""), 0.0))
+		var kids: Array = children.get(parent_id, [])
+		kids.append(node_id)
+		children[parent_id] = kids
+	roots.sort()
+	# One cell size for the whole board: big enough to read, small enough that
+	# the deepest chain still has cells to walk into.
+	var cell: float = clampf(
+		minf(_canvas.size.x, _canvas.size.y) / float(GRID_SPAN), CELL_MIN, CELL_MAX
+	)
+	var cols: int = maxi(int(floor(_canvas.size.x / cell)), 3)
+	var rows: int = maxi(int(floor(_canvas.size.y / cell)), 3)
+	if cols % 2 == 0:
+		cols -= 1
+	if rows % 2 == 0:
+		rows -= 1
+	var half_c: int = (cols - 1) / 2
+	var half_r: int = (rows - 1) / 2
+	var taken: Dictionary = {Vector2i.ZERO: true}
+	var cells: Dictionary = {}
+	# Roots ring the hub, in compass order, so the tab opens as a wheel.
+	var dirs: Array[Vector2i] = GRID_RING
+	for i: int in roots.size():
+		var want: Vector2i = dirs[i % dirs.size()]
+		if i >= dirs.size():
+			want = dirs[i % dirs.size()] * 2
+		var slot: Vector2i = _free_cell(
+			want, want, taken, half_c, half_r
+		)
+		taken[slot] = true
+		cells[roots[i]] = slot
+	# Chains walk outward one cell at a time, keeping their heading when the
+	# cell ahead is free and bending to the nearest free neighbour when it is
+	# not — so a segment is always one cell long.
+	var queue: Array[String] = roots.duplicate()
+	while not queue.is_empty():
+		var node_id: String = queue.pop_front()
+		var here: Vector2i = cells[node_id]
+		var kids: Array = children.get(node_id, [])
+		kids.sort()
+		var heading: Vector2i = _cell_heading(here)
+		for i: int in kids.size():
+			var kid_id: String = String(kids[i])
+			var bias: Vector2i = heading if i == 0 else _rotate_cell(
+				heading, (i + 1) / 2 * (1 if i % 2 == 1 else -1)
 			)
-		var step: float = TAU / float(members.size())
-		var ring: float = inner + pitch * float(level - 1)
-		for i: int in members.size():
-			var node_id: String = String(members[i])
-			var angle: float = -PI / 2.0 + step * float(i)
-			bearings[node_id] = angle
-			_radial[node_id] = center + Vector2(
-				cos(angle) * radius.x * ring, sin(angle) * radius.y * ring
-			)
-	# The rings are even by construction; the shrink step only ever fires when
-	# one ring holds more discs than its circumference can seat.
+			var slot: Vector2i = _free_cell(here + bias, bias, taken, half_c, half_r)
+			taken[slot] = true
+			cells[kid_id] = slot
+			queue.append(kid_id)
+	# Second pass: the cells actually used decide the scale, so a tab with six
+	# revealed nodes fills the canvas instead of huddling at the hub, and a
+	# full tab still fits. The hub's own cell counts, so it never gets buried.
+	var ex: int = 1
+	var ey: int = 1
+	for node_id: Variant in cells:
+		var slot: Vector2i = cells[node_id]
+		ex = maxi(ex, absi(slot.x))
+		ey = maxi(ey, absi(slot.y))
+	cell = clampf(
+		minf(
+			(_canvas.size.x - RADIAL_PAD * 2.0) / float(ex * 2 + 1),
+			(_canvas.size.y - RADIAL_PAD * 2.0) / float(ey * 2 + 1)
+		), CELL_MIN, CELL_MAX
+	)
+	# The web is centred on what it actually occupies, not on the hub cell —
+	# a lopsided reveal used to sit high with dead canvas under it.
+	var lo := Vector2i(0, 0)
+	var hi := Vector2i(0, 0)
+	for node_id: Variant in cells:
+		var slot: Vector2i = cells[node_id]
+		lo = Vector2i(mini(lo.x, slot.x), mini(lo.y, slot.y))
+		hi = Vector2i(maxi(hi.x, slot.x), maxi(hi.y, slot.y))
+	var shift := Vector2(float(lo.x + hi.x), float(lo.y + hi.y)) / 2.0
+	_hub_pos = center - shift * cell
+	var disc: float = cell * CELL_FILL
+	for node_id: Variant in cells:
+		var slot: Vector2i = cells[node_id]
+		_node_sizes[node_id] = disc
+		_radial[node_id] = _hub_pos + Vector2(slot) * cell
 	_node_scale = 1.0
-	for _attempt: int in 3:
-		if _min_separation() >= _node_size() + 4.0:
-			break
-		_node_scale *= 0.85
 	_apply_node_sizes()
 
 
-## N11-12: a couple dozen relaxation sweeps — any pair closer than a node
-## width pushes apart along its own axis, everything stays inside the canvas
-## ellipse and off the hub. The analytic pass gives the SHAPE (spiral field,
-## curling arms); this pass guarantees nothing ever touches, whatever the
-## data grows into.
+## The eight cells around a node, ordered so a search fans out from a bias.
+func _free_cell(
+	want: Vector2i, bias: Vector2i, taken: Dictionary, half_c: int, half_r: int
+) -> Vector2i:
+	if _cell_ok(want, taken, half_c, half_r):
+		return want
+	var origin: Vector2i = want - bias
+	for turn: int in [1, -1, 2, -2, 3, -3, 4]:
+		var probe: Vector2i = origin + _rotate_cell(bias, turn)
+		if _cell_ok(probe, taken, half_c, half_r):
+			return probe
+	# Everything adjacent is taken: spiral out until something is free, so a
+	# crowded board still places every node instead of stacking them.
+	for radius: int in range(2, maxi(half_c, half_r) + 1):
+		for dx: int in range(-radius, radius + 1):
+			for dy: int in range(-radius, radius + 1):
+				if absi(dx) != radius and absi(dy) != radius:
+					continue
+				var probe2: Vector2i = origin + Vector2i(dx, dy)
+				if _cell_ok(probe2, taken, half_c, half_r):
+					return probe2
+	return want
+
+
+func _cell_ok(cell: Vector2i, taken: Dictionary, half_c: int, half_r: int) -> bool:
+	if taken.has(cell):
+		return false
+	return absi(cell.x) <= half_c and absi(cell.y) <= half_r
+
+
+## Which of the eight compass steps points away from the hub.
+func _cell_heading(from: Vector2i) -> Vector2i:
+	if from == Vector2i.ZERO:
+		return Vector2i(0, -1)
+	return Vector2i(signi(from.x), signi(from.y))
+
+
+## Turns a compass step by `steps` eighths of a circle.
+func _rotate_cell(step: Vector2i, steps: int) -> Vector2i:
+	var order: Array[Vector2i] = GRID_RING
+	var at: int = order.find(step)
+	if at < 0:
+		at = 0
+	return order[posmod(at + steps, order.size())]
+
+
+## QA N11-14 F-5/F-6: a 231px portrait radius seats barely two full-size
+## rings, so every chain deeper than that collapsed onto one ring and its
+## links became chords across the field. Discs taper outward instead — the
+## ring the node sits on decides its size, which reads as depth and buys the
+## room a deep chain needs.
+## The board's baseline disc — the grid decides the real size per node, and
+## this is the fallback for anything asked about before a layout pass.
 func _node_size() -> float:
 	return NODE_SIZE * _node_scale
+
+
+func _ring_size(level: int) -> float:
+	return maxf(
+		NODE_SIZE * _node_scale * pow(RING_TAPER, float(maxi(level, 1) - 1)),
+		NODE_SIZE_MIN * _node_scale
+	)
+
+
+func _node_size_of(node_id: String) -> float:
+	return float(_node_sizes.get(node_id, _node_size()))
 
 
 func _min_separation() -> float:
@@ -1032,15 +1141,15 @@ func _min_separation() -> float:
 
 ## Buttons and icons re-fit the settled disc size after a fallback shrink.
 func _apply_node_sizes() -> void:
-	var side: float = _node_size()
 	for node_id: Variant in _node_buttons:
 		var button: Button = _node_buttons[node_id]
+		var side: float = _node_size_of(String(node_id))
 		button.custom_minimum_size = Vector2(side, side)
 		button.size = Vector2(side, side)
 		button.pivot_offset = Vector2(side, side) / 2.0
 		var icon: TextureRect = button.get_node_or_null("Icon")
 		if icon != null:
-			var icon_side: float = NODE_ICON_SIZE * _node_scale
+			var icon_side: float = NODE_ICON_SIZE * (side / NODE_SIZE)
 			icon.offset_left = -icon_side / 2.0
 			icon.offset_top = -icon_side / 2.0
 			icon.offset_right = icon_side / 2.0
@@ -1215,11 +1324,52 @@ func _tab_nodes() -> Array[Dictionary]:
 ## prerequisite reaches rank 1, so buying is what opens the map.
 func _revealed_nodes() -> Array[Dictionary]:
 	var state: Dictionary = _profile.get("meta_tree", {})
-	var shown: Array[Dictionary] = []
+	var opened: Array[Dictionary] = []
 	for entry: Dictionary in _tab_nodes():
 		if _is_revealed(entry, state):
+			opened.append(entry)
+	# QA N11-14 F-5/F-6: a portrait canvas seats about three readable rings,
+	# and a chain runs deeper than that — piling the rest onto the outer ring
+	# is what made links cross the field and cut through discs. The screen
+	# holds a WINDOW instead: the frontier the player is working on, plus any
+	# node anywhere that still has a rank left to buy. A node only leaves the
+	# canvas once it is finished AND the growth has moved past it.
+	var depth: Dictionary = _depth_map(opened)
+	var deepest: int = 1
+	for node_id: Variant in depth:
+		deepest = maxi(deepest, int(depth[node_id]))
+	var floor_level: int = maxi(deepest - VISIBLE_DEPTH + 1, 1)
+	var shown: Array[Dictionary] = []
+	for entry: Dictionary in opened:
+		var node_id: String = String(entry["id"])
+		var level: int = int(depth.get(node_id, 1))
+		var finished: bool = MetaTree.rank_of(state, node_id) >= MetaTree.max_rank(entry)
+		if level >= floor_level or not finished:
 			shown.append(entry)
 	return shown
+
+
+## Depth of every node within one set, counting only parents that are in it.
+func _depth_map(entries: Array[Dictionary]) -> Dictionary:
+	var present: Dictionary = {}
+	for entry: Dictionary in entries:
+		present[String(entry["id"])] = entry
+	var depth: Dictionary = {}
+	var settled: bool = false
+	while not settled:
+		settled = true
+		for entry: Dictionary in entries:
+			var node_id: String = String(entry["id"])
+			if depth.has(node_id):
+				continue
+			var requires: Array = entry.get("requires", [])
+			if requires.is_empty() or not present.has(String(requires[0])):
+				depth[node_id] = 1
+				settled = false
+			elif depth.has(String(requires[0])):
+				depth[node_id] = int(depth[String(requires[0])]) + 1
+				settled = false
+	return depth
 
 
 ## The ids on screen right now, so a purchase can tell what it just opened.
@@ -1310,7 +1460,7 @@ func _draw_graph() -> void:
 	var width: float = _canvas.size.x
 	# N11-12: the spine is a HUB now — the 신목's heartwood at the canvas
 	# center that every flat branch grows out of, up, down and sideways.
-	var hub: Vector2 = _canvas.size / 2.0
+	var hub: Vector2 = _hub_pos if _hub_pos != Vector2.ZERO else _canvas.size / 2.0
 	_canvas.draw_circle(hub, HUB_RADIUS, UiPalette.NIGHT_BROWN)
 	_canvas.draw_arc(hub, HUB_RADIUS, 0.0, TAU, 40, UiPalette.WOOD_BORDER, 3.0)
 	var state: Dictionary = _profile.get("meta_tree", {})
@@ -1335,16 +1485,21 @@ func _draw_graph() -> void:
 		var branch_width: float = (
 			4.0 if branch_color == UiPalette.GOLD_BORDER else EDGE_WIDTH
 		)
+		var to_disc: float = _node_size_of(String(entry.get("id", "")))
 		var requires: Array = entry.get("requires", [])
 		if requires.is_empty():
-			_draw_branch(hub, to_center, branch_color, dashed, branch_width)
+			_draw_branch(
+				hub, to_center, branch_color, dashed, branch_width,
+				HUB_RADIUS * 2.0, to_disc
+			)
 		for required: Variant in requires:
-			var from_entry: Dictionary = MetaTree.node(_tree, String(required))
-			if from_entry.is_empty():
+			var from_id: String = String(required)
+			var from_entry: Dictionary = MetaTree.node(_tree, from_id)
+			if from_entry.is_empty() or not _radial.has(from_id):
 				continue
 			_draw_branch(
 				_node_center(from_entry, width), to_center, branch_color,
-				dashed, branch_width
+				dashed, branch_width, _node_size_of(from_id), to_disc
 			)
 	# Breathing ring on every node the player could buy RIGHT NOW, a steady
 	# gold ring on what is already theirs — the growth state readable at a
@@ -1365,27 +1520,29 @@ func _draw_graph() -> void:
 				# alone. Owned wears a DOUBLE ring, buyable a single one —
 				# the state reads as form before it reads as hue.
 				_canvas.draw_arc(
-					center, _node_size() / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
+					center, _node_size_of(node_id) / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
 					Color(UiPalette.GOLD_BORDER, ring_fade), 3.0
 				)
 				_canvas.draw_arc(
-					center, _node_size() / 2.0 + PULSE_RING_PAD - 5.0,
+					center, _node_size_of(node_id) / 2.0 + PULSE_RING_PAD - 5.0,
 					0.0, TAU, 28,
 					Color(UiPalette.GOLD_BORDER, 0.7 * ring_fade), 1.5
 				)
 			elif node_id in pulse_ids:
 				_canvas.draw_arc(
-					center, _node_size() / 2.0 + PULSE_RING_PAD + ring_swell,
+					center, _node_size_of(node_id) / 2.0 + PULSE_RING_PAD + ring_swell,
 					0.0, TAU, 32, Color(UiPalette.GOLD, 0.65 * ring_fade), 2.0
 				)
 			elif _is_buyable(entry, state):
 				_canvas.draw_arc(
-					center, _node_size() / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
+					center, _node_size_of(node_id) / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
 					Color(UiPalette.WOOD, 0.55 * ring_fade), 2.0
 				)
 	# I-6 / N11-15: the selected node wears a MARK — plate and icon untouched.
 	if not _selected_id.is_empty() and _radial.has(_selected_id):
-		_draw_selection_mark(_radial[_selected_id])
+		_draw_selection_mark(
+			_radial[_selected_id], _node_size_of(_selected_id)
+		)
 	# One-shot purchase bursts: an expanding, fading gold ring where the coin
 	# was just spent.
 	for burst: Dictionary in _bursts:
@@ -1407,7 +1564,8 @@ func _draw_graph() -> void:
 ## the spine the way a branch leaves a trunk.
 func _draw_branch(
 	from: Vector2, to: Vector2, color: Color, dashed: bool = false,
-	width: float = EDGE_WIDTH
+	width: float = EDGE_WIDTH, from_disc: float = NODE_SIZE,
+	to_disc: float = NODE_SIZE
 ) -> void:
 	# QA I-4: end the curve at the disc RIMS — a line that dives under a
 	# disc reads as clutter, a line that stops at its edge reads as a link.
@@ -1457,8 +1615,8 @@ func _node_state_color(entry: Dictionary, state: Dictionary) -> Color:
 ## ring among the state rings and read as noise. It is a MARK now — a heavy
 ## gold arc broken at the four diagonals, with cardinal ticks pointing in, so
 ## it is unmistakable against a state ring at a glance.
-func _draw_selection_mark(at: Vector2) -> void:
-	var reach: float = _node_size() / 2.0 + PULSE_RING_PAD + 3.0
+func _draw_selection_mark(at: Vector2, disc: float) -> void:
+	var reach: float = disc / 2.0 + PULSE_RING_PAD + 3.0
 	var quarter: float = TAU / 4.0
 	for i: int in 4:
 		var start: float = -PI / 4.0 + quarter * float(i) + SELECT_ARC_GAP
