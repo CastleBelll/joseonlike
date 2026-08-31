@@ -54,8 +54,8 @@
   }
  },
  "warrior": {
-  "name_ko": "무진",
-  "name_en": "Mujin",
+  "name_ko": "기룡",
+  "name_en": "Giryong",
   "name_hanja": "",
   "title_ko": "환도를 벼리는 무인",
   "title_en": "Blade of the Unyielding",
@@ -115,8 +115,8 @@
   }
  },
  "archer": {
-  "name_ko": "여울",
-  "name_en": "Yeoul",
+  "name_ko": "초희",
+  "name_en": "Chohui",
   "name_hanja": "",
   "title_ko": "바람을 읽는 명궁",
   "title_en": "Archer Who Reads the Wind",
