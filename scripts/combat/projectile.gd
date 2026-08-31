@@ -36,6 +36,8 @@ static func blade_size() -> Vector2:
 const TRAVEL_FPS := 12.0
 
 var _velocity := Vector2.ZERO
+const RANGE_DAMAGE_UNIT_PX := 100.0
+
 var _damage: float = 0.0
 var _crit: bool = false
 var _view_margin: float = 0.0
@@ -49,6 +51,11 @@ var _pierce_left: int = 0
 # N4-3 tuning knobs: damage kept per pierced enemy, damage kept at the blast
 # edge. Both default 1.0 (no decay) when the weapon data omits them.
 var _pierce_retention: float = 1.0
+## N11-19c 원격: bonus share per 100px travelled, and how far this shot has
+## actually gone.
+var _range_damage: float = 0.0
+## The distance one full range_damage share is paid over.
+var _flown_px: float = 0.0
 var _explosion_falloff: float = 1.0
 var _explosion_radius: float = 0.0
 var _chain_jumps_left: int = 0
@@ -131,6 +138,10 @@ func launch(from: Vector2, direction: Vector2, speed: float, damage: float,
 	_aim_visual(direction)
 	_pierce_left = int(config.get("pierce", 0))
 	_pierce_retention = float(config.get("pierce_retention", 1.0))
+	# N11-19c 원격: damage per 100px flown, applied at the moment of impact so
+	# a shot that crossed the field lands heavier than one fired point blank.
+	_range_damage = float(config.get("range_damage", 0.0))
+	_flown_px = 0.0
 	_explosion_radius = float(config.get("explosion_radius", 0.0))
 	_explosion_falloff = float(config.get("explosion_falloff", 1.0))
 	var chain: Dictionary = config.get("chain", {})
@@ -174,6 +185,7 @@ func _physics_process(delta: float) -> void:
 		finished.emit(self)
 		return
 	global_position += _velocity * delta
+	_flown_px += _velocity.length() * delta
 	_tick_travel_art(delta)
 	_trail.record(global_position, delta)
 	# N5-5: a shot passing over a destructible prop chips it. Free of pierce
@@ -270,7 +282,9 @@ func _strike(enemy: Enemy, damage: float) -> void:
 	var burst: float = 0.0
 	if not _seal.is_empty() and enemy.apply_seal(int(_seal.get("burst_at", 0))):
 		burst = damage * float(_seal.get("burst_damage_scale", 0.0))
-	enemy.take_damage(damage + burst, _velocity.normalized())
+	# N11-19c 원격: the further this shot flew, the harder it lands.
+	var flight: float = 1.0 + _range_damage * (_flown_px / RANGE_DAMAGE_UNIT_PX)
+	enemy.take_damage((damage * flight) + burst, _velocity.normalized())
 	hit_landed.emit(damage, hit_at, boss_hit, _crit)
 	if burst > 0.0:
 		hit_landed.emit(burst, hit_at, boss_hit, false)

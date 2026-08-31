@@ -590,3 +590,23 @@ func test_salvage_leftovers_sells_a_share_of_the_pouch() -> bool:
 		return false
 	# No rate, no trade.
 	return int(MetaTree.salvage_leftovers({"bamboo": 10}, loot, 0.0)["coins"]) == 0
+
+
+func test_archer_effects_fold_into_weapon_stats() -> bool:
+	# N11-19c: 꿰뚫는 달 pushes pierce retention ABOVE 1.0 so a shot grows as
+	# it pierces, and 원격 hands the projectile its distance bonus.
+	var stats := {"pierce": 2, "pierce_retention": 0.7, "mechanic": "pierce"}
+	var grown: Dictionary = MetaTree.modified_weapon_stats(
+		stats, {"pierce_growth": 0.45, "range_damage": 0.16}
+	)
+	if not is_equal_approx(float(grown["pierce_retention"]), 1.15):
+		push_error("test_meta_tree: pierce growth must add to retention")
+		return false
+	if not is_equal_approx(float(grown["range_damage"]), 0.16):
+		push_error("test_meta_tree: range damage must reach the weapon stats")
+		return false
+	# A weapon with no pierce is untouched by the growth.
+	var plain: Dictionary = MetaTree.modified_weapon_stats(
+		{"mechanic": "orbit"}, {"pierce_growth": 0.45}
+	)
+	return not plain.has("pierce_retention")

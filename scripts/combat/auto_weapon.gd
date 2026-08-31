@@ -359,6 +359,8 @@ func _build_shot_config() -> Dictionary:
 		MECHANIC_PIERCE:
 			config["pierce"] = int(_stats.get("pierce", 0))
 			config["pierce_retention"] = float(_stats.get("pierce_retention", 1.0))
+			# N11-19c 원격: every shot carries the archer's distance bonus.
+			config["range_damage"] = float(_stats.get("range_damage", 0.0))
 			config["size"] = Projectile.blade_size()  # 법검 blade streak (N3-17)
 		MECHANIC_EXPLOSION:
 			var explosion: Dictionary = _stats.get("explosion", {})

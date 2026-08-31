@@ -50,10 +50,17 @@ var last_move_direction := Vector2.RIGHT
 var last_hit_source := ""
 
 var _speed: float = 0.0
+## Emitted when 그림자 걸음 turns a hit aside, so the HUD can say so.
+signal dodged
+
 var _invuln_window: float = 0.0
 ## N7-2 명부수: incoming-hit multiplier (철피) and invulnerability-window
 ## scale (긴 호흡), both set once by the stage from the capped meta aggregate.
+const MAX_DODGE_CHANCE := 0.5
+
 var _damage_taken_scale: float = 1.0
+## N11-19c 그림자 걸음: the odds a hit is avoided outright.
+var _dodge_chance: float = 0.0
 var _time_since_hit: float = 0.0
 var _bonus_invuln_left: float = 0.0  # granted by actives, on top of hit i-frames
 ## N9-148 철벽 guard: timed incoming-damage multiplier on top of the meta
@@ -191,6 +198,11 @@ func set_speed_scale(scale: float) -> void:
 
 ## N7-2 철피: scales every incoming hit; rescaled from 1.0 so it can never
 ## compound with itself across refreshes.
+## N11-19c: the archer's dodge odds, clamped so no build becomes untouchable.
+func set_dodge_chance(chance: float) -> void:
+	_dodge_chance = clampf(chance, 0.0, MAX_DODGE_CHANCE)
+
+
 func set_damage_taken_scale(scale: float) -> void:
 	_damage_taken_scale = clampf(scale, 0.0, 1.0)
 
@@ -222,6 +234,12 @@ func take_hit(damage: float, source_name: String = "") -> bool:
 	if _bonus_invuln_left > 0.0:
 		return false
 	if not CombatMath.can_hit(_time_since_hit, _invuln_window):
+		return false
+	# N11-19c 그림자 걸음: a roll to take no hit at all. The dodge still opens
+	# the invulnerability window, so a dodged hit is not a free extra hit.
+	if _dodge_chance > 0.0 and CombatRng.hits(_dodge_chance):
+		_time_since_hit = 0.0
+		dodged.emit()
 		return false
 	_time_since_hit = 0.0
 	last_hit_source = source_name

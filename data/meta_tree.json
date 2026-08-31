@@ -23,7 +23,10 @@
    "area_scale": 0.44,
    "burn_power": 0.3,
    "salvage_rate": 0.3,
-   "defeat_bank": 0.5
+   "defeat_bank": 0.5,
+   "pierce_growth": 0.3,
+   "range_damage": 0.24,
+   "dodge_chance": 0.18
   },
   "revive": {
    "hp_ratio": 0.3,
@@ -1884,6 +1887,80 @@
    "pos": [
     0.5,
     3
+   ]
+  },
+  {
+   "id": "piercing_moon",
+   "name_ko": "꿰뚫는 달",
+   "name_en": "Piercing Moon",
+   "icon": "thunder_stone",
+   "effect": {
+    "stat": "pierce_growth",
+    "per_rank": 0.15
+   },
+   "desc_ko": "관통할 때마다 피해가 15% 커진다",
+   "desc_en": "Each body pierced adds 15% damage",
+   "costs": [
+    1500,
+    3200
+   ],
+   "requires": [
+    "split_nock"
+   ],
+   "character": "archer",
+   "pos": [
+    0.5,
+    4
+   ]
+  },
+  {
+   "id": "far_shot",
+   "name_ko": "원격",
+   "name_en": "Far Shot",
+   "icon": "beast_fang",
+   "effect": {
+    "stat": "range_damage",
+    "per_rank": 0.08
+   },
+   "desc_ko": "100px 날아갈 때마다 피해 +8%",
+   "desc_en": "+8% damage per 100px flown",
+   "costs": [
+    700,
+    1500,
+    3000
+   ],
+   "requires": [
+    "swift_string"
+   ],
+   "character": "archer",
+   "pos": [
+    0.5,
+    4
+   ]
+  },
+  {
+   "id": "shadow_step",
+   "name_ko": "그림자 걸음",
+   "name_en": "Shadow Step",
+   "icon": "wonhon_shard",
+   "effect": {
+    "stat": "dodge_chance",
+    "per_rank": 0.06
+   },
+   "desc_ko": "피격을 6% 확률로 흘린다",
+   "desc_en": "6% chance to slip a hit entirely",
+   "costs": [
+    900,
+    2000,
+    4200
+   ],
+   "requires": [
+    "hawk_eye"
+   ],
+   "character": "archer",
+   "pos": [
+    0.5,
+    4
    ]
   }
  ]

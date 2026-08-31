@@ -394,6 +394,8 @@ func _stage_ready_field() -> void:
 	# _refresh_run_scalars (N9-3g) because the 방비 passive now joins it and
 	# passive stacks change mid-run.
 	_player.set_invuln_scale(1.0 + _meta_bonus("hit_invuln"))
+	# N11-19c 그림자 걸음: 초희's odds of turning a hit aside entirely.
+	_player.set_dodge_chance(_meta_bonus("dodge_chance"))
 	_popup = LevelUpPopup.new()
 	_popup.picked.connect(_on_choice_picked)
 	_popup.dismissed.connect(_on_popup_dismissed)

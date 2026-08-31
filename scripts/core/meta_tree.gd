@@ -51,7 +51,11 @@ const START_STATS: Array[String] = [
 	"start_level", "choice_count", "first_find", "start_material"
 ]
 ## Survivability (Player damage pipeline + Stage revive).
-const SURVIVAL_STATS: Array[String] = ["revive", "damage_reduction", "hit_invuln"]
+const SURVIVAL_STATS: Array[String] = [
+	"revive", "damage_reduction", "hit_invuln",
+	# N11-19c 그림자 걸음: a roll to take no hit at all.
+	"dodge_chance"
+]
 ## 술법 weapon-stat modifiers (AutoWeapon via modified_weapon_stats).
 const WEAPON_STATS: Array[String] = [
 	"burn_duration", "chain_jumps", "ward_radius", "orbit_count", "seal_burst",
@@ -59,12 +63,16 @@ const WEAPON_STATS: Array[String] = [
 	# both suppliers, so a tree node gets them for the price of a data entry.
 	"burn_dps", "area_radius",
 	# N11-8 migrated weapon-flavoured passives (integer ladders cap them).
-	"burn_power", "chain_amount", "seal_haste", "projectile_count"
+	"burn_power", "chain_amount", "seal_haste", "projectile_count",
+	# N11-19c 초희 (docs/META_TREE_DESIGN.md step 3): a shot that GROWS as it
+	# pierces, and one that hits harder the further it has flown. Both change
+	# how a bow is aimed rather than adding a flat percent.
+	"pierce_growth", "range_damage"
 ]
 ## Fractional stats that MUST declare a positive config.stat_caps entry; the
 ## integer counters above are capped by their rank ladders instead.
 const CAPPED_STATS: Array[String] = [
-	"salvage_rate", "defeat_bank",
+	"salvage_rate", "defeat_bank", "pierce_growth", "range_damage", "dodge_chance",
 	"max_hp", "move_speed", "attack_damage", "attack_speed", "magnet_radius",
 	"gold_gain", "xp_gain", "luck", "damage_reduction", "hit_invuln",
 	"burn_duration", "ward_radius", "crit_chance", "crit_damage",
@@ -450,6 +458,18 @@ static func modified_weapon_stats(stats: Dictionary, effects: Dictionary) -> Dic
 	var burn_dps_scale: float = float(effects.get("burn_dps", 0.0))
 	if burn_dps_scale > 0.0 and String(status.get("id", "")) == "burn":
 		status["dps"] = float(status.get("dps", 0.0)) * (1.0 + burn_dps_scale)
+	# N11-19c 꿰뚫는 달: retention above 1.0 means a shot GAINS damage on each
+	# body it goes through — the archer's reward for lining enemies up.
+	var pierce_growth: float = float(effects.get("pierce_growth", 0.0))
+	if pierce_growth > 0.0 and int(result.get("pierce", 0)) > 0:
+		result["pierce_retention"] = (
+			float(result.get("pierce_retention", 1.0)) + pierce_growth
+		)
+	# N11-19c 원격: the shot carries a distance bonus the projectile applies
+	# per pixel flown, so far shots land heavier than point blank.
+	var range_damage: float = float(effects.get("range_damage", 0.0))
+	if range_damage > 0.0:
+		result["range_damage"] = float(result.get("range_damage", 0.0)) + range_damage
 	var area_scale: float = float(effects.get("area_radius", 0.0))
 	if area_scale > 0.0:
 		# N9-161 (owner: 광역 확장은 모든 기술의 범위): every mechanic grows.
