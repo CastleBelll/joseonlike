@@ -124,6 +124,8 @@ const PILL_PADDING_Y := UiPalette.PILL_PAD_Y
 const CARD_CORNER_RADIUS := 12
 const CARD_PADDING := 14
 const CARD_ICON_WELL := 64.0
+## The glyph inside that well — the well is the frame, not the icon.
+const CARD_ICON_SIZE := 36.0
 const COIN_ICON_SIZE := 28.0
 const BACK_SIZE := 44.0
 const CTA_HEIGHT := 60
@@ -534,9 +536,14 @@ func _build_detail_card() -> Control:
 	well_box.bg_color = UiPalette.CARD_WELL
 	well_box.set_corner_radius_all(CARD_CORNER_RADIUS)
 	well.add_theme_stylebox_override("panel", well_box)
-	_detail_icon = UiIcons.icon_rect(null, NODE_ICON_SIZE)
+	# A PanelContainer stretches its only child to fill, which blew the glyph
+	# up into a white slab; the centre box keeps it at its own size.
+	var icon_box := CenterContainer.new()
+	icon_box.name = "IconBox"
+	well.add_child(icon_box)
+	_detail_icon = UiIcons.icon_rect(null, CARD_ICON_SIZE)
 	_detail_icon.name = "DetailIcon"
-	well.add_child(_detail_icon)
+	icon_box.add_child(_detail_icon)
 	row.add_child(well)
 
 	var lines := VBoxContainer.new()
@@ -1062,43 +1069,33 @@ func _compute_radial() -> void:
 			cells[kid_id] = slot
 			queue.append(kid_id)
 	# Second pass: the cells actually used decide the scale, so a tab with six
-	# revealed nodes fills the canvas instead of huddling at the hub, and a
-	# full tab still fits. The hub's own cell counts, so it never gets buried.
-	var ex: int = 1
-	var ey: int = 1
-	for node_id: Variant in cells:
-		var slot: Vector2i = cells[node_id]
-		ex = maxi(ex, absi(slot.x))
-		ey = maxi(ey, absi(slot.y))
-	cell = clampf(
-		minf(
-			(_canvas.size.x - RADIAL_PAD * 2.0) / float(ex * 2 + 1),
-			(_canvas.size.y - RADIAL_PAD * 2.0) / float(ey * 2 + 1)
-		), CELL_MIN, CELL_MAX
-	)
-	# The web is centred on what it actually occupies, not on the hub cell —
-	# a lopsided reveal used to sit high with dead canvas under it.
+	# revealed nodes fills the canvas instead of huddling, and a full tab still
+	# fits. The tile's own half-width is part of the budget — sizing on the
+	# cell centres alone left the outermost tiles hanging over the edge.
 	var lo := Vector2i(0, 0)
 	var hi := Vector2i(0, 0)
 	for node_id: Variant in cells:
 		var slot: Vector2i = cells[node_id]
 		lo = Vector2i(mini(lo.x, slot.x), mini(lo.y, slot.y))
 		hi = Vector2i(maxi(hi.x, slot.x), maxi(hi.y, slot.y))
-	var shift := Vector2(float(lo.x + hi.x), float(lo.y + hi.y)) / 2.0
-	_hub_pos = center - Vector2(
-		(shift.x - shift.y) * cell * ISO_X, (shift.x + shift.y) * cell * ISO_Y
+	var half_x: float = float(hi.x - lo.x) / 2.0
+	var half_y: float = float(hi.y - lo.y) / 2.0
+	cell = clampf(
+		minf(
+			(_canvas.size.x / 2.0 - RADIAL_PAD) / maxf(half_x + CELL_FILL / 2.0, 0.5),
+			(_canvas.size.y / 2.0 - RADIAL_PAD) / maxf(half_y + CELL_FILL / 2.0, 0.5)
+		), CELL_MIN, CELL_MAX
 	)
+	# The web is centred on what it occupies, not on the origin cell.
+	var shift := Vector2(float(lo.x + hi.x), float(lo.y + hi.y)) / 2.0
+	_hub_pos = center - Vector2(shift.x * cell * ISO_X, shift.y * cell * ISO_Y)
 	_cell = cell
 	var disc: float = cell * CELL_FILL
 	for node_id: Variant in cells:
 		var slot: Vector2i = cells[node_id]
 		_node_sizes[node_id] = disc
-		# Owner (사각 배치되어있어서 이상해): the same grid, read on the
-		# diagonal — a lattice reads as a web where aligned rows read as a
-		# spreadsheet. Spacing stays exactly equal.
 		_radial[node_id] = _hub_pos + Vector2(
-			float(slot.x - slot.y) * cell * ISO_X,
-			float(slot.x + slot.y) * cell * ISO_Y
+			float(slot.x) * cell * ISO_X, float(slot.y) * cell * ISO_Y
 		)
 	_node_scale = 1.0
 	_apply_node_sizes()

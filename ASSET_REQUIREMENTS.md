@@ -561,3 +561,29 @@ being built:
   placeholder rect until each stage is actually built
 - Camp interiors for Workshop / Training Ground / Shrine (M2-3..M2-5)
 - Icons for weapons added past the current 7 (M3-4..N)
+
+## 수련 트리 아이콘 43종 (N11-28, 오너가 생성 예정)
+
+**현재 상태**: `tools/make_tree_icons.py`가 그린 임시 실루엣이 들어가 있다. 형태만
+맞춰 놓은 것이고, 오너가 실제 아이콘을 주면 같은 파일명으로 덮으면 끝난다.
+
+- **경로**: `asset/ui/tree_icons/<이름>.png`
+- **규격**: 정사각, **흰색 단색 실루엣**(투명 배경). 화면이 상태색으로 틴트한다 —
+  잠김 회색 / 구매 가능 초록 / 보유 금색. 그래서 아이콘 자체에 색이 있으면 안 된다.
+- **크기**: 48x48 이상 권장(현재 임시본은 16x16을 x3 확대). 픽셀 그리드가 보이는
+  스타일이면 배수 확대로 만들 것.
+- **표시 크기**: 타일 안 32px 안팎, 상세 카드 36px.
+
+필요한 파일명 43개:
+
+```
+coin coin_stack coin_chest clover book magnet boot
+sword sword_edge sword_aura spear bow arrows arrow_split
+flame flame_twin bolt bolt_twin skull talisman talisman_seal
+orb ward heart heart_big shield shield_stud armor feather
+eye eye_wide fang hourglass hourglass_run star pouch moon
+sprout cards steps anvil chest chain
+```
+
+이름은 `data/meta_tree.json`의 각 노드 `tree_icon` 필드와 1:1로 맞는다. 노드를
+추가하면 그 노드에도 `tree_icon`을 지정해야 한다(없으면 화면이 빈 칸으로 그린다).
