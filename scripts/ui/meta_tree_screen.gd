@@ -169,6 +169,9 @@ var _hub_pos: Vector2 = Vector2.ZERO
 ## The grid pitch the last layout settled on; the hub and the state marks are
 ## drawn from it so they always match the tiles.
 var _cell: float = 0.0
+## Owner (어디부터 시작되는지가 안 보이잖아): the node the map starts from —
+## the cheapest root, in the first column — marked so the eye lands on it.
+var _origin_id: String = ""
 var _reveal_phase: float = 1.0
 ## QA I-5 growth fraction (0..1) the branch drawing honors; I-10 tween store.
 var _grow: float = 1.0
@@ -994,12 +997,9 @@ func _compute_radial() -> void:
 	if entries.is_empty():
 		return
 	# QA N11-14 F-4/F-5/F-6: rings could not hold a five-deep chain in a
-	# 508x368 landscape canvas — the tail piled onto the outer ring, links
-	# became chords across the field and cut through other discs. The tree is
-	# a GRID web now: the hub takes the middle cell, every node takes a cell,
-	# and a child always lands on a cell NEXT to its parent. Equal cells make
-	# the spacing equal everywhere, and a link one cell long cannot reach far
-	# enough to cross a third disc.
+	# 508x368 landscape canvas. The board is a LAYERED grid: column = depth,
+	# rows are claimed by leaves and parents centre on their children, so the
+	# map reads left to right and a branch keeps its own band.
 	var center := _canvas.size / 2.0
 	var depth: Dictionary = _depth_map(entries)
 	var children: Dictionary = {}
@@ -1014,65 +1014,53 @@ func _compute_radial() -> void:
 		var kids: Array = children.get(parent_id, [])
 		kids.append(node_id)
 		children[parent_id] = kids
-	# Owner reference (2026-08-31): an orthogonal board. Every link is one cell
-	# long and runs straight up, down, left or right — no diagonals, and no
-	# node ever placed away from its parent. The grid is deliberately larger
-	# than the canvas; the second pass below scales whatever shape comes out
-	# down to fit, which is what keeps adjacency an absolute guarantee.
-	var taken: Dictionary = {}
+	# Owner (어디부터 시작되는지가 안 보이잖아): the board is LAYERED now.
+	# A node's column is its depth, so the map reads left to right — the first
+	# column is where you start, every step right costs more — and each branch
+	# keeps its own rows, so a family is a band you can follow with a finger.
 	var cells: Dictionary = {}
 	roots.sort_custom(func(a: String, b: String) -> bool:
 		return _first_cost(a) < _first_cost(b)
 	)
-	# Roots stack in a column, cheapest in the middle, so each one owns a row
-	# of the board and its chain runs off to the side.
-	for i: int in roots.size():
-		var step: int = (i + 1) / 2
-		var row: int = step if i % 2 == 1 else -step
-		var slot := Vector2i(0, row * ROOT_ROW_PITCH)
-		while taken.has(slot):
-			slot += Vector2i(0, 1)
-		taken[slot] = true
-		cells[roots[i]] = slot
-	# A chain keeps walking the way it was already going; a fork sends its
-	# other children up and down from the same cell. Every step is one cell.
-	var queue: Array[String] = roots.duplicate()
-	# Chains leave their root alternately right and left, so the board grows
-	# into the canvas's width instead of running off the bottom.
-	var headings: Dictionary = {}
-	for i: int in roots.size():
-		headings[roots[i]] = Vector2i(1 if i % 2 == 0 else -1, 0)
-	while not queue.is_empty():
-		var node_id: String = queue.pop_front()
-		var here: Vector2i = cells[node_id]
-		var heading: Vector2i = headings.get(node_id, Vector2i(1, 0))
-		var kids: Array = children.get(node_id, [])
+	for parent_id: Variant in children:
+		var kids: Array = children[parent_id]
 		kids.sort_custom(func(a: Variant, b: Variant) -> bool:
 			return _first_cost(String(a)) < _first_cost(String(b))
 		)
-		for i: int in kids.size():
-			var kid_id: String = String(kids[i])
-			var order: Array[Vector2i] = _step_order(heading, i)
-			var slot: Vector2i = here
-			var placed: bool = false
-			for step: Vector2i in order:
-				if not taken.has(here + step):
-					slot = here + step
-					headings[kid_id] = step
-					placed = true
-					break
-			if not placed:
-				# Every neighbour is spoken for: walk along the parent's own
-				# heading until a free cell turns up, so the link is still a
-				# straight line even if it is longer than one cell.
-				var probe: Vector2i = here + heading
-				while taken.has(probe):
-					probe += heading
-				slot = probe
-				headings[kid_id] = heading
-			taken[slot] = true
-			cells[kid_id] = slot
-			queue.append(kid_id)
+		children[parent_id] = kids
+	# Rows are packed PER COLUMN: a column only needs as many rows as it has
+	# nodes. Giving every leaf its own global row made the board as tall as the
+	# tab has leaves, which is what squeezed the tiles down to nothing.
+	var columns: Dictionary = {}
+	var walk: Array[String] = roots.duplicate()
+	while not walk.is_empty():
+		var node_id: String = walk.pop_front()
+		var column: int = int(depth.get(node_id, 1)) - 1
+		var column_list: Array = columns.get(column, [])
+		column_list.append(node_id)
+		columns[column] = column_list
+		for kid: Variant in (children.get(node_id, []) as Array):
+			walk.append(String(kid))
+	var last_column: int = 0
+	for column: Variant in columns:
+		last_column = maxi(last_column, int(column))
+	var tallest: int = 1
+	for column: Variant in columns:
+		tallest = maxi(tallest, (columns[column] as Array).size())
+	for column: int in range(last_column + 1):
+		var column_list: Array = columns.get(column, [])
+		# Each column is centred on the board, so a short column sits beside
+		# the middle of the long one instead of hugging the top.
+		var offset: int = int(floor(float(tallest - column_list.size()) / 2.0))
+		for i: int in column_list.size():
+			# Tiers run along the canvas's LONG axis: left to right in
+			# landscape, top to bottom in portrait. A tier stack on the short
+			# axis wastes the other half of the screen.
+			var slot := Vector2i(column, offset + i)
+			if _canvas.size.y > _canvas.size.x:
+				slot = Vector2i(offset + i, column)
+			cells[String(column_list[i])] = slot
+	_origin_id = roots[0] if not roots.is_empty() else ""
 	# Second pass: the cells actually used decide the scale, so a tab with six
 	# revealed nodes fills the canvas instead of huddling, and a full tab still
 	# fits. The tile's own half-width is part of the budget — sizing on the
@@ -1110,6 +1098,8 @@ func _compute_radial() -> void:
 func _first_cost(node_id: String) -> int:
 	var costs: Array = MetaTree.node(_tree, node_id).get("costs", [])
 	return int(costs[0]) if not costs.is_empty() else 0
+
+
 
 
 ## Where a child may go, in order of preference: straight on, then the two
@@ -1498,6 +1488,23 @@ func _draw_graph() -> void:
 				_node_center(entry, width), side,
 				Color(UiPalette.GOLD, 0.5 * fade), 2.0
 			)
+	# Owner (어디부터 시작되는지가 안 보이잖아): the first column's cheapest
+	# node wears a start mark and says so, so the map has an entrance.
+	if not _origin_id.is_empty() and _radial.has(_origin_id):
+		var origin: Vector2 = _radial[_origin_id]
+		var side: float = _node_size_of(_origin_id)
+		_draw_tile_mark(origin, side + 12.0, Color(UiPalette.GOLD, 0.85), 2.0)
+		var font: Font = get_theme_default_font()
+		if font != null:
+			var label: String = UiLocale.t("시작")
+			var size: int = maxi(int(side * 0.34), 10)
+			var wide: float = font.get_string_size(
+				label, HORIZONTAL_ALIGNMENT_LEFT, -1.0, size
+			).x
+			_canvas.draw_string(
+				font, origin + Vector2(-wide / 2.0, -side * 0.5 - 10.0), label,
+				HORIZONTAL_ALIGNMENT_LEFT, -1.0, size, UiPalette.GOLD
+			)
 	# I-6 / N11-15: the selected node wears a MARK — plate and icon untouched.
 	if not _selected_id.is_empty() and _radial.has(_selected_id):
 		_draw_selection_mark(
@@ -1541,6 +1548,27 @@ func _draw_branch(
 	# QA I-5: only the grown fraction exists yet — the tab OPENING is where
 	# the mindmap's spreading actually reads.
 	var tip: Vector2 = from.lerp(to, clampf(_grow, 0.0, 1.0))
+	# Owner reference: links turn at right angles. A parent and child one
+	# column apart but on different rows get an elbow — out of the parent,
+	# across the gap between the columns, then into the child — instead of a
+	# slanted line that reads as a stray.
+	if absf(from.y - to.y) > 1.0 and absf(from.x - to.x) > 1.0:
+		var bend: float = (from.x + to.x) / 2.0
+		var mid_a := Vector2(bend, from.y)
+		var mid_b := Vector2(bend, to.y)
+		var grown: float = clampf(_grow, 0.0, 1.0)
+		_canvas.draw_line(from, from.lerp(mid_a, grown), color, width, true)
+		if grown > 0.34:
+			_canvas.draw_line(
+				mid_a, mid_a.lerp(mid_b, clampf((grown - 0.34) / 0.33, 0.0, 1.0)),
+				color, width, true
+			)
+		if grown > 0.67:
+			_canvas.draw_line(
+				mid_b, mid_b.lerp(to, clampf((grown - 0.67) / 0.33, 0.0, 1.0)),
+				color, width, true
+			)
+		return
 	# Owner (node 선도 너무 구리고): a bare 3px stroke on the night ground read
 	# as a stray hairline. Every live link is cut into the dark first — a
 	# keyline a shade wider — so the bright core sits ON something.
