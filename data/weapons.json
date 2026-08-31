@@ -798,22 +798,22 @@
   "category": "spiritual",
   "grade": "common",
   "mechanic": "ward",
-  "damage": 2.6,
-  "cooldown_sec": 4.0,
+  "damage": 5.2,
+  "cooldown_sec": 3.4,
   "projectile_count": 1,
   "pierce": 0,
   "speed": 0.0,
   "range_px": 260.0,
   "ward": {
-   "radius_px": 45.0,
-   "duration_sec": 3.5,
-   "tick_sec": 0.6,
+   "radius_px": 74.0,
+   "duration_sec": 4.2,
+   "tick_sec": 0.42,
    "slow_scale": 0.6
   },
   "max_level": 8,
   "per_level": {
-   "damage": 1.25,
-   "cooldown_sec": -0.1
+   "damage": 2.2,
+   "cooldown_sec": -0.14
   },
   "evolution_only": false,
   "milestones": {
@@ -932,21 +932,21 @@
   "category": "spiritual",
   "grade": "common",
   "mechanic": "summon",
-  "damage": 12.0,
+  "damage": 16.0,
   "cooldown_sec": 3.5,
   "projectile_count": 1,
   "pierce": 0,
   "speed": 0.0,
   "range_px": 460.0,
   "summon": {
-   "lifetime_sec": 11.0,
+   "lifetime_sec": 12.0,
    "speed": 150.0,
    "leash_px": 320.0,
-   "attack_cooldown_sec": 0.65
+   "attack_cooldown_sec": 0.5
   },
   "max_level": 8,
   "per_level": {
-   "damage": 3.2,
+   "damage": 4.6,
    "cooldown_sec": -0.2
   },
   "evolution_only": false,
