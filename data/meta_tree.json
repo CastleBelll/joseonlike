@@ -26,7 +26,9 @@
    "defeat_bank": 0.5,
    "pierce_growth": 0.3,
    "range_damage": 0.24,
-   "dodge_chance": 0.18
+   "dodge_chance": 0.18,
+   "active_haste": 0.24,
+   "active_power": 0.36
   },
   "revive": {
    "hp_ratio": 0.3,
@@ -1961,6 +1963,242 @@
    "pos": [
     0.5,
     4
+   ]
+  },
+  {
+   "id": "build_fire",
+   "name_ko": "불을 다루는 법",
+   "name_en": "Way of Fire",
+   "icon": "fire_spirit_stone",
+   "build_family": "fire",
+   "character": "taoist",
+   "costs": [
+    400,
+    900
+   ],
+   "requires": [],
+   "desc_ko": "화염 계열 술법이 자주 나타난다",
+   "desc_en": "Fire arts show up far more often",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_lightning",
+   "name_ko": "우레를 부르는 법",
+   "name_en": "Way of Thunder",
+   "icon": "thunder_stone",
+   "build_family": "lightning",
+   "character": "taoist",
+   "costs": [
+    400,
+    900
+   ],
+   "requires": [],
+   "desc_ko": "뇌전 계열 술법이 자주 나타난다",
+   "desc_en": "Lightning arts show up far more often",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_curse",
+   "name_ko": "저주를 거는 법",
+   "name_en": "Way of Curses",
+   "icon": "wonhon_shard",
+   "build_family": "curse",
+   "character": "taoist",
+   "costs": [
+    400,
+    900
+   ],
+   "requires": [],
+   "desc_ko": "저주 계열 술법이 자주 나타난다",
+   "desc_en": "Curse arts show up far more often",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_seal",
+   "name_ko": "봉인하는 법",
+   "name_en": "Way of Seals",
+   "icon": "talisman_paper",
+   "build_family": "seal",
+   "character": "taoist",
+   "costs": [
+    400,
+    900
+   ],
+   "requires": [],
+   "desc_ko": "봉인 계열 술법이 자주 나타난다",
+   "desc_en": "Seal arts show up far more often",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_hwando",
+   "name_ko": "환도의 길",
+   "name_en": "Way of the Sabre",
+   "icon": "whetstone",
+   "build_family": "hwando",
+   "character": "warrior",
+   "costs": [
+    400,
+    900
+   ],
+   "requires": [],
+   "desc_ko": "환도 계열이 자주 나타난다",
+   "desc_en": "Sabres show up far more often",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_wolto",
+   "name_ko": "언월도의 길",
+   "name_en": "Way of the Glaive",
+   "icon": "cast_iron",
+   "build_family": "wolto",
+   "character": "warrior",
+   "costs": [
+    400,
+    900
+   ],
+   "requires": [],
+   "desc_ko": "언월도 계열이 자주 나타난다",
+   "desc_en": "Glaives show up far more often",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_pyeongon",
+   "name_ko": "편곤의 길",
+   "name_en": "Way of the Flail",
+   "icon": "ghost_iron",
+   "build_family": "pyeongon",
+   "character": "warrior",
+   "costs": [
+    400,
+    900
+   ],
+   "requires": [],
+   "desc_ko": "편곤 계열이 자주 나타난다",
+   "desc_en": "Flails show up far more often",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_gakgung",
+   "name_ko": "각궁의 길",
+   "name_en": "Way of the Horn Bow",
+   "icon": "bamboo",
+   "build_family": "gakgung",
+   "character": "archer",
+   "costs": [
+    400,
+    900
+   ],
+   "requires": [],
+   "desc_ko": "각궁 계열이 자주 나타난다",
+   "desc_en": "Horn bows show up far more often",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_soenoe",
+   "name_ko": "쇠뇌의 길",
+   "name_en": "Way of the Crossbow",
+   "icon": "beast_fang",
+   "build_family": "soenoe",
+   "character": "archer",
+   "costs": [
+    400,
+    900
+   ],
+   "requires": [],
+   "desc_ko": "쇠뇌 계열이 자주 나타난다",
+   "desc_en": "Crossbows show up far more often",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_pyeonjeon",
+   "name_ko": "편전의 길",
+   "name_en": "Way of the Dart Arrow",
+   "icon": "thunder_stone",
+   "build_family": "pyeonjeon",
+   "character": "archer",
+   "costs": [
+    400,
+    900
+   ],
+   "requires": [],
+   "desc_ko": "편전 계열이 자주 나타난다",
+   "desc_en": "Dart arrows show up far more often",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "active_haste",
+   "name_ko": "주문 속도",
+   "name_en": "Swift Casting",
+   "icon": "raw_egg",
+   "effect": {
+    "stat": "active_haste",
+    "per_rank": 0.08
+   },
+   "desc_ko": "비기 재사용 대기 -8%",
+   "desc_en": "Skill cooldown -8%",
+   "costs": [
+    500,
+    1100,
+    2400
+   ],
+   "requires": [],
+   "pos": [
+    0.5,
+    6
+   ]
+  },
+  {
+   "id": "active_power",
+   "name_ko": "깊은 수행",
+   "name_en": "Deep Practice",
+   "icon": "cinnabar",
+   "effect": {
+    "stat": "active_power",
+    "per_rank": 0.12
+   },
+   "desc_ko": "비기 위력·범위 +12%",
+   "desc_en": "Skill power and reach +12%",
+   "costs": [
+    600,
+    1300,
+    2800
+   ],
+   "requires": [
+    "active_haste"
+   ],
+   "pos": [
+    0.5,
+    6
    ]
   }
  ]

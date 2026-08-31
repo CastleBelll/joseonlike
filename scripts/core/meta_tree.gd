@@ -56,6 +56,10 @@ const SURVIVAL_STATS: Array[String] = [
 	# N11-19c 그림자 걸음: a roll to take no hit at all.
 	"dodge_chance"
 ]
+## N11-20 (docs/BUILD_TREE_PLAN.md): a character now carries ONE active, and
+## the tree grows THAT — a shorter wait between casts and a heavier cast —
+## instead of handing out a second skill.
+const ACTIVE_STATS: Array[String] = ["active_haste", "active_power"]
 ## 술법 weapon-stat modifiers (AutoWeapon via modified_weapon_stats).
 const WEAPON_STATS: Array[String] = [
 	"burn_duration", "chain_jumps", "ward_radius", "orbit_count", "seal_burst",
@@ -73,6 +77,7 @@ const WEAPON_STATS: Array[String] = [
 ## integer counters above are capped by their rank ladders instead.
 const CAPPED_STATS: Array[String] = [
 	"salvage_rate", "defeat_bank", "pierce_growth", "range_damage", "dodge_chance",
+	"active_haste", "active_power",
 	"max_hp", "move_speed", "attack_damage", "attack_speed", "magnet_radius",
 	"gold_gain", "xp_gain", "luck", "damage_reduction", "hit_invuln",
 	"burn_duration", "ward_radius", "crit_chance", "crit_damage",
@@ -106,8 +111,30 @@ static func salvage_leftovers(
 	return {"pouch": kept, "coins": coins}
 
 
+## N11-20 빌드 개방: the families whose root node the camp has bought, for the
+## run to weight its level-up pool with. A node declares its family with a
+## "build_family" field; rank 1 is enough — the root OPENS the line, the ranks
+## above it deepen the build.
+static func unlocked_families(
+	tree: Dictionary, state: Dictionary, character_id: String
+) -> Array[String]:
+	var families: Array[String] = []
+	for entry: Variant in nodes(tree):
+		var node: Dictionary = entry
+		var family: String = String(node.get("build_family", ""))
+		if family.is_empty() or families.has(family):
+			continue
+		var owner: String = node_character(node)
+		if not owner.is_empty() and owner != character_id:
+			continue
+		if rank_of(state, String(node.get("id", ""))) >= 1:
+			families.append(family)
+	return families
+
+
 static func wired_stats() -> Array[String]:
 	var all: Array[String] = []
+	all.append_array(ACTIVE_STATS)
 	all.append_array(SCALAR_STATS)
 	all.append_array(ECONOMY_STATS)
 	all.append_array(START_STATS)
@@ -557,6 +584,12 @@ static func _node_issues(
 	var branch: String = node_character(entry)
 	if not branch.is_empty() and not characters.has(branch):
 		issues.append("node '%s' character '%s' not in characters.json" % [node_id, branch])
+	# N11-20: a BUILD node's effect is the family it opens — it moves no stat,
+	# so it declares a family instead of a number and is checked for that.
+	if not String(entry.get("build_family", "")).is_empty():
+		if not entry.get("effect", {}).is_empty():
+			issues.append("node '%s' is a build root and must carry no effect" % node_id)
+		return
 	var effect: Dictionary = entry.get("effect", {})
 	var stat: String = String(effect.get("stat", ""))
 	# The stat vocabulary IS the set the run actually consumes — anything else

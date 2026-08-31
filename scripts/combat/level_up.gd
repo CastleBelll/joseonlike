@@ -72,6 +72,8 @@ const LEVEL_STEP := 1
 ## 개조 gate — was unreachable no matter how hard the player focused. Capping
 ## the build narrows the pool to what is already in it, which is what makes
 ## investment reach the gate and what stops the run reading as a grab bag.
+## N11-20: how many extra chances an opened build's weapon gets in the pool.
+const FAVOURED_FAMILY_COPIES := 3
 const WEAPON_SLOTS := 4
 const PASSIVE_SLOTS := 4
 const PIERCE_ALL := 99
@@ -136,7 +138,8 @@ static func candidates(
 	replaced: Array = [],
 	allowed_categories: Array = [],
 	ignore_slots: bool = false,
-	has_damaging_active: bool = true
+	has_damaging_active: bool = true,
+	favoured_families: Array = []
 ) -> Array[Dictionary]:
 	var pool: Array[Dictionary] = []
 	var rungs: Array[String] = WeaponGrade.ladder(grades)
@@ -172,7 +175,13 @@ static func candidates(
 			if not allowed_categories.is_empty() \
 					and not allowed_categories.has(String(stats.get("category", ""))):
 				continue
+			# N11-20 (owner: 나오되 확률만 낮다): a build the camp has opened
+			# is WEIGHTED UP rather than gated — an unopened family still
+			# turns up, just rarely, so a run is never starved of options.
 			pool.append({"kind": KIND_NEW_WEAPON, "id": weapon_id})
+			if favoured_families.has(String(stats.get("family", ""))):
+				for _copy: int in FAVOURED_FAMILY_COPIES:
+					pool.append({"kind": KIND_NEW_WEAPON, "id": weapon_id})
 	# N11-8 (owner: 패시브를 아예 아이들러쪽 업그레이드로 넘기고 액티브만 매번
 	# 빌드를 바꿀 수 있게): the pool offers WEAPONS ONLY. The seventeen former
 	# passive cards are permanent refine_* ranks on the meta tree now — a run's

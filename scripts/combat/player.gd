@@ -77,6 +77,12 @@ signal hit_taken
 
 ## The run starts with the profile's selected character (N2-1); node-free
 ## headless tests have no SaveService instance and fall back to the default.
+## N11-20: the selected character, for callers outside the player node (the
+## stage reads it to weight the run's build pool).
+static func character_id() -> String:
+	return _character_id()
+
+
 static func _character_id() -> String:
 	if SaveService.instance != null:
 		return SaveService.instance.selected_character()

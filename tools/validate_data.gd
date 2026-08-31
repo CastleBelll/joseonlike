@@ -1179,6 +1179,9 @@ const WEAPON_ALLOWED_KEYS: Array[String] = [
 	"explosion", "chain", "arc", "orbit", "ward", "summon", "shockwave",
 	"on_hit_status", "on_hit_seal", "lifesteal", "hit_effect", "travel_sprite",
 	"travel_frames", "cast_effect", "wave_effect", "swing_effect",
+	# N11-20 빌드: which build line a weapon belongs to. LevelUp.candidates
+	# weights the families the camp has opened (MetaTree.unlocked_families).
+	"family",
 ]
 
 

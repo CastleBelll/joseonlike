@@ -20,15 +20,6 @@
   },
   "actives": [
    {
-    "id": "chukji",
-    "name_ko": "축지",
-    "name_en": "Chukji",
-    "type": "blink",
-    "cooldown_sec": 8.0,
-    "distance_px": 140.0,
-    "invulnerable_sec": 1.0
-   },
-   {
     "id": "byeoksajin",
     "name_ko": "벽사진",
     "name_en": "Byeoksajin",
@@ -82,16 +73,6 @@
   "idle_walk_frame": 1,
   "actives": [
    {
-    "id": "cheolbyeok",
-    "name_ko": "철벽",
-    "name_en": "Iron Wall",
-    "type": "guard",
-    "cooldown_sec": 30.0,
-    "duration_sec": 4.0,
-    "damage_taken_scale": 0.3,
-    "effect": "skill_cheolbyeok"
-   },
-   {
     "id": "chamgyeok",
     "name_ko": "참격",
     "name_en": "Cleave",
@@ -138,20 +119,6 @@
    "ranged"
   ],
   "actives": [
-   {
-    "id": "cheoljillyeo",
-    "name_ko": "철질려",
-    "name_en": "Caltrops",
-    "type": "trap",
-    "cooldown_sec": 14.0,
-    "damage": 9.0,
-    "ward": {
-     "radius_px": 130.0,
-     "duration_sec": 6.0,
-     "tick_sec": 0.5,
-     "slow_scale": 0.45
-    }
-   },
    {
     "id": "iljesa",
     "name_ko": "일제사",

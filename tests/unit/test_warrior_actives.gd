@@ -19,20 +19,15 @@ func _warrior_active(active_id: String) -> Dictionary:
 	return {}
 
 
-func test_the_warrior_carries_two_arts() -> bool:
+## N11-20 (owner: 액티브를 한 개만 쓰고 그 무기를 업그레이드해 나가는 방식): a
+## character carries exactly ONE art, and the tree grows it. Two buttons from
+## the first run left nothing to work toward.
+func test_the_warrior_carries_one_art() -> bool:
 	var actives: Array = (_characters().get("warrior", {}) as Dictionary).get("actives", [])
-	var passed: bool = actives.size() >= 2
-	if not passed:
-		push_error("test_warrior_actives: the warrior has only %d active(s)" % actives.size())
+	if actives.size() != 1:
+		push_error("test_warrior_actives: the warrior carries %d arts, not 1" % actives.size())
 		return false
-	# Two arts that do the same thing are one art with two buttons.
-	var kinds: Dictionary = {}
-	for active: Dictionary in actives:
-		kinds[String(active.get("type", ""))] = true
-	if kinds.size() < 2:
-		push_error("test_warrior_actives: both warrior arts share one type %s" % str(kinds.keys()))
-		passed = false
-	return passed
+	return String((actives[0] as Dictionary).get("id", "")) == CLEAVE_ID
 
 
 func test_the_cleave_declares_its_swing() -> bool:

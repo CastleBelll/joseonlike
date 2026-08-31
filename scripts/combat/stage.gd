@@ -65,6 +65,8 @@ var _passives_data: Dictionary = {}
 var _owned_levels: Dictionary = {}
 var _passive_stacks: Dictionary = {}
 var _weapon_categories: Array = []
+## N11-20 빌드: families the camp opened, weighted up in the level-up pool.
+var _favoured_families: Array[String] = []
 # N9-6 infinite field: chunk streaming state.
 var _field_seed: int = 0
 var _props_catalog: Dictionary = {}
@@ -197,6 +199,9 @@ var _outcome: String = RunFlow.OUTCOME_NONE
 var _result: ResultScreen
 
 # N4-4b actives: data entries from characters.json plus per-id cooldown left.
+## N11-20: the most the tree may cut off an active cooldown.
+const MAX_ACTIVE_HASTE := 0.45
+
 var _actives: Array[Dictionary] = []
 var _active_cooldowns: Dictionary = {}
 
@@ -404,6 +409,12 @@ func _stage_ready_field() -> void:
 	# N9-5d weapon identity: the level-up pool only offers new weapons from
 	# the selected character's categories (도사 gets no 각궁).
 	_weapon_categories = Player.load_weapon_categories()
+	# N11-20: the builds the camp has opened weight this run's card pool.
+	_favoured_families = MetaTree.unlocked_families(
+		MetaTree.load_tree(),
+		_profile().get("meta_tree", {}) as Dictionary,
+		Player.character_id()
+	)
 	_actives = Player.load_actives()
 	_innate = Player.load_innate()
 	for active: Dictionary in _actives:
@@ -961,7 +972,13 @@ func _on_active_pressed(active_id: String) -> void:
 		if String(active.get("id", "")) != active_id:
 			continue
 		_execute_active(active)
-		_active_cooldowns[active_id] = float(active.get("cooldown_sec", 0.0))
+		# N11-20: the tree shortens the wait between casts (축지술) rather
+		# than handing out a second skill. Clamped so a cast never becomes
+		# free — the cooldown IS the cost of an active.
+		var haste: float = clampf(_meta_bonus("active_haste"), 0.0, MAX_ACTIVE_HASTE)
+		_active_cooldowns[active_id] = float(
+			active.get("cooldown_sec", 0.0)
+		) * (1.0 - haste)
 		# N9-14: the guide's "눌러봐" page advances on a real cast.
 		if _guide != null:
 			_guide.notify_action(Ftue.AWAIT_ACTIVE)
@@ -969,10 +986,25 @@ func _on_active_pressed(active_id: String) -> void:
 
 
 ## Effects live here so demo tools can fire them without touching cooldowns.
+## N11-20: the tree's active_power scales what a cast actually does — the
+## burst's damage and reach, the cleave's arc, the trap's bite. Applied here
+## so every caller (demo tools included) gets the same cast the player does.
+func _empowered_active(active: Dictionary) -> Dictionary:
+	var power: float = maxf(_meta_bonus("active_power"), 0.0)
+	if power <= 0.0:
+		return active
+	var scaled: Dictionary = active.duplicate(true)
+	for key: String in ["damage", "radius_px", "duration_sec"]:
+		if scaled.has(key):
+			scaled[key] = float(scaled[key]) * (1.0 + power)
+	return scaled
+
+
 func _execute_active(active: Dictionary) -> void:
 	# Here rather than in the button handler, so a demo tool firing an active
 	# directly is not silently different from a player pressing it.
 	_play_sfx("skill")
+	active = _empowered_active(active)
 	match String(active.get("type", "")):
 		"blink":
 			_execute_blink(active)
@@ -1213,7 +1245,7 @@ func _show_next_level_up() -> void:
 	var pool: Array[Dictionary] = LevelUp.candidates(
 		_weapons_data, _passives_data, _owned_levels, _passive_stacks,
 		_owned_grades, _grades_config, _replaced_weapons, _weapon_categories,
-		false, _has_damaging_active()
+		false, _has_damaging_active(), _favoured_families
 	)
 	# N9-31 (owner report: 낡은 부적 Lv.5 안됐는데도 개조가 되네): the level gate
 	# now applies on the first run too. It used to be waived so the scripted

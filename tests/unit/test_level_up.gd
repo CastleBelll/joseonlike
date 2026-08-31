@@ -770,3 +770,38 @@ func test_geomryun_belongs_to_the_melee_pool_only() -> bool:
 	if not passed:
 		push_error("test_level_up: geomryun is not a warrior-only melee root")
 	return passed
+
+
+func test_favoured_family_shows_up_more_often() -> bool:
+	# N11-20 (owner: 나오되 확률만 낮다): an opened build is weighted up in the
+	# pool, not gated — an unopened family must still be reachable.
+	var weapons := {
+		"fire_a": {"name_ko": "A", "mechanic": "straight", "category": "spiritual",
+			"family": "fire", "max_level": 5, "damage": 1.0, "cooldown_sec": 1.0,
+			"speed": 200.0},
+		"seal_a": {"name_ko": "B", "mechanic": "straight", "category": "spiritual",
+			"family": "seal", "max_level": 5, "damage": 1.0, "cooldown_sec": 1.0,
+			"speed": 200.0},
+	}
+	var plain: Array[Dictionary] = LevelUp.candidates(
+		weapons, {}, {}, {}, {}, {}, [], [], false, true, []
+	)
+	var favoured: Array[Dictionary] = LevelUp.candidates(
+		weapons, {}, {}, {}, {}, {}, [], [], false, true, ["fire"]
+	)
+	var plain_fire: int = 0
+	for card: Dictionary in plain:
+		if String(card.get("id", "")) == "fire_a":
+			plain_fire += 1
+	var favoured_fire: int = 0
+	var favoured_seal: int = 0
+	for card: Dictionary in favoured:
+		if String(card.get("id", "")) == "fire_a":
+			favoured_fire += 1
+		elif String(card.get("id", "")) == "seal_a":
+			favoured_seal += 1
+	if plain_fire != 1 or favoured_fire <= plain_fire:
+		push_error("test_level_up: opening a build must weight its family up")
+		return false
+	# The unopened family is rarer, never absent.
+	return favoured_seal == 1
