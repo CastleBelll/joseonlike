@@ -8,8 +8,7 @@ extends RefCounted
 ## One row per material the player holds OR still owes, shopping list first so
 ## the pouch reads as a stock list rather than a data dump.
 static func rows(
-	profile: Dictionary, loot: Dictionary, mods: Dictionary,
-	tree: Dictionary, locale: String
+	profile: Dictionary, loot: Dictionary, mods: Dictionary, tree: Dictionary
 ) -> Array[Dictionary]:
 	var pouch: Dictionary = profile.get("materials", {})
 	var wanted: Dictionary = demand(profile, mods, tree)
@@ -23,8 +22,6 @@ static func rows(
 			"name": UiLocale.data_name(entry, loot_id),
 			"count": int(pouch.get(loot_id, 0)),
 			"needed": int(wanted.get(loot_id, 0)),
-			"desc": String(entry.get("desc_" + locale, entry.get("desc_ko", ""))),
-			"special": bool(entry.get("special", false)),
 		})
 	built.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		# Owed-but-missing first (that is the shopping list), then by stock.

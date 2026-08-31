@@ -52,7 +52,7 @@ func test_demand_sums_unbought_recipes_and_next_ranks() -> bool:
 func test_rows_list_held_and_owed_only() -> bool:
 	# bamboo is neither held nor owed, so it must not take a row.
 	var rows: Array[Dictionary] = Storehouse.rows(
-		_profile({"ghost_iron": 1}), LOOT, MODS, TREE, "ko"
+		_profile({"ghost_iron": 1}), LOOT, MODS, TREE
 	)
 	var ids: Array[String] = []
 	for row: Dictionary in rows:
@@ -66,7 +66,7 @@ func test_rows_list_held_and_owed_only() -> bool:
 func test_rows_put_the_shopping_list_first() -> bool:
 	# whetstone is fully stocked (owes 3, holds 9); ghost_iron is short.
 	var rows: Array[Dictionary] = Storehouse.rows(
-		_profile({"whetstone": 9, "ghost_iron": 1}), LOOT, MODS, TREE, "ko"
+		_profile({"whetstone": 9, "ghost_iron": 1}), LOOT, MODS, TREE
 	)
 	if String(rows[0]["id"]) != "ghost_iron":
 		push_error("test_storehouse: a short material must sort above a stocked one")

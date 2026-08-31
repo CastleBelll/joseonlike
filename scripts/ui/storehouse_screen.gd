@@ -137,13 +137,15 @@ func _build_header() -> Control:
 func _refresh() -> void:
 	for child: Node in _rows_box.get_children():
 		child.queue_free()
-	var rows: Array[Dictionary] = Storehouse.rows(
-		_profile, _loot, _mods, _tree, UiLocale.current_locale
-	)
+	var rows: Array[Dictionary] = Storehouse.rows(_profile, _loot, _mods, _tree)
 	_count_label.text = "%d/%d" % [
 		Storehouse.stocked_count(_profile, _loot), _loot.size()
 	]
-	_empty_label.visible = rows.is_empty()
+	# QA N11-5 F-1: this rode on the ROW list, and rows are never empty on a
+	# fresh profile (every kind is billed by an unbought recipe or a rank-0
+	# node) — so the first-run line only ever appeared at endgame, where it
+	# read wrong. It rides the POUCH now, above the shopping list.
+	_empty_label.visible = Storehouse.stocked_count(_profile, _loot) == 0
 	for row: Dictionary in rows:
 		_rows_box.add_child(_build_row(row))
 
