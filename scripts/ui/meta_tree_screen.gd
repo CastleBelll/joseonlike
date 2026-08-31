@@ -59,7 +59,7 @@ const VISIBLE_DEPTH := 3
 ## The grid web: how many cells the short side is cut into, the disc's share
 ## of a cell, and the compass order a chain walks.
 const GRID_SPAN := 7.0
-const CELL_MIN := 46.0
+const CELL_MIN := 26.0
 const CELL_MAX := 96.0
 ## Owner (제대로 마인드맵부터): at 0.78 the tiles touched and the whole tab
 ## read as a brick wall of inventory slots — the links, which are what makes
@@ -77,10 +77,9 @@ const TILE_LOCKED_EDGE := Color("#4a453f")
 const TILE_READY_EDGE := Color("#7ea86a")
 ## How far a state mark sits outside the tile it belongs to.
 const TILE_MARK_PAD := 10.0
-const GRID_RING: Array[Vector2i] = [
-	Vector2i(0, -1), Vector2i(1, -1), Vector2i(1, 0), Vector2i(1, 1),
-	Vector2i(0, 1), Vector2i(-1, 1), Vector2i(-1, 0), Vector2i(-1, -1),
-]
+## How far apart the root rows sit, in cells — a chain needs room to run
+## sideways without meeting the next root's row.
+const ROOT_ROW_PITCH := 1
 ## How far an over-deep node steps aside inside its own wedge, and how far it
 ## pulls back in, so a tail deeper than the canvas never stacks on its parent.
 const OVERFLOW_FAN := 0.34
@@ -1015,56 +1014,62 @@ func _compute_radial() -> void:
 		var kids: Array = children.get(parent_id, [])
 		kids.append(node_id)
 		children[parent_id] = kids
-	# One cell size for the whole board: big enough to read, small enough that
-	# the deepest chain still has cells to walk into.
-	var cell: float = clampf(
-		minf(_canvas.size.x, _canvas.size.y) / float(GRID_SPAN), CELL_MIN, CELL_MAX
-	)
-	var cols: int = maxi(int(floor(_canvas.size.x / cell)), 3)
-	var rows: int = maxi(int(floor(_canvas.size.y / cell)), 3)
-	if cols % 2 == 0:
-		cols -= 1
-	if rows % 2 == 0:
-		rows -= 1
-	var half_c: int = (cols - 1) / 2
-	var half_r: int = (rows - 1) / 2
-	# Owner (중간에 공용 이런거 없애 / 공격력 증가부터 시작해): there is no hub
-	# any more. The cheapest root — 공격력 연마 on the refine tab — takes the
-	# middle cell and the map grows out of it, so the first thing on screen is
-	# a node you can actually buy, not a label.
+	# Owner reference (2026-08-31): an orthogonal board. Every link is one cell
+	# long and runs straight up, down, left or right — no diagonals, and no
+	# node ever placed away from its parent. The grid is deliberately larger
+	# than the canvas; the second pass below scales whatever shape comes out
+	# down to fit, which is what keeps adjacency an absolute guarantee.
 	var taken: Dictionary = {}
 	var cells: Dictionary = {}
 	roots.sort_custom(func(a: String, b: String) -> bool:
 		return _first_cost(a) < _first_cost(b)
 	)
-	var dirs: Array[Vector2i] = GRID_RING
+	# Roots stack in a column, cheapest in the middle, so each one owns a row
+	# of the board and its chain runs off to the side.
 	for i: int in roots.size():
-		var slot: Vector2i
-		if i == 0:
-			slot = Vector2i.ZERO
-		else:
-			var want: Vector2i = dirs[(i - 1) % dirs.size()]
-			if i - 1 >= dirs.size():
-				want *= 2
-			slot = _free_cell(want, want, taken, half_c, half_r)
+		var step: int = (i + 1) / 2
+		var row: int = step if i % 2 == 1 else -step
+		var slot := Vector2i(0, row * ROOT_ROW_PITCH)
+		while taken.has(slot):
+			slot += Vector2i(0, 1)
 		taken[slot] = true
 		cells[roots[i]] = slot
-	# Chains walk outward one cell at a time, keeping their heading when the
-	# cell ahead is free and bending to the nearest free neighbour when it is
-	# not — so a segment is always one cell long.
+	# A chain keeps walking the way it was already going; a fork sends its
+	# other children up and down from the same cell. Every step is one cell.
 	var queue: Array[String] = roots.duplicate()
+	# Chains leave their root alternately right and left, so the board grows
+	# into the canvas's width instead of running off the bottom.
+	var headings: Dictionary = {}
+	for i: int in roots.size():
+		headings[roots[i]] = Vector2i(1 if i % 2 == 0 else -1, 0)
 	while not queue.is_empty():
 		var node_id: String = queue.pop_front()
 		var here: Vector2i = cells[node_id]
+		var heading: Vector2i = headings.get(node_id, Vector2i(1, 0))
 		var kids: Array = children.get(node_id, [])
-		kids.sort()
-		var heading: Vector2i = _cell_heading(here)
+		kids.sort_custom(func(a: Variant, b: Variant) -> bool:
+			return _first_cost(String(a)) < _first_cost(String(b))
+		)
 		for i: int in kids.size():
 			var kid_id: String = String(kids[i])
-			var bias: Vector2i = heading if i == 0 else _rotate_cell(
-				heading, (i + 1) / 2 * (1 if i % 2 == 1 else -1)
-			)
-			var slot: Vector2i = _free_cell(here + bias, bias, taken, half_c, half_r)
+			var order: Array[Vector2i] = _step_order(heading, i)
+			var slot: Vector2i = here
+			var placed: bool = false
+			for step: Vector2i in order:
+				if not taken.has(here + step):
+					slot = here + step
+					headings[kid_id] = step
+					placed = true
+					break
+			if not placed:
+				# Every neighbour is spoken for: walk along the parent's own
+				# heading until a free cell turns up, so the link is still a
+				# straight line even if it is longer than one cell.
+				var probe: Vector2i = here + heading
+				while taken.has(probe):
+					probe += heading
+				slot = probe
+				headings[kid_id] = heading
 			taken[slot] = true
 			cells[kid_id] = slot
 			queue.append(kid_id)
@@ -1080,7 +1085,7 @@ func _compute_radial() -> void:
 		hi = Vector2i(maxi(hi.x, slot.x), maxi(hi.y, slot.y))
 	var half_x: float = float(hi.x - lo.x) / 2.0
 	var half_y: float = float(hi.y - lo.y) / 2.0
-	cell = clampf(
+	var cell: float = clampf(
 		minf(
 			(_canvas.size.x / 2.0 - RADIAL_PAD) / maxf(half_x + CELL_FILL / 2.0, 0.5),
 			(_canvas.size.y / 2.0 - RADIAL_PAD) / maxf(half_y + CELL_FILL / 2.0, 0.5)
@@ -1107,50 +1112,19 @@ func _first_cost(node_id: String) -> int:
 	return int(costs[0]) if not costs.is_empty() else 0
 
 
-## The eight cells around a node, ordered so a search fans out from a bias.
-func _free_cell(
-	want: Vector2i, bias: Vector2i, taken: Dictionary, half_c: int, half_r: int
-) -> Vector2i:
-	if _cell_ok(want, taken, half_c, half_r):
-		return want
-	var origin: Vector2i = want - bias
-	for turn: int in [1, -1, 2, -2, 3, -3, 4]:
-		var probe: Vector2i = origin + _rotate_cell(bias, turn)
-		if _cell_ok(probe, taken, half_c, half_r):
-			return probe
-	# Everything adjacent is taken: spiral out until something is free, so a
-	# crowded board still places every node instead of stacking them.
-	for radius: int in range(2, maxi(half_c, half_r) + 1):
-		for dx: int in range(-radius, radius + 1):
-			for dy: int in range(-radius, radius + 1):
-				if absi(dx) != radius and absi(dy) != radius:
-					continue
-				var probe2: Vector2i = origin + Vector2i(dx, dy)
-				if _cell_ok(probe2, taken, half_c, half_r):
-					return probe2
-	return want
+## Where a child may go, in order of preference: straight on, then the two
+## sides, then back. Forks alternate which side they try first, so a parent
+## with three children spreads instead of stacking.
+func _step_order(heading: Vector2i, index: int) -> Array[Vector2i]:
+	var side: Vector2i = Vector2i(-heading.y, heading.x)
+	var other: Vector2i = -side
+	if index == 0:
+		return [heading, side, other, -heading]
+	if index % 2 == 1:
+		return [side, heading, other, -heading]
+	return [other, heading, side, -heading]
 
 
-func _cell_ok(cell: Vector2i, taken: Dictionary, half_c: int, half_r: int) -> bool:
-	if taken.has(cell):
-		return false
-	return absi(cell.x) <= half_c and absi(cell.y) <= half_r
-
-
-## Which of the eight compass steps points away from the hub.
-func _cell_heading(from: Vector2i) -> Vector2i:
-	if from == Vector2i.ZERO:
-		return Vector2i(0, -1)
-	return Vector2i(signi(from.x), signi(from.y))
-
-
-## Turns a compass step by `steps` eighths of a circle.
-func _rotate_cell(step: Vector2i, steps: int) -> Vector2i:
-	var order: Array[Vector2i] = GRID_RING
-	var at: int = order.find(step)
-	if at < 0:
-		at = 0
-	return order[posmod(at + steps, order.size())]
 
 
 ## QA N11-14 F-5/F-6: a 231px portrait radius seats barely two full-size
