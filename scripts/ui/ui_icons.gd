@@ -6,6 +6,7 @@ extends RefCounted
 ## downscaled with NEAREST to 2x logical so 9-slice corners stay pixel-crisp.
 
 const WEAPON_ICON_DIR := "res://asset/ui/weapon_icons"
+const TREE_ICON_DIR := "res://asset/ui/tree_icons"
 const LOOT_ICON_DIR := "res://asset/ui/loot_icons"
 const PASSIVE_ICON_DIR := "res://asset/ui/passive_icons"
 const HUD_ICON_DIR := "res://asset/ui/hud"
@@ -45,6 +46,13 @@ static func weapon_icon(weapon_id: String) -> Texture2D:
 
 static func loot_icon(loot_id: String) -> Texture2D:
 	return _icon(LOOT_ICON_DIR, loot_id)
+
+
+## N11-25 (owner: 이미지 그냥 쓰지 말고 간단한 픽셀 이미지로): the training tree
+## has its own 16x16 glyph set. The loot art is a 1254px painting — at a 40px
+## tile it turns to mush and two nodes read as the same smudge.
+static func tree_icon(glyph_id: String) -> Texture2D:
+	return _icon(TREE_ICON_DIR, glyph_id)
 
 
 static func passive_icon(passive_id: String) -> Texture2D:

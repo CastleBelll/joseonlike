@@ -475,7 +475,7 @@ func _populate_tab() -> void:
 		button.mouse_entered.connect(_on_node_hover.bind(button, true))
 		button.mouse_exited.connect(_on_node_hover.bind(button, false))
 		var icon: TextureRect = UiIcons.icon_rect(
-			UiIcons.loot_icon(String(entry.get("icon", ""))), NODE_ICON_SIZE
+			UiIcons.tree_icon(String(entry.get("tree_icon", ""))), NODE_ICON_SIZE
 		)
 		icon.name = "Icon"
 		# Center inside the circle: PRESET_CENTER alone anchors the icon's
@@ -889,7 +889,7 @@ func _refresh_detail(state: Dictionary, gold: int) -> void:
 	var rank: int = MetaTree.rank_of(state, _selected_id)
 	var cost: int = MetaTree.next_cost(entry, rank)
 	var desc: String = MetaTree.display_desc(entry, UiLocale.current_locale)
-	_detail_icon.texture = UiIcons.loot_icon(String(entry.get("icon", "")))
+	_detail_icon.texture = UiIcons.tree_icon(String(entry.get("tree_icon", "")))
 	_detail_name.text = MetaTree.display_name(entry, UiLocale.current_locale)
 
 	if _branch_locked():
@@ -1458,7 +1458,7 @@ func _draw_hub_face(hub: Vector2, state: Dictionary) -> void:
 	var caption: String = _tab_caption(_current_tab)
 	# N11-24: the hub's own cell decides the type size — a label wider than the
 	# plate it sits on was the "왜 빈칸이야" complaint's second half.
-	var caption_size: int = maxi(int(_cell * 0.20), 10)
+	var caption_size: int = maxi(int(_cell * 0.24), 11)
 	var caption_width: float = font.get_string_size(
 		caption, HORIZONTAL_ALIGNMENT_CENTER, -1.0, caption_size
 	).x
@@ -1565,6 +1565,13 @@ func _draw_graph() -> void:
 	# static wood ring, and anything OWNED (QA I-3: rank 1 counts, not just
 	# maxed) wears gold. Rings wait for the growth to arrive (I-5).
 	var pulse_ids: Array[String] = _cheapest_buyable_ids(state)
+	# N11-25: the rank ladder reads on the tile itself, not only in the card.
+	for entry: Dictionary in _revealed_nodes():
+		var pip_id: String = String(entry.get("id", ""))
+		_draw_rank_pips(
+			_node_center(entry, width), _node_size_of(pip_id),
+			MetaTree.rank_of(state, pip_id), MetaTree.max_rank(entry)
+		)
 	# N11-24: roots and keystones get their diamond drawn under the button, so
 	# the shape says "this one turns the map" before any label is read.
 	for entry: Dictionary in _revealed_nodes():
@@ -1722,6 +1729,27 @@ func _draw_node_plate(entry: Dictionary, at: Vector2, side: float, hue: Color, o
 	var outline := PackedVector2Array(points)
 	outline.append(points[0])
 	_canvas.draw_polyline(outline, edge, 3.0, true)
+
+
+## Owner (단계는 제대로 보이지도 않고): each rank is a pip under the tile —
+## filled for what is bought, hollow for what is left. A node with one rank
+## draws none: there is no ladder to show.
+func _draw_rank_pips(at: Vector2, side: float, rank: int, max_rank: int) -> void:
+	if max_rank <= 1:
+		return
+	var pip: float = maxf(side * 0.11, 3.0)
+	var gap: float = pip * 0.6
+	var span: float = float(max_rank) * pip + float(max_rank - 1) * gap
+	var start: float = at.x - span / 2.0
+	# Inside the tile's own bottom edge — pips hung outside it landed on the
+	# neighbour below, and on the hub when the neighbour was the hub.
+	var row: float = at.y + side * 0.5 - pip * 1.6
+	for i: int in max_rank:
+		var box := Rect2(Vector2(start + float(i) * (pip + gap), row), Vector2(pip, pip))
+		if i < rank:
+			_canvas.draw_rect(box, UiPalette.GOLD, true)
+		else:
+			_canvas.draw_rect(box, Color(UiPalette.TEXT_MUTED_ON_DARK, 0.7), false, 1.5)
 
 
 ## One square outline centred on a tile.

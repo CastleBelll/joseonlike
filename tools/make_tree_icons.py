@@ -1,0 +1,301 @@
+"""Draws the training tree's own icon set — simple pixel glyphs, not the HD
+loot art.
+
+The loot icons are 1254px paintings; at a 40px tree tile they turn to mush and
+two different nodes read as the same smudge. These are 16x16 glyphs in a small
+palette, scaled x3 with nearest-neighbour so they stay crisp on the tile and
+match the game's pixel grammar.
+
+    python tools/make_tree_icons.py     ->  asset/ui/tree_icons/*.png
+"""
+import io
+import os
+import sys
+
+from PIL import Image, ImageDraw
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
+OUT_DIR = "asset/ui/tree_icons"
+SIZE = 16
+SCALE = 3
+
+INK = (26, 22, 19, 255)
+LIGHT = (242, 230, 210, 255)
+GOLD = (214, 168, 74, 255)
+RED = (176, 74, 60, 255)
+BLUE = (96, 140, 184, 255)
+GREEN = (104, 150, 104, 255)
+GREY = (150, 146, 138, 255)
+PURPLE = (140, 108, 168, 255)
+
+
+def canvas():
+    image = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    return image, ImageDraw.Draw(image)
+
+
+def coin(_):
+    image, draw = canvas()
+    draw.ellipse((2, 2, 13, 13), fill=GOLD, outline=INK)
+    draw.rectangle((7, 5, 8, 10), fill=INK)
+    draw.rectangle((5, 7, 10, 8), fill=INK)
+    return image
+
+
+def clover(_):
+    image, draw = canvas()
+    for cx, cy in ((5, 5), (10, 5), (5, 10), (10, 10)):
+        draw.ellipse((cx - 3, cy - 3, cx + 2, cy + 2), fill=GREEN, outline=INK)
+    draw.rectangle((7, 7, 8, 8), fill=GREEN)
+    return image
+
+
+def book(_):
+    image, draw = canvas()
+    draw.rectangle((2, 3, 13, 12), fill=LIGHT, outline=INK)
+    draw.line((8, 3, 8, 12), fill=INK)
+    draw.line((4, 6, 6, 6), fill=GREY)
+    draw.line((4, 8, 6, 8), fill=GREY)
+    draw.line((10, 6, 12, 6), fill=GREY)
+    return image
+
+
+def magnet(_):
+    image, draw = canvas()
+    draw.arc((2, 2, 13, 15), start=180, end=360, fill=GREY, width=3)
+    draw.rectangle((2, 9, 4, 13), fill=RED, outline=INK)
+    draw.rectangle((11, 9, 13, 13), fill=BLUE, outline=INK)
+    return image
+
+
+def boot(_):
+    image, draw = canvas()
+    draw.rectangle((5, 2, 9, 9), fill=RED, outline=INK)
+    draw.rectangle((3, 9, 12, 13), fill=RED, outline=INK)
+    draw.line((4, 12, 11, 12), fill=INK)
+    return image
+
+
+def sword(_):
+    image, draw = canvas()
+    draw.polygon([(8, 1), (10, 4), (10, 10), (6, 10), (6, 4)], fill=GREY, outline=INK)
+    draw.rectangle((4, 10, 11, 11), fill=GOLD, outline=INK)
+    draw.rectangle((7, 12, 8, 14), fill=INK)
+    return image
+
+
+def spear(_):
+    image, draw = canvas()
+    draw.polygon([(8, 1), (11, 6), (8, 8), (5, 6)], fill=GREY, outline=INK)
+    draw.rectangle((7, 8, 8, 14), fill=GOLD, outline=INK)
+    return image
+
+
+def bow(_):
+    image, draw = canvas()
+    draw.arc((3, 1, 13, 14), start=270, end=90, fill=GOLD, width=2)
+    draw.line((5, 2, 5, 13), fill=LIGHT)
+    draw.line((5, 8, 12, 8), fill=INK)
+    return image
+
+
+def arrows(_):
+    image, draw = canvas()
+    for offset in (-3, 0, 3):
+        draw.line((3, 8 + offset, 12, 8 + offset), fill=GOLD)
+        draw.polygon([(12, 8 + offset), (9, 6 + offset), (9, 10 + offset)], fill=INK)
+    return image
+
+
+def flame(_):
+    image, draw = canvas()
+    draw.polygon([(8, 1), (12, 8), (11, 13), (5, 13), (4, 8)], fill=RED, outline=INK)
+    draw.polygon([(8, 6), (10, 10), (8, 13), (6, 10)], fill=GOLD)
+    return image
+
+
+def bolt(_):
+    image, draw = canvas()
+    draw.polygon(
+        [(9, 1), (4, 8), (7, 8), (6, 15), (12, 7), (9, 7)], fill=GOLD, outline=INK
+    )
+    return image
+
+
+def skull(_):
+    image, draw = canvas()
+    draw.ellipse((3, 2, 12, 10), fill=LIGHT, outline=INK)
+    draw.rectangle((5, 10, 10, 13), fill=LIGHT, outline=INK)
+    draw.rectangle((5, 5, 6, 7), fill=INK)
+    draw.rectangle((9, 5, 10, 7), fill=INK)
+    return image
+
+
+def talisman(_):
+    image, draw = canvas()
+    draw.rectangle((4, 1, 11, 14), fill=LIGHT, outline=INK)
+    draw.line((6, 4, 9, 4), fill=RED)
+    draw.line((7, 4, 7, 11), fill=RED)
+    draw.line((6, 8, 9, 8), fill=RED)
+    return image
+
+
+def orb(_):
+    image, draw = canvas()
+    draw.ellipse((2, 2, 13, 13), outline=PURPLE, width=2)
+    draw.ellipse((6, 6, 9, 9), fill=PURPLE)
+    return image
+
+
+def ward(_):
+    image, draw = canvas()
+    draw.ellipse((1, 4, 14, 12), outline=BLUE, width=2)
+    draw.ellipse((5, 6, 10, 10), fill=BLUE)
+    return image
+
+
+def heart(_):
+    image, draw = canvas()
+    draw.ellipse((3, 3, 8, 8), fill=RED, outline=INK)
+    draw.ellipse((7, 3, 12, 8), fill=RED, outline=INK)
+    draw.polygon([(3, 7), (12, 7), (8, 14)], fill=RED, outline=INK)
+    return image
+
+
+def shield(_):
+    image, draw = canvas()
+    draw.polygon([(3, 2), (12, 2), (12, 9), (8, 14), (3, 9)], fill=BLUE, outline=INK)
+    draw.line((8, 4, 8, 11), fill=LIGHT)
+    return image
+
+
+def armor(_):
+    image, draw = canvas()
+    draw.rectangle((3, 3, 12, 12), fill=GREY, outline=INK)
+    draw.line((3, 6, 12, 6), fill=INK)
+    draw.line((3, 9, 12, 9), fill=INK)
+    return image
+
+
+def feather(_):
+    image, draw = canvas()
+    draw.polygon([(11, 2), (13, 6), (6, 13), (3, 13), (4, 9)], fill=LIGHT, outline=INK)
+    draw.line((5, 12, 11, 4), fill=GREY)
+    return image
+
+
+def eye(_):
+    image, draw = canvas()
+    draw.polygon([(1, 8), (8, 3), (15, 8), (8, 13)], fill=LIGHT, outline=INK)
+    draw.ellipse((6, 6, 9, 10), fill=BLUE, outline=INK)
+    return image
+
+
+def fang(_):
+    image, draw = canvas()
+    draw.polygon([(4, 2), (11, 2), (8, 14)], fill=LIGHT, outline=INK)
+    draw.line((6, 5, 9, 5), fill=RED)
+    return image
+
+
+def hourglass(_):
+    image, draw = canvas()
+    draw.polygon(
+        [(3, 2), (12, 2), (8, 8), (12, 14), (3, 14), (7, 8)], fill=GOLD, outline=INK
+    )
+    return image
+
+
+def star(_):
+    image, draw = canvas()
+    draw.polygon(
+        [(8, 1), (10, 6), (15, 7), (11, 10), (12, 15), (8, 12), (4, 15), (5, 10),
+         (1, 7), (6, 6)],
+        fill=GOLD, outline=INK,
+    )
+    return image
+
+
+def pouch(_):
+    image, draw = canvas()
+    draw.polygon([(4, 5), (11, 5), (13, 13), (2, 13)], fill=GOLD, outline=INK)
+    draw.line((5, 5, 6, 2), fill=INK)
+    draw.line((10, 5, 9, 2), fill=INK)
+    return image
+
+
+def moon(_):
+    image, draw = canvas()
+    draw.ellipse((2, 2, 13, 13), fill=LIGHT, outline=INK)
+    draw.ellipse((6, 1, 16, 12), fill=(0, 0, 0, 0))
+    return image
+
+
+def sprout(_):
+    image, draw = canvas()
+    draw.line((8, 6, 8, 14), fill=GREEN, width=2)
+    draw.ellipse((2, 4, 8, 9), fill=GREEN, outline=INK)
+    draw.ellipse((8, 2, 14, 7), fill=GREEN, outline=INK)
+    return image
+
+
+def cards(_):
+    image, draw = canvas()
+    draw.rectangle((2, 4, 8, 13), fill=LIGHT, outline=INK)
+    draw.rectangle((6, 2, 12, 11), fill=LIGHT, outline=INK)
+    draw.line((8, 5, 10, 5), fill=RED)
+    return image
+
+
+def steps(_):
+    image, draw = canvas()
+    draw.rectangle((2, 10, 6, 13), fill=GOLD, outline=INK)
+    draw.rectangle((6, 7, 10, 13), fill=GOLD, outline=INK)
+    draw.rectangle((10, 4, 14, 13), fill=GOLD, outline=INK)
+    return image
+
+
+def anvil(_):
+    image, draw = canvas()
+    draw.polygon([(2, 5), (13, 5), (11, 9), (5, 9)], fill=GREY, outline=INK)
+    draw.rectangle((6, 9, 9, 13), fill=GREY, outline=INK)
+    return image
+
+
+def chest(_):
+    image, draw = canvas()
+    draw.rectangle((2, 6, 13, 13), fill=RED, outline=INK)
+    draw.arc((2, 2, 13, 10), start=180, end=360, fill=RED, width=3)
+    draw.rectangle((7, 8, 8, 11), fill=GOLD)
+    return image
+
+
+def chain(_):
+    image, draw = canvas()
+    draw.ellipse((1, 5, 7, 11), outline=GREY, width=2)
+    draw.ellipse((8, 5, 14, 11), outline=GOLD, width=2)
+    return image
+
+
+GLYPHS = {
+    "coin": coin, "clover": clover, "book": book, "magnet": magnet, "boot": boot,
+    "sword": sword, "spear": spear, "bow": bow, "arrows": arrows, "flame": flame,
+    "bolt": bolt, "skull": skull, "talisman": talisman, "orb": orb, "ward": ward,
+    "heart": heart, "shield": shield, "armor": armor, "feather": feather,
+    "eye": eye, "fang": fang, "hourglass": hourglass, "star": star,
+    "pouch": pouch, "moon": moon, "sprout": sprout, "cards": cards,
+    "steps": steps, "anvil": anvil, "chest": chest, "chain": chain,
+}
+
+
+def main():
+    os.makedirs(OUT_DIR, exist_ok=True)
+    for name, draw_glyph in GLYPHS.items():
+        glyph = draw_glyph(None)
+        glyph = glyph.resize((SIZE * SCALE, SIZE * SCALE), Image.NEAREST)
+        glyph.save(os.path.join(OUT_DIR, f"{name}.png"))
+    print(f"{len(GLYPHS)} tree icons written to {OUT_DIR}")
+
+
+main()
