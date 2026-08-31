@@ -83,6 +83,10 @@ const BACK_SIZE := 44.0
 const CTA_HEIGHT := 60
 const TAB_HEIGHT := 40
 const DETAIL_MIN_HEIGHT := 96.0
+## QA N11-14 F-1: the effect line never grows past this, so the card keeps one
+## height and the graph canvas never resizes under a tap.
+const DETAIL_EFFECT_LINES := 2
+const DETAIL_INFO_LINES := 2
 const NOTICE_FADE_SEC := 1.4
 ## Locked node icons dim by alpha only — no raw color values outside palette.
 const LOCKED_ICON_ALPHA := 0.35
@@ -125,6 +129,9 @@ var _detail_info: Label
 var _detail_effect: Label
 var _detail_icon: TextureRect
 var _cta: Button
+## QA N11-14 F-1: the reserved row the CTA lives in, so showing or hiding the
+## button never resizes the graph canvas.
+var _cta_slot: Control
 ## The tree row and the panel beside (landscape) or below (portrait) it.
 var _body: HBoxContainer
 var _side: VBoxContainer
@@ -228,12 +235,20 @@ func build_ui() -> void:
 	_side_slack.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_side.add_child(_side_slack)
 
+	# QA N11-14 F-1: the CTA appearing on selection stole 76-98px from the
+	# portrait canvas and the whole tree jumped under the finger. The slot is
+	# reserved always; only the button inside it comes and goes.
+	_cta_slot = Control.new()
+	_cta_slot.name = "CtaSlot"
+	_cta_slot.custom_minimum_size = Vector2(0.0, CTA_HEIGHT)
+	_side.add_child(_cta_slot)
+
 	_cta = Button.new()
 	_cta.name = "CtaButton"
-	_cta.custom_minimum_size = Vector2(0.0, CTA_HEIGHT)
+	_cta.set_anchors_preset(Control.PRESET_FULL_RECT)
 	WoodButton.apply(_cta)
 	_cta.pressed.connect(_on_cta_pressed)
-	_side.add_child(_cta)
+	_cta_slot.add_child(_cta)
 	_place_side()
 	resized.connect(_place_side)
 
@@ -437,7 +452,10 @@ func _populate_tab() -> void:
 func _build_detail_card() -> Control:
 	var card := PanelContainer.new()
 	card.name = "DetailCard"
+	# QA N11-14 F-1: a fixed height, not a minimum — the card grew by a line
+	# on selection and the canvas paid for it.
 	card.custom_minimum_size = Vector2(0.0, DETAIL_MIN_HEIGHT)
+	card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var kit: StyleBox = UiIcons.card_panel()
 	if kit != null:
 		(kit as StyleBoxTexture).set_content_margin_all(CARD_PADDING)
@@ -481,7 +499,10 @@ func _build_detail_card() -> Control:
 	_detail_effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_detail_effect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_detail_effect.name = "DetailEffect"
-	_detail_effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# QA N11-14 F-1: a two-line ceiling with an ellipsis, so a long effect
+	# line can never add a row and shove the canvas.
+	_detail_effect.max_lines_visible = DETAIL_EFFECT_LINES
+	_detail_effect.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	lines.add_child(_detail_effect)
 	_detail_info = _label("", UiPalette.FONT_SIZE_LABEL, UiPalette.TEXT_MUTED_ON_PAPER)
 	_detail_info.name = "DetailInfo"
@@ -491,6 +512,16 @@ func _build_detail_card() -> Control:
 	# demand to the longest word (the V1/result-sheet grammar).
 	_detail_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_detail_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# QA N11-14 F-1: a node with a material bill adds a second line here, and
+	# that line came out of the graph canvas — the taoist tab still moved 22px
+	# under a tap. Two lines are reserved always; nodes without a bill simply
+	# leave the second one blank.
+	_detail_info.custom_minimum_size = Vector2(
+		0.0, float(UiPalette.FONT_SIZE_LABEL) * DETAIL_INFO_LINES * 1.35
+	)
+	_detail_info.max_lines_visible = DETAIL_INFO_LINES
+	_detail_info.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_detail_info.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	lines.add_child(_detail_info)
 	row.add_child(lines)
 	return card
@@ -877,6 +908,10 @@ func _layout_nodes() -> void:
 		button.position = (
 			(_radial.get(node_id, Vector2.ZERO) as Vector2) - Vector2(half, half)
 		)
+	# QA N11-14 F-2: the caption is added before the buttons, so it drew UNDER
+	# the discs and got clipped by them. Keep it on top of the canvas.
+	if _focus_caption != null and is_instance_valid(_focus_caption):
+		_focus_caption.move_to_front()
 	_place_focus_caption()
 
 
@@ -1319,24 +1354,34 @@ func _draw_graph() -> void:
 	# static wood ring, and anything OWNED (QA I-3: rank 1 counts, not just
 	# maxed) wears gold. Rings wait for the growth to arrive (I-5).
 	var pulse_ids: Array[String] = _cheapest_buyable_ids(state)
-	if _grow >= 0.9:
+	# QA N11-14 F-9: every ring used to appear whole in one frame at 0.9.
+	var ring_fade: float = clampf((_grow - 0.72) / 0.28, 0.0, 1.0)
+	if ring_fade > 0.0:
 		for entry: Dictionary in _revealed_nodes():
 			var center: Vector2 = _node_center(entry, width)
 			var node_id: String = String(entry.get("id", ""))
 			if MetaTree.rank_of(state, node_id) >= 1:
+				# QA N11-14 F-7: owned vs buyable measured 1.17:1 on colour
+				# alone. Owned wears a DOUBLE ring, buyable a single one —
+				# the state reads as form before it reads as hue.
 				_canvas.draw_arc(
 					center, _node_size() / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
-					UiPalette.GOLD_BORDER, 2.0
+					Color(UiPalette.GOLD_BORDER, ring_fade), 3.0
+				)
+				_canvas.draw_arc(
+					center, _node_size() / 2.0 + PULSE_RING_PAD - 5.0,
+					0.0, TAU, 28,
+					Color(UiPalette.GOLD_BORDER, 0.7 * ring_fade), 1.5
 				)
 			elif node_id in pulse_ids:
 				_canvas.draw_arc(
 					center, _node_size() / 2.0 + PULSE_RING_PAD + ring_swell,
-					0.0, TAU, 32, Color(UiPalette.GOLD, 0.65), 2.0
+					0.0, TAU, 32, Color(UiPalette.GOLD, 0.65 * ring_fade), 2.0
 				)
 			elif _is_buyable(entry, state):
 				_canvas.draw_arc(
 					center, _node_size() / 2.0 + PULSE_RING_PAD, 0.0, TAU, 32,
-					Color(UiPalette.WOOD, 0.55), 2.0
+					Color(UiPalette.WOOD, 0.55 * ring_fade), 2.0
 				)
 	# I-6 / N11-15: the selected node wears a MARK — plate and icon untouched.
 	if not _selected_id.is_empty() and _radial.has(_selected_id):
