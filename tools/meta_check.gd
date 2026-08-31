@@ -29,8 +29,17 @@ func _ready() -> void:
 				granted[String((entry as Dictionary)["id"])] = 1
 			profile["meta_tree"] = granted
 			profile["unlocks"] = ["warrior", "archer"]
+		elif "--fresh" in OS.get_cmdline_user_args():
+			# What a first-time player opens: roots only.
+			profile["meta_tree"] = {}
 		else:
-			profile["meta_tree"] = {"coin_eye": 2, "luck_seed": 1, "skill_power": 1}
+			# Mid-progression: a few chains started, which is the state the
+			# screen actually spends most of its life in.
+			profile["meta_tree"] = {
+				"coin_eye": 2, "ledger_eye": 1, "luck_seed": 1,
+				"skill_power": 2, "vast_rites": 1, "burn_mastery": 1,
+				"build_fire": 1, "chain_reach": 1,
+			}
 		SaveService.instance.profile = profile
 		SaveService.instance._write_locked = true
 		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"

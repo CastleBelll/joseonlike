@@ -60,9 +60,6 @@ const VISIBLE_DEPTH := 3
 ## of a cell, and the compass order a chain walks.
 const GRID_SPAN := 7.0
 const CELL_MIN := 26.0
-## The tile size a tier tries to keep; a tier longer than the canvas can seat
-## at this size wraps onto another line rather than shrinking the board.
-const TILE_TARGET_PX := 62.0
 const CELL_MAX := 96.0
 ## Owner (제대로 마인드맵부터): at 0.78 the tiles touched and the whole tab
 ## read as a brick wall of inventory slots — the links, which are what makes
@@ -1050,30 +1047,33 @@ func _compute_radial() -> void:
 	var tallest: int = 1
 	for column: Variant in columns:
 		tallest = maxi(tallest, (columns[column] as Array).size())
-	# A tier with a dozen nodes would squeeze the whole board down to fit them
-	# on one line, so a long tier WRAPS: it keeps its own band and runs onto a
-	# second (or third) line inside it. Tiles stay readable however wide a
-	# tier gets.
-	var long_axis: float = maxf(_canvas.size.x, _canvas.size.y) - RADIAL_PAD * 2.0
-	var per_line: int = maxi(int(floor(long_axis / TILE_TARGET_PX)), 3)
-	var lines_before: Array[int] = []
-	var lines_total: int = 0
+	# The board should end up roughly the canvas's shape. A tab whose first
+	# tier holds ten roots and nothing else would otherwise lay them in one
+	# long line and leave four fifths of the screen empty; a tier wider than
+	# that shape wraps onto another line inside its own band, so parent and
+	# child stay near each other.
+	var long_side: float = maxf(_canvas.size.x, _canvas.size.y)
+	var short_side: float = maxf(minf(_canvas.size.x, _canvas.size.y), 1.0)
+	var aspect: float = long_side / short_side
+	var busiest: int = 1
+	for column: Variant in columns:
+		busiest = maxi(busiest, (columns[column] as Array).size())
+	var per_line: int = maxi(
+		int(ceil(sqrt(float(busiest) * aspect / maxf(float(last_column + 1), 1.0)))), 1
+	)
+	per_line = mini(maxi(per_line, 2), busiest)
+	var line_of: Array[int] = []
+	var lines_used: int = 0
 	for column: int in range(last_column + 1):
-		lines_before.append(lines_total)
+		line_of.append(lines_used)
 		var members: int = (columns.get(column, []) as Array).size()
-		lines_total += maxi(int(ceil(float(members) / float(per_line))), 1)
-	tallest = per_line
+		lines_used += maxi(int(ceil(float(members) / float(per_line))), 1)
 	for column: int in range(last_column + 1):
 		var column_list: Array = columns.get(column, [])
 		var on_line: int = mini(column_list.size(), per_line)
-		# Each tier is centred on the board, so a short tier sits beside the
-		# middle of the long one instead of hugging the edge.
-		var offset: int = int(floor(float(tallest - on_line) / 2.0))
+		var offset: int = int(floor(float(per_line - on_line) / 2.0))
 		for i: int in column_list.size():
-			# Tiers run along the canvas's LONG axis: left to right in
-			# landscape, top to bottom in portrait. A tier stack on the short
-			# axis wastes the other half of the screen.
-			var line: int = lines_before[column] + int(i / per_line)
+			var line: int = line_of[column] + int(i / per_line)
 			var place: int = offset + (i % per_line)
 			var slot := Vector2i(line, place)
 			if _canvas.size.y > _canvas.size.x:
