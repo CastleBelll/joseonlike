@@ -39,7 +39,9 @@ const TRUNK_WIDTH := 10.0
 ## chained nodes pushed outward past their parent. Nothing scrolls; the
 ## canvas is the viewport and the spiral is scaled to fit it.
 const GOLDEN_ANGLE := 2.399963
-const HUB_RADIUS := 30.0
+## The hub is drawn from the live cell size (see _hub_side) — this is only
+## the floor for a canvas too small to give it one.
+const HUB_RADIUS := 26.0
 ## Owner (노드들끼리 간격도 다 다르고): the gap a ring keeps from the next.
 const RING_GAP := 14.0
 ## Each ring out shrinks its discs by this much, down to NODE_SIZE_MIN.
@@ -59,11 +61,16 @@ const VISIBLE_DEPTH := 3
 const GRID_SPAN := 7.0
 const CELL_MIN := 46.0
 const CELL_MAX := 96.0
-const CELL_FILL := 0.78
+## Owner (제대로 마인드맵부터): at 0.78 the tiles touched and the whole tab
+## read as a brick wall of inventory slots — the links, which are what makes
+## it a map, had nowhere to show. A tile now takes well under its cell.
+const CELL_FILL := 0.58
 ## Owner reference: square tiles with a soft corner, not discs.
 const TILE_RADIUS := 10
 ## One hue per branch family, in the kit's own range — earth reds, ink blues,
 ## wood ambers, moss greens. A locked tile wears the same hue, darkened.
+## Owner reference: the special nodes are diamonds among the squares.
+const DIAMOND_ROLES: Array[String] = ["root", "keystone"]
 const FAMILY_COLORS: Array[Color] = [
 	Color("#8c3b34"), Color("#3f5a7a"), Color("#8a6a2f"),
 	Color("#3f6b4a"), Color("#6a4a7a"), Color("#7a5a3a"),
@@ -162,6 +169,9 @@ var _reveal_ids: Array[String] = []
 var _node_sizes: Dictionary = {}
 ## Where the hub cell landed after the web was centred on its own extent.
 var _hub_pos: Vector2 = Vector2.ZERO
+## The grid pitch the last layout settled on; the hub and the state marks are
+## drawn from it so they always match the tiles.
+var _cell: float = 0.0
 ## node id -> its family hue, rebuilt whenever the tab changes.
 var _family_of: Dictionary = {}
 var _reveal_phase: float = 1.0
@@ -846,8 +856,13 @@ func _style_node(
 	# swallowing the icon, and the icon IS the node's identity. A drawn ring
 	# marks the pick instead (see _draw_graph).
 
+	# N11-24: a diamond node draws its own plate on the canvas, so the button
+	# behind it stays transparent — two plates would fight.
+	var plate: StyleBox = (
+		StyleBoxEmpty.new() if _node_role(entry) != "tile" else _node_plate(fill, border)
+	)
 	for state_name: String in ["normal", "hover", "pressed"]:
-		button.add_theme_stylebox_override(state_name, _node_plate(fill, border))
+		button.add_theme_stylebox_override(state_name, plate)
 	button.add_theme_stylebox_override("focus", _node_plate(fill, UiPalette.GOLD))
 	# N11-12: only the SELECTED node speaks on the canvas — everyone else
 	# talks through their ring/branch colour and the detail card.
@@ -1073,6 +1088,7 @@ func _compute_radial() -> void:
 		hi = Vector2i(maxi(hi.x, slot.x), maxi(hi.y, slot.y))
 	var shift := Vector2(float(lo.x + hi.x), float(lo.y + hi.y)) / 2.0
 	_hub_pos = center - shift * cell
+	_cell = cell
 	var disc: float = cell * CELL_FILL
 	for node_id: Variant in cells:
 		var slot: Vector2i = cells[node_id]
@@ -1440,27 +1456,29 @@ func _draw_hub_face(hub: Vector2, state: Dictionary) -> void:
 		owned += MetaTree.rank_of(state, node_id)
 		total += (entry.get("costs", []) as Array).size()
 	var caption: String = _tab_caption(_current_tab)
-	var caption_size: int = UiPalette.FONT_SIZE_LABEL
+	# N11-24: the hub's own cell decides the type size — a label wider than the
+	# plate it sits on was the "왜 빈칸이야" complaint's second half.
+	var caption_size: int = maxi(int(_cell * 0.20), 10)
 	var caption_width: float = font.get_string_size(
 		caption, HORIZONTAL_ALIGNMENT_CENTER, -1.0, caption_size
 	).x
 	# A long branch name gets trimmed rather than spilling off the disc.
-	while caption_width > HUB_RADIUS * 1.7 and caption.length() > 2:
+	while caption_width > maxf(_cell * 0.74, HUB_RADIUS * 1.7) and caption.length() > 2:
 		caption = caption.substr(0, caption.length() - 1)
 		caption_width = font.get_string_size(
 			caption, HORIZONTAL_ALIGNMENT_CENTER, -1.0, caption_size
 		).x
 	_canvas.draw_string(
-		font, hub + Vector2(-caption_width / 2.0, -2.0), caption,
+		font, hub + Vector2(-caption_width / 2.0, -3.0), caption,
 		HORIZONTAL_ALIGNMENT_LEFT, -1.0, caption_size, UiPalette.GOLD
 	)
 	var tally: String = "%d/%d" % [owned, total]
-	var tally_size: int = UiPalette.FONT_SIZE_LABEL - 2
+	var tally_size: int = maxi(caption_size - 2, 9)
 	var tally_width: float = font.get_string_size(
 		tally, HORIZONTAL_ALIGNMENT_CENTER, -1.0, tally_size
 	).x
 	_canvas.draw_string(
-		font, hub + Vector2(-tally_width / 2.0, 16.0), tally,
+		font, hub + Vector2(-tally_width / 2.0, float(caption_size) + 3.0), tally,
 		HORIZONTAL_ALIGNMENT_LEFT, -1.0, tally_size, UiPalette.TEXT_ON_DARK
 	)
 
@@ -1483,13 +1501,17 @@ func _draw_graph() -> void:
 	# N11-12: the spine is a HUB now — the 신목's heartwood at the canvas
 	# center that every flat branch grows out of, up, down and sideways.
 	var hub: Vector2 = _hub_pos if _hub_pos != Vector2.ZERO else _canvas.size / 2.0
+	# N11-24: the hub owns its cell outright — at half a tile it read as a
+	# stray dark square and the tab's own name was unreadable on it.
+	var hub_side: float = maxf(_cell * 0.86, HUB_RADIUS * 2.0)
 	# Owner reference: everything on this board is a tile, the hub included —
 	# a lone circle in a field of squares read as a leftover.
 	var hub_rect := Rect2(
-		hub - Vector2(HUB_RADIUS, HUB_RADIUS), Vector2(HUB_RADIUS, HUB_RADIUS) * 2.0
+		hub - Vector2(hub_side, hub_side) / 2.0, Vector2(hub_side, hub_side)
 	)
 	_canvas.draw_rect(hub_rect, UiPalette.NIGHT_BROWN, true)
-	_canvas.draw_rect(hub_rect, UiPalette.WOOD_BORDER, false, 3.0)
+	_canvas.draw_rect(hub_rect, UiPalette.GOLD_BORDER, false, 3.0)
+	_canvas.draw_rect(hub_rect.grow(-5.0), Color(UiPalette.GOLD_BORDER, 0.35), false, 1.5)
 	var state: Dictionary = _profile.get("meta_tree", {})
 	# Owner (중앙 노드는 왜 빈칸이야): the heartwood carries the tab it belongs
 	# to and how much of that tab is already the player's — the one number the
@@ -1543,6 +1565,16 @@ func _draw_graph() -> void:
 	# static wood ring, and anything OWNED (QA I-3: rank 1 counts, not just
 	# maxed) wears gold. Rings wait for the growth to arrive (I-5).
 	var pulse_ids: Array[String] = _cheapest_buyable_ids(state)
+	# N11-24: roots and keystones get their diamond drawn under the button, so
+	# the shape says "this one turns the map" before any label is read.
+	for entry: Dictionary in _revealed_nodes():
+		var node_id: String = String(entry.get("id", ""))
+		if _node_role(entry) == "tile":
+			continue
+		_draw_node_plate(
+			entry, _node_center(entry, width), _node_size_of(node_id),
+			_family_color(node_id), MetaTree.rank_of(state, node_id) >= 1
+		)
 	# QA N11-14 F-9: the state marks used to appear whole in one frame at 0.9.
 	# Owner reference (간단한 반응형 노드): the marks are SQUARE now — a tile
 	# wearing a circular ring read as two shapes fighting.
@@ -1661,6 +1693,35 @@ func _draw_selection_mark(at: Vector2, disc: float) -> void:
 			_canvas.draw_line(
 				corner, corner - Vector2(0.0, float(sy) * arm), UiPalette.GOLD, 3.0
 			)
+
+
+## Owner reference (특수 노드는 마름모): what a node IS decides its shape.
+## A build root opens a whole family and a one-rank node is a keystone — both
+## are turning points, and they read as diamonds among the square tiles.
+func _node_role(entry: Dictionary) -> String:
+	if not String(entry.get("build_family", "")).is_empty() and entry.get("effect", {}).is_empty():
+		return "root"
+	if (entry.get("costs", []) as Array).size() == 1:
+		return "keystone"
+	return "tile"
+
+
+## Draws one node's plate under its button: a square for an ordinary rank, a
+## diamond for a root or a keystone.
+func _draw_node_plate(entry: Dictionary, at: Vector2, side: float, hue: Color, owned: bool) -> void:
+	var fill: Color = hue if owned else UiPalette.NIGHT.lerp(hue, TILE_LOCKED_MIX)
+	var edge: Color = UiPalette.GOLD_BORDER if owned else hue.darkened(0.3)
+	if _node_role(entry) == "tile":
+		return
+	var reach: float = side * 0.78
+	var points := PackedVector2Array([
+		at + Vector2(0.0, -reach), at + Vector2(reach, 0.0),
+		at + Vector2(0.0, reach), at + Vector2(-reach, 0.0),
+	])
+	_canvas.draw_colored_polygon(points, fill)
+	var outline := PackedVector2Array(points)
+	outline.append(points[0])
+	_canvas.draw_polyline(outline, edge, 3.0, true)
 
 
 ## One square outline centred on a tile.

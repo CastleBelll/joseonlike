@@ -44,7 +44,11 @@ const ECONOMY_STATS: Array[String] = [
 	# still pays a share instead of nothing (defeat_bank), and a night can
 	# start with材 in hand (start_material). These change what a RUN IS
 	# rather than adding another percent.
-	"salvage_rate", "defeat_bank"
+	"salvage_rate", "defeat_bank",
+	# N11-23 (owner: 공용 노드가 너무 적다 — 몇 번 하면 다 된다): four more
+	#운영 axes, each wired to something the run already does. Materials found,
+	# what the smithy charges, what a chest pays, and what a heal is worth.
+	"material_find", "smithy_discount", "chest_bounty", "heal_power"
 ]
 ## Start-of-run and choice-quality counters (Stage._ready / level-up screen).
 const START_STATS: Array[String] = [
@@ -84,6 +88,7 @@ const WEAPON_STATS: Array[String] = [
 ## integer counters above are capped by their rank ladders instead.
 const CAPPED_STATS: Array[String] = [
 	"salvage_rate", "defeat_bank", "pierce_growth", "range_damage", "dodge_chance",
+	"material_find", "smithy_discount", "chest_bounty", "heal_power",
 	"active_haste", "active_power",
 	"max_hp", "move_speed", "attack_damage", "attack_speed", "magnet_radius",
 	"gold_gain", "xp_gain", "luck", "damage_reduction", "hit_invuln",

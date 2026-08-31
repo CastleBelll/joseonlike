@@ -12,6 +12,8 @@ const REASON_OWNED := "owned"
 const REASON_UNKNOWN := "unknown"
 
 const PROFILE_KEY := "mod_unlocks"
+## The most 흥정 can take off a recipe's coin price.
+const MAX_SMITHY_DISCOUNT := 0.4
 
 
 static func unlocked_ids(profile: Dictionary) -> Array:
@@ -38,17 +40,28 @@ static func runtime_mods(
 	return subset
 
 
-static func unlock_cost(mod: Dictionary) -> Dictionary:
+static func unlock_cost(mod: Dictionary, discount: float = 0.0) -> Dictionary:
 	var unlock: Variant = mod.get("unlock", {})
-	return unlock if unlock is Dictionary else {}
+	if unlock is not Dictionary:
+		return {}
+	# N11-23 흥정: the tree can talk 돌무쇠 down. Materials are untouched —
+	# a recipe still costs what it is made of; only the coin price moves.
+	var cut: float = clampf(discount, 0.0, MAX_SMITHY_DISCOUNT)
+	if cut <= 0.0:
+		return unlock
+	var priced: Dictionary = (unlock as Dictionary).duplicate(true)
+	priced["gold"] = int(round(float(priced.get("gold", 0)) * (1.0 - cut)))
+	return priced
 
 
-static func can_unlock(profile: Dictionary, mods: Dictionary, mod_id: String) -> String:
+static func can_unlock(
+	profile: Dictionary, mods: Dictionary, mod_id: String, discount: float = 0.0
+) -> String:
 	if not mods.has(mod_id):
 		return REASON_UNKNOWN
 	if is_unlocked(profile, mod_id):
 		return REASON_OWNED
-	var cost: Dictionary = unlock_cost(mods[mod_id])
+	var cost: Dictionary = unlock_cost(mods[mod_id], discount)
 	if int(profile.get("gold", 0)) < int(cost.get("gold", 0)):
 		return REASON_GOLD
 	var pouch: Dictionary = profile.get("materials", {})
@@ -59,11 +72,13 @@ static func can_unlock(profile: Dictionary, mods: Dictionary, mod_id: String) ->
 
 
 ## Atomic fold: gold and the material bill spend together or not at all.
-static func unlock(profile: Dictionary, mods: Dictionary, mod_id: String) -> Dictionary:
-	var reason: String = can_unlock(profile, mods, mod_id)
+static func unlock(
+	profile: Dictionary, mods: Dictionary, mod_id: String, discount: float = 0.0
+) -> Dictionary:
+	var reason: String = can_unlock(profile, mods, mod_id, discount)
 	if reason != REASON_OK:
 		return {"ok": false, "reason": reason, "profile": profile}
-	var cost: Dictionary = unlock_cost(mods[mod_id])
+	var cost: Dictionary = unlock_cost(mods[mod_id], discount)
 	var next: Dictionary = profile.duplicate(true)
 	next["gold"] = int(profile.get("gold", 0)) - int(cost.get("gold", 0))
 	var spent: Dictionary = (next.get("materials", {}) as Dictionary).duplicate()

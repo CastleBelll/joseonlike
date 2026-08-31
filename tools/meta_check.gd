@@ -6,7 +6,8 @@ extends Node
 
 const SHOT_PATH := "user://meta_check.png"
 const BRANCH_SHOT_PATH := "user://meta_check_branch.png"
-const SELECTED_NODE := "sharp_talisman"
+## N11-18 rewired the tree; these are current ids.
+const SELECTED_NODE := "coin_eye"
 ## N7-2: second shot on the taoist branch tab, mid-branch node selected.
 const BRANCH_NODE := "chain_reach"
 
@@ -17,7 +18,19 @@ func _ready() -> void:
 		var profile: Dictionary = SaveProfile.apply_run_result(
 			SaveProfile.default_profile(), 287.0, 132, 875, true
 		)
-		profile["meta_tree"] = {"iron_bones": 2, "wind_steps": 1, "burn_mastery": 1}
+		# N11-24: "--full" grants every node one rank, so the capture shows the
+		# map a long-running profile actually sees — the reveal rule keeps a
+		# fresh profile down to a handful of discs, which hides the layout.
+		var full: bool = "--full" in OS.get_cmdline_user_args()
+		if full:
+			var tree: Dictionary = MetaTree.load_tree()
+			var granted: Dictionary = {}
+			for entry: Variant in MetaTree.nodes(tree):
+				granted[String((entry as Dictionary)["id"])] = 1
+			profile["meta_tree"] = granted
+			profile["unlocks"] = ["warrior", "archer"]
+		else:
+			profile["meta_tree"] = {"coin_eye": 2, "luck_seed": 1, "skill_power": 1}
 		SaveService.instance.profile = profile
 		SaveService.instance._write_locked = true
 		SaveService.instance._write_lock_reason = "a harness is using a throwaway profile"
