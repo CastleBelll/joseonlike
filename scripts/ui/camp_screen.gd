@@ -67,6 +67,7 @@ const MAP_SPOTS: Array[Dictionary] = [
 	{"id": "apothecary", "npc": "choha", "label": "약방",
 		"pos": [0.26, 0.86], "pos_l": [0.46, 0.72]},
 	{"id": "market", "npc": "neoreum", "label": "장터",
+		"scene": "res://scenes/storehouse.tscn",
 		"pos": [0.74, 0.86], "pos_l": [0.685, 0.76]},
 ]## N9-35: same flat corner glyph the title and the combat HUD already use.
 const UTILITY_BUTTON_SIZE := 44.0  # UiPalette.TOUCH_TARGET_MIN

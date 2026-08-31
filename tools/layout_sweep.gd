@@ -29,7 +29,7 @@ const WINDOW_RATIOS := {
 ## Screens whose content is a LIST that grows with data — the 명부수 tree, the
 ## bestiary and the achievement ledger are meant to scroll, so only their
 ## chrome (anything outside the scroll) is held to the fit rule.
-const LIST_SCREENS: Array[String] = ["meta", "bestiary", "achievements", "smithy"]
+const LIST_SCREENS: Array[String] = ["meta", "bestiary", "achievements", "smithy", "storehouse"]
 const SCREENS := {
 	"title": "res://scenes/title.tscn",
 	"camp": "res://scenes/camp.tscn",
@@ -38,6 +38,7 @@ const SCREENS := {
 	"bestiary": "res://scenes/bestiary.tscn",
 	"achievements": "res://scenes/achievements.tscn",
 	"smithy": "res://scenes/smithy.tscn",
+	"storehouse": "res://scenes/storehouse.tscn",
 }
 
 var _failures: Array[String] = []
