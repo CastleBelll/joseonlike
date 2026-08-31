@@ -36,16 +36,18 @@ const TRUNK_WIDTH := 10.0
 ## chained nodes pushed outward past their parent. Nothing scrolls; the
 ## canvas is the viewport and the spiral is scaled to fit it.
 const GOLDEN_ANGLE := 2.399963
-const HUB_RADIUS := 26.0
+const HUB_RADIUS := 38.0
 const RADIAL_PAD := 10.0
-## Every chain step also turns, so a deep chain curls into an arm.
-const CHAIN_TURN := 0.42
-## Sibling chained children fan out around the parent's own bearing.
-const CHAIN_FAN := 0.55
-## N11-11 (owner: 마인드맵처럼 업그레이드가 퍼져나가고 호버 클릭 시 애니메이션
-## 이랑 사운드도): every node hangs off the trunk (or its requires parent) by
-## a drawn curve, so the tree reads as branches spreading, not a list.
-const BRANCH_SAMPLES := 14
+## Owner (곡선말고 직선으로 여러 갈래로): a chain runs STRAIGHT out along its
+## root's bearing. Only a real fork opens an angle, and both forked arms
+## then run straight again — no per-step curl.
+const CHAIN_FAN := 0.42
+## A fork never opens wider than this share of the gap to the next spoke.
+const FORK_GAP_SHARE := 0.38
+## N11-11/N11-14: every node hangs off the hub (or its requires parent) by a
+## straight drawn line, so the tree reads as spokes spreading, not a list.
+## Locked links dash at this length.
+const DASH_LENGTH := 7.0
 const PULSE_PERIOD_SEC := 1.6
 ## QA I-11: clear of the hover-scaled disc (39.6px) through the whole cycle.
 const PULSE_RING_PAD := 8.0
@@ -655,16 +657,9 @@ func _refresh() -> void:
 func _refresh_tabs() -> void:
 	for tab_id: String in _tab_buttons:
 		var tab: Button = _tab_buttons[tab_id]
-		var caption: String
+		var caption: String = _tab_caption(tab_id)
 		var muted: bool = false
-		if tab_id == TAB_TRUNK:
-			caption = UiLocale.text("meta.tab_shared")
-		elif tab_id == TAB_REFINE:
-			caption = UiLocale.t("연마")
-		else:
-			caption = MetaTree.display_name(
-				_characters.get(tab_id, {}) as Dictionary, UiLocale.current_locale
-			)
+		if tab_id != TAB_TRUNK and tab_id != TAB_REFINE:
 			if tab_id not in _unlocked:
 				caption += " · " + UiLocale.text("meta.locked")
 				muted = true
@@ -863,94 +858,105 @@ func _compute_radial() -> void:
 		_canvas.size.x / 2.0 - NODE_SIZE / 2.0 - RADIAL_PAD,
 		_canvas.size.y / 2.0 - NODE_SIZE / 2.0 - RADIAL_PAD
 	)
-	var flat: Array[Dictionary] = []
-	var chained: Array[Dictionary] = []
+	# Owner (곡선말고 직선으로 여러 갈래로): a wedge tree. Every root owns a
+	# slice of the circle sized by how many leaves hang under it; a node sits
+	# at its slice's middle bearing, its children split that slice again. A
+	# chain with no fork keeps its parent's bearing exactly, so it draws as one
+	# straight ray; a fork is the only place a line changes direction.
+	var children: Dictionary = {}
+	var roots: Array[String] = []
+	var by_id: Dictionary = {}
 	for entry: Dictionary in entries:
-		if (entry.get("requires", []) as Array).is_empty():
-			flat.append(entry)
-		else:
-			chained.append(entry)
-	# Longest chain still hanging BELOW each node — what divides the leftover
-	# radius so an eight-deep trunk chain never piles up on the rim (the 1.0
-	# cap collision the first cut had).
-	var below: Dictionary = {}
-	var changed: bool = true
-	while changed:
-		changed = false
-		for entry: Dictionary in chained:
-			var parent_id: String = String((entry.get("requires", []) as Array)[0])
-			var mine: int = int(below.get(String(entry["id"]), 0))
-			if int(below.get(parent_id, 0)) < mine + 1:
-				below[parent_id] = mine + 1
-				changed = true
-	var bearings: Dictionary = {}
-	var rings: Dictionary = {}
-	# QA I-13: a small tab (≤16 flat nodes) walks ONE even ring — the golden
-	# spiral clumps into a quadrant at low counts (measured 6/5/2/2). Bigger
-	# tabs keep the area-even spiral, pushed out to fill the ellipse.
-	var even_ring: bool = flat.size() <= 17
-	for i: int in flat.size():
-		var node_id: String = String(flat[i]["id"])
-		var angle: float
-		var ring: float
-		if even_ring:
-			angle = float(i) * TAU / float(maxi(flat.size(), 1)) - PI / 2.0
-			ring = 0.55 if int(below.get(node_id, 0)) > 0 else 0.78
-		else:
-			angle = float(i) * GOLDEN_ANGLE
-			# sqrt spreads the AREA evenly; +0.35 keeps node zero off the
-			# hub, and the 0.85 scale pushes the field to FILL the ellipse
-			# (QA F-5: mean fill radius sat at half the canvas).
-			ring = sqrt((float(i) + 0.35) / float(entries.size())) * 0.95
-			if int(below.get(node_id, 0)) > 0:
-				ring = minf(ring, 0.5)
-		_radial[node_id] = center + Vector2(
-			cos(angle) * radius.x * ring, sin(angle) * radius.y * ring
-		)
-		bearings[node_id] = angle
-		rings[node_id] = ring
-	# Chain arms: each child takes an even share of the radius its parent has
-	# left, and turns a little every step — the arm curls outward like a fern
-	# instead of shooting a straight ray. Passes cover the deepest chain.
-	var sibling_index: Dictionary = {}
-	for _pass: int in entries.size():
-		var placed_any: bool = false
-		for entry: Dictionary in chained:
-			var node_id: String = String(entry["id"])
-			if _radial.has(node_id):
-				continue
-			var parent_id: String = String((entry.get("requires", []) as Array)[0])
-			if not _radial.has(parent_id):
-				continue
-			var index: int = int(sibling_index.get(parent_id, 0))
-			sibling_index[parent_id] = index + 1
-			var fan: float = (
-				0.0 if index == 0
-				else CHAIN_FAN * ceilf(float(index) / 2.0)
-					* (1.0 if index % 2 == 1 else -1.0)
-			)
-			var parent_ring: float = float(rings.get(parent_id, 0.4))
-			var share: float = (1.0 - parent_ring) 				/ float(int(below.get(parent_id, 0)) + 1)
-			var ring: float = minf(parent_ring + maxf(share, 0.07), 1.0)
-			var angle: float = float(bearings.get(parent_id, 0.0)) + CHAIN_TURN + fan
-			_radial[node_id] = center + Vector2(
-				cos(angle) * radius.x * ring, sin(angle) * radius.y * ring
-			)
-			bearings[node_id] = angle
-			rings[node_id] = ring
-			placed_any = true
-		if not placed_any:
-			break
-	# QA I-3 convergence fallback: relax, VERIFY, and shrink the discs one
-	# step before ever ending on a silent overlap. The gate proved silence
-	# here costs a 6.7px disc collision on the wide axis.
+		var node_id: String = String(entry["id"])
+		by_id[node_id] = entry
+		var requires: Array = entry.get("requires", [])
+		if requires.is_empty():
+			roots.append(node_id)
+			continue
+		var parent_id: String = String(requires[0])
+		var kids: Array = children.get(parent_id, [])
+		kids.append(node_id)
+		children[parent_id] = kids
+	var leaves: Dictionary = {}
+	var depth: Dictionary = {}
+	for root_id: String in roots:
+		_measure_arm(root_id, 1, children, leaves, depth)
+	var total_leaves: int = 0
+	for root_id: String in roots:
+		total_leaves += int(leaves.get(root_id, 1))
+	var arm: int = 1
+	for node_id: Variant in depth:
+		arm = maxi(arm, int(depth[node_id]))
+	# The innermost ring clears the hub; the rest divide what is left evenly,
+	# so a straight arm never doubles back over its own parent.
+	# The hub carries the tab's name and tally now, so ring one has to stand
+	# clear of the face, not just off the disc.
+	var inner: float = (HUB_RADIUS + _node_size() + 12.0) / maxf(
+		minf(radius.x, radius.y), 1.0
+	)
+	var pitch: float = (1.0 - inner) / float(maxi(arm - 1, 1))
+	var cursor: float = -PI / 2.0
+	for root_id: String in roots:
+		var span: float = TAU * float(leaves.get(root_id, 1)) / float(maxi(total_leaves, 1))
+		_place_arm(root_id, cursor, span, center, radius, inner, pitch, children, leaves, depth)
+		cursor += span
+	# QA I-3 convergence fallback: relax, VERIFY, and shrink the discs one step
+	# before ever ending on a silent overlap. Straight arms are the point now,
+	# so the relaxation only ever runs as the collision safety net.
 	_node_scale = 1.0
 	for _attempt: int in 3:
+		if _min_separation() >= _node_size() + 4.0:
+			break
 		_relax_radial(center, radius)
 		if _min_separation() >= _node_size() + 4.0:
 			break
 		_node_scale *= 0.85
 	_apply_node_sizes()
+
+
+## Leaf count and depth of one arm, so a wide subtree claims a wide wedge.
+func _measure_arm(
+	node_id: String, level: int, children: Dictionary,
+	leaves: Dictionary, depth: Dictionary
+) -> int:
+	depth[node_id] = level
+	var kids: Array = children.get(node_id, [])
+	if kids.is_empty():
+		leaves[node_id] = 1
+		return 1
+	var count: int = 0
+	for kid: Variant in kids:
+		count += _measure_arm(String(kid), level + 1, children, leaves, depth)
+	leaves[node_id] = count
+	return count
+
+
+## Places one node at the middle of its wedge, then hands each child a
+## proportional slice of that same wedge one ring further out.
+func _place_arm(
+	node_id: String, start: float, span: float, center: Vector2, radius: Vector2,
+	inner: float, pitch: float, children: Dictionary,
+	leaves: Dictionary, depth: Dictionary
+) -> void:
+	var bearing: float = start + span / 2.0
+	var ring: float = inner + pitch * float(int(depth.get(node_id, 1)) - 1)
+	_radial[node_id] = center + Vector2(
+		cos(bearing) * radius.x * ring, sin(bearing) * radius.y * ring
+	)
+	var kids: Array = children.get(node_id, [])
+	if kids.is_empty():
+		return
+	var cursor: float = start
+	for kid: Variant in kids:
+		var kid_id: String = String(kid)
+		var share: float = span * float(leaves.get(kid_id, 1)) / float(
+			maxi(int(leaves.get(node_id, 1)), 1)
+		)
+		_place_arm(
+			kid_id, cursor, share, center, radius, inner, pitch,
+			children, leaves, depth
+		)
+		cursor += share
 
 
 ## N11-12: a couple dozen relaxation sweeps — any pair closer than a node
@@ -1066,6 +1072,14 @@ func _place_focus_caption() -> void:
 		)
 		var rect := Rect2(clamped, want)
 		var hits: int = 0
+		# The hub face counts as an obstacle — a caption parked over it hid
+		# the one label the whole screen is named for.
+		var hub_rect := Rect2(
+			_canvas.size / 2.0 - Vector2(HUB_RADIUS, HUB_RADIUS),
+			Vector2(HUB_RADIUS, HUB_RADIUS) * 2.0
+		)
+		if rect.intersects(hub_rect):
+			hits += 1
 		for node_id: Variant in _radial:
 			if String(node_id) == _selected_id:
 				continue
@@ -1143,6 +1157,55 @@ func _node_center(entry: Dictionary, _width: float) -> Vector2:
 	return _radial.get(String(entry.get("id", "")), _canvas.size / 2.0)
 
 
+## The hub's face: the tab's own name over its owned/total ranks. Drawn, not
+## a child node, so it never takes a click away from the discs around it.
+func _draw_hub_face(hub: Vector2, state: Dictionary) -> void:
+	var font: Font = get_theme_default_font()
+	if font == null:
+		return
+	var owned: int = 0
+	var total: int = 0
+	for entry: Dictionary in _tab_nodes():
+		var node_id: String = String(entry.get("id", ""))
+		owned += MetaTree.rank_of(state, node_id)
+		total += (entry.get("costs", []) as Array).size()
+	var caption: String = _tab_caption(_current_tab)
+	var caption_size: int = UiPalette.FONT_SIZE_LABEL
+	var caption_width: float = font.get_string_size(
+		caption, HORIZONTAL_ALIGNMENT_CENTER, -1.0, caption_size
+	).x
+	# A long branch name gets trimmed rather than spilling off the disc.
+	while caption_width > HUB_RADIUS * 1.7 and caption.length() > 2:
+		caption = caption.substr(0, caption.length() - 1)
+		caption_width = font.get_string_size(
+			caption, HORIZONTAL_ALIGNMENT_CENTER, -1.0, caption_size
+		).x
+	_canvas.draw_string(
+		font, hub + Vector2(-caption_width / 2.0, -2.0), caption,
+		HORIZONTAL_ALIGNMENT_LEFT, -1.0, caption_size, UiPalette.GOLD
+	)
+	var tally: String = "%d/%d" % [owned, total]
+	var tally_size: int = UiPalette.FONT_SIZE_LABEL - 2
+	var tally_width: float = font.get_string_size(
+		tally, HORIZONTAL_ALIGNMENT_CENTER, -1.0, tally_size
+	).x
+	_canvas.draw_string(
+		font, hub + Vector2(-tally_width / 2.0, 16.0), tally,
+		HORIZONTAL_ALIGNMENT_LEFT, -1.0, tally_size, UiPalette.TEXT_ON_DARK
+	)
+
+
+## One tab's display name, shared by the tab pills and the hub face.
+func _tab_caption(tab_id: String) -> String:
+	if tab_id == TAB_TRUNK:
+		return UiLocale.text("meta.tab_shared")
+	if tab_id == TAB_REFINE:
+		return UiLocale.t("연마")
+	return MetaTree.display_name(
+		_characters.get(tab_id, {}) as Dictionary, UiLocale.current_locale
+	)
+
+
 ## The 신목 trunk plus prerequisite edges, drawn under the node buttons.
 ## Satisfied edges warm to GOLD_BORDER so progress reads on the tree itself.
 func _draw_graph() -> void:
@@ -1152,8 +1215,11 @@ func _draw_graph() -> void:
 	var hub: Vector2 = _canvas.size / 2.0
 	_canvas.draw_circle(hub, HUB_RADIUS, UiPalette.NIGHT_BROWN)
 	_canvas.draw_arc(hub, HUB_RADIUS, 0.0, TAU, 40, UiPalette.WOOD_BORDER, 3.0)
-	_canvas.draw_arc(hub, HUB_RADIUS * 0.55, 0.0, TAU, 32, UiPalette.GOLD_BORDER, 1.5)
 	var state: Dictionary = _profile.get("meta_tree", {})
+	# Owner (중앙 노드는 왜 빈칸이야): the heartwood carries the tab it belongs
+	# to and how much of that tab is already the player's — the one number the
+	# whole screen is about, where the eye lands first.
+	_draw_hub_face(hub, state)
 	# N11-11: branches, not wires. A node with prerequisites hangs off its
 	# parent; a root node hangs off the trunk one half-row above itself, so
 	# the whole tab reads as growth spreading out of the spine. Colour is the
@@ -1245,25 +1311,26 @@ func _draw_branch(
 	if from.distance_to(to) > rim * 2.5:
 		from = from + axis * rim
 		to = to - axis * rim
-	var control := Vector2(from.x, to.y)
-	var points := PackedVector2Array()
+	# Owner (곡선말고 직선으로): the link was a quadratic bend through a corner
+	# control point, which read as a curve however straight the layout was.
+	# It is one straight segment now — the branch only ever changes direction
+	# at a fork, where two child lines actually diverge.
 	# QA I-5: only the grown fraction exists yet — the tab OPENING is where
 	# the mindmap's spreading actually reads.
-	var grown: int = maxi(int(round(_grow * float(BRANCH_SAMPLES))), 1)
-	for i: int in grown + 1:
-		var t: float = float(i) / float(BRANCH_SAMPLES)
-		var a: Vector2 = from.lerp(control, t)
-		var b: Vector2 = control.lerp(to, t)
-		points.append(a.lerp(b, t))
+	var tip: Vector2 = from.lerp(to, clampf(_grow, 0.0, 1.0))
 	if dashed:
-		# QA I-3: locked speaks in FORM, not colour alone — every other
-		# sampled segment is skipped, which reads as a dashed vine.
-		var index: int = 0
-		while index + 1 < points.size():
-			_canvas.draw_line(points[index], points[index + 1], color, 2.0)
-			index += 2
+		# QA I-3: locked speaks in FORM, not colour alone — a dashed vine.
+		var span: float = from.distance_to(tip)
+		var step: float = DASH_LENGTH * 2.0
+		var walked: float = 0.0
+		while walked < span:
+			var head: float = minf(walked + DASH_LENGTH, span)
+			_canvas.draw_line(
+				from + axis * walked, from + axis * head, color, 2.0
+			)
+			walked += step
 		return
-	_canvas.draw_polyline(points, color, width, true)
+	_canvas.draw_line(from, tip, color, width, true)
 
 
 ## The colour a node's branch and ring speak: bought, within reach, or dim.

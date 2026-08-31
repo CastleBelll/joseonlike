@@ -401,7 +401,9 @@ func test_screen_builds_with_tabs_and_cta_follows_selection() -> bool:
 	screen.select_node("iron_bones")
 	passed = passed and cta.visible
 	# A locked node hides the CTA and names its requirement in the card.
-	screen.select_node("sharp_talisman")
+	# N11-14 rewired the trunk for breadth: 부적 연마 is a root now, 돌가죽
+	# is the node still gated behind 철골.
+	screen.select_node("stone_skin")
 	var effect_label: Label = screen.find_child("DetailEffect", true, false)
 	passed = passed and not cta.visible \
 		and effect_label != null and effect_label.text.contains("철골")

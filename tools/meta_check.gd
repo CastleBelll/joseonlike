@@ -33,6 +33,9 @@ func _ready() -> void:
 
 
 func _capture(path: String) -> void:
+	# N11-14: the branches GROW for GROW_SEC when a tab opens, so a two-frame
+	# capture photographed the animation instead of the layout.
+	await get_tree().create_timer(0.6).timeout
 	await RenderingServer.frame_post_draw
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(path)
