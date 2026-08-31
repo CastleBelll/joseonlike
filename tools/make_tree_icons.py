@@ -35,6 +35,40 @@ def canvas():
     return image, ImageDraw.Draw(image)
 
 
+def shade(image, amount=0.72):
+    """Darkens the bottom-right of every filled pixel by one step.
+
+    Flat fills read as stickers at tile size; one shadow step is what makes a
+    16px glyph look carved rather than printed.
+    """
+    pixels = image.load()
+    shaded = image.copy()
+    out = shaded.load()
+    for y in range(SIZE - 1, 0, -1):
+        for x in range(SIZE - 1, 0, -1):
+            here = pixels[x, y]
+            if here[3] == 0:
+                continue
+            below = pixels[x, y + 1] if y + 1 < SIZE else (0, 0, 0, 0)
+            right = pixels[x + 1, y] if x + 1 < SIZE else (0, 0, 0, 0)
+            if below[3] != 0 and right[3] != 0:
+                continue
+            if here == INK:
+                continue
+            out[x, y] = (
+                int(here[0] * amount), int(here[1] * amount),
+                int(here[2] * amount), here[3],
+            )
+    return shaded
+
+
+def spark(image, at, colour=LIGHT):
+    """A two-pixel glint, the cheapest way to say 'this one is sharper'."""
+    draw = ImageDraw.Draw(image)
+    draw.point([at, (at[0] + 1, at[1] - 1)], fill=colour)
+    return image
+
+
 def coin(_):
     image, draw = canvas()
     draw.ellipse((2, 2, 13, 13), fill=GOLD, outline=INK)
@@ -278,6 +312,96 @@ def chain(_):
     return image
 
 
+
+def sword_edge(_):
+    return spark(sword(None), (11, 3))
+
+
+def sword_aura(_):
+    image = sword(None)
+    draw = ImageDraw.Draw(image)
+    draw.line((2, 12, 4, 10), fill=RED)
+    draw.line((13, 12, 11, 10), fill=RED)
+    return image
+
+
+def coin_stack(_):
+    image, draw = canvas()
+    draw.ellipse((2, 6, 13, 12), fill=GOLD, outline=INK)
+    draw.ellipse((2, 3, 13, 9), fill=GOLD, outline=INK)
+    draw.rectangle((7, 5, 8, 7), fill=INK)
+    return image
+
+
+def coin_chest(_):
+    image, draw = canvas()
+    draw.rectangle((2, 7, 13, 13), fill=GOLD, outline=INK)
+    draw.line((2, 10, 13, 10), fill=INK)
+    draw.ellipse((6, 2, 11, 7), fill=GOLD, outline=INK)
+    return image
+
+
+def heart_big(_):
+    image = heart(None)
+    draw = ImageDraw.Draw(image)
+    draw.line((6, 5, 6, 7), fill=LIGHT)
+    return image
+
+
+def shield_stud(_):
+    image = shield(None)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((7, 6, 8, 7), fill=GOLD)
+    return image
+
+
+def flame_twin(_):
+    image, draw = canvas()
+    draw.polygon([(5, 3), (8, 8), (6, 13), (2, 13), (2, 8)], fill=RED, outline=INK)
+    draw.polygon([(11, 1), (14, 8), (13, 13), (8, 13), (8, 7)], fill=GOLD, outline=INK)
+    return image
+
+
+def bolt_twin(_):
+    image = bolt(None)
+    draw = ImageDraw.Draw(image)
+    draw.line((2, 4, 4, 7), fill=GOLD)
+    draw.line((13, 8, 11, 11), fill=GOLD)
+    return image
+
+
+def talisman_seal(_):
+    image = talisman(None)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((5, 11, 10, 13), fill=RED, outline=INK)
+    return image
+
+
+def arrow_split(_):
+    image, draw = canvas()
+    draw.line((2, 8, 9, 8), fill=GOLD)
+    draw.line((9, 8, 13, 4), fill=GOLD)
+    draw.line((9, 8, 13, 12), fill=GOLD)
+    draw.polygon([(13, 4), (10, 4), (12, 7)], fill=INK)
+    draw.polygon([(13, 12), (10, 12), (12, 9)], fill=INK)
+    return image
+
+
+def eye_wide(_):
+    image = eye(None)
+    draw = ImageDraw.Draw(image)
+    draw.line((3, 4, 5, 6), fill=GOLD)
+    draw.line((13, 4, 11, 6), fill=GOLD)
+    return image
+
+
+def hourglass_run(_):
+    image = hourglass(None)
+    draw = ImageDraw.Draw(image)
+    draw.line((1, 5, 2, 5), fill=LIGHT)
+    draw.line((14, 10, 15, 10), fill=LIGHT)
+    return image
+
 GLYPHS = {
     "coin": coin, "clover": clover, "book": book, "magnet": magnet, "boot": boot,
     "sword": sword, "spear": spear, "bow": bow, "arrows": arrows, "flame": flame,
@@ -286,13 +410,21 @@ GLYPHS = {
     "eye": eye, "fang": fang, "hourglass": hourglass, "star": star,
     "pouch": pouch, "moon": moon, "sprout": sprout, "cards": cards,
     "steps": steps, "anvil": anvil, "chest": chest, "chain": chain,
+    # Tier variants: a chain's second and third rungs must not wear the same
+    # face as its first, or the map reads as the same node three times.
+    "sword_edge": sword_edge, "sword_aura": sword_aura,
+    "coin_stack": coin_stack, "coin_chest": coin_chest,
+    "heart_big": heart_big, "shield_stud": shield_stud,
+    "flame_twin": flame_twin, "bolt_twin": bolt_twin,
+    "talisman_seal": talisman_seal, "arrow_split": arrow_split,
+    "eye_wide": eye_wide, "hourglass_run": hourglass_run,
 }
 
 
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     for name, draw_glyph in GLYPHS.items():
-        glyph = draw_glyph(None)
+        glyph = shade(draw_glyph(None))
         glyph = glyph.resize((SIZE * SCALE, SIZE * SCALE), Image.NEAREST)
         glyph.save(os.path.join(OUT_DIR, f"{name}.png"))
     print(f"{len(GLYPHS)} tree icons written to {OUT_DIR}")

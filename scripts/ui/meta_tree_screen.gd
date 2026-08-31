@@ -64,7 +64,10 @@ const CELL_MAX := 96.0
 ## Owner (제대로 마인드맵부터): at 0.78 the tiles touched and the whole tab
 ## read as a brick wall of inventory slots — the links, which are what makes
 ## it a map, had nowhere to show. A tile now takes well under its cell.
-const CELL_FILL := 0.58
+const CELL_FILL := 0.62
+## The isometric lattice's horizontal and vertical pitch, as a share of a cell.
+const ISO_X := 0.78
+const ISO_Y := 0.56
 ## Owner reference: square tiles with a soft corner, not discs.
 const TILE_RADIUS := 10
 ## One hue per branch family, in the kit's own range — earth reds, ink blues,
@@ -821,7 +824,9 @@ func _style_node(
 	# owned / within reach / locked, and the border repeats it so the state
 	# never rides on fill alone.
 	var hue: Color = _family_color(node_id)
-	var border: Color = hue.darkened(0.35)
+	# Locked wears the family hue darkened; within-reach wears wood; owned
+	# wears gold — one border, three readings.
+	var border: Color = hue.darkened(0.45)
 	var fill: Color = UiPalette.NIGHT.lerp(hue, TILE_LOCKED_MIX)
 	var status: String
 	var icon: TextureRect = button.get_node("Icon")
@@ -1017,7 +1022,6 @@ func _compute_radial() -> void:
 		var kids: Array = children.get(parent_id, [])
 		kids.append(node_id)
 		children[parent_id] = kids
-	roots.sort()
 	# One cell size for the whole board: big enough to read, small enough that
 	# the deepest chain still has cells to walk into.
 	var cell: float = clampf(
@@ -1031,17 +1035,25 @@ func _compute_radial() -> void:
 		rows -= 1
 	var half_c: int = (cols - 1) / 2
 	var half_r: int = (rows - 1) / 2
-	var taken: Dictionary = {Vector2i.ZERO: true}
+	# Owner (중간에 공용 이런거 없애 / 공격력 증가부터 시작해): there is no hub
+	# any more. The cheapest root — 공격력 연마 on the refine tab — takes the
+	# middle cell and the map grows out of it, so the first thing on screen is
+	# a node you can actually buy, not a label.
+	var taken: Dictionary = {}
 	var cells: Dictionary = {}
-	# Roots ring the hub, in compass order, so the tab opens as a wheel.
+	roots.sort_custom(func(a: String, b: String) -> bool:
+		return _first_cost(a) < _first_cost(b)
+	)
 	var dirs: Array[Vector2i] = GRID_RING
 	for i: int in roots.size():
-		var want: Vector2i = dirs[i % dirs.size()]
-		if i >= dirs.size():
-			want = dirs[i % dirs.size()] * 2
-		var slot: Vector2i = _free_cell(
-			want, want, taken, half_c, half_r
-		)
+		var slot: Vector2i
+		if i == 0:
+			slot = Vector2i.ZERO
+		else:
+			var want: Vector2i = dirs[(i - 1) % dirs.size()]
+			if i - 1 >= dirs.size():
+				want *= 2
+			slot = _free_cell(want, want, taken, half_c, half_r)
 		taken[slot] = true
 		cells[roots[i]] = slot
 	# Chains walk outward one cell at a time, keeping their heading when the
@@ -1087,15 +1099,29 @@ func _compute_radial() -> void:
 		lo = Vector2i(mini(lo.x, slot.x), mini(lo.y, slot.y))
 		hi = Vector2i(maxi(hi.x, slot.x), maxi(hi.y, slot.y))
 	var shift := Vector2(float(lo.x + hi.x), float(lo.y + hi.y)) / 2.0
-	_hub_pos = center - shift * cell
+	_hub_pos = center - Vector2(
+		(shift.x - shift.y) * cell * ISO_X, (shift.x + shift.y) * cell * ISO_Y
+	)
 	_cell = cell
 	var disc: float = cell * CELL_FILL
 	for node_id: Variant in cells:
 		var slot: Vector2i = cells[node_id]
 		_node_sizes[node_id] = disc
-		_radial[node_id] = _hub_pos + Vector2(slot) * cell
+		# Owner (사각 배치되어있어서 이상해): the same grid, read on the
+		# diagonal — a lattice reads as a web where aligned rows read as a
+		# spreadsheet. Spacing stays exactly equal.
+		_radial[node_id] = _hub_pos + Vector2(
+			float(slot.x - slot.y) * cell * ISO_X,
+			float(slot.x + slot.y) * cell * ISO_Y
+		)
 	_node_scale = 1.0
 	_apply_node_sizes()
+
+
+## The coin price of a node's first rank — the cheapest root anchors the map.
+func _first_cost(node_id: String) -> int:
+	var costs: Array = MetaTree.node(_tree, node_id).get("costs", [])
+	return int(costs[0]) if not costs.is_empty() else 0
 
 
 ## The eight cells around a node, ordered so a search fans out from a bias.
@@ -1443,47 +1469,7 @@ func _node_center(entry: Dictionary, _width: float) -> Vector2:
 	return _radial.get(String(entry.get("id", "")), _canvas.size / 2.0)
 
 
-## The hub's face: the tab's own name over its owned/total ranks. Drawn, not
-## a child node, so it never takes a click away from the discs around it.
-func _draw_hub_face(hub: Vector2, state: Dictionary) -> void:
-	var font: Font = get_theme_default_font()
-	if font == null:
-		return
-	var owned: int = 0
-	var total: int = 0
-	for entry: Dictionary in _tab_nodes():
-		var node_id: String = String(entry.get("id", ""))
-		owned += MetaTree.rank_of(state, node_id)
-		total += (entry.get("costs", []) as Array).size()
-	var caption: String = _tab_caption(_current_tab)
-	# N11-24: the hub's own cell decides the type size — a label wider than the
-	# plate it sits on was the "왜 빈칸이야" complaint's second half.
-	var caption_size: int = maxi(int(_cell * 0.24), 11)
-	var caption_width: float = font.get_string_size(
-		caption, HORIZONTAL_ALIGNMENT_CENTER, -1.0, caption_size
-	).x
-	# A long branch name gets trimmed rather than spilling off the disc.
-	while caption_width > maxf(_cell * 0.74, HUB_RADIUS * 1.7) and caption.length() > 2:
-		caption = caption.substr(0, caption.length() - 1)
-		caption_width = font.get_string_size(
-			caption, HORIZONTAL_ALIGNMENT_CENTER, -1.0, caption_size
-		).x
-	_canvas.draw_string(
-		font, hub + Vector2(-caption_width / 2.0, -3.0), caption,
-		HORIZONTAL_ALIGNMENT_LEFT, -1.0, caption_size, UiPalette.GOLD
-	)
-	var tally: String = "%d/%d" % [owned, total]
-	var tally_size: int = maxi(caption_size - 2, 9)
-	var tally_width: float = font.get_string_size(
-		tally, HORIZONTAL_ALIGNMENT_CENTER, -1.0, tally_size
-	).x
-	_canvas.draw_string(
-		font, hub + Vector2(-tally_width / 2.0, float(caption_size) + 3.0), tally,
-		HORIZONTAL_ALIGNMENT_LEFT, -1.0, tally_size, UiPalette.TEXT_ON_DARK
-	)
-
-
-## One tab's display name, shared by the tab pills and the hub face.
+## One tab's display name for the tab pills.
 func _tab_caption(tab_id: String) -> String:
 	if tab_id == TAB_TRUNK:
 		return UiLocale.text("meta.tab_shared")
@@ -1498,25 +1484,10 @@ func _tab_caption(tab_id: String) -> String:
 ## Satisfied edges warm to GOLD_BORDER so progress reads on the tree itself.
 func _draw_graph() -> void:
 	var width: float = _canvas.size.x
-	# N11-12: the spine is a HUB now — the 신목's heartwood at the canvas
-	# center that every flat branch grows out of, up, down and sideways.
-	var hub: Vector2 = _hub_pos if _hub_pos != Vector2.ZERO else _canvas.size / 2.0
-	# N11-24: the hub owns its cell outright — at half a tile it read as a
-	# stray dark square and the tab's own name was unreadable on it.
-	var hub_side: float = maxf(_cell * 0.86, HUB_RADIUS * 2.0)
-	# Owner reference: everything on this board is a tile, the hub included —
-	# a lone circle in a field of squares read as a leftover.
-	var hub_rect := Rect2(
-		hub - Vector2(hub_side, hub_side) / 2.0, Vector2(hub_side, hub_side)
-	)
-	_canvas.draw_rect(hub_rect, UiPalette.NIGHT_BROWN, true)
-	_canvas.draw_rect(hub_rect, UiPalette.GOLD_BORDER, false, 3.0)
-	_canvas.draw_rect(hub_rect.grow(-5.0), Color(UiPalette.GOLD_BORDER, 0.35), false, 1.5)
+	# N11-26 (owner: 중간에 공용 이런거 없애): no hub. The map's origin is the
+	# cheapest root — a node you can buy — and every line is a real
+	# prerequisite between two nodes.
 	var state: Dictionary = _profile.get("meta_tree", {})
-	# Owner (중앙 노드는 왜 빈칸이야): the heartwood carries the tab it belongs
-	# to and how much of that tab is already the player's — the one number the
-	# whole screen is about, where the eye lands first.
-	_draw_hub_face(hub, state)
 	# N11-11: branches, not wires. A node with prerequisites hangs off its
 	# parent; a root node hangs off the trunk one half-row above itself, so
 	# the whole tab reads as growth spreading out of the spine. Colour is the
@@ -1539,13 +1510,8 @@ func _draw_graph() -> void:
 			4.0 if branch_color == UiPalette.GOLD_BORDER else EDGE_WIDTH
 		)
 		var to_disc: float = _node_size_of(String(entry.get("id", "")))
-		var requires: Array = entry.get("requires", [])
-		if requires.is_empty():
-			_draw_branch(
-				hub, to_center, branch_color, dashed, branch_width,
-				HUB_RADIUS * 2.0, to_disc
-			)
-		for required: Variant in requires:
+		# N11-26: a root draws no stem — there is no hub for it to hang off.
+		for required: Variant in (entry.get("requires", []) as Array):
 			var from_id: String = String(required)
 			var from_entry: Dictionary = MetaTree.node(_tree, from_id)
 			if from_entry.is_empty() or not _radial.has(from_id):
@@ -1560,11 +1526,6 @@ func _draw_graph() -> void:
 	# Breathing ring on every node the player could buy RIGHT NOW, a steady
 	# gold ring on what is already theirs — the growth state readable at a
 	# glance, before any caption is read.
-	var ring_swell: float = sin(_pulse_phase * TAU / PULSE_PERIOD_SEC) * PULSE_RING_SWING
-	# QA I-8: only the cheapest few buyable nodes breathe — the rest wear a
-	# static wood ring, and anything OWNED (QA I-3: rank 1 counts, not just
-	# maxed) wears gold. Rings wait for the growth to arrive (I-5).
-	var pulse_ids: Array[String] = _cheapest_buyable_ids(state)
 	# N11-25: the rank ladder reads on the tile itself, not only in the card.
 	for entry: Dictionary in _revealed_nodes():
 		var pip_id: String = String(entry.get("id", ""))
@@ -1572,8 +1533,8 @@ func _draw_graph() -> void:
 			_node_center(entry, width), _node_size_of(pip_id),
 			MetaTree.rank_of(state, pip_id), MetaTree.max_rank(entry)
 		)
-	# N11-24: roots and keystones get their diamond drawn under the button, so
-	# the shape says "this one turns the map" before any label is read.
+	# N11-24: roots and keystones draw their diamond under the button, so the
+	# shape says "this one turns the map" before any label is read.
 	for entry: Dictionary in _revealed_nodes():
 		var node_id: String = String(entry.get("id", ""))
 		if _node_role(entry) == "tile":
@@ -1582,33 +1543,24 @@ func _draw_graph() -> void:
 			entry, _node_center(entry, width), _node_size_of(node_id),
 			_family_color(node_id), MetaTree.rank_of(state, node_id) >= 1
 		)
-	# QA N11-14 F-9: the state marks used to appear whole in one frame at 0.9.
-	# Owner reference (간단한 반응형 노드): the marks are SQUARE now — a tile
-	# wearing a circular ring read as two shapes fighting.
-	var ring_fade: float = clampf((_grow - 0.72) / 0.28, 0.0, 1.0)
-	if ring_fade > 0.0:
+	# Owner (무슨 테두리들이 이상하게 있는데 좀 정리해): state used to wear a
+	# ring AND a square AND a border, three outlines fighting on one tile. The
+	# TILE'S OWN border carries owned / within reach / locked now; the only
+	# thing drawn on top is the soft pulse under the few cheapest buys, which
+	# is a hint rather than an outline.
+	var pulse_ids: Array[String] = _cheapest_buyable_ids(state)
+	var swell: float = sin(_pulse_phase * TAU / PULSE_PERIOD_SEC) * PULSE_RING_SWING
+	var fade: float = clampf((_grow - 0.72) / 0.28, 0.0, 1.0)
+	if fade > 0.0:
 		for entry: Dictionary in _revealed_nodes():
-			var center: Vector2 = _node_center(entry, width)
 			var node_id: String = String(entry.get("id", ""))
-			var side: float = _node_size_of(node_id)
-			if MetaTree.rank_of(state, node_id) >= 1:
-				# Owned: a bright square kept just off the tile edge.
-				_draw_tile_mark(
-					center, side + TILE_MARK_PAD,
-					Color(UiPalette.GOLD_BORDER, ring_fade), 2.5
-				)
-			elif node_id in pulse_ids:
-				# The cheapest next steps breathe, so the eye is told where
-				# the money goes without reading a price.
-				_draw_tile_mark(
-					center, side + TILE_MARK_PAD + ring_swell,
-					Color(UiPalette.GOLD, 0.75 * ring_fade), 2.0
-				)
-			elif _is_buyable(entry, state):
-				_draw_tile_mark(
-					center, side + TILE_MARK_PAD,
-					Color(UiPalette.WOOD, 0.6 * ring_fade), 2.0
-				)
+			if node_id not in pulse_ids:
+				continue
+			var side: float = _node_size_of(node_id) + PULSE_RING_PAD + swell
+			_draw_tile_mark(
+				_node_center(entry, width), side,
+				Color(UiPalette.GOLD, 0.5 * fade), 2.0
+			)
 	# I-6 / N11-15: the selected node wears a MARK — plate and icon untouched.
 	if not _selected_id.is_empty() and _radial.has(_selected_id):
 		_draw_selection_mark(

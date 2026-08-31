@@ -334,7 +334,7 @@
     0.3,
     1
    ],
-   "tree_icon": "coin"
+   "tree_icon": "coin_stack"
   },
   {
    "id": "deep_purse",
@@ -358,7 +358,7 @@
     0.5,
     2
    ],
-   "tree_icon": "coin"
+   "tree_icon": "coin_chest"
   },
   {
    "id": "luck_seed",
@@ -729,7 +729,7 @@
     0.9,
     5
    ],
-   "tree_icon": "sword"
+   "tree_icon": "sword_edge"
   },
   {
    "id": "refine_killing_intent",
@@ -753,7 +753,7 @@
     0.1,
     6
    ],
-   "tree_icon": "sword"
+   "tree_icon": "sword_aura"
   },
   {
    "id": "refine_attack_speed",
@@ -802,7 +802,7 @@
     0.5,
     1
    ],
-   "tree_icon": "hourglass"
+   "tree_icon": "hourglass_run"
   },
   {
    "id": "refine_move_speed",
@@ -899,7 +899,7 @@
     0.3,
     5
    ],
-   "tree_icon": "hourglass"
+   "tree_icon": "hourglass_run"
   },
   {
    "id": "skill_power",
@@ -1151,7 +1151,7 @@
     0.3,
     1
    ],
-   "tree_icon": "flame"
+   "tree_icon": "flame_twin"
   },
   {
    "id": "chain_reach",
@@ -1199,7 +1199,7 @@
     0.7,
     3
    ],
-   "tree_icon": "bolt"
+   "tree_icon": "bolt_twin"
   },
   {
    "id": "seal_ease",
@@ -1247,7 +1247,7 @@
     0.1,
     5
    ],
-   "tree_icon": "talisman"
+   "tree_icon": "talisman_seal"
   },
   {
    "id": "art_mastery",
@@ -1322,7 +1322,7 @@
     0.7,
     1
    ],
-   "tree_icon": "flame"
+   "tree_icon": "flame_twin"
   },
   {
    "id": "iron_stance",
@@ -1469,7 +1469,7 @@
     0.9,
     0
    ],
-   "tree_icon": "heart"
+   "tree_icon": "heart_big"
   },
   {
    "id": "bulwark",
@@ -1520,7 +1520,7 @@
     0.3,
     2
    ],
-   "tree_icon": "shield"
+   "tree_icon": "shield_stud"
   },
   {
    "id": "long_breath",
@@ -1569,7 +1569,7 @@
     0.7,
     4
    ],
-   "tree_icon": "heart"
+   "tree_icon": "heart_big"
   },
   {
    "id": "hide_temper",
@@ -1669,7 +1669,7 @@
     0.5,
     1
    ],
-   "tree_icon": "eye"
+   "tree_icon": "eye_wide"
   },
   {
    "id": "deep_wound",
@@ -1794,7 +1794,7 @@
     0.5,
     6
    ],
-   "tree_icon": "bow"
+   "tree_icon": "arrow_split"
   },
   {
    "id": "moon_volley",
@@ -1818,7 +1818,7 @@
     0.7,
     0
    ],
-   "tree_icon": "bow"
+   "tree_icon": "arrow_split"
   },
   {
    "id": "still_aim",
@@ -1843,7 +1843,7 @@
     0.9,
     1
    ],
-   "tree_icon": "eye"
+   "tree_icon": "eye_wide"
   },
   {
    "id": "shatter_point",
