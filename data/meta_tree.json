@@ -21,7 +21,9 @@
    "skill_power": 0.86,
    "defense": 0.32,
    "area_scale": 0.44,
-   "burn_power": 0.3
+   "burn_power": 0.3,
+   "salvage_rate": 0.3,
+   "defeat_bank": 0.5
   },
   "revive": {
    "hp_ratio": 0.3,
@@ -270,7 +272,9 @@
     900
    ]
   },
-  "_design_note": "N11-18 정리 패스 (docs/META_TREE_DESIGN.md): 한 스탯은 한 탭에만 산다. 공용=운영(경제/준비/보험), 연마=기본기(모두에게 통하는 전투 스칼라), 캐릭터 탭=그 수행자의 무기 계열. 같은 스탯은 한 탭 안에서 티어로만 이어진다. 제거된 노드에 쓴 엽전은 _removed_refunds로 전액 환급한다."
+  "_design_note": "N11-18 정리 패스 (docs/META_TREE_DESIGN.md): 한 스탯은 한 탭에만 산다. 공용=운영(경제/준비/보험), 연마=기본기(모두에게 통하는 전투 스칼라), 캐릭터 탭=그 수행자의 무기 계열. 같은 스탯은 한 탭 안에서 티어로만 이어진다. 제거된 노드에 쓴 엽전은 _removed_refunds로 전액 환급한다.",
+  "defeat_bank_base": 0.5,
+  "_defeat_note": "N11-19: 패배해도 그 밤 엽전의 50%는 기본으로 남는다 — 죽음이 대가를 치르되 진행이 멈추지는 않는다. 두 번째 밤 노드가 두 랭크로 100%까지 올린다."
  },
  "nodes": [
   {
@@ -475,28 +479,6 @@
    "pos": [
     0.7,
     1
-   ]
-  },
-  {
-   "id": "pathsense",
-   "name_ko": "길눈",
-   "name_en": "Pathsense",
-   "icon": "willow_branch",
-   "effect": {
-    "stat": "first_find",
-    "per_rank": 1.0
-   },
-   "desc_ko": "출정 시작 시 전리품 1개 더",
-   "desc_en": "One more piece to start with",
-   "costs": [
-    1600
-   ],
-   "requires": [
-    "first_find"
-   ],
-   "pos": [
-    0.9,
-    2
    ]
   },
   {
@@ -1832,6 +1814,75 @@
    "character": "archer",
    "pos": [
     0.3,
+    3
+   ]
+  },
+  {
+   "id": "salvage_hand",
+   "name_ko": "환전꾼",
+   "name_en": "Broker's Hand",
+   "icon": "cast_iron",
+   "effect": {
+    "stat": "salvage_rate",
+    "per_rank": 0.15
+   },
+   "desc_ko": "출정 후 남는 재료의 15%를 엽전으로 바꾼다",
+   "desc_en": "Sells 15% of leftover materials for coins",
+   "costs": [
+    1500,
+    3200
+   ],
+   "requires": [
+    "deep_purse"
+   ],
+   "pos": [
+    0.5,
+    3
+   ]
+  },
+  {
+   "id": "second_night",
+   "name_ko": "두 번째 밤",
+   "name_en": "Second Night",
+   "icon": "wonhon_shard",
+   "effect": {
+    "stat": "defeat_bank",
+    "per_rank": 0.25
+   },
+   "desc_ko": "패배해도 그 밤 엽전의 25%를 챙긴다",
+   "desc_en": "Keeps 25% of the night's coins even in defeat",
+   "costs": [
+    1400,
+    3000
+   ],
+   "requires": [
+    "revive"
+   ],
+   "pos": [
+    0.5,
+    3
+   ]
+  },
+  {
+   "id": "pathsense_grant",
+   "name_ko": "길눈",
+   "name_en": "Pathsense",
+   "icon": "willow_branch",
+   "effect": {
+    "stat": "start_material",
+    "per_rank": 1.0
+   },
+   "desc_ko": "출정을 재료 1개와 함께 시작한다",
+   "desc_en": "Start the night holding one material",
+   "costs": [
+    1200,
+    2600
+   ],
+   "requires": [
+    "first_find"
+   ],
+   "pos": [
+    0.5,
     3
    ]
   }

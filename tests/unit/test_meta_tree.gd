@@ -568,3 +568,25 @@ func test_refund_removed_pays_back_and_drops_the_ranks() -> bool:
 		return false
 	# Second pass finds nothing — the ranks are already gone.
 	return int(MetaTree.refund_removed(next, tree)["refunded"]) == 0
+
+
+func test_salvage_leftovers_sells_a_share_of_the_pouch() -> bool:
+	# N11-19 환전꾼: the rate sells whole units only, pays the loot's own
+	# salvage_gold, and takes what it sold out of the pouch.
+	var loot := {
+		"bamboo": {"salvage_gold": 5},
+		"ghost_iron": {"salvage_gold": 10},
+	}
+	var result: Dictionary = MetaTree.salvage_leftovers(
+		{"bamboo": 10, "ghost_iron": 3}, loot, 0.3
+	)
+	var pouch: Dictionary = result["pouch"]
+	# bamboo: 3 sold x 5 = 15, ghost_iron: floor(0.9) = 0 sold.
+	if int(result["coins"]) != 15 or int(pouch["bamboo"]) != 7:
+		push_error("test_meta_tree: salvage must sell whole units at loot value")
+		return false
+	if int(pouch["ghost_iron"]) != 3:
+		push_error("test_meta_tree: a pouch too small to round up must keep it all")
+		return false
+	# No rate, no trade.
+	return int(MetaTree.salvage_leftovers({"bamboo": 10}, loot, 0.0)["coins"]) == 0

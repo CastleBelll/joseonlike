@@ -37,9 +37,19 @@ const SCALAR_STATS: Array[String] = [
 ]
 ## Run economy multipliers (Stage gold/xp pickup paths; luck scales the
 ## special-material drop odds in the loot roll — N4-9).
-const ECONOMY_STATS: Array[String] = ["gold_gain", "xp_gain", "luck"]
+const ECONOMY_STATS: Array[String] = [
+	"gold_gain", "xp_gain", "luck",
+	# N11-19 (docs/META_TREE_DESIGN.md step 2): the 운영 keystones. Leftover
+	# materials sell themselves at banking time (salvage_rate), a lost night
+	# still pays a share instead of nothing (defeat_bank), and a night can
+	# start with材 in hand (start_material). These change what a RUN IS
+	# rather than adding another percent.
+	"salvage_rate", "defeat_bank"
+]
 ## Start-of-run and choice-quality counters (Stage._ready / level-up screen).
-const START_STATS: Array[String] = ["start_level", "choice_count", "first_find"]
+const START_STATS: Array[String] = [
+	"start_level", "choice_count", "first_find", "start_material"
+]
 ## Survivability (Player damage pipeline + Stage revive).
 const SURVIVAL_STATS: Array[String] = ["revive", "damage_reduction", "hit_invuln"]
 ## 술법 weapon-stat modifiers (AutoWeapon via modified_weapon_stats).
@@ -54,6 +64,7 @@ const WEAPON_STATS: Array[String] = [
 ## Fractional stats that MUST declare a positive config.stat_caps entry; the
 ## integer counters above are capped by their rank ladders instead.
 const CAPPED_STATS: Array[String] = [
+	"salvage_rate", "defeat_bank",
 	"max_hp", "move_speed", "attack_damage", "attack_speed", "magnet_radius",
 	"gold_gain", "xp_gain", "luck", "damage_reduction", "hit_invuln",
 	"burn_duration", "ward_radius", "crit_chance", "crit_damage",
@@ -63,6 +74,28 @@ const CAPPED_STATS: Array[String] = [
 ]
 ## Sealed weapons must always need at least this many stacks to burst.
 const MIN_SEAL_BURST := 2
+
+
+## N11-19 환전꾼: leftover materials sell themselves when the night banks.
+## Returns {"pouch": Dictionary, "coins": int} — the share is spent from the
+## POUCH, so the player trades stock for coins and the trade is visible.
+static func salvage_leftovers(
+	pouch: Dictionary, loot: Dictionary, rate: float
+) -> Dictionary:
+	if rate <= 0.0:
+		return {"pouch": pouch, "coins": 0}
+	var kept: Dictionary = {}
+	var coins: int = 0
+	for loot_id: Variant in pouch:
+		var id: String = String(loot_id)
+		var held: int = int(pouch[loot_id])
+		# Only the surplus sells: a material the tree or the smithy still
+		# wants is never auto-sold out from under the player.
+		var sell: int = int(floor(float(held) * rate))
+		var entry: Dictionary = loot.get(id, {})
+		coins += sell * int(entry.get("salvage_gold", 0))
+		kept[id] = held - sell
+	return {"pouch": kept, "coins": coins}
 
 
 static func wired_stats() -> Array[String]:

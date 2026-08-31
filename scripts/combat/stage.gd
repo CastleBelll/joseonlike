@@ -462,6 +462,27 @@ func _stage_ready_field() -> void:
 	# same guarantee pipeline the FTUE table uses (data timing, run-seeded pick).
 	if int(_meta_bonus("first_find")) >= 1:
 		_arm_first_find()
+	# N11-19 길눈: the night opens with material already in the pouch, so a
+	# mod can be reachable before the first elite falls.
+	_grant_start_materials(int(_meta_bonus("start_material")))
+
+
+## N11-19 길눈: seeds the run inventory with common materials the region can
+## actually drop, so the grant reads as "found on the way in" rather than as
+## an item out of nowhere.
+func _grant_start_materials(count: int) -> void:
+	if count <= 0:
+		return
+	var ids: Array[String] = []
+	for loot_id: String in _loot_data:
+		if not bool((_loot_data[loot_id] as Dictionary).get("special", false)):
+			ids.append(loot_id)
+	if ids.is_empty():
+		return
+	ids.sort()
+	for i: int in count:
+		var pick: String = ids[_loot_rng.randi_range(0, ids.size() - 1)]
+		_run_state.inventory[pick] = int(_run_state.inventory.get(pick, 0)) + 1
 
 
 ## Appends the 첫 인연 guarantee to the run's guarantee table: one random

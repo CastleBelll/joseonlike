@@ -23,6 +23,7 @@ const BUS_MUSIC := "Music"
 const BUS_EFFECTS := "Effects"
 const ACHIEVEMENTS_PATH := "res://data/achievements.json"
 const META_TREE_PATH := "res://data/meta_tree.json"
+const LOOT_PATH := "res://data/loot.json"
 const BUS_BY_SETTING := {
 	"master_volume": BUS_MASTER,
 	"music_volume": BUS_MUSIC,
@@ -57,6 +58,9 @@ var _earned_achievements: Array[Dictionary] = []
 ## N11-18: coins handed back by the tree redesign, for the camp to announce
 ## once. Zero when there was nothing to refund.
 var pending_refund: int = 0
+## N11-19: coins the last bank turned surplus materials into, for the result
+## sheet to print. Zero when the tree has not bought that yet.
+var last_salvage: int = 0
 
 
 func _init() -> void:
@@ -206,7 +210,23 @@ func bank_run(
 	elapsed_sec: float, kills: int, run_gold: int, boss_killed: bool,
 	run: Dictionary = {}
 ) -> int:
-	profile = SaveProfile.apply_run_result(profile, elapsed_sec, kills, run_gold, boss_killed)
+	# N11-19 두 번째 밤: a lost night used to bank its full purse anyway —
+	# nothing was at stake in dying. The run's coins are cut to the share the
+	# tree bought back, so a defeat costs something and the node is what
+	# softens it. A victory always banks whole.
+	var banked_gold: int = run_gold
+	var lost: bool = not bool(run.get("victory", boss_killed))
+	if lost:
+		# A lost night keeps the data's base share; the tree buys the rest of
+		# the way back to a full purse. Zero base would have stalled a fresh
+		# profile whose first sortie is a scripted defeat.
+		var share: float = clampf(
+			_defeat_bank_base() + _meta_scalar("defeat_bank"), 0.0, 1.0
+		)
+		banked_gold = int(round(float(run_gold) * share))
+	profile = SaveProfile.apply_run_result(
+		profile, elapsed_sec, kills, banked_gold, boss_killed
+	)
 	var folded: Dictionary = run.duplicate()
 	folded["character"] = selected_character()
 	folded["kills"] = kills
@@ -220,13 +240,57 @@ func bank_run(
 			int(pouch.get(String(loot_id), 0))
 			+ maxi(int((run.get("loot", {}) as Dictionary)[loot_id]), 0)
 		)
-	profile["materials"] = pouch
+	# N11-19 환전꾼: the share the tree bought sells itself on the way in, so
+	# a pouch of materials nothing needs turns back into coins by itself.
+	var salvage: Dictionary = MetaTree.salvage_leftovers(
+		pouch, _loot_data(), _meta_scalar("salvage_rate")
+	)
+	profile["materials"] = salvage["pouch"]
+	var salvaged: int = int(salvage["coins"])
+	if salvaged > 0:
+		profile["gold"] = SaveProfile.bank_gold(int(profile.get("gold", 0)), salvaged)
+	last_salvage = salvaged
 	profile = Achievements.fold_run(profile, folded)
 	var result: Dictionary = Achievements.evaluate(profile, achievement_data())
 	profile = result["profile"]
 	_earned_achievements = result["earned"]
 	save_profile()
 	return gold()
+
+
+## One run-start meta scalar, read straight from the tree for the SELECTED
+## character. Kept here because banking happens outside the stage, where the
+## run's own bonus table no longer exists.
+func _meta_scalar(stat: String) -> float:
+	var tree: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string(META_TREE_PATH)
+	)
+	if not tree is Dictionary:
+		return 0.0
+	var totals: Dictionary = MetaTree.aggregate_effects(
+		tree as Dictionary, profile.get("meta_tree", {}) as Dictionary,
+		selected_character()
+	)
+	return float(totals.get(stat, 0.0))
+
+
+## The share of a lost night's coins that banks before any tree node.
+func _defeat_bank_base() -> float:
+	var tree: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string(META_TREE_PATH)
+	)
+	if not tree is Dictionary:
+		return 1.0
+	return float(
+		((tree as Dictionary).get("config", {}) as Dictionary).get("defeat_bank_base", 1.0)
+	)
+
+
+func _loot_data() -> Dictionary:
+	var loot: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string(LOOT_PATH)
+	)
+	return loot if loot is Dictionary else {}
 
 
 ## Achievement entries that completed on the last banked run, handed over once.
