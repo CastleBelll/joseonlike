@@ -248,8 +248,16 @@ func test_landscape_columns_fit_the_540_height() -> bool:
 		if not bool(stats.get("evolution_only", false)) and LevelUp.runtime_can_fire(stats):
 			max_owned += 1
 	var strip_width: float = 960.0 - LevelUpPopup.PANEL_MARGIN_X * 2.0
-	if LevelUpPopup.owned_strip_rows(max_owned, strip_width) != 1:
+	# N11-22: the roster grew past what one 960px row can seat (20 offerable
+	# weapons at 48px wells). Landscape still RESERVES one row — the cap does
+	# that, and the +N badge carries the rest — and a real run, which holds
+	# four weapons plus what it evolved them into, must never need a second.
+	if LevelUpPopup.owned_strip_rows(max_owned, strip_width, true) != 1:
 		push_error("test_level_up_popup: landscape roster strip wraps past one row")
+		passed = false
+	var real_roster: int = LevelUp.WEAPON_SLOTS + 2
+	if LevelUpPopup.owned_strip_rows(real_roster, strip_width) != 1:
+		push_error("test_level_up_popup: a real run's roster must fit one row")
 		passed = false
 	return passed
 

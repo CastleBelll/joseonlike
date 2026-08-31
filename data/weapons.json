@@ -862,22 +862,22 @@
   "category": "spiritual",
   "grade": "epic",
   "mechanic": "ward",
-  "damage": 3.2,
+  "damage": 12.0,
   "cooldown_sec": 3.6,
   "projectile_count": 1,
   "pierce": 0,
   "speed": 0.0,
   "range_px": 260.0,
   "ward": {
-   "radius_px": 50.0,
-   "duration_sec": 3.9,
-   "tick_sec": 0.6,
-   "slow_scale": 0.55
+   "radius_px": 96.0,
+   "duration_sec": 5.0,
+   "tick_sec": 0.36,
+   "slow_scale": 0.5
   },
   "max_level": 8,
   "per_level": {
-   "damage": 1.5,
-   "cooldown_sec": -0.08
+   "damage": 4.4,
+   "cooldown_sec": -0.14
   },
   "evolution_only": true,
   "on_hit_status": {
@@ -997,22 +997,22 @@
   "category": "spiritual",
   "grade": "epic",
   "mechanic": "summon",
-  "damage": 14.0,
+  "damage": 36.0,
   "cooldown_sec": 3.0,
   "projectile_count": 1,
   "pierce": 0,
   "speed": 0.0,
   "range_px": 460.0,
   "summon": {
-   "lifetime_sec": 12.0,
-   "speed": 160.0,
+   "lifetime_sec": 14.0,
+   "speed": 175.0,
    "leash_px": 340.0,
-   "attack_cooldown_sec": 0.55
+   "attack_cooldown_sec": 0.4
   },
   "max_level": 8,
   "per_level": {
-   "damage": 3.6,
-   "cooldown_sec": -0.15
+   "damage": 9.0,
+   "cooldown_sec": -0.2
   },
   "evolution_only": true,
   "on_hit_status": {
@@ -1871,6 +1871,318 @@
     "pierce": 1
    }
   },
+  "hit_effect": "hit_divine_bow",
+  "family": "pyeonjeon"
+ },
+ "bulssi": {
+  "name_ko": "불씨",
+  "name_en": "Ember Seed",
+  "category": "spiritual",
+  "grade": "common",
+  "mechanic": "straight",
+  "damage": 8.0,
+  "cooldown_sec": 1.05,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 340.0,
+  "range_px": 430.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 2.6,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": false,
+  "milestones": {
+   "3": {
+    "projectile_count": 1
+   },
+   "5": {
+    "on_hit_status": {
+     "dps": 1.5
+    }
+   },
+   "8": {
+    "projectile_count": 1,
+    "on_hit_status": {
+     "duration_sec": 0.6
+    }
+   }
+  },
+  "on_hit_status": {
+   "id": "burn",
+   "duration_sec": 2.0,
+   "dps": 3.0
+  },
+  "travel_sprite": "res://asset/weapon/travel/fire_talisman.png",
+  "travel_frames": 4,
+  "hit_effect": "hit_fire_talisman",
+  "family": "fire"
+ },
+ "noechim": {
+  "name_ko": "뇌침",
+  "name_en": "Thunder Needle",
+  "category": "spiritual",
+  "grade": "common",
+  "mechanic": "chain",
+  "damage": 7.5,
+  "cooldown_sec": 1.5,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 420.0,
+  "range_px": 420.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 2.7,
+   "cooldown_sec": -0.06
+  },
+  "evolution_only": false,
+  "milestones": {
+   "3": {
+    "chain": {
+     "jumps": 1
+    }
+   },
+   "5": {
+    "chain": {
+     "range_px": 30.0
+    }
+   },
+   "8": {
+    "chain": {
+     "jumps": 1,
+     "falloff": 0.05
+    }
+   }
+  },
+  "chain": {
+   "jumps": 1,
+   "falloff": 0.75,
+   "range_px": 190.0
+  },
+  "hit_effect": "hit_noebu",
+  "family": "lightning"
+ },
+ "sagwibu": {
+  "name_ko": "사귀부",
+  "name_en": "Hexing Charm",
+  "category": "spiritual",
+  "grade": "common",
+  "mechanic": "curse",
+  "damage": 6.5,
+  "cooldown_sec": 1.7,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 300.0,
+  "range_px": 430.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 2.6,
+   "cooldown_sec": -0.06
+  },
+  "evolution_only": false,
+  "milestones": {
+   "3": {
+    "on_hit_status": {
+     "spread_count": 1
+    }
+   },
+   "5": {
+    "on_hit_status": {
+     "dps": 1.5
+    }
+   },
+   "8": {
+    "on_hit_status": {
+     "spread_count": 1,
+     "duration_sec": 0.5
+    }
+   }
+  },
+  "travel_sprite": "res://asset/weapon/travel/sal.png",
+  "travel_frames": 4,
+  "hit_effect": "hit_sal",
+  "family": "curse",
+  "on_hit_status": {
+   "id": "curse",
+   "dps": 4.0,
+   "duration_sec": 3.5,
+   "spread_radius_px": 90.0,
+   "spread_count": 1
+  }
+ },
+ "dando": {
+  "name_ko": "단도",
+  "name_en": "Short Blade",
+  "category": "melee",
+  "grade": "common",
+  "mechanic": "melee_arc",
+  "damage": 6.5,
+  "cooldown_sec": 0.72,
+  "projectile_count": 1,
+  "pierce": 0,
+  "range_px": 108.0,
+  "arc": {
+   "angle_deg": 110.0,
+   "knockback_scale": 1.2
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 2.2,
+   "cooldown_sec": -0.03
+  },
+  "evolution_only": false,
+  "milestones": {
+   "3": {
+    "arc": {
+     "angle_deg": 15.0
+    }
+   },
+   "5": {
+    "pierce": 1
+   }
+  },
+  "hit_effect": "hit_sword",
+  "swing_effect": "swing_sword",
+  "family": "hwando"
+ },
+ "jangchang": {
+  "name_ko": "장창",
+  "name_en": "Long Spear",
+  "category": "melee",
+  "grade": "common",
+  "mechanic": "melee_arc",
+  "damage": 13.0,
+  "cooldown_sec": 1.55,
+  "projectile_count": 1,
+  "pierce": 0,
+  "range_px": 205.0,
+  "arc": {
+   "angle_deg": 62.0,
+   "knockback_scale": 2.4
+  },
+  "max_level": 8,
+  "per_level": {
+   "damage": 4.2,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": false,
+  "milestones": {
+   "3": {
+    "pierce": 1
+   },
+   "5": {
+    "arc": {
+     "angle_deg": 18.0
+    }
+   },
+   "7": {
+    "pierce": 1
+   }
+  },
+  "hit_effect": "hit_seokjang",
+  "swing_effect": "swing_seokjang",
+  "family": "wolto"
+ },
+ "jukgung": {
+  "name_ko": "죽궁",
+  "name_en": "Bamboo Bow",
+  "category": "ranged",
+  "grade": "common",
+  "mechanic": "straight",
+  "damage": 6.0,
+  "cooldown_sec": 0.55,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 430.0,
+  "range_px": 470.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 1.8,
+   "cooldown_sec": -0.02
+  },
+  "evolution_only": false,
+  "milestones": {
+   "3": {
+    "projectile_count": 1
+   },
+   "5": {
+    "pierce": 1
+   },
+   "7": {
+    "projectile_count": 1
+   }
+  },
+  "travel_sprite": "res://asset/weapon/travel/bow.png",
+  "travel_frames": 4,
+  "hit_effect": "hit_bow",
+  "family": "gakgung"
+ },
+ "suno": {
+  "name_ko": "수노",
+  "name_en": "Hand Crossbow",
+  "category": "ranged",
+  "grade": "common",
+  "mechanic": "pierce",
+  "damage": 9.0,
+  "cooldown_sec": 1.25,
+  "projectile_count": 1,
+  "pierce": 1,
+  "pierce_retention": 0.8,
+  "speed": 500.0,
+  "range_px": 520.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.0,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": false,
+  "milestones": {
+   "3": {
+    "pierce": 1
+   },
+   "5": {
+    "pierce_retention": 0.05
+   },
+   "7": {
+    "pierce": 1
+   }
+  },
+  "travel_sprite": "res://asset/weapon/travel/beopgeom.png",
+  "travel_frames": 4,
+  "hit_effect": "hit_beopgeom",
+  "family": "soenoe"
+ },
+ "sejeon": {
+  "name_ko": "세전",
+  "name_en": "Needle Arrow",
+  "category": "ranged",
+  "grade": "common",
+  "mechanic": "straight",
+  "damage": 11.0,
+  "cooldown_sec": 1.35,
+  "projectile_count": 1,
+  "pierce": 0,
+  "speed": 620.0,
+  "range_px": 620.0,
+  "max_level": 8,
+  "per_level": {
+   "damage": 3.6,
+   "cooldown_sec": -0.05
+  },
+  "evolution_only": false,
+  "milestones": {
+   "3": {
+    "pierce": 1
+   },
+   "5": {
+    "projectile_count": 1
+   },
+   "7": {
+    "pierce": 1
+   }
+  },
+  "travel_sprite": "res://asset/weapon/travel/divine_bow.png",
+  "travel_frames": 4,
   "hit_effect": "hit_divine_bow",
   "family": "pyeonjeon"
  }
