@@ -952,6 +952,13 @@ func _end_run(outcome: String, boss_killed: bool = false) -> void:
 	for loot_id: Variant in _run_state.inventory:
 		banked += maxi(int(_run_state.inventory[loot_id]), 0)
 	summary["banked_materials"] = banked
+	# N11-19/20b: a lost night banks only its share, so the sheet says so —
+	# a purse that quietly shrank reads as a bug, not as a cost.
+	if outcome != RunFlow.OUTCOME_VICTORY:
+		summary["defeat_share"] = clampf(
+			float((_meta_config.get("defeat_bank_base", 1.0)))
+			+ _meta_bonus("defeat_bank"), 0.0, 1.0
+		)
 	summary["new_records"] = maxi(_bestiary_count() - _bestiary_start_count, 0)
 	var profile: Dictionary = _profile()
 	summary["next_upgrade"] = MetaTree.cheapest_next(

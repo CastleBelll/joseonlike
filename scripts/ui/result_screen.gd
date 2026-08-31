@@ -237,7 +237,17 @@ func open(outcome: String, summary: Dictionary) -> void:
 		)
 	_time_value.text = String(summary.get("time_text", ""))
 	_kills_value.text = str(int(summary.get("kills", 0)))
-	_gold_value.text = str(int(summary.get("gold", 0)))
+	# N11-20b: on a lost night the purse only banks its share, and the row
+	# says which share — the number shrinking with no explanation reads as a
+	# bug rather than as the cost of dying.
+	var share: float = float(summary.get("defeat_share", 1.0))
+	var earned: int = int(summary.get("gold", 0))
+	if share < 1.0:
+		_gold_value.text = "%d → %d (%d%%)" % [
+			earned, int(round(float(earned) * share)), int(round(share * 100.0))
+		]
+	else:
+		_gold_value.text = str(earned)
 	# N5-2: permanent gold after banking this run (SaveManager.bank_run).
 	_total_gold_value.text = str(int(summary.get("total_gold", 0)))
 	# N11-3b: the growth rows — what the night banked, what it recorded, and

@@ -100,7 +100,7 @@ const MIN_SEAL_BURST := 2
 ## Returns {"pouch": Dictionary, "coins": int} — the share is spent from the
 ## POUCH, so the player trades stock for coins and the trade is visible.
 static func salvage_leftovers(
-	pouch: Dictionary, loot: Dictionary, rate: float
+	pouch: Dictionary, loot: Dictionary, rate: float, demand: Dictionary = {}
 ) -> Dictionary:
 	if rate <= 0.0:
 		return {"pouch": pouch, "coins": 0}
@@ -109,9 +109,13 @@ static func salvage_leftovers(
 	for loot_id: Variant in pouch:
 		var id: String = String(loot_id)
 		var held: int = int(pouch[loot_id])
-		# Only the surplus sells: a material the tree or the smithy still
-		# wants is never auto-sold out from under the player.
-		var sell: int = int(floor(float(held) * rate))
+		# Only the SURPLUS sells. Whatever an unbought recipe or the next rank
+		# still bills is never auto-sold out from under the player — the whole
+		# point of the node is turning dead stock into coins, and a material
+		# the camp is waiting on is not dead stock.
+		var owed: int = int(demand.get(id, 0))
+		var spare: int = maxi(held - owed, 0)
+		var sell: int = int(floor(float(spare) * rate))
 		var entry: Dictionary = loot.get(id, {})
 		coins += sell * int(entry.get("salvage_gold", 0))
 		kept[id] = held - sell
@@ -493,6 +497,9 @@ static func sanitize_state(tree: Dictionary, state: Dictionary) -> Dictionary:
 static func aggregate_effects(
 	tree: Dictionary, state: Dictionary, character_id: String
 ) -> Dictionary:
+	# N11-20b: family-scoped stats are deliberately NOT summed here. They are
+	# per-family by definition, and a global total of them would be a number
+	# nothing reads — and one the stat caps would then clamp for no reason.
 	var totals: Dictionary = {}
 	for entry: Dictionary in nodes(tree):
 		var branch: String = node_character(entry)
@@ -503,6 +510,8 @@ static func aggregate_effects(
 			continue
 		var effect: Dictionary = entry.get("effect", {})
 		var stat: String = String(effect.get("stat", ""))
+		if stat in FAMILY_STATS:
+			continue  # summed per family by family_effects(), never globally
 		var amount: float = float(effect.get("per_rank", 0.0)) * mini(rank, max_rank(entry))
 		totals[stat] = float(totals.get(stat, 0.0)) + amount
 	var caps: Dictionary = (tree.get("config", {}) as Dictionary).get("stat_caps", {})

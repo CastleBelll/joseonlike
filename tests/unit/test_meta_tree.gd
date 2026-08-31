@@ -588,6 +588,15 @@ func test_salvage_leftovers_sells_a_share_of_the_pouch() -> bool:
 	if int(pouch["ghost_iron"]) != 3:
 		push_error("test_meta_tree: a pouch too small to round up must keep it all")
 		return false
+	# N11-20 self-check: what the camp still owes is NOT sold. 8 of the 10
+	# bamboo are spoken for, so only the 2 spare ones can be traded, and 30%
+	# of 2 rounds down to nothing.
+	var spared: Dictionary = MetaTree.salvage_leftovers(
+		{"bamboo": 10}, loot, 0.3, {"bamboo": 8}
+	)
+	if int(spared["coins"]) != 0 or int((spared["pouch"] as Dictionary)["bamboo"]) != 10:
+		push_error("test_meta_tree: salvage must not sell what the camp still bills")
+		return false
 	# No rate, no trade.
 	return int(MetaTree.salvage_leftovers({"bamboo": 10}, loot, 0.0)["coins"]) == 0
 

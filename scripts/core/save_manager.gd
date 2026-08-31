@@ -24,6 +24,7 @@ const BUS_EFFECTS := "Effects"
 const ACHIEVEMENTS_PATH := "res://data/achievements.json"
 const META_TREE_PATH := "res://data/meta_tree.json"
 const LOOT_PATH := "res://data/loot.json"
+const WEAPON_MODS_PATH := "res://data/weapon_mods.json"
 const BUS_BY_SETTING := {
 	"master_volume": BUS_MASTER,
 	"music_volume": BUS_MUSIC,
@@ -242,8 +243,16 @@ func bank_run(
 		)
 	# N11-19 환전꾼: the share the tree bought sells itself on the way in, so
 	# a pouch of materials nothing needs turns back into coins by itself.
+	# The camp's outstanding bills are protected: only what NOTHING is waiting
+	# on can be auto-sold.
+	var tree_data: Dictionary = _tree_data()
+	var owed: Dictionary = Storehouse.demand(
+		{"materials": pouch, "mod_unlocks": Smithy.unlocked_ids(profile),
+		"meta_tree": profile.get("meta_tree", {})},
+		_mods_data(), tree_data
+	)
 	var salvage: Dictionary = MetaTree.salvage_leftovers(
-		pouch, _loot_data(), _meta_scalar("salvage_rate")
+		pouch, _loot_data(), _meta_scalar("salvage_rate"), owed
 	)
 	profile["materials"] = salvage["pouch"]
 	var salvaged: int = int(salvage["coins"])
@@ -284,6 +293,20 @@ func _defeat_bank_base() -> float:
 	return float(
 		((tree as Dictionary).get("config", {}) as Dictionary).get("defeat_bank_base", 1.0)
 	)
+
+
+func _tree_data() -> Dictionary:
+	var tree: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string(META_TREE_PATH)
+	)
+	return tree if tree is Dictionary else {}
+
+
+func _mods_data() -> Dictionary:
+	var mods: Variant = JSON.parse_string(
+		FileAccess.get_file_as_string(WEAPON_MODS_PATH)
+	)
+	return mods if mods is Dictionary else {}
 
 
 func _loot_data() -> Dictionary:

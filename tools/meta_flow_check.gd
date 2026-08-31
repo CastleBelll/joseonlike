@@ -3,10 +3,12 @@ extends Node
 ## separate process, so state must survive a full relaunch to pass.
 ## Run: godot --headless --path . res://tools/meta_flow_check.tscn -- --phase=X
 ##   --phase=bank    bank a finished run's gold into the profile and save
-##   --phase=buy     buy iron_bones rank 1 through SaveService (atomic write)
+##   --phase=buy     buy coin_eye rank 1 through SaveService (atomic write)
 ##   --phase=verify  print what a fresh boot loaded from disk
 
-const NODE_ID := "iron_bones"
+## N11-18 rewired the tree; 철골 is gone and 엽전 눈 is the cheapest
+## shared root, which is what this flow wants to exercise.
+const NODE_ID := "coin_eye"
 
 
 func _ready() -> void:
