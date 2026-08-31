@@ -610,3 +610,36 @@ func test_archer_effects_fold_into_weapon_stats() -> bool:
 		{"mechanic": "orbit"}, {"pierce_growth": 0.45}
 	)
 	return not plain.has("pierce_retention")
+
+
+func test_family_upgrades_only_touch_their_own_build() -> bool:
+	# N11-20b (owner: 무기를 업그레이드 하는 걸 얘기한 거였어): a fire branch
+	# sharpens fire weapons and leaves the lightning ones exactly as they were.
+	var tree := {"nodes": [
+		{"id": "build_fire_might", "build_family": "fire", "character": "taoist",
+			"effect": {"stat": "family_damage", "per_rank": 0.1}, "costs": [100, 200]},
+		{"id": "build_fire_tempo", "build_family": "fire", "character": "taoist",
+			"effect": {"stat": "family_haste", "per_rank": 0.06}, "costs": [100]},
+		{"id": "build_lightning_might", "build_family": "lightning", "character": "taoist",
+			"effect": {"stat": "family_damage", "per_rank": 0.1}, "costs": [100]},
+	]}
+	var totals: Dictionary = MetaTree.family_effects(
+		tree, {"build_fire_might": 2, "build_fire_tempo": 1}, "taoist"
+	)
+	if not is_equal_approx(float((totals["fire"] as Dictionary)["family_damage"]), 0.2):
+		push_error("test_meta_tree: two ranks of a family node must stack")
+		return false
+	if totals.has("lightning"):
+		push_error("test_meta_tree: an unbought family must contribute nothing")
+		return false
+	var fire: Dictionary = MetaTree.apply_family_upgrades(
+		{"family": "fire", "damage": 100.0, "cooldown_sec": 1.0}, totals
+	)
+	var bolt: Dictionary = MetaTree.apply_family_upgrades(
+		{"family": "lightning", "damage": 100.0, "cooldown_sec": 1.0}, totals
+	)
+	if not is_equal_approx(float(fire["damage"]), 120.0) \
+			or not is_equal_approx(float(fire["cooldown_sec"]), 0.94):
+		push_error("test_meta_tree: the fire weapon must take both upgrades")
+		return false
+	return is_equal_approx(float(bolt["damage"]), 100.0)

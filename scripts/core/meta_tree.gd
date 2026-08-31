@@ -60,6 +60,13 @@ const SURVIVAL_STATS: Array[String] = [
 ## the tree grows THAT — a shorter wait between casts and a heavier cast —
 ## instead of handing out a second skill.
 const ACTIVE_STATS: Array[String] = ["active_haste", "active_power"]
+## N11-20b (owner: 무기를 업그레이드 하는 걸 얘기한 거였어): the build branches
+## sharpen the FAMILY they belong to, permanently. A node carrying one of these
+## also carries build_family, and the run applies it only to weapons of that
+## family — so 화염 수련 makes 화부 hit harder and leaves 뇌부 alone.
+const FAMILY_STATS: Array[String] = [
+	"family_damage", "family_haste", "family_level"
+]
 ## 술법 weapon-stat modifiers (AutoWeapon via modified_weapon_stats).
 const WEAPON_STATS: Array[String] = [
 	"burn_duration", "chain_jumps", "ward_radius", "orbit_count", "seal_burst",
@@ -111,6 +118,56 @@ static func salvage_leftovers(
 	return {"pouch": kept, "coins": coins}
 
 
+## N11-20b: every family upgrade the camp has bought, as
+## {family: {stat: total}}. The run folds these into a weapon's own stats by
+## looking up its family, so one branch sharpens one build.
+static func family_effects(
+	tree: Dictionary, state: Dictionary, character_id: String
+) -> Dictionary:
+	var totals: Dictionary = {}
+	for entry: Variant in nodes(tree):
+		var node: Dictionary = entry
+		var family: String = String(node.get("build_family", ""))
+		var effect: Dictionary = node.get("effect", {})
+		if family.is_empty() or effect.is_empty():
+			continue
+		var stat: String = String(effect.get("stat", ""))
+		if stat not in FAMILY_STATS:
+			continue
+		var owner: String = node_character(node)
+		if not owner.is_empty() and owner != character_id:
+			continue
+		var rank: int = rank_of(state, String(node.get("id", "")))
+		if rank <= 0:
+			continue
+		var bucket: Dictionary = totals.get(family, {})
+		bucket[stat] = float(bucket.get(stat, 0.0)) + float(effect.get("per_rank", 0.0)) * float(rank)
+		totals[family] = bucket
+	return totals
+
+
+## Folds one family's bought upgrades into a weapon's stats: heavier hits and
+## a shorter wait between them. Level grants are handled by the run, which
+## owns the level ladder.
+static func apply_family_upgrades(stats: Dictionary, family_totals: Dictionary) -> Dictionary:
+	var family: String = String(stats.get("family", ""))
+	var bonus: Dictionary = family_totals.get(family, {})
+	if family.is_empty() or bonus.is_empty():
+		return stats
+	var result: Dictionary = stats.duplicate(true)
+	var damage: float = float(bonus.get("family_damage", 0.0))
+	if damage > 0.0:
+		result["damage"] = float(result.get("damage", 0.0)) * (1.0 + damage)
+	var haste: float = clampf(float(bonus.get("family_haste", 0.0)), 0.0, MAX_FAMILY_HASTE)
+	if haste > 0.0:
+		result["cooldown_sec"] = float(result.get("cooldown_sec", 0.0)) * (1.0 - haste)
+	return result
+
+
+## A family's cooldown cut can never make a weapon free.
+const MAX_FAMILY_HASTE := 0.4
+
+
 ## N11-20 빌드 개방: the families whose root node the camp has bought, for the
 ## run to weight its level-up pool with. A node declares its family with a
 ## "build_family" field; rank 1 is enough — the root OPENS the line, the ranks
@@ -134,6 +191,7 @@ static func unlocked_families(
 
 static func wired_stats() -> Array[String]:
 	var all: Array[String] = []
+	all.append_array(FAMILY_STATS)
 	all.append_array(ACTIVE_STATS)
 	all.append_array(SCALAR_STATS)
 	all.append_array(ECONOMY_STATS)
@@ -587,8 +645,18 @@ static func _node_issues(
 	# N11-20: a BUILD node's effect is the family it opens — it moves no stat,
 	# so it declares a family instead of a number and is checked for that.
 	if not String(entry.get("build_family", "")).is_empty():
-		if not entry.get("effect", {}).is_empty():
-			issues.append("node '%s' is a build root and must carry no effect" % node_id)
+		# A build node either OPENS the family (no effect at all) or sharpens
+		# it with one of the family-scoped stats. A global stat on a build
+		# node would silently apply to weapons the branch does not own.
+		var build_effect: Dictionary = entry.get("effect", {})
+		if build_effect.is_empty():
+			return
+		if String(build_effect.get("stat", "")) not in FAMILY_STATS:
+			issues.append(
+				"node '%s' is a build node: its effect must be family-scoped" % node_id
+			)
+		elif float(build_effect.get("per_rank", 0.0)) <= 0.0:
+			issues.append("node '%s' effect per_rank must be positive" % node_id)
 		return
 	var effect: Dictionary = entry.get("effect", {})
 	var stat: String = String(effect.get("stat", ""))

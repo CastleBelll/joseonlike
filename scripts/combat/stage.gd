@@ -350,6 +350,12 @@ func _stage_ready_field() -> void:
 		meta_data, meta_clean["state"] as Dictionary,
 		String(_profile().get("selected_character", SaveProfile.DEFAULT_CHARACTER))
 	)
+	# N11-20b: the camp's family upgrades ride along under a reserved key, so
+	# a weapon's setup still takes one dictionary.
+	_meta_effects["_families"] = MetaTree.family_effects(
+		meta_data, meta_clean["state"] as Dictionary,
+		String(_profile().get("selected_character", SaveProfile.DEFAULT_CHARACTER))
+	)
 	_meta_config = meta_data.get("config", {})
 	_orb_pool = NodePool.new(self, _create_orb)
 	_number_pool = NodePool.new(self, _create_damage_number)

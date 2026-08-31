@@ -166,7 +166,12 @@ func setup(
 		push_error("auto_weapon: unknown weapon id '%s' in %s" % [id, WEAPONS_PATH])
 		return
 	weapon_id = id
-	_base_stats = MetaTree.modified_weapon_stats(weapons[id], meta_effects)
+	# N11-20b: the camp's family upgrades ride in with the meta effects under
+	# a reserved key, so one call still builds the whole stat block.
+	var family_totals: Dictionary = meta_effects.get("_families", {})
+	_base_stats = MetaTree.apply_family_upgrades(
+		MetaTree.modified_weapon_stats(weapons[id], meta_effects), family_totals
+	)
 	_impact_effect = String(_base_stats.get("hit_effect", ""))
 	# N9-116 (owner: 시작 이펙트): optional cast flash at the caster, data-
 	# driven exactly like hit_effect — weapons without the key are untouched.

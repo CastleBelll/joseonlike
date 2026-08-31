@@ -28,7 +28,10 @@
    "range_damage": 0.24,
    "dodge_chance": 0.18,
    "active_haste": 0.24,
-   "active_power": 0.36
+   "active_power": 0.36,
+   "family_damage": 0.3,
+   "family_haste": 0.18,
+   "family_level": 2.0
   },
   "revive": {
    "hp_ratio": 0.3,
@@ -2164,8 +2167,8 @@
     "stat": "active_haste",
     "per_rank": 0.08
    },
-   "desc_ko": "비기 재사용 대기 -8%",
-   "desc_en": "Skill cooldown -8%",
+   "desc_ko": "비기 두 가지 모두 재사용 대기 -8%",
+   "desc_en": "Both arts come off cooldown 8% sooner",
    "costs": [
     500,
     1100,
@@ -2186,8 +2189,8 @@
     "stat": "active_power",
     "per_rank": 0.12
    },
-   "desc_ko": "비기 위력·범위 +12%",
-   "desc_en": "Skill power and reach +12%",
+   "desc_ko": "비기 두 가지 모두 위력·범위 +12%",
+   "desc_en": "Both arts gain 12% power and reach",
    "costs": [
     600,
     1300,
@@ -2196,6 +2199,526 @@
    "requires": [
     "active_haste"
    ],
+   "pos": [
+    0.5,
+    6
+   ]
+  },
+  {
+   "id": "build_fire_might",
+   "name_ko": "화염 벼리기",
+   "name_en": "Fire Honing",
+   "icon": "fire_spirit_stone",
+   "effect": {
+    "stat": "family_damage",
+    "per_rank": 0.1
+   },
+   "build_family": "fire",
+   "character": "taoist",
+   "costs": [
+    600,
+    1300,
+    2800
+   ],
+   "requires": [
+    "build_fire"
+   ],
+   "desc_ko": "화염 계열 무기 피해 +10%",
+   "desc_en": "Fire weapons deal 10% more",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_fire_tempo",
+   "name_ko": "화염 손속",
+   "name_en": "Fire Tempo",
+   "icon": "fire_spirit_stone",
+   "effect": {
+    "stat": "family_haste",
+    "per_rank": 0.06
+   },
+   "build_family": "fire",
+   "character": "taoist",
+   "costs": [
+    800,
+    1700,
+    3600
+   ],
+   "requires": [
+    "build_fire_might"
+   ],
+   "desc_ko": "화염 계열 무기 대기 -6%",
+   "desc_en": "Fire weapons fire 6% sooner",
+   "pos": [
+    0.5,
+    6
+   ]
+  },
+  {
+   "id": "build_lightning_might",
+   "name_ko": "뇌전 벼리기",
+   "name_en": "Lightning Honing",
+   "icon": "thunder_stone",
+   "effect": {
+    "stat": "family_damage",
+    "per_rank": 0.1
+   },
+   "build_family": "lightning",
+   "character": "taoist",
+   "costs": [
+    600,
+    1300,
+    2800
+   ],
+   "requires": [
+    "build_lightning"
+   ],
+   "desc_ko": "뇌전 계열 무기 피해 +10%",
+   "desc_en": "Lightning weapons deal 10% more",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_lightning_tempo",
+   "name_ko": "뇌전 손속",
+   "name_en": "Lightning Tempo",
+   "icon": "thunder_stone",
+   "effect": {
+    "stat": "family_haste",
+    "per_rank": 0.06
+   },
+   "build_family": "lightning",
+   "character": "taoist",
+   "costs": [
+    800,
+    1700,
+    3600
+   ],
+   "requires": [
+    "build_lightning_might"
+   ],
+   "desc_ko": "뇌전 계열 무기 대기 -6%",
+   "desc_en": "Lightning weapons fire 6% sooner",
+   "pos": [
+    0.5,
+    6
+   ]
+  },
+  {
+   "id": "build_curse_might",
+   "name_ko": "저주 벼리기",
+   "name_en": "Curse Honing",
+   "icon": "wonhon_shard",
+   "effect": {
+    "stat": "family_damage",
+    "per_rank": 0.1
+   },
+   "build_family": "curse",
+   "character": "taoist",
+   "costs": [
+    600,
+    1300,
+    2800
+   ],
+   "requires": [
+    "build_curse"
+   ],
+   "desc_ko": "저주 계열 무기 피해 +10%",
+   "desc_en": "Curse weapons deal 10% more",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_curse_tempo",
+   "name_ko": "저주 손속",
+   "name_en": "Curse Tempo",
+   "icon": "wonhon_shard",
+   "effect": {
+    "stat": "family_haste",
+    "per_rank": 0.06
+   },
+   "build_family": "curse",
+   "character": "taoist",
+   "costs": [
+    800,
+    1700,
+    3600
+   ],
+   "requires": [
+    "build_curse_might"
+   ],
+   "desc_ko": "저주 계열 무기 대기 -6%",
+   "desc_en": "Curse weapons fire 6% sooner",
+   "pos": [
+    0.5,
+    6
+   ]
+  },
+  {
+   "id": "build_seal_might",
+   "name_ko": "봉인 벼리기",
+   "name_en": "Seal Honing",
+   "icon": "talisman_paper",
+   "effect": {
+    "stat": "family_damage",
+    "per_rank": 0.1
+   },
+   "build_family": "seal",
+   "character": "taoist",
+   "costs": [
+    600,
+    1300,
+    2800
+   ],
+   "requires": [
+    "build_seal"
+   ],
+   "desc_ko": "봉인 계열 무기 피해 +10%",
+   "desc_en": "Seal weapons deal 10% more",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_seal_tempo",
+   "name_ko": "봉인 손속",
+   "name_en": "Seal Tempo",
+   "icon": "talisman_paper",
+   "effect": {
+    "stat": "family_haste",
+    "per_rank": 0.06
+   },
+   "build_family": "seal",
+   "character": "taoist",
+   "costs": [
+    800,
+    1700,
+    3600
+   ],
+   "requires": [
+    "build_seal_might"
+   ],
+   "desc_ko": "봉인 계열 무기 대기 -6%",
+   "desc_en": "Seal weapons fire 6% sooner",
+   "pos": [
+    0.5,
+    6
+   ]
+  },
+  {
+   "id": "build_hwando_might",
+   "name_ko": "환도 벼리기",
+   "name_en": "Sabre Honing",
+   "icon": "whetstone",
+   "effect": {
+    "stat": "family_damage",
+    "per_rank": 0.1
+   },
+   "build_family": "hwando",
+   "character": "warrior",
+   "costs": [
+    600,
+    1300,
+    2800
+   ],
+   "requires": [
+    "build_hwando"
+   ],
+   "desc_ko": "환도 계열 무기 피해 +10%",
+   "desc_en": "Sabre weapons deal 10% more",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_hwando_tempo",
+   "name_ko": "환도 손속",
+   "name_en": "Sabre Tempo",
+   "icon": "whetstone",
+   "effect": {
+    "stat": "family_haste",
+    "per_rank": 0.06
+   },
+   "build_family": "hwando",
+   "character": "warrior",
+   "costs": [
+    800,
+    1700,
+    3600
+   ],
+   "requires": [
+    "build_hwando_might"
+   ],
+   "desc_ko": "환도 계열 무기 대기 -6%",
+   "desc_en": "Sabre weapons fire 6% sooner",
+   "pos": [
+    0.5,
+    6
+   ]
+  },
+  {
+   "id": "build_wolto_might",
+   "name_ko": "언월도 벼리기",
+   "name_en": "Glaive Honing",
+   "icon": "cast_iron",
+   "effect": {
+    "stat": "family_damage",
+    "per_rank": 0.1
+   },
+   "build_family": "wolto",
+   "character": "warrior",
+   "costs": [
+    600,
+    1300,
+    2800
+   ],
+   "requires": [
+    "build_wolto"
+   ],
+   "desc_ko": "언월도 계열 무기 피해 +10%",
+   "desc_en": "Glaive weapons deal 10% more",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_wolto_tempo",
+   "name_ko": "언월도 손속",
+   "name_en": "Glaive Tempo",
+   "icon": "cast_iron",
+   "effect": {
+    "stat": "family_haste",
+    "per_rank": 0.06
+   },
+   "build_family": "wolto",
+   "character": "warrior",
+   "costs": [
+    800,
+    1700,
+    3600
+   ],
+   "requires": [
+    "build_wolto_might"
+   ],
+   "desc_ko": "언월도 계열 무기 대기 -6%",
+   "desc_en": "Glaive weapons fire 6% sooner",
+   "pos": [
+    0.5,
+    6
+   ]
+  },
+  {
+   "id": "build_pyeongon_might",
+   "name_ko": "편곤 벼리기",
+   "name_en": "Flail Honing",
+   "icon": "ghost_iron",
+   "effect": {
+    "stat": "family_damage",
+    "per_rank": 0.1
+   },
+   "build_family": "pyeongon",
+   "character": "warrior",
+   "costs": [
+    600,
+    1300,
+    2800
+   ],
+   "requires": [
+    "build_pyeongon"
+   ],
+   "desc_ko": "편곤 계열 무기 피해 +10%",
+   "desc_en": "Flail weapons deal 10% more",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_pyeongon_tempo",
+   "name_ko": "편곤 손속",
+   "name_en": "Flail Tempo",
+   "icon": "ghost_iron",
+   "effect": {
+    "stat": "family_haste",
+    "per_rank": 0.06
+   },
+   "build_family": "pyeongon",
+   "character": "warrior",
+   "costs": [
+    800,
+    1700,
+    3600
+   ],
+   "requires": [
+    "build_pyeongon_might"
+   ],
+   "desc_ko": "편곤 계열 무기 대기 -6%",
+   "desc_en": "Flail weapons fire 6% sooner",
+   "pos": [
+    0.5,
+    6
+   ]
+  },
+  {
+   "id": "build_gakgung_might",
+   "name_ko": "각궁 벼리기",
+   "name_en": "Horn Bow Honing",
+   "icon": "bamboo",
+   "effect": {
+    "stat": "family_damage",
+    "per_rank": 0.1
+   },
+   "build_family": "gakgung",
+   "character": "archer",
+   "costs": [
+    600,
+    1300,
+    2800
+   ],
+   "requires": [
+    "build_gakgung"
+   ],
+   "desc_ko": "각궁 계열 무기 피해 +10%",
+   "desc_en": "Horn Bow weapons deal 10% more",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_gakgung_tempo",
+   "name_ko": "각궁 손속",
+   "name_en": "Horn Bow Tempo",
+   "icon": "bamboo",
+   "effect": {
+    "stat": "family_haste",
+    "per_rank": 0.06
+   },
+   "build_family": "gakgung",
+   "character": "archer",
+   "costs": [
+    800,
+    1700,
+    3600
+   ],
+   "requires": [
+    "build_gakgung_might"
+   ],
+   "desc_ko": "각궁 계열 무기 대기 -6%",
+   "desc_en": "Horn Bow weapons fire 6% sooner",
+   "pos": [
+    0.5,
+    6
+   ]
+  },
+  {
+   "id": "build_soenoe_might",
+   "name_ko": "쇠뇌 벼리기",
+   "name_en": "Crossbow Honing",
+   "icon": "beast_fang",
+   "effect": {
+    "stat": "family_damage",
+    "per_rank": 0.1
+   },
+   "build_family": "soenoe",
+   "character": "archer",
+   "costs": [
+    600,
+    1300,
+    2800
+   ],
+   "requires": [
+    "build_soenoe"
+   ],
+   "desc_ko": "쇠뇌 계열 무기 피해 +10%",
+   "desc_en": "Crossbow weapons deal 10% more",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_soenoe_tempo",
+   "name_ko": "쇠뇌 손속",
+   "name_en": "Crossbow Tempo",
+   "icon": "beast_fang",
+   "effect": {
+    "stat": "family_haste",
+    "per_rank": 0.06
+   },
+   "build_family": "soenoe",
+   "character": "archer",
+   "costs": [
+    800,
+    1700,
+    3600
+   ],
+   "requires": [
+    "build_soenoe_might"
+   ],
+   "desc_ko": "쇠뇌 계열 무기 대기 -6%",
+   "desc_en": "Crossbow weapons fire 6% sooner",
+   "pos": [
+    0.5,
+    6
+   ]
+  },
+  {
+   "id": "build_pyeonjeon_might",
+   "name_ko": "편전 벼리기",
+   "name_en": "Dart Arrow Honing",
+   "icon": "thunder_stone",
+   "effect": {
+    "stat": "family_damage",
+    "per_rank": 0.1
+   },
+   "build_family": "pyeonjeon",
+   "character": "archer",
+   "costs": [
+    600,
+    1300,
+    2800
+   ],
+   "requires": [
+    "build_pyeonjeon"
+   ],
+   "desc_ko": "편전 계열 무기 피해 +10%",
+   "desc_en": "Dart Arrow weapons deal 10% more",
+   "pos": [
+    0.5,
+    5
+   ]
+  },
+  {
+   "id": "build_pyeonjeon_tempo",
+   "name_ko": "편전 손속",
+   "name_en": "Dart Arrow Tempo",
+   "icon": "thunder_stone",
+   "effect": {
+    "stat": "family_haste",
+    "per_rank": 0.06
+   },
+   "build_family": "pyeonjeon",
+   "character": "archer",
+   "costs": [
+    800,
+    1700,
+    3600
+   ],
+   "requires": [
+    "build_pyeonjeon_might"
+   ],
+   "desc_ko": "편전 계열 무기 대기 -6%",
+   "desc_en": "Dart Arrow weapons fire 6% sooner",
    "pos": [
     0.5,
     6
