@@ -20,14 +20,18 @@ OUT_DIR = "asset/ui/tree_icons"
 SIZE = 16
 SCALE = 3
 
-INK = (26, 22, 19, 255)
-LIGHT = (242, 230, 210, 255)
-GOLD = (214, 168, 74, 255)
-RED = (176, 74, 60, 255)
-BLUE = (96, 140, 184, 255)
-GREEN = (104, 150, 104, 255)
-GREY = (150, 146, 138, 255)
-PURPLE = (140, 108, 168, 255)
+# Owner reference (2026-08-31): one flat white silhouette per node, tinted by
+# the screen to say owned / within reach / locked. A glyph that carries its own
+# colours fights the tile's state colour and the map turns into confetti.
+WHITE = (255, 255, 255, 255)
+INK = WHITE
+LIGHT = WHITE
+GOLD = WHITE
+RED = WHITE
+BLUE = WHITE
+GREEN = WHITE
+GREY = WHITE
+PURPLE = WHITE
 
 
 def canvas():
@@ -424,7 +428,9 @@ GLYPHS = {
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     for name, draw_glyph in GLYPHS.items():
-        glyph = shade(draw_glyph(None))
+        # No shading pass: the reference set is flat, and a shadow step on a
+        # white silhouette only muddies it.
+        glyph = draw_glyph(None)
         glyph = glyph.resize((SIZE * SCALE, SIZE * SCALE), Image.NEAREST)
         glyph.save(os.path.join(OUT_DIR, f"{name}.png"))
     print(f"{len(GLYPHS)} tree icons written to {OUT_DIR}")

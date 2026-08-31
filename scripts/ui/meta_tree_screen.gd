@@ -66,22 +66,15 @@ const CELL_MAX := 96.0
 ## it a map, had nowhere to show. A tile now takes well under its cell.
 const CELL_FILL := 0.62
 ## The isometric lattice's horizontal and vertical pitch, as a share of a cell.
-const ISO_X := 0.78
-const ISO_Y := 0.56
+const ISO_X := 1.0
+const ISO_Y := 1.0
 ## Owner reference: square tiles with a soft corner, not discs.
 const TILE_RADIUS := 10
 ## One hue per branch family, in the kit's own range — earth reds, ink blues,
-## wood ambers, moss greens. A locked tile wears the same hue, darkened.
-## Owner reference: the special nodes are diamonds among the squares.
-const DIAMOND_ROLES: Array[String] = ["root", "keystone"]
-const FAMILY_COLORS: Array[Color] = [
-	Color("#8c3b34"), Color("#3f5a7a"), Color("#8a6a2f"),
-	Color("#3f6b4a"), Color("#6a4a7a"), Color("#7a5a3a"),
-	Color("#2f6a6a"), Color("#7a3f5a"),
-]
-## How dark a family hue goes while the node is still locked.
-const TILE_LOCKED_MIX := 0.22
-const TILE_BUYABLE_MIX := 0.55
+## The one plate every tile wears, and the three edges that say its state.
+const TILE_PLATE := Color("#1d1a17")
+const TILE_LOCKED_EDGE := Color("#4a453f")
+const TILE_READY_EDGE := Color("#7ea86a")
 ## How far a state mark sits outside the tile it belongs to.
 const TILE_MARK_PAD := 10.0
 const GRID_RING: Array[Vector2i] = [
@@ -175,8 +168,6 @@ var _hub_pos: Vector2 = Vector2.ZERO
 ## The grid pitch the last layout settled on; the hub and the state marks are
 ## drawn from it so they always match the tiles.
 var _cell: float = 0.0
-## node id -> its family hue, rebuilt whenever the tab changes.
-var _family_of: Dictionary = {}
 var _reveal_phase: float = 1.0
 ## QA I-5 growth fraction (0..1) the branch drawing honors; I-10 tween store.
 var _grow: float = 1.0
@@ -457,7 +448,6 @@ func _build_graph() -> Control:
 ## (Re)builds the node buttons for the current tab — the graph shows ONE
 ## branch at a time so a much larger total tree still reads on 540x960.
 func _populate_tab() -> void:
-	_rebuild_families()
 	for button: Button in _node_buttons.values():
 		button.queue_free()
 	_node_buttons.clear()
@@ -820,16 +810,14 @@ func _style_node(
 	var name_text: String = MetaTree.display_name(entry, UiLocale.current_locale)
 	var selected: bool = node_id == _selected_id
 
-	# Owner reference: the tile's hue is its family; how lit that hue is says
-	# owned / within reach / locked, and the border repeats it so the state
-	# never rides on fill alone.
-	var hue: Color = _family_color(node_id)
-	# Locked wears the family hue darkened; within-reach wears wood; owned
-	# wears gold — one border, three readings.
-	var border: Color = hue.darkened(0.45)
-	var fill: Color = UiPalette.NIGHT.lerp(hue, TILE_LOCKED_MIX)
+	# Owner reference (2026-08-31): every tile is the same dark plate. State is
+	# the BORDER and the icon tint — locked grey, within reach green, owned
+	# gold — because a board of coloured fills reads as confetti.
+	var border: Color = TILE_LOCKED_EDGE
+	var fill: Color = TILE_PLATE
 	var status: String
 	var icon: TextureRect = button.get_node("Icon")
+	icon.modulate = Color.WHITE
 	icon.modulate.a = 1.0
 	if _branch_locked():
 		# The whole branch is roster advertising: named, priced, not buyable.
@@ -838,7 +826,6 @@ func _style_node(
 			+ UiLocale.text("meta.cost_fmt") % cost
 	elif rank > 0:
 		border = UiPalette.GOLD_BORDER
-		fill = hue
 		if cost == MetaTree.NO_NEXT_COST:
 			status = UiLocale.text("meta.max")
 		else:
@@ -851,8 +838,7 @@ func _style_node(
 	elif cost > 0 and gold >= cost:
 		# The next affordable step must be findable without color alone: the
 		# words 구매 가능 carry the cue, the WOOD border doubles it.
-		border = UiPalette.WOOD
-		fill = UiPalette.NIGHT.lerp(hue, TILE_BUYABLE_MIX)
+		border = TILE_READY_EDGE
 		status = UiLocale.text("meta.available") + " · " \
 			+ UiLocale.text("meta.cost_fmt") % cost
 	else:
@@ -863,9 +849,9 @@ func _style_node(
 
 	# N11-24: a diamond node draws its own plate on the canvas, so the button
 	# behind it stays transparent — two plates would fight.
-	var plate: StyleBox = (
-		StyleBoxEmpty.new() if _node_role(entry) != "tile" else _node_plate(fill, border)
-	)
+	var plate: StyleBox = _node_plate(fill, border)
+	# The glyph ships white; the tile tints it so icon and edge always agree.
+	icon.modulate = Color(border, icon.modulate.a)
 	for state_name: String in ["normal", "hover", "pressed"]:
 		button.add_theme_stylebox_override(state_name, plate)
 	button.add_theme_stylebox_override("focus", _node_plate(fill, UiPalette.GOLD))
@@ -1498,17 +1484,17 @@ func _draw_graph() -> void:
 		# only when both of its ends are the player's; everything else is a
 		# quiet grey thread, dashed while the node is still locked.
 		var node_owned: bool = MetaTree.rank_of(state, String(entry.get("id", ""))) >= 1
-		var branch_color: Color = _node_state_color(entry, state)
-		var dashed: bool = branch_color == UiPalette.CARD_BORDER_DIM
+		# Owner reference: a line is gold when the path is walked, green when
+		# the node it leads to is affordable now, and a quiet grey otherwise.
+		var branch_color: Color = TILE_LOCKED_EDGE
+		if _is_buyable(entry, state):
+			branch_color = TILE_READY_EDGE
+		var dashed: bool = false
 		# QA FAIL-2 (1.17:1 between bought gold and buyable wood): the LINE
 		# ITSELF carries the state — owned 4px, within-reach 3px, locked a
 		# 2px dashed vine in a dim that still exists on the night ground
 		# (CARD_BORDER_DIM measured 1.66:1 — near-invisible).
-		if dashed:
-			branch_color = Color(UiPalette.TEXT_MUTED_ON_DARK, 0.45)
-		var branch_width: float = (
-			4.0 if branch_color == UiPalette.GOLD_BORDER else EDGE_WIDTH
-		)
+		var branch_width: float = EDGE_WIDTH
 		var to_disc: float = _node_size_of(String(entry.get("id", "")))
 		# N11-26: a root draws no stem — there is no hub for it to hang off.
 		for required: Variant in (entry.get("requires", []) as Array):
@@ -1519,35 +1505,15 @@ func _draw_graph() -> void:
 			var lit: bool = node_owned and MetaTree.rank_of(state, from_id) >= 1
 			_draw_branch(
 				_node_center(from_entry, width), to_center,
-				UiPalette.GOLD if lit else branch_color,
-				dashed, 3.0 if lit else branch_width,
+				UiPalette.GOLD_BORDER if lit else branch_color,
+				dashed, 2.5 if lit else branch_width,
 				_node_size_of(from_id), to_disc
 			)
 	# Breathing ring on every node the player could buy RIGHT NOW, a steady
 	# gold ring on what is already theirs — the growth state readable at a
 	# glance, before any caption is read.
-	# N11-25: the rank ladder reads on the tile itself, not only in the card.
-	for entry: Dictionary in _revealed_nodes():
-		var pip_id: String = String(entry.get("id", ""))
-		_draw_rank_pips(
-			_node_center(entry, width), _node_size_of(pip_id),
-			MetaTree.rank_of(state, pip_id), MetaTree.max_rank(entry)
-		)
-	# N11-24: roots and keystones draw their diamond under the button, so the
-	# shape says "this one turns the map" before any label is read.
-	for entry: Dictionary in _revealed_nodes():
-		var node_id: String = String(entry.get("id", ""))
-		if _node_role(entry) == "tile":
-			continue
-		_draw_node_plate(
-			entry, _node_center(entry, width), _node_size_of(node_id),
-			_family_color(node_id), MetaTree.rank_of(state, node_id) >= 1
-		)
-	# Owner (무슨 테두리들이 이상하게 있는데 좀 정리해): state used to wear a
-	# ring AND a square AND a border, three outlines fighting on one tile. The
-	# TILE'S OWN border carries owned / within reach / locked now; the only
-	# thing drawn on top is the soft pulse under the few cheapest buys, which
-	# is a hint rather than an outline.
+	# Owner reference: nothing is drawn on top of a tile except a soft pulse
+	# under the few cheapest buys. State is the border, and that is all.
 	var pulse_ids: Array[String] = _cheapest_buyable_ids(state)
 	var swell: float = sin(_pulse_phase * TAU / PULSE_PERIOD_SEC) * PULSE_RING_SWING
 	var fade: float = clampf((_grow - 0.72) / 0.28, 0.0, 1.0)
@@ -1607,8 +1573,7 @@ func _draw_branch(
 	# Owner (node 선도 너무 구리고): a bare 3px stroke on the night ground read
 	# as a stray hairline. Every live link is cut into the dark first — a
 	# keyline a shade wider — so the bright core sits ON something.
-	if not dashed:
-		_canvas.draw_line(from, tip, UiPalette.NIGHT_BROWN, width + 4.0, true)
+	# The reference keeps its lines bare — no keyline, no glow.
 	if dashed:
 		# QA I-3: locked speaks in FORM, not colour alone — a dashed vine.
 		var span: float = from.distance_to(tip)
@@ -1652,56 +1617,6 @@ func _draw_selection_mark(at: Vector2, disc: float) -> void:
 			_canvas.draw_line(
 				corner, corner - Vector2(0.0, float(sy) * arm), UiPalette.GOLD, 3.0
 			)
-
-
-## Owner reference (특수 노드는 마름모): what a node IS decides its shape.
-## A build root opens a whole family and a one-rank node is a keystone — both
-## are turning points, and they read as diamonds among the square tiles.
-func _node_role(entry: Dictionary) -> String:
-	if not String(entry.get("build_family", "")).is_empty() and entry.get("effect", {}).is_empty():
-		return "root"
-	if (entry.get("costs", []) as Array).size() == 1:
-		return "keystone"
-	return "tile"
-
-
-## Draws one node's plate under its button: a square for an ordinary rank, a
-## diamond for a root or a keystone.
-func _draw_node_plate(entry: Dictionary, at: Vector2, side: float, hue: Color, owned: bool) -> void:
-	var fill: Color = hue if owned else UiPalette.NIGHT.lerp(hue, TILE_LOCKED_MIX)
-	var edge: Color = UiPalette.GOLD_BORDER if owned else hue.darkened(0.3)
-	if _node_role(entry) == "tile":
-		return
-	var reach: float = side * 0.78
-	var points := PackedVector2Array([
-		at + Vector2(0.0, -reach), at + Vector2(reach, 0.0),
-		at + Vector2(0.0, reach), at + Vector2(-reach, 0.0),
-	])
-	_canvas.draw_colored_polygon(points, fill)
-	var outline := PackedVector2Array(points)
-	outline.append(points[0])
-	_canvas.draw_polyline(outline, edge, 3.0, true)
-
-
-## Owner (단계는 제대로 보이지도 않고): each rank is a pip under the tile —
-## filled for what is bought, hollow for what is left. A node with one rank
-## draws none: there is no ladder to show.
-func _draw_rank_pips(at: Vector2, side: float, rank: int, max_rank: int) -> void:
-	if max_rank <= 1:
-		return
-	var pip: float = maxf(side * 0.11, 3.0)
-	var gap: float = pip * 0.6
-	var span: float = float(max_rank) * pip + float(max_rank - 1) * gap
-	var start: float = at.x - span / 2.0
-	# Inside the tile's own bottom edge — pips hung outside it landed on the
-	# neighbour below, and on the hub when the neighbour was the hub.
-	var row: float = at.y + side * 0.5 - pip * 1.6
-	for i: int in max_rank:
-		var box := Rect2(Vector2(start + float(i) * (pip + gap), row), Vector2(pip, pip))
-		if i < rank:
-			_canvas.draw_rect(box, UiPalette.GOLD, true)
-		else:
-			_canvas.draw_rect(box, Color(UiPalette.TEXT_MUTED_ON_DARK, 0.7), false, 1.5)
 
 
 ## One square outline centred on a tile.
@@ -1756,41 +1671,6 @@ func _node_plate(fill: Color, border: Color) -> StyleBox:
 	box.set_border_width_all(NODE_BORDER_WIDTH)
 	box.set_corner_radius_all(TILE_RADIUS)
 	return box
-
-
-## Which family a node belongs to, for its tile hue. Roots seed the colour and
-## every node inherits its root's, so one branch is one colour.
-func _family_color(node_id: String) -> Color:
-	if _family_of.has(node_id):
-		return _family_of[node_id]
-	return FAMILY_COLORS[0]
-
-
-## Walks each tab's roots and paints their whole subtree one hue.
-func _rebuild_families() -> void:
-	_family_of.clear()
-	var entries: Array[Dictionary] = _tab_nodes()
-	var children: Dictionary = {}
-	var roots: Array[String] = []
-	for entry: Dictionary in entries:
-		var node_id: String = String(entry["id"])
-		var requires: Array = entry.get("requires", [])
-		if requires.is_empty():
-			roots.append(node_id)
-			continue
-		var parent_id: String = String(requires[0])
-		var kids: Array = children.get(parent_id, [])
-		kids.append(node_id)
-		children[parent_id] = kids
-	roots.sort()
-	for i: int in roots.size():
-		var hue: Color = FAMILY_COLORS[i % FAMILY_COLORS.size()]
-		var walk: Array[String] = [roots[i]]
-		while not walk.is_empty():
-			var node_id: String = walk.pop_back()
-			_family_of[node_id] = hue
-			for kid: Variant in (children.get(node_id, []) as Array):
-				walk.append(String(kid))
 
 
 func _pill_plate(active: bool) -> StyleBoxFlat:
